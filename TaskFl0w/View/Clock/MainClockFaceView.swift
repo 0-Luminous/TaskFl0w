@@ -1,3 +1,9 @@
+//
+//  MainClockFaceView.swift
+//  TaskFl0w
+//
+//  Created by Yan on 24/12/24.
+//
 import SwiftUI
 
 struct MainClockFaceView: View {
@@ -120,7 +126,9 @@ struct MainClockFaceView: View {
         }
         .sheet(isPresented: $showingTaskDetail) {
             if let task = selectedTask {
-                TaskEditorView(viewModel: viewModel, task: task, isPresented: $showingTaskDetail)
+                TaskEditorView(viewModel: viewModel,
+                               isPresented: $showingTaskDetail,
+                               task: task)
             }
         }
     }
@@ -150,3 +158,42 @@ struct MainClockFaceView: View {
         return Calendar.current.date(from: components) ?? currentDate
     }
 }
+
+//#if DEBUG
+//#Preview {
+//    // 1. Создаём фиктивную (mock) категорию
+//    let sampleCategory = TaskCategoryModel(
+//        id: UUID(),
+//        rawValue: "Work",
+//        iconName: "briefcase",
+//        color: .blue
+//    )
+//    
+//    // 2. Создаём тестовую задачу
+//    let sampleTask = Task(
+//        id: UUID(),
+//        title: "Sample Task",
+//        startTime: Date(),
+//        duration: 3600,
+//        color: .blue,
+//        icon: "briefcase",
+//        category: sampleCategory,
+//        isCompleted: false
+//    )
+//    
+//    // 3. Инициализируем тестовую ClockViewModel
+//    //    и кладём туда нашу задачу
+//    let sampleVM = ClockViewModel()
+//    sampleVM.tasks = [sampleTask]
+//    
+//    // 4. Вызываем MainClockFaceView, передавая нужные параметры
+//    return MainClockFaceView(
+//        currentDate: Date(),                // Текущая дата
+//        tasks: sampleVM.tasks,             // Тестовый список задач
+//        viewModel: sampleVM,               // Наша вью-модель
+//        draggedCategory: .constant(nil),    // Пока ничего не «тянем»
+//        clockFaceColor: .white             // Цвет циферблата
+//    )
+//}
+//#endif
+

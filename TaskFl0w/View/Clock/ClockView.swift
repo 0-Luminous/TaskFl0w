@@ -1,3 +1,9 @@
+//
+//  ClockView.swift
+//  TaskFl0w
+//
+//  Created by Yan on 24/12/24.
+//
 import SwiftUI
 
 
@@ -155,4 +161,8 @@ struct ClockView: View {
         formatter.locale = Locale(identifier: "ru_RU")
         return formatter.string(from: viewModel.selectedDate).capitalized
     }
+}
+
+#Preview{
+    ClockView()
 }

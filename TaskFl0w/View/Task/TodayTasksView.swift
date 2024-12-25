@@ -1,3 +1,9 @@
+//
+//  TodayTasksView.swift
+//  TaskFl0w
+//
+//  Created by Yan on 24/12/24.
+//
 import SwiftUI
 
 struct TodayTasksView: View {
@@ -67,8 +73,8 @@ struct TodayTasksView: View {
             .sheet(isPresented: $isShowingTaskEditor) {
                 if let task = selectedTask {
                     TaskEditorView(viewModel: viewModel,
-                                   task: task,
-                                   isPresented: $isShowingTaskEditor)
+                                   isPresented: $isShowingTaskEditor,
+                                   task: task)
                 }
             }
         }
@@ -83,3 +89,34 @@ struct TodayTasksView: View {
         }
     }
 }
+
+//#if DEBUG
+//#Preview {
+//    // Пример тестовой категории
+//    let sampleCategory = TaskCategoryModel(
+//        id: UUID(),
+//        rawValue: "Demo Category",
+//        iconName: "star.fill",
+//        color: .blue
+//    )
+//    
+//    // Пример тестовой задачи
+//    let sampleTask = Task(
+//        id: UUID(),
+//        title: "Test Task",
+//        startTime: Date(),
+//        duration: 3600, // 1 час
+//        color: .blue,
+//        icon: "star.fill",
+//        category: sampleCategory,
+//        isCompleted: false
+//    )
+//    
+//    // Создаём и наполняем ClockViewModel
+//    let sampleVM = ClockViewModel()
+//    sampleVM.tasks = [sampleTask]
+//
+//    // Возвращаем TodayTasksView для превью
+//    return TodayTasksView(viewModel: sampleVM)
+//}
+//#endif

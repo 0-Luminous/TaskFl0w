@@ -4,6 +4,10 @@
 //
 //  Created by Yan on 24/12/24.
 //
+import SwiftUICore
+import SwiftUI
+import UIKit
+
 extension Color {
     init?(hex: String) {
         var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -33,6 +37,28 @@ extension Color {
         }
 
         self.init(red: r, green: g, blue: b, opacity: a)
+    }
+    
+    func toHex() -> String {
+        guard let components = UIColor(self).cgColor.components else { return "" }
+        
+        let r = Float(components[0])
+        let g = Float(components[1])
+        let b = Float(components[2])
+        let a = components.count >= 4 ? Float(components[3]) : Float(1.0)
+        
+        if a != Float(1.0) {
+            return String(format: "%02lX%02lX%02lX%02lX",
+                        lroundf(r * 255),
+                        lroundf(g * 255),
+                        lroundf(b * 255),
+                        lroundf(a * 255))
+        }
+        
+        return String(format: "%02lX%02lX%02lX",
+                    lroundf(r * 255),
+                    lroundf(g * 255),
+                    lroundf(b * 255))
     }
 }
 
