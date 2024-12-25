@@ -15,13 +15,12 @@ struct ClockCenterView: View {
     var body: some View {
         VStack {
             if isDraggingStart {
-                // Показываем только время начала
+                // Показываем время начала задачи
                 Text(timeFormatter.string(from: currentDate))
                     .font(.system(size: 24, weight: .bold))
             } else if isDraggingEnd, let task = task {
-                // Показываем продолжительность
-                let duration = currentDate.timeIntervalSince(task.startTime)
-                Text(formatDuration(duration))
+                // Показываем время окончания задачи
+                Text(timeFormatter.string(from: currentDate))
                     .font(.system(size: 24, weight: .bold))
             }
         }

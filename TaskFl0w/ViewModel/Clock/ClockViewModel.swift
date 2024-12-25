@@ -37,19 +37,19 @@ final class ClockViewModel: ObservableObject {
             // Добавьте свои категории...
         ]
         
-        // Пример добавления тестовых задач
-        self.tasks = [
-            Task(
-                id: UUID(),
-                title: "Пример задачи",
-                startTime: Date(),
-                duration: 60 * 60,       // 1 час
-                color: .blue,
-                icon: "briefcase.fill",
-                category: categories[0],
-                isCompleted: false
-            )
-        ]
+//        // Пример добавления тестовых задач
+//        self.tasks = [
+//            Task(
+//                id: UUID(),
+//                title: "Пример задачи",
+//                startTime: Date(),
+//                duration: 60 * 60,       // 1 час
+//                color: .blue,
+//                icon: "briefcase.fill",
+//                category: categories[0],
+//                isCompleted: false
+//            )
+//        ]
     }
     
     // MARK: - Методы работы с задачами

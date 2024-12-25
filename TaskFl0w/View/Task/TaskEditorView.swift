@@ -42,15 +42,6 @@ struct TaskEditorView: View {
             }
             .navigationTitle(task == nil ? "Новая задача" : "Редактирование")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(
-                leading: Button("Отмена") {
-                    closeEditor()
-                },
-                trailing: Button("Сохранить") {
-                    saveTask()
-                    closeEditor()
-                }
-            )
             .onAppear {
                 // Если редактируем задачу, подтягиваем её данные
                 if let existingTask = task {
