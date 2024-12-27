@@ -140,7 +140,7 @@ struct MainClockFaceView: View {
                              y: UIScreen.main.bounds.width * 0.35)
         let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
         
-        var angle = atan2(vector.dy, vector.dx)
+        let angle = atan2(vector.dy, vector.dx)
         
         // Переводим в градусы
         var degrees = angle * 180 / .pi

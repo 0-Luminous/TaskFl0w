@@ -133,10 +133,10 @@ struct MainClockTaskArc: View {
         let startHour = CGFloat(calendar.component(.hour, from: task.startTime))
         let startMinute = CGFloat(calendar.component(.minute, from: task.startTime))
         let endTime = task.startTime.addingTimeInterval(task.duration)
-        var endHour = CGFloat(calendar.component(.hour, from: endTime))
+        let endHour = CGFloat(calendar.component(.hour, from: endTime))
         let endMinute = CGFloat(calendar.component(.minute, from: endTime))
         
-        var startMinutes = startHour * 60 + startMinute
+        let startMinutes = startHour * 60 + startMinute
         var endMinutes = endHour * 60 + endMinute
         
         // Если задача идёт за полночь
@@ -167,7 +167,7 @@ struct MainClockTaskArc: View {
     
     private func timeForLocation(_ location: CGPoint, center: CGPoint) -> Date {
         let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
-        var angle = atan2(vector.dy, vector.dx)
+        let angle = atan2(vector.dy, vector.dx)
         var degrees = angle * 180 / .pi
         degrees = (degrees - 90 + 360).truncatingRemainder(dividingBy: 360)
         

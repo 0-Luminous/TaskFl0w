@@ -72,3 +72,5 @@ struct CategoryEditorView: View {
         viewModel.addCategory(newCategory)
     }
 }
+
+

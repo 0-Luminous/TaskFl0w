@@ -11,7 +11,11 @@ final class ClockViewModel: ObservableObject {
     // MARK: - Published properties
     
     @Published var tasks: [Task] = []
-    @Published var categories: [TaskCategoryModel] = []
+    @Published var categories: [TaskCategoryModel] = [
+        TaskCategoryModel(id: UUID(), rawValue: "Работа", iconName: "briefcase.fill", color: .blue),
+        TaskCategoryModel(id: UUID(), rawValue: "Спорт", iconName: "sportscourt.fill", color: .green),
+        TaskCategoryModel(id: UUID(), rawValue: "Развлечения", iconName: "gamecontroller.fill", color: .orange)
+    ]
     
     // Текущая "выбранная" дата для отображения задач
     @Published var selectedDate: Date = Date()
@@ -22,6 +26,8 @@ final class ClockViewModel: ObservableObject {
     // Пример использования AppStorage для цвета циферблата
     @AppStorage("lightModeClockFaceColor") var lightModeClockFaceColor: String = Color.white.toHex()
     @AppStorage("darkModeClockFaceColor") var darkModeClockFaceColor: String = Color.black.toHex()
+    
+    @Published var isDockBarEditingEnabled: Bool = false
     
     // MARK: - Инициализация
     
