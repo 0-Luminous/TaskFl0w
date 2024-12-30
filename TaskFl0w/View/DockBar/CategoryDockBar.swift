@@ -13,6 +13,7 @@ struct CategoryDockBar: View {
     @Binding var draggedCategory: TaskCategoryModel?
     @Binding var showingCategoryEditor: Bool
     @Binding var selectedCategory: TaskCategoryModel?
+    var editingCategory: TaskCategoryModel? = nil
     
     @State private var isEditMode = false
     @State private var currentPage = 0
@@ -23,10 +24,13 @@ struct CategoryDockBar: View {
     
     @Environment(\.colorScheme) var colorScheme
     
+    // Добавляем генератор обратной связи
+    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
+    
     var body: some View {
         VStack(spacing: 5) {
             // Индикатор страниц показываем отдельно, вне основного контейнера
-            if isEditMode && numberOfPages > 1 {
+            if numberOfPages > 1 {
                 HStack {
                     ForEach(0..<numberOfPages, id: \.self) { index in
                         Circle()
@@ -42,20 +46,29 @@ struct CategoryDockBar: View {
                 TabView(selection: $currentPage) {
                     ForEach(0..<numberOfPages, id: \.self) { page in
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: categoryWidth))], spacing: 10) {
-                            
-                            // Отрисовка кнопок категорий
                             ForEach(categoriesForPage(page)) { category in
                                 CategoryButton(
                                     category: category,
                                     isSelected: selectedCategory == category
                                 )
                                 .frame(width: categoryWidth, height: 80)
+                                .scaleEffect(selectedCategory == category ? 1.1 : 1.0)
+                                .animation(.easeInOut(duration: 0.2), value: selectedCategory == category)
                                 .onTapGesture {
                                     selectedCategory = category
                                 }
                                 .onDrag {
                                     self.draggedCategory = category
                                     return NSItemProvider(object: category.id.uuidString as NSString)
+                                } preview: {
+                                    Circle()
+                                        .fill(category.color)
+                                        .frame(width: 50, height: 50)
+                                        .overlay(
+                                            Image(systemName: category.iconName)
+                                                .foregroundColor(.white)
+                                                .font(.system(size: 24))
+                                        )
                                 }
                                 .onDrop(
                                     of: [.text],
@@ -66,25 +79,6 @@ struct CategoryDockBar: View {
                                     )
                                 )
                             }
-                            
-                            // Кнопка "Добавить категорию" (в режиме редактирования)
-                            if isEditMode && shouldShowAddButton(on: page) {
-                                Button(action: {
-                                    showingCategoryEditor = true
-                                }) {
-                                    VStack {
-                                        Image(systemName: "plus.circle.fill")
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(width: 40, height: 40)
-                                        Text("Добавить")
-                                            .font(.caption)
-                                    }
-                                    .foregroundColor(.blue)
-                                    .frame(width: categoryWidth, height: 80)
-                                }
-                            }
-                            
                         }
                         .tag(page)
                     }
@@ -102,14 +96,21 @@ struct CategoryDockBar: View {
             LongPressGesture(minimumDuration: 0.5)
                 .onEnded { _ in
                     withAnimation {
+                        // Подготавливаем и запускаем вибрацию
+                        feedbackGenerator.prepare()
+                        feedbackGenerator.impactOccurred()
+                        
                         if !isEditMode {
                             lastNonEditPage = currentPage
                         }
                         isEditMode.toggle()
-                        if isEditMode && !viewModel.categories.isEmpty {
-                            currentPage = pageWithAddButton
-                        } else {
-                            currentPage = min(lastNonEditPage, numberOfPages - 1)
+                        
+                        // При входе в режим редактирования сразу открываем CategoryEditorView
+                        if isEditMode {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showingCategoryEditor = true
+                                isEditMode = false // Сбрасываем режим редактирования
+                            }
                         }
                     }
                 }
@@ -128,11 +129,8 @@ struct CategoryDockBar: View {
     
     private var numberOfPages: Int {
         let count = viewModel.categories.count
-        if isEditMode {
-            return max((count + categoriesPerPage) / categoriesPerPage, 2)
-        } else {
-            return max((count + categoriesPerPage - 1) / categoriesPerPage, 1)
-        }
+        // Просто делим количество категорий на categoriesPerPage и округляем вверх
+        return max((count + categoriesPerPage - 1) / categoriesPerPage, 1)
     }
     
     private func categoriesForPage(_ page: Int) -> [TaskCategoryModel] {
@@ -148,12 +146,24 @@ struct CategoryDockBar: View {
     }
     
     private var pageWithAddButton: Int {
-        let fullPages = viewModel.categories.count / categoriesPerPage
-        return fullPages
+        // Если у нас ровно 4 категории или больше, кнопка добавления должна быть на второй странице
+        return viewModel.categories.count >= categoriesPerPage ? 1 : 0
     }
     
     private func shouldShowAddButton(on page: Int) -> Bool {
-        return page == pageWithAddButton
+        if !isEditMode { return false }
+        
+        // Для 4 или более категорий показываем кнопку на второй странице
+        if viewModel.categories.count >= categoriesPerPage {
+            return page == 1
+        }
+        
+        // Для менее 4 категорий показываем на первой странице
+        return page == 0
+    }
+    
+    private func isEditing(_ category: TaskCategoryModel) -> Bool {
+        return editingCategory?.id == category.id
     }
 }
 
@@ -165,19 +175,19 @@ struct CategoryDockBar: View {
         TaskCategoryModel(
             id: UUID(),
             rawValue: "Работа",
-            iconName: "briefcase.fill",
+            iconName: "macbook",
             color: .blue
         ),
         TaskCategoryModel(
             id: UUID(),
             rawValue: "Спорт",
-            iconName: "sportscourt.fill",
+            iconName: "figure.strengthtraining.traditional",
             color: .green
         ),
         TaskCategoryModel(
             id: UUID(),
             rawValue: "Отдых",
-            iconName: "gamecontroller.fill",
+            iconName: "gamecontroller",
             color: .orange
         ),
         TaskCategoryModel(

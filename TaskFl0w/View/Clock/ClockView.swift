@@ -123,8 +123,7 @@ struct ClockView: View {
                 // CategoryEditorView, например
                 CategoryEditorView(
                     viewModel: viewModel,
-                    isPresented: $showingCategoryEditor,
-                    clockOffset: .constant(0)
+                    isPresented: $showingCategoryEditor
                 )
             }
         }

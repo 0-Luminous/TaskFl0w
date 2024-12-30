@@ -12,9 +12,9 @@ final class ClockViewModel: ObservableObject {
     
     @Published var tasks: [Task] = []
     @Published var categories: [TaskCategoryModel] = [
-        TaskCategoryModel(id: UUID(), rawValue: "Работа", iconName: "briefcase.fill", color: .blue),
-        TaskCategoryModel(id: UUID(), rawValue: "Спорт", iconName: "sportscourt.fill", color: .green),
-        TaskCategoryModel(id: UUID(), rawValue: "Развлечения", iconName: "gamecontroller.fill", color: .orange)
+        TaskCategoryModel(id: UUID(), rawValue: "Работа", iconName: "macbook", color: .blue),
+        TaskCategoryModel(id: UUID(), rawValue: "Спорт", iconName: "figure.strengthtraining.traditional", color: .green),
+        TaskCategoryModel(id: UUID(), rawValue: "Развлечения", iconName: "gamecontroller", color: .red)
     ]
     
     // Текущая "выбранная" дата для отображения задач
@@ -37,9 +37,9 @@ final class ClockViewModel: ObservableObject {
         // Ниже для примера:
         
         self.categories = [
-            TaskCategoryModel(id: UUID(), rawValue: "Работа", iconName: "briefcase.fill", color: .blue),
-            TaskCategoryModel(id: UUID(), rawValue: "Спорт", iconName: "sportscourt.fill", color: .green),
-            TaskCategoryModel(id: UUID(), rawValue: "Развлечения", iconName: "gamecontroller.fill", color: .orange),
+            TaskCategoryModel(id: UUID(), rawValue: "Работа", iconName: "macbook", color: .blue),
+            TaskCategoryModel(id: UUID(), rawValue: "Спорт", iconName: "figure.strengthtraining.traditional", color: .green),
+            TaskCategoryModel(id: UUID(), rawValue: "Развлечения", iconName: "gamecontroller", color: .red)
             // Добавьте свои категории...
         ]
         
@@ -95,5 +95,35 @@ final class ClockViewModel: ObservableObject {
         categories.append(category)
     }
     
-    // И т.д., если нужно
+    func updateCategory(_ category: TaskCategoryModel) {
+        if let index = categories.firstIndex(where: { $0.id == category.id }) {
+            categories[index] = category
+            // Обновляем все задачи, связанные с этой категорией
+            tasks = tasks.map { task in
+                if task.category.id == category.id {
+                    return Task(
+                        id: task.id,
+                        title: task.title,
+                        startTime: task.startTime,
+                        duration: task.duration,
+                        color: category.color,
+                        icon: category.iconName,
+                        category: category,
+                        isCompleted: task.isCompleted
+                    )
+                }
+                return task
+            }
+        }
+    }
+    
+    func removeCategory(_ category: TaskCategoryModel) {
+        // Удаляем все задачи, связанные с этой категорией
+        tasks.removeAll { task in
+            task.category.id == category.id
+        }
+        
+        // Удаляем саму категорию
+        categories.removeAll { $0.id == category.id }
+    }
 }
