@@ -126,4 +126,21 @@ final class ClockViewModel: ObservableObject {
         // Удаляем саму категорию
         categories.removeAll { $0.id == category.id }
     }
+    
+    func updateTaskStartTimeKeepingEnd(_ task: Task, newStartTime: Date) {
+        if let index = tasks.firstIndex(of: task) {
+            let endTime = task.startTime.addingTimeInterval(task.duration)
+            let newDuration = endTime.timeIntervalSince(newStartTime)
+            
+            // Минимальная длительность задачи (например, 5 минут)
+            let minDuration: TimeInterval = 5 * 60
+            
+            if newDuration >= minDuration {
+                var updatedTask = task
+                updatedTask.startTime = newStartTime
+                updatedTask.duration = newDuration
+                tasks[index] = updatedTask
+            }
+        }
+    }
 }
