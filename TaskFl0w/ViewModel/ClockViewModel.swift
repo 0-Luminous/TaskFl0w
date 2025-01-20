@@ -33,6 +33,9 @@ final class ClockViewModel: ObservableObject {
     
     @Published var isDockBarEditingEnabled: Bool = false
     
+    @Published var draggedTask: Task?
+    @Published var isDraggingOutside: Bool = false
+    
     // MARK: - Инициализация
     
     init() {
@@ -232,5 +235,23 @@ final class ClockViewModel: ObservableObject {
         updatedTask.duration = max(0, newDuration)
         
         tasks[index] = updatedTask
+    }
+    
+    func startDragging(_ task: Task) {
+        draggedTask = task
+    }
+    
+    func stopDragging(didReturnToClock: Bool) {
+        if let task = draggedTask {
+            if !didReturnToClock {
+                tasks.removeAll(where: { $0.id == task.id })
+            }
+        }
+        draggedTask = nil
+        isDraggingOutside = false
+    }
+    
+    func updateDragPosition(isOutsideClock: Bool) {
+        isDraggingOutside = isOutsideClock
     }
 }
