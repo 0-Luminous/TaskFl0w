@@ -79,10 +79,18 @@ final class ClockViewModel: ObservableObject {
     // MARK: - Методы работы с задачами
     
     func addTask(_ task: Task) {
-        let taskEntity = TaskEntity.from(task, context: context)
-        context.insert(taskEntity)
-        saveContext()
-        fetchTasks()
+        // Убедимся, что время задачи соответствует выбранной дате
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: task.startTime)
+        components.hour = timeComponents.hour
+        components.minute = timeComponents.minute
+        
+        if let correctedDate = calendar.date(from: components) {
+            var newTask = task
+            newTask.startTime = correctedDate
+            tasks.append(newTask)
+        }
     }
     
     func updateTask(_ task: Task) {
@@ -165,20 +173,28 @@ final class ClockViewModel: ObservableObject {
     }
     
     func updateTaskStartTimeKeepingEnd(_ task: Task, newStartTime: Date) {
-        if let index = tasks.firstIndex(of: task) {
-            let endTime = task.startTime.addingTimeInterval(task.duration)
-            let newDuration = endTime.timeIntervalSince(newStartTime)
-            
-            // Минимальная длительность задачи (например, 5 минут)
-            let minDuration: TimeInterval = 5 * 60
-            
-            if newDuration >= minDuration {
-                var updatedTask = task
-                updatedTask.startTime = newStartTime
-                updatedTask.duration = newDuration
-                tasks[index] = updatedTask
-            }
-        }
+        guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
+        
+        let calendar = Calendar.current
+        let oldEndTime = task.startTime.addingTimeInterval(task.duration)
+        
+        // Создаем компоненты для новой даты, сохраняя день из selectedDate
+        var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: newStartTime)
+        components.hour = timeComponents.hour
+        components.minute = timeComponents.minute
+        
+        guard let newStart = calendar.date(from: components) else { return }
+        
+        // Вычисляем новую продолжительность
+        let newDuration = oldEndTime.timeIntervalSince(newStart)
+        
+        // Обновляем только конкретную задачу
+        var updatedTask = task
+        updatedTask.startTime = newStart
+        updatedTask.duration = max(0, newDuration)
+        
+        tasks[index] = updatedTask
     }
     
     private func validateTimeInterval(_ interval: TimeInterval) -> TimeInterval {
@@ -187,26 +203,34 @@ final class ClockViewModel: ObservableObject {
     }
     
     func updateTaskStartTime(_ task: Task, newStartTime: Date) {
-        guard newStartTime.timeIntervalSince1970.isFinite else { return }
-        
         if let index = tasks.firstIndex(where: { $0.id == task.id }) {
             var updatedTask = task
             updatedTask.startTime = newStartTime
-            updatedTask.duration = validateTimeInterval(updatedTask.duration)
             tasks[index] = updatedTask
             updateTask(updatedTask)
         }
     }
     
     func updateTaskDuration(_ task: Task, newEndTime: Date) {
-        let duration = newEndTime.timeIntervalSince(task.startTime)
-        let validDuration = validateTimeInterval(duration)
+        guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         
-        if let index = tasks.firstIndex(where: { $0.id == task.id }) {
-            var updatedTask = task
-            updatedTask.duration = validDuration
-            tasks[index] = updatedTask
-            updateTask(updatedTask)
-        }
+        let calendar = Calendar.current
+        
+        // Создаем компоненты для новой даты окончания
+        var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: newEndTime)
+        components.hour = timeComponents.hour
+        components.minute = timeComponents.minute
+        
+        guard let newEnd = calendar.date(from: components) else { return }
+        
+        // Вычисляем новую продолжительность
+        let newDuration = newEnd.timeIntervalSince(task.startTime)
+        
+        // Обновляем только конкретную задачу
+        var updatedTask = task
+        updatedTask.duration = max(0, newDuration)
+        
+        tasks[index] = updatedTask
     }
 }
