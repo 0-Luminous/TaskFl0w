@@ -42,6 +42,19 @@ struct TaskEditorView: View {
             }
             .navigationTitle(task == nil ? "Новая задача" : "Редактирование")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Отмена") {
+                        closeEditor()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Сохранить") {
+                        saveTask()
+                        closeEditor()
+                    }
+                }
+            }
             .onAppear {
                 // Если редактируем задачу, подтягиваем её данные
                 if let existingTask = task {
@@ -65,34 +78,32 @@ struct TaskEditorView: View {
     }
     
     private func saveTask() {
-        // Вычисляем duration
         let duration = selectedEndDate.timeIntervalSince(selectedStartDate)
-        guard duration >= 0 else { return }
+        guard duration.isFinite && duration > 0 else { 
+            print("Некорректная длительность задачи")
+            return 
+        }
         
         if let existingTask = task {
-            // Обновляем существующую задачу
-            // 1. Обновим title
-            if let index = viewModel.tasks.firstIndex(where: { $0.id == existingTask.id }) {
-                viewModel.tasks[index].title = title
-            }
-            // 2. Обновим время
-            viewModel.updateTaskStartTime(existingTask, newStartTime: selectedStartDate)
-            viewModel.updateTaskDuration(existingTask, newEndTime: selectedEndDate)
+            var updatedTask = existingTask
+            updatedTask.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            updatedTask.startTime = selectedStartDate
+            updatedTask.duration = duration
             
-            // 3. Обновим категорию (иконку/цвет)
-            if let category = selectedCategory, let idx = viewModel.tasks.firstIndex(where: { $0.id == existingTask.id }) {
-                viewModel.tasks[idx].category = category
-                viewModel.tasks[idx].color = category.color
-                viewModel.tasks[idx].icon = category.iconName
+            if let category = selectedCategory {
+                updatedTask.category = category
+                updatedTask.color = category.color
+                updatedTask.icon = category.iconName
             }
             
+            viewModel.updateTask(updatedTask)
         } else {
-            // Создаём новую
             guard let category = selectedCategory else { return }
+            guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
             
             let newTask = Task(
                 id: UUID(),
-                title: title,
+                title: title.trimmingCharacters(in: .whitespacesAndNewlines),
                 startTime: selectedStartDate,
                 duration: duration,
                 color: category.color,

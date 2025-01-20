@@ -14,6 +14,7 @@ struct TaskFl0wApp: App {
     var body: some Scene {
         WindowGroup {
             ClockView()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }
 }

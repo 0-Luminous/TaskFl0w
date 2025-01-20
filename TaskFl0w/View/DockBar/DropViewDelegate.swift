@@ -16,16 +16,16 @@ struct DropViewDelegate: DropDelegate {
     }
 
     func dropEntered(info: DropInfo) {
-        guard let draggedItem = self.draggedItem else { return }
-        if draggedItem != item {
-            let from = items.firstIndex(of: draggedItem)!
-            let to = items.firstIndex(of: item)!
-            withAnimation(.default) {
-                items.move(
-                    fromOffsets: IndexSet(integer: from),
-                    toOffset: to > from ? to + 1 : to
-                )
-            }
+        guard let draggedItem = self.draggedItem,
+              let fromIndex = items.firstIndex(of: draggedItem),
+              let toIndex = items.firstIndex(of: item),
+              draggedItem != item else { return }
+        
+        withAnimation(.default) {
+            items.move(
+                fromOffsets: IndexSet(integer: fromIndex),
+                toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex
+            )
         }
     }
 }

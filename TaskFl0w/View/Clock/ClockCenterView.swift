@@ -18,7 +18,7 @@ struct ClockCenterView: View {
                 // Показываем время начала задачи
                 Text(timeFormatter.string(from: currentDate))
                     .font(.system(size: 24, weight: .bold))
-            } else if isDraggingEnd, let task = task {
+            } else if isDraggingEnd, let _ = task {
                 // Показываем время окончания задачи
                 Text(timeFormatter.string(from: currentDate))
                     .font(.system(size: 24, weight: .bold))

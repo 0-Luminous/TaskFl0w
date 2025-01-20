@@ -44,7 +44,7 @@ struct CalendarView: View {
                 DatePicker("", selection: $viewModel.selectedDate, displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding()
-                    .onChange(of: viewModel.selectedDate) { _ in
+                    .onChange(of: viewModel.selectedDate) { oldValue, newValue in
                         dismiss()
                     }
                 
