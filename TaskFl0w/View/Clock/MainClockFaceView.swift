@@ -14,22 +14,8 @@ struct MainClockFaceView: View {
     @Binding var draggedCategory: TaskCategoryModel?
     let clockFaceColor: Color
     
-    // Локальные состояния
-    @State private var selectedTask: Task?
-    @State private var showingTaskDetail = false
-    @State private var dropLocation: CGPoint?
-    
-    // Режимы редактирования
-    @State private var isEditingMode = false
-    @State private var editingTask: Task?
-    @State private var isDraggingStart = false
-    @State private var isDraggingEnd = false
-    @State private var previewTime: Date?
-    
-    // Отфильтрованные задачи под выбранную дату
-    private var tasksForSelectedDate: [Task] {
-        tasks.filter { Calendar.current.isDate($0.startTime, inSameDayAs: currentDate) }
-    }
+    // Локальные состояния убраны и перенесены в ViewModel
+    // Используем состояния из ViewModel через viewModel
     
     var body: some View {
         ZStack {
@@ -39,34 +25,27 @@ struct MainClockFaceView: View {
             
             MainTaskArcsView(
                 tasks: tasksForSelectedDate,
-                viewModel: viewModel,
-                selectedTask: $selectedTask,
-                showingTaskDetail: $showingTaskDetail,
-                isEditingMode: $isEditingMode,
-                editingTask: $editingTask,
-                isDraggingStart: $isDraggingStart,
-                isDraggingEnd: $isDraggingEnd,
-                previewTime: $previewTime
+                viewModel: viewModel
             )
             
             MainClockMarksView()
             
-            MainClockHandView(currentDate: currentDate)
+            MainClockHandView(currentDate: viewModel.currentDate)
             
             // Показ точки, куда «кидаем» категорию
-            if let location = dropLocation {
+            if let location = viewModel.dropLocation {
                 Circle()
-                    .fill(draggedCategory?.color ?? .clear)
+                    .fill(viewModel.draggedCategory?.color ?? .clear)
                     .frame(width: 20, height: 20)
                     .position(location)
             }
             
             // Если редактируем задачу
-            if isEditingMode, let time = previewTime, let task = editingTask {
+            if viewModel.isEditingMode, let time = viewModel.previewTime, let task = viewModel.editingTask {
                 ClockCenterView(
                     currentDate: time,
-                    isDraggingStart: isDraggingStart,
-                    isDraggingEnd: isDraggingEnd,
+                    isDraggingStart: viewModel.isDraggingStart,
+                    isDraggingEnd: viewModel.isDraggingEnd,
                     task: task
                 )
             }
@@ -78,15 +57,15 @@ struct MainClockFaceView: View {
         
         // Drop — создание новой задачи (Drag & Drop категории)
         .onDrop(of: [.text], isTargeted: nil) { providers, location in
-            guard let category = draggedCategory else { return false }
+            guard let category = viewModel.draggedCategory else { return false }
             let dropPoint = location
-            self.dropLocation = dropPoint
+            viewModel.dropLocation = dropPoint
             
             let time = timeForLocation(dropPoint)
             
             // Собираем дату с учётом выбранного дня + времени
             let calendar = Calendar.current
-            let selectedComponents = calendar.dateComponents([.year, .month, .day], from: currentDate)
+            let selectedComponents = calendar.dateComponents([.year, .month, .day], from: viewModel.currentDate)
             let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
             
             var newTaskComponents = DateComponents()
@@ -115,25 +94,29 @@ struct MainClockFaceView: View {
             
             // Анимация исчезновения точки
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.dropLocation = nil
+                viewModel.dropLocation = nil
             }
             
             // Включаем режим редактирования, чтобы пользователь сразу мог двигать границы
-            isEditingMode = true
-            editingTask = newTask
+            viewModel.isEditingMode = true
+            viewModel.editingTask = newTask
             
             return true
         }
-        .sheet(isPresented: $showingTaskDetail) {
-            if let task = selectedTask {
+        .sheet(isPresented: $viewModel.showingTaskDetail) {
+            if let task = viewModel.selectedTask {
                 TaskEditorView(viewModel: viewModel,
-                               isPresented: $showingTaskDetail,
+                               isPresented: $viewModel.showingTaskDetail,
                                task: task)
             }
         }
     }
     
     // MARK: - Вспомогательные
+    
+    private var tasksForSelectedDate: [Task] {
+        tasks.filter { Calendar.current.isDate($0.startTime, inSameDayAs: currentDate) }
+    }
     
     private func timeForLocation(_ location: CGPoint) -> Date {
         let center = CGPoint(x: UIScreen.main.bounds.width * 0.35,

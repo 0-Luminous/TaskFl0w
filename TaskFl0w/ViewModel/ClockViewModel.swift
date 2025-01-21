@@ -24,6 +24,9 @@ final class ClockViewModel: ObservableObject {
     // Текущая "выбранная" дата для отображения задач
     @Published var selectedDate: Date = Date()
     
+    // Текущее время для реального обновления
+    @Published var currentDate: Date = Date()
+    
     // В этот флаг можно прокидывать логику тёмной/светлой темы, если нужно
     @AppStorage("isDarkMode") var isDarkMode = false
     
@@ -33,8 +36,32 @@ final class ClockViewModel: ObservableObject {
     
     @Published var isDockBarEditingEnabled: Bool = false
     
+    // Перетаскивание задачи
     @Published var draggedTask: Task?
     @Published var isDraggingOutside: Bool = false
+    
+    // Состояния представлений
+    @Published var showingAddTask: Bool = false
+    @Published var showingSettings: Bool = false
+    @Published var showingCalendar: Bool = false
+    @Published var showingStatistics: Bool = false
+    @Published var showingTodayTasks: Bool = false
+    @Published var showingCategoryEditor: Bool = false
+    @Published var selectedCategory: TaskCategoryModel?
+    
+    // Drag & Drop
+    @Published var draggedCategory: TaskCategoryModel?
+    
+    // Режим редактирования
+    @Published var isEditingMode: Bool = false
+    @Published var editingTask: Task?
+    @Published var isDraggingStart: Bool = false
+    @Published var isDraggingEnd: Bool = false
+    @Published var previewTime: Date?
+    @Published var dropLocation: CGPoint?
+    @Published var selectedTask: Task?
+    @Published var showingTaskDetail: Bool = false
+    @Published var searchText: String = ""
     
     // MARK: - Инициализация
     

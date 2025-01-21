@@ -8,120 +8,111 @@ import SwiftUI
 
 struct MainClockTaskArc: View {
     let task: Task
-    let geometry: GeometryProxy
     @ObservedObject var viewModel: ClockViewModel
     
-    @Binding var selectedTask: Task?
-    @Binding var showingTaskDetail: Bool
-    @Binding var isEditingMode: Bool
-    @Binding var editingTask: Task?
-    @Binding var isDraggingStart: Bool
-    @Binding var isDraggingEnd: Bool
-    @Binding var previewTime: Date?
-    
     var body: some View {
-        let center = CGPoint(x: geometry.size.width / 2,
-                             y: geometry.size.height / 2)
-        let radius = min(geometry.size.width, geometry.size.height) / 2
-        let (startAngle, endAngle) = calculateAngles()
-        
-        ZStack {
-            // Дуга задачи
-            Path { path in
-                path.addArc(center: center,
-                            radius: radius + 10,
-                            startAngle: startAngle,
-                            endAngle: endAngle,
-                            clockwise: false)
-            }
-            .stroke(task.category.color, lineWidth: 20)
-            .gesture(
-                LongPressGesture(minimumDuration: 0.5)
-                    .onEnded { _ in
-                        withAnimation {
-                            // Если уже редактируем именно эту задачу — выключаем
-                            if isEditingMode, editingTask?.id == task.id {
-                                isEditingMode = false
-                                editingTask = nil
-                            } else {
-                                // Иначе включаем режим редактирования
-                                isEditingMode = true
-                                editingTask = task
-                            }
-                        }
-                    }
-            )
-            .simultaneousGesture(
-                TapGesture()
-                    .onEnded {
-                        if !isEditingMode {
-                            selectedTask = task
-                            showingTaskDetail = true
-                        }
-                    }
-            )
+        GeometryReader { geometry in
+            let center = CGPoint(x: geometry.size.width / 2,
+                                 y: geometry.size.height / 2)
+            let radius = min(geometry.size.width, geometry.size.height) / 2
+            let (startAngle, endAngle) = calculateAngles()
             
-            // Если текущая задача в режиме редактирования — показываем маркеры
-            if isEditingMode && task.id == editingTask?.id {
-                // Маркер начала
-                Circle()
-                    .fill(task.category.color)
-                    .frame(width: 24, height: 24)
-                    .position(
-                        x: center.x + (radius + 10) * CGFloat(cos(startAngle.radians)),
-                        y: center.y + (radius + 10) * CGFloat(sin(startAngle.radians))
-                    )
-                    .gesture(
-                        DragGesture()
-                            .onChanged { value in
-                                isDraggingStart = true
-                                let newTime = timeForLocation(value.location, center: center)
-                                previewTime = newTime
-                                viewModel.updateTaskStartTimeKeepingEnd(task, newStartTime: newTime)
+            ZStack {
+                // Дуга задачи
+                Path { path in
+                    path.addArc(center: center,
+                                radius: radius + 10,
+                                startAngle: startAngle,
+                                endAngle: endAngle,
+                                clockwise: false)
+                }
+                .stroke(task.category.color, lineWidth: 20)
+                .gesture(
+                    LongPressGesture(minimumDuration: 0.5)
+                        .onEnded { _ in
+                            withAnimation {
+                                if viewModel.isEditingMode, viewModel.editingTask?.id == task.id {
+                                    viewModel.isEditingMode = false
+                                    viewModel.editingTask = nil
+                                } else {
+                                    viewModel.isEditingMode = true
+                                    viewModel.editingTask = task
+                                }
                             }
-                            .onEnded { _ in
-                                isDraggingStart = false
-                                previewTime = nil
+                        }
+                )
+                .simultaneousGesture(
+                    TapGesture()
+                        .onEnded {
+                            if !viewModel.isEditingMode {
+                                viewModel.selectedTask = task
+                                viewModel.showingTaskDetail = true
                             }
-                    )
+                        }
+                )
                 
-                // Маркер конца
-                Circle()
-                    .fill(task.category.color)
-                    .frame(width: 24, height: 24)
-                    .position(
-                        x: center.x + (radius + 10) * CGFloat(cos(endAngle.radians)),
-                        y: center.y + (radius + 10) * CGFloat(sin(endAngle.radians))
-                    )
-                    .gesture(
-                        DragGesture()
-                            .onChanged { value in
-                                isDraggingEnd = true
-                                let newTime = timeForLocation(value.location, center: center)
-                                previewTime = newTime
-                                viewModel.updateTaskDuration(task, newEndTime: newTime)
-                            }
-                            .onEnded { _ in
-                                isDraggingEnd = false
-                                previewTime = nil
-                            }
-                    )
-            }
-            
-            // Иконка категории на середине дуги
-            let midAngle = calculateMidAngle(start: startAngle, end: endAngle)
-            Image(systemName: task.category.iconName)
-                .font(.system(size: 12))
-                .foregroundColor(.white)
-                .background(
+                // Если текущая задача в режиме редактирования — показываем маркеры
+                if viewModel.isEditingMode && task.id == viewModel.editingTask?.id {
+                    // Маркер начала
                     Circle()
                         .fill(task.category.color)
-                        .frame(width: 20, height: 20)
-                )
-                .position(
-                    x: center.x + (radius + 20) * CGFloat(cos(midAngle.radians)),
-                    y: center.y + (radius + 20) * CGFloat(sin(midAngle.radians))
-                )
+                        .frame(width: 24, height: 24)
+                        .position(
+                            x: center.x + (radius + 10) * CGFloat(cos(startAngle.radians)),
+                            y: center.y + (radius + 10) * CGFloat(sin(startAngle.radians))
+                        )
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    viewModel.isDraggingStart = true
+                                    let newTime = timeForLocation(value.location, center: center)
+                                    viewModel.previewTime = newTime
+                                    viewModel.updateTaskStartTimeKeepingEnd(task, newStartTime: newTime)
+                                }
+                                .onEnded { _ in
+                                    viewModel.isDraggingStart = false
+                                    viewModel.previewTime = nil
+                                }
+                        )
+                    
+                    // Маркер конца
+                    Circle()
+                        .fill(task.category.color)
+                        .frame(width: 24, height: 24)
+                        .position(
+                            x: center.x + (radius + 10) * CGFloat(cos(endAngle.radians)),
+                            y: center.y + (radius + 10) * CGFloat(sin(endAngle.radians))
+                        )
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    viewModel.isDraggingEnd = true
+                                    let newTime = timeForLocation(value.location, center: center)
+                                    viewModel.previewTime = newTime
+                                    viewModel.updateTaskDuration(task, newEndTime: newTime)
+                                }
+                                .onEnded { _ in
+                                    viewModel.isDraggingEnd = false
+                                    viewModel.previewTime = nil
+                                }
+                        )
+                }
+                
+                // Иконка категории на середине дуги
+                let midAngle = calculateMidAngle(start: startAngle, end: endAngle)
+                Image(systemName: task.category.iconName)
+                    .font(.system(size: 12))
+                    .foregroundColor(.white)
+                    .background(
+                        Circle()
+                            .fill(task.category.color)
+                            .frame(width: 20, height: 20)
+                    )
+                    .position(
+                        x: center.x + (radius + 20) * CGFloat(cos(midAngle.radians)),
+                        y: center.y + (radius + 20) * CGFloat(sin(midAngle.radians))
+                    )
+            }
         }
     }
     

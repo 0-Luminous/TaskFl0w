@@ -10,20 +10,6 @@ import SwiftUI
 struct ClockView: View {
     @StateObject private var viewModel = ClockViewModel()
     
-    @State private var showingAddTask = false
-    @State private var showingSettings = false
-    @State private var showingCalendar = false
-    @State private var showingStatistics = false
-    @State private var currentDate = Date()
-    @State private var showingTodayTasks = false
-    
-    // Drag & Drop
-    @State private var draggedCategory: TaskCategoryModel?
-    
-    // Редактирование категорий
-    @State private var showingCategoryEditor = false
-    @State private var selectedCategory: TaskCategoryModel?
-    
     @Environment(\.colorScheme) var colorScheme
     
     // Таймер для "реал-тайм" обновления
@@ -55,7 +41,7 @@ struct ClockView: View {
                         currentDate: viewModel.selectedDate,
                         tasks: viewModel.tasks,
                         viewModel: viewModel,
-                        draggedCategory: $draggedCategory,
+                        draggedCategory: $viewModel.draggedCategory,
                         clockFaceColor: currentClockFaceColor
                     )
                 }
@@ -65,10 +51,10 @@ struct ClockView: View {
                 // Набор категорий снизу
                 CategoryDockBar(
                     viewModel: viewModel,
-                    showingAddTask: $showingAddTask,
-                    draggedCategory: $draggedCategory,
-                    showingCategoryEditor: $showingCategoryEditor,
-                    selectedCategory: $selectedCategory
+                    showingAddTask: $viewModel.showingAddTask,
+                    draggedCategory: $viewModel.draggedCategory,
+                    showingCategoryEditor: $viewModel.showingCategoryEditor,
+                    selectedCategory: $viewModel.selectedCategory
                 )
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -84,46 +70,46 @@ struct ClockView: View {
                 }
                 ToolbarItem(placement: .navigationBarLeading) {
                     HStack {
-                        Button(action: { showingSettings = true }) {
+                        Button(action: { viewModel.showingSettings = true }) {
                             Image(systemName: "gear")
                         }
-                        Button(action: { showingStatistics = true }) {
+                        Button(action: { viewModel.showingStatistics = true }) {
                             Image(systemName: "chart.bar")
                         }
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack {
-                        Button(action: { showingCalendar = true }) {
+                        Button(action: { viewModel.showingCalendar = true }) {
                             Image(systemName: "calendar")
                         }
-                        Button(action: { showingTodayTasks = true }) {
+                        Button(action: { viewModel.showingTodayTasks = true }) {
                             Image(systemName: "list.bullet")
                         }
                     }
                 }
             }
             // Пример использования листов (sheet)
-            .sheet(isPresented: $showingAddTask) {
-                TaskEditorView(viewModel: viewModel, isPresented: $showingAddTask)
+            .sheet(isPresented: $viewModel.showingAddTask) {
+                TaskEditorView(viewModel: viewModel, isPresented: $viewModel.showingAddTask)
             }
-            .sheet(isPresented: $showingSettings) {
+            .sheet(isPresented: $viewModel.showingSettings) {
                 SettingsView()
             }
-            .sheet(isPresented: $showingCalendar) {
+            .sheet(isPresented: $viewModel.showingCalendar) {
                 CalendarView(viewModel: viewModel)
             }
-            .sheet(isPresented: $showingStatistics) {
+            .sheet(isPresented: $viewModel.showingStatistics) {
                 StatisticsView(viewModel: viewModel)
             }
-            .sheet(isPresented: $showingTodayTasks) {
+            .sheet(isPresented: $viewModel.showingTodayTasks) {
                 TodayTasksView(viewModel: viewModel)
             }
-            .sheet(isPresented: $showingCategoryEditor) {
+            .sheet(isPresented: $viewModel.showingCategoryEditor) {
                 // CategoryEditorView, например
                 CategoryEditorView(
                     viewModel: viewModel,
-                    isPresented: $showingCategoryEditor
+                    isPresented: $viewModel.showingCategoryEditor
                 )
             }
         }
@@ -133,7 +119,7 @@ struct ClockView: View {
         .onReceive(timer) { _ in
             // Если выбранная дата совпадает с сегодня, тогда обновляем "currentDate" каждую секунду
             if Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: Date()) {
-                currentDate = Date()
+                viewModel.currentDate = Date()
             }
         }
     }
