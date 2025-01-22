@@ -122,6 +122,12 @@ struct ClockView: View {
                 viewModel.currentDate = Date()
             }
         }
+        .onDrop(of: [.text], isTargeted: nil) { providers, location in
+            if let task = viewModel.draggedTask {
+                viewModel.taskManagement.removeTask(task)
+            }
+            return true
+        }
     }
     
     // MARK: - Вспомогательные вычислимые свойства

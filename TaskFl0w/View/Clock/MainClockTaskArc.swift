@@ -67,7 +67,7 @@ struct MainClockTaskArc: View {
                                     viewModel.isDraggingStart = true
                                     let newTime = timeForLocation(value.location, center: center)
                                     viewModel.previewTime = newTime
-                                    viewModel.updateTaskStartTimeKeepingEnd(task, newStartTime: newTime)
+                                    viewModel.taskManagement.updateTaskStartTimeKeepingEnd(task, newStartTime: newTime)
                                 }
                                 .onEnded { _ in
                                     viewModel.isDraggingStart = false
@@ -89,7 +89,7 @@ struct MainClockTaskArc: View {
                                     viewModel.isDraggingEnd = true
                                     let newTime = timeForLocation(value.location, center: center)
                                     viewModel.previewTime = newTime
-                                    viewModel.updateTaskDuration(task, newEndTime: newTime)
+                                    viewModel.taskManagement.updateTaskDuration(task, newEndTime: newTime)
                                 }
                                 .onEnded { _ in
                                     viewModel.isDraggingEnd = false

@@ -103,7 +103,7 @@ struct CalendarView: View {
         guard let tasksForDate = filteredTasks[date] else { return }
         for index in offsets {
             let task = tasksForDate[index]
-            viewModel.removeTask(task)
+            viewModel.taskManagement.removeTask(task)
         }
     }
 }

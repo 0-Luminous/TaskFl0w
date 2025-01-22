@@ -85,8 +85,12 @@ struct TodayTasksView: View {
     private func deleteTasks(at offsets: IndexSet) {
         let tasksToDelete = offsets.map { todaysTasks[$0] }
         for task in tasksToDelete {
-            viewModel.removeTask(task)
+            deleteTask(task)
         }
+    }
+    
+    private func deleteTask(_ task: Task) {
+        viewModel.taskManagement.removeTask(task)
     }
 }
 

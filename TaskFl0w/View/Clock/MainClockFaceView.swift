@@ -82,15 +82,15 @@ struct MainClockFaceView: View {
                 id: UUID(),
                 title: "Новая задача",
                 startTime: newTaskDate,
-                duration: 3600, // 1 час
+                duration: 3600,
                 color: category.color,
                 icon: category.iconName,
                 category: category,
                 isCompleted: false
             )
             
-            // Добавляем через viewModel
-            viewModel.addTask(newTask)
+            // Добавляем через taskManagement
+            viewModel.taskManagement.addTask(newTask)
             
             // Анимация исчезновения точки
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {

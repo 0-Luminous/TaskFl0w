@@ -29,7 +29,17 @@ struct CategoryDockBar: View {
     
     var body: some View {
         VStack(spacing: 5) {
-            // Индикатор страниц показываем отдельно, вне основного контейнера
+            pageIndicator
+            categoryGrid
+        }
+        .padding(.horizontal, 10)
+        .padding(.top, 5)
+        .gesture(longPressGesture)
+    }
+    
+    // Выносим индикатор страниц в отдельное представление
+    private var pageIndicator: some View {
+        Group {
             if numberOfPages > 1 {
                 HStack {
                     ForEach(0..<numberOfPages, id: \.self) { index in
@@ -40,47 +50,45 @@ struct CategoryDockBar: View {
                 }
                 .padding(.bottom, 5)
             }
-            
-            // Основной контейнер DockBar
+        }
+    }
+    
+    // Выносим сетку категорий в отдельное представление
+    private var categoryGrid: some View {
+        CategoryGridContent(
+            currentPage: $currentPage,
+            numberOfPages: numberOfPages,
+            backgroundColorForTheme: backgroundColorForTheme,
+            shadowColorForTheme: shadowColorForTheme
+        ) { page in
+            categoryPage(for: page)
+        }
+    }
+    
+    // Выносим страницу категорий в отдельное представление
+    private func categoryPage(for page: Int) -> some View {
+        CategoryPageContent(
+            categories: categoriesForPage(page),
+            categoryWidth: categoryWidth,
+            selectedCategory: $selectedCategory,
+            draggedCategory: $draggedCategory,
+            moveCategory: moveCategory
+        )
+    }
+    
+    // Новая структура для содержимого сетки
+    private struct CategoryGridContent<Content: View>: View {
+        @Binding var currentPage: Int
+        let numberOfPages: Int
+        let backgroundColorForTheme: Color
+        let shadowColorForTheme: Color
+        let content: (Int) -> Content
+        
+        var body: some View {
             VStack {
                 TabView(selection: $currentPage) {
                     ForEach(0..<numberOfPages, id: \.self) { page in
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: categoryWidth))], spacing: 10) {
-                            ForEach(categoriesForPage(page)) { category in
-                                CategoryButton(
-                                    category: category,
-                                    isSelected: selectedCategory == category
-                                )
-                                .frame(width: categoryWidth, height: 80)
-                                .scaleEffect(selectedCategory == category ? 1.1 : 1.0)
-                                .animation(.easeInOut(duration: 0.2), value: selectedCategory == category)
-                                .onTapGesture {
-                                    selectedCategory = category
-                                }
-                                .onDrag {
-                                    self.draggedCategory = category
-                                    return NSItemProvider(object: category.id.uuidString as NSString)
-                                } preview: {
-                                    Circle()
-                                        .fill(category.color)
-                                        .frame(width: 50, height: 50)
-                                        .overlay(
-                                            Image(systemName: category.iconName)
-                                                .foregroundColor(.white)
-                                                .font(.system(size: 24))
-                                        )
-                                }
-                                .onDrop(
-                                    of: [.text],
-                                    delegate: DropViewDelegate(
-                                        item: category,
-                                        items: $viewModel.categories,
-                                        draggedItem: $draggedCategory
-                                    )
-                                )
-                            }
-                        }
-                        .tag(page)
+                        content(page)
                     }
                 }
                 .frame(height: 100)
@@ -90,31 +98,133 @@ struct CategoryDockBar: View {
             .cornerRadius(20)
             .shadow(color: shadowColorForTheme, radius: 8, x: 0, y: 4)
         }
-        .padding(.horizontal, 10)
-        .padding(.top, 5)
-        .gesture(
-            LongPressGesture(minimumDuration: 0.5)
-                .onEnded { _ in
-                    withAnimation {
-                        // Подготавливаем и запускаем вибрацию
-                        feedbackGenerator.prepare()
-                        feedbackGenerator.impactOccurred()
-                        
-                        if !isEditMode {
-                            lastNonEditPage = currentPage
-                        }
-                        isEditMode.toggle()
-                        
-                        // При входе в режим редактирования сразу открываем CategoryEditorView
-                        if isEditMode {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                showingCategoryEditor = true
-                                isEditMode = false // Сбрасываем режим редактирования
-                            }
+    }
+    
+    // Новая структура для содержимого страницы
+    private struct CategoryPageContent: View {
+        let categories: [TaskCategoryModel]
+        let categoryWidth: CGFloat
+        @Binding var selectedCategory: TaskCategoryModel?
+        @Binding var draggedCategory: TaskCategoryModel?
+        let moveCategory: (Int, Int) -> Void
+        
+        var body: some View {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: categoryWidth))], spacing: 10) {
+                ForEach(categories) { category in
+                    CategoryButtonContent(
+                        category: category,
+                        categories: categories,
+                        isSelected: selectedCategory == category,
+                        categoryWidth: categoryWidth,
+                        selectedCategory: $selectedCategory,
+                        draggedCategory: $draggedCategory,
+                        moveCategory: moveCategory
+                    )
+                }
+            }
+        }
+    }
+    
+    // Новая структура для содержимого кнопки категории
+    private struct CategoryButtonContent: View {
+        let category: TaskCategoryModel
+        let categories: [TaskCategoryModel]
+        let isSelected: Bool
+        let categoryWidth: CGFloat
+        @Binding var selectedCategory: TaskCategoryModel?
+        @Binding var draggedCategory: TaskCategoryModel?
+        let moveCategory: (Int, Int) -> Void
+        
+        var body: some View {
+            CategoryButton(
+                category: category,
+                isSelected: isSelected
+            )
+            .frame(width: categoryWidth, height: 80)
+            .scaleEffect(isSelected ? 1.1 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: isSelected)
+            .onTapGesture {
+                selectedCategory = category
+            }
+            .onDrag {
+                draggedCategory = category
+                return NSItemProvider(object: category.id.uuidString as NSString)
+            } preview: {
+                categoryDragPreview(for: category)
+            }
+            .onDrop(
+                of: [.text],
+                delegate: CategoryDropDelegate(
+                    item: category,
+                    items: categories,
+                    draggedItem: draggedCategory,
+                    moveAction: moveCategory
+                )
+            )
+        }
+        
+        private func categoryDragPreview(for category: TaskCategoryModel) -> some View {
+            Circle()
+                .fill(category.color)
+                .frame(width: 50, height: 50)
+                .overlay(
+                    Image(systemName: category.iconName)
+                        .foregroundColor(.white)
+                        .font(.system(size: 24))
+                )
+        }
+    }
+    
+    // Новый делегат для обработки перетаскивания
+    private struct CategoryDropDelegate: DropDelegate {
+        let item: TaskCategoryModel
+        let items: [TaskCategoryModel]
+        let draggedItem: TaskCategoryModel?
+        let moveAction: (Int, Int) -> Void
+        
+        func performDrop(info: DropInfo) -> Bool {
+            guard let draggedItem = draggedItem else { return false }
+            
+            let fromIndex = items.firstIndex(of: draggedItem) ?? 0
+            let toIndex = items.firstIndex(of: item) ?? 0
+            
+            if fromIndex != toIndex {
+                moveAction(fromIndex, toIndex)
+            }
+            
+            return true
+        }
+        
+        func dropUpdated(info: DropInfo) -> DropProposal? {
+            return DropProposal(operation: .move)
+        }
+        
+        func validateDrop(info: DropInfo) -> Bool {
+            return true
+        }
+    }
+    
+    // Выносим жест длительного нажатия в отдельное свойство
+    private var longPressGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.5)
+            .onEnded { _ in
+                withAnimation {
+                    feedbackGenerator.prepare()
+                    feedbackGenerator.impactOccurred()
+                    
+                    if !isEditMode {
+                        lastNonEditPage = currentPage
+                    }
+                    isEditMode.toggle()
+                    
+                    if isEditMode {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            showingCategoryEditor = true
+                            isEditMode = false
                         }
                     }
                 }
-        )
+            }
     }
     
     // MARK: - Вспомогательные
@@ -165,13 +275,35 @@ struct CategoryDockBar: View {
     private func isEditing(_ category: TaskCategoryModel) -> Bool {
         return editingCategory?.id == category.id
     }
+    
+    private func deleteCategory(_ category: TaskCategoryModel) {
+        viewModel.categoryManagement.removeCategory(category)
+    }
+    
+    private func moveCategory(from source: Int, to destination: Int) {
+        guard let draggedCategory = draggedCategory else { return }
+        
+        // Создаем новую категорию с обновленным порядком
+        let updatedCategory = TaskCategoryModel(
+            id: draggedCategory.id,
+            rawValue: draggedCategory.rawValue,
+            iconName: draggedCategory.iconName,
+            color: draggedCategory.color
+            // Добавьте другие необходимые свойства
+        )
+        
+        viewModel.categoryManagement.updateCategory(updatedCategory)
+        
+        // Сбрасываем состояние перетаскивания
+        self.draggedCategory = nil
+    }
 }
 
 #Preview {
     let viewModel = ClockViewModel()
     
-    // Добавляем тестовые категории
-    viewModel.categories = [
+    // Добавляем тестовые категории через categoryManagement
+    let testCategories = [
         TaskCategoryModel(
             id: UUID(),
             rawValue: "Работа",
@@ -197,6 +329,11 @@ struct CategoryDockBar: View {
             color: .red
         )
     ]
+    
+    // Добавляем категории через proper API
+    testCategories.forEach { category in
+        viewModel.categoryManagement.addCategory(category)
+    }
     
     return CategoryDockBar(
         viewModel: viewModel,

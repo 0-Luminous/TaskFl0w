@@ -351,7 +351,7 @@ struct CategoryEditorView: View {
             Button("Отмена", role: .cancel) {}
             Button("Удалить", role: .destructive) {
                 if let category = editingCategory {
-                    viewModel.removeCategory(category)
+                    viewModel.categoryManagement.removeCategory(category)
                     isPresented = false
                 }
             }
@@ -369,20 +369,25 @@ struct CategoryEditorView: View {
         )
         
         if editingCategory != nil {
-            viewModel.updateCategory(newCategory)
+            viewModel.categoryManagement.updateCategory(newCategory)
         } else {
-            viewModel.addCategory(newCategory)
+            viewModel.categoryManagement.addCategory(newCategory)
         }
+        isPresented = false
     }
 }
 
 #Preview {
     let viewModel = ClockViewModel()
-    viewModel.categories = [
-        TaskCategoryModel(id: UUID(), rawValue: "Работа", iconName: "briefcase.fill", color: .blue),
-        TaskCategoryModel(id: UUID(), rawValue: "Спорт", iconName: "sportscourt.fill", color: .green),
-        TaskCategoryModel(id: UUID(), rawValue: "Отдых", iconName: "gamecontroller.fill", color: .orange)
-    ]
+    
+    // Добавляем тестовую категорию через categoryManagement
+    let testCategory = TaskCategoryModel(
+        id: UUID(),
+        rawValue: "Тестовая категория",
+        iconName: "star.fill",
+        color: .blue
+    )
+    viewModel.categoryManagement.addCategory(testCategory)
     
     return CategoryEditorView(
         viewModel: viewModel,

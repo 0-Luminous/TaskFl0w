@@ -96,7 +96,7 @@ struct TaskEditorView: View {
                 updatedTask.icon = category.iconName
             }
             
-            viewModel.updateTask(updatedTask)
+            viewModel.taskManagement.updateTask(updatedTask)
         } else {
             guard let category = selectedCategory else { return }
             guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
@@ -111,7 +111,7 @@ struct TaskEditorView: View {
                 category: category,
                 isCompleted: false
             )
-            viewModel.addTask(newTask)
+            viewModel.taskManagement.addTask(newTask)
         }
     }
 }

@@ -9,17 +9,18 @@ import Combine
 import CoreData
 
 final class ClockViewModel: ObservableObject {
-    private let container: NSPersistentContainer
-    private let context: NSManagedObjectContext
+    // MARK: - Services
+    let sharedState: SharedStateService
+    let taskManagement: TaskManagementProtocol
+    let categoryManagement: CategoryManagementProtocol
     
     // MARK: - Published properties
-    
     @Published var tasks: [Task] = []
-    @Published var categories: [TaskCategoryModel] = [
-        TaskCategoryModel(id: UUID(), rawValue: "Работа", iconName: "macbook", color: .blue),
-        TaskCategoryModel(id: UUID(), rawValue: "Спорт", iconName: "figure.strengthtraining.traditional", color: .green),
-        TaskCategoryModel(id: UUID(), rawValue: "Развлечения", iconName: "gamecontroller", color: .red)
-    ]
+    
+    // Доступ к категориям только для чтения
+    var categories: [TaskCategoryModel] {
+        categoryManagement.categories
+    }
     
     // Текущая "выбранная" дата для отображения задач
     @Published var selectedDate: Date = Date()
@@ -64,204 +65,23 @@ final class ClockViewModel: ObservableObject {
     @Published var searchText: String = ""
     
     // MARK: - Инициализация
-    
-    init() {
-        container = PersistenceController.shared.container
-        context = container.viewContext
+    init(sharedState: SharedStateService = .shared) {
+        self.sharedState = sharedState
         
-        fetchCategories()
-        fetchTasks()
-    }
-    
-    // MARK: - CoreData методы
-    private func fetchCategories() {
-        let request = NSFetchRequest<CategoryEntity>(entityName: "CategoryEntity")
+        // Сначала инициализируем selectedDate
+        let initialDate = Date()
+        self.selectedDate = initialDate
         
-        do {
-            let categoryEntities = try context.fetch(request)
-            categories = categoryEntities.map { $0.categoryModel }
-        } catch {
-            print("Ошибка при загрузке категорий: \(error)")
-        }
-    }
-    
-    private func fetchTasks() {
-        let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
+        // Теперь можем безопасно использовать selectedDate
+        self.taskManagement = TaskManagement(sharedState: sharedState, selectedDate: initialDate)
+        self.categoryManagement = CategoryManagement(context: sharedState.context, sharedState: sharedState)
         
-        do {
-            let taskEntities = try context.fetch(request)
-            tasks = taskEntities.map { $0.taskModel }
-        } catch {
-            print("Ошибка при загрузке задач: \(error)")
-        }
-    }
-    
-    private func saveContext() {
-        if context.hasChanges {
-            do {
-                try context.save()
-            } catch {
-                print("Ошибка сохранения контекста: \(error)")
-            }
-        }
-    }
-    
-    // MARK: - Методы работы с задачами
-    
-    func addTask(_ task: Task) {
-        // Убедимся, что время задачи соответствует выбранной дате
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
-        let timeComponents = calendar.dateComponents([.hour, .minute], from: task.startTime)
-        components.hour = timeComponents.hour
-        components.minute = timeComponents.minute
-        
-        if let correctedDate = calendar.date(from: components) {
-            var newTask = task
-            newTask.startTime = correctedDate
-            tasks.append(newTask)
-        }
-    }
-    
-    func updateTask(_ task: Task) {
-        let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
-        request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
-        
-        do {
-            if let existingTask = try context.fetch(request).first {
-                existingTask.title = task.title
-                existingTask.startTime = task.startTime
-                existingTask.duration = task.duration
-                existingTask.isCompleted = task.isCompleted
-                
-                // Обновляем категорию
-                let categoryRequest = NSFetchRequest<CategoryEntity>(entityName: "CategoryEntity")
-                categoryRequest.predicate = NSPredicate(format: "id == %@", task.category.id as CVarArg)
-                if let category = try context.fetch(categoryRequest).first {
-                    existingTask.category = category
-                }
-                
-                saveContext()
-                fetchTasks()
-            }
-        } catch {
-            print("Ошибка при обновлении задачи: \(error)")
-        }
-    }
-    
-    func removeTask(_ task: Task) {
-        let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
-        request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
-        
-        do {
-            if let taskToDelete = try context.fetch(request).first {
-                context.delete(taskToDelete)
-                saveContext()
-                fetchTasks()
-            }
-        } catch {
-            print("Ошибка при удалении задачи: \(error)")
-        }
-    }
-    
-    // MARK: - Методы работы с категориями
-    
-    func addCategory(_ category: TaskCategoryModel) {
-        categories.append(category)
-    }
-    
-    func updateCategory(_ category: TaskCategoryModel) {
-        if let index = categories.firstIndex(where: { $0.id == category.id }) {
-            categories[index] = category
-            // Обновляем все задачи, связанные с этой категорией
-            tasks = tasks.map { task in
-                if task.category.id == category.id {
-                    return Task(
-                        id: task.id,
-                        title: task.title,
-                        startTime: task.startTime,
-                        duration: task.duration,
-                        color: category.color,
-                        icon: category.iconName,
-                        category: category,
-                        isCompleted: task.isCompleted
-                    )
-                }
-                return task
-            }
-        }
-    }
-    
-    func removeCategory(_ category: TaskCategoryModel) {
-        // Удаляем все задачи, связанные с этой категорией
-        tasks.removeAll { task in
-            task.category.id == category.id
+        // Подписываемся на обновления задач
+        sharedState.subscribeToTasksUpdates { [weak self] in
+            self?.tasks = sharedState.tasks
         }
         
-        // Удаляем саму категорию
-        categories.removeAll { $0.id == category.id }
-    }
-    
-    func updateTaskStartTimeKeepingEnd(_ task: Task, newStartTime: Date) {
-        guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
-        
-        let calendar = Calendar.current
-        let oldEndTime = task.startTime.addingTimeInterval(task.duration)
-        
-        // Создаем компоненты для новой даты, сохраняя день из selectedDate
-        var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
-        let timeComponents = calendar.dateComponents([.hour, .minute], from: newStartTime)
-        components.hour = timeComponents.hour
-        components.minute = timeComponents.minute
-        
-        guard let newStart = calendar.date(from: components) else { return }
-        
-        // Вычисляем новую продолжительность
-        let newDuration = oldEndTime.timeIntervalSince(newStart)
-        
-        // Обновляем только конкретную задачу
-        var updatedTask = task
-        updatedTask.startTime = newStart
-        updatedTask.duration = max(0, newDuration)
-        
-        tasks[index] = updatedTask
-    }
-    
-    private func validateTimeInterval(_ interval: TimeInterval) -> TimeInterval {
-        guard interval.isFinite else { return 0 }
-        return max(0, min(interval, 24 * 60 * 60)) // Максимум 24 часа
-    }
-    
-    func updateTaskStartTime(_ task: Task, newStartTime: Date) {
-        if let index = tasks.firstIndex(where: { $0.id == task.id }) {
-            var updatedTask = task
-            updatedTask.startTime = newStartTime
-            tasks[index] = updatedTask
-            updateTask(updatedTask)
-        }
-    }
-    
-    func updateTaskDuration(_ task: Task, newEndTime: Date) {
-        guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
-        
-        let calendar = Calendar.current
-        
-        // Создаем компоненты для новой даты окончания
-        var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
-        let timeComponents = calendar.dateComponents([.hour, .minute], from: newEndTime)
-        components.hour = timeComponents.hour
-        components.minute = timeComponents.minute
-        
-        guard let newEnd = calendar.date(from: components) else { return }
-        
-        // Вычисляем новую продолжительность
-        let newDuration = newEnd.timeIntervalSince(task.startTime)
-        
-        // Обновляем только конкретную задачу
-        var updatedTask = task
-        updatedTask.duration = max(0, newDuration)
-        
-        tasks[index] = updatedTask
+        self.tasks = sharedState.tasks
     }
     
     func startDragging(_ task: Task) {
@@ -271,7 +91,7 @@ final class ClockViewModel: ObservableObject {
     func stopDragging(didReturnToClock: Bool) {
         if let task = draggedTask {
             if !didReturnToClock {
-                tasks.removeAll(where: { $0.id == task.id })
+                taskManagement.removeTask(task)
             }
         }
         draggedTask = nil
