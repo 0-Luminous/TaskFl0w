@@ -28,8 +28,8 @@ struct MainClockTaskArc: View {
                 }
                 .stroke(task.category.color, lineWidth: 20)
                 .gesture(
-                    LongPressGesture(minimumDuration: 0.5)
-                        .onEnded { _ in
+                    TapGesture()
+                        .onEnded {
                             withAnimation {
                                 if viewModel.isEditingMode, viewModel.editingTask?.id == task.id {
                                     viewModel.isEditingMode = false
@@ -42,7 +42,7 @@ struct MainClockTaskArc: View {
                         }
                 )
                 .simultaneousGesture(
-                    TapGesture()
+                    TapGesture(count: 2)
                         .onEnded {
                             if !viewModel.isEditingMode {
                                 viewModel.selectedTask = task
