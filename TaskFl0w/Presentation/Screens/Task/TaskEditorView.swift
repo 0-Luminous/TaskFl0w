@@ -53,15 +53,18 @@ struct TaskEditorView: View {
                         saveTask()
                         closeEditor()
                     }
+                    .disabled(!isValidTask())
                 }
             }
             .onAppear {
-                // Если редактируем задачу, подтягиваем её данные
                 if let existingTask = task {
                     title = existingTask.title
                     selectedStartDate = existingTask.startTime
-                    selectedEndDate = existingTask.startTime.addingTimeInterval(existingTask.duration)
+                    selectedEndDate = existingTask.endTime
                     selectedCategory = existingTask.category
+                } else {
+                    // Для новой задачи устанавливаем время окончания на час позже времени начала
+                    selectedEndDate = Calendar.current.date(byAdding: .hour, value: 1, to: selectedStartDate) ?? selectedStartDate
                 }
             }
         }
@@ -77,35 +80,39 @@ struct TaskEditorView: View {
         }
     }
     
+    private func isValidTask() -> Bool {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmedTitle.isEmpty && 
+               selectedStartDate < selectedEndDate && 
+               selectedCategory != nil
+    }
+    
     private func saveTask() {
-        let duration = selectedEndDate.timeIntervalSince(selectedStartDate)
-        guard duration.isFinite && duration > 0 else { 
-            print("Некорректная длительность задачи")
+        guard selectedStartDate < selectedEndDate else { 
+            print("Некорректное время задачи")
             return 
         }
         
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedTitle.isEmpty else { return }
+        guard let category = selectedCategory else { return }
+        
         if let existingTask = task {
             var updatedTask = existingTask
-            updatedTask.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            updatedTask.title = trimmedTitle
             updatedTask.startTime = selectedStartDate
-            updatedTask.duration = duration
-            
-            if let category = selectedCategory {
-                updatedTask.category = category
-                updatedTask.color = category.color
-                updatedTask.icon = category.iconName
-            }
+            updatedTask.endTime = selectedEndDate
+            updatedTask.category = category
+            updatedTask.color = category.color
+            updatedTask.icon = category.iconName
             
             viewModel.taskManagement.updateTask(updatedTask)
         } else {
-            guard let category = selectedCategory else { return }
-            guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-            
             let newTask = Task(
                 id: UUID(),
-                title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                title: trimmedTitle,
                 startTime: selectedStartDate,
-                duration: duration,
+                endTime: selectedEndDate,
                 color: category.color,
                 icon: category.iconName,
                 category: category,

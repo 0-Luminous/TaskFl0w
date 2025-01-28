@@ -7,10 +7,13 @@
 import SwiftUI
 
 struct MainClockHandView: View {
-    let currentDate: Date
     
-    // При желании можно хранить этот флаг в ViewModel
+    let currentDate: Date
     @AppStorage("useManualTime") private var useManualTime = false
+    
+    private var calendar: Calendar {
+        Calendar.current
+    }
     
     private var displayDate: Date {
         if useManualTime,
@@ -18,10 +21,6 @@ struct MainClockHandView: View {
             return manualTime
         }
         return currentDate
-    }
-    
-    private var calendar: Calendar {
-        Calendar.current
     }
     
     private var timeComponents: (hour: Int, minute: Int) {

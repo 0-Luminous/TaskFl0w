@@ -30,7 +30,7 @@ struct CalendarTaskRow: View {
                 HStack {
                     Text(timeFormatter.string(from: task.startTime))
                     Text("-")
-                    Text(timeFormatter.string(from: task.startTime.addingTimeInterval(task.duration)))
+                    Text(timeFormatter.string(from: task.endTime))
                     Text("•")
                     Text(task.category.rawValue)
                 }

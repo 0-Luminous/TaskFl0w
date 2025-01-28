@@ -1,13 +1,14 @@
 import Foundation
 import CoreData
+import Combine
 
 // Синглтон для хранения общего состояния
-class SharedStateService {
+class SharedStateService: ObservableObject {
     static let shared = SharedStateService()
     
     let context: NSManagedObjectContext
     
-    var tasks: [Task] = [] {
+    @Published var tasks: [Task] = [] {
         didSet {
             // Уведомляем подписчиков об изменении
             notifyTasksUpdated()
@@ -15,16 +16,24 @@ class SharedStateService {
     }
     
     private var tasksUpdateCallbacks: [() -> Void] = []
+    private var cancellables = Set<AnyCancellable>()
     
     private init() {
-        // Получаем контекст из контейнера CoreData
-        let container = NSPersistentContainer(name: "TaskFl0w")
-        container.loadPersistentStores { description, error in
-            if let error = error {
-                print("Ошибка загрузки Core Data: \(error.localizedDescription)")
-            }
-        }
+        let container = PersistenceController.shared.container
         self.context = container.viewContext
+        
+        // Загружаем начальные данные
+        fetchInitialData()
+    }
+    
+    private func fetchInitialData() {
+        let taskRequest = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
+        do {
+            let taskEntities = try context.fetch(taskRequest)
+            tasks = taskEntities.map { $0.taskModel }
+        } catch {
+            print("Ошибка загрузки начальных данных: \(error)")
+        }
     }
     
     func saveContext() {

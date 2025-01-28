@@ -4,7 +4,6 @@
 //
 //  Created by Yan on 24/12/24.
 //
-import SwiftUICore
 import SwiftUI
 import UIKit
 

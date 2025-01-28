@@ -100,44 +100,21 @@ struct CategoryEditorView: View {
         }
         .sheet(isPresented: $showingColorPicker) {
             NavigationView {
-                VStack(spacing: 15) {
-                    ColorPicker("", selection: $selectedColor)
-                        .labelsHidden()
-                        .padding()
-                    
-                    Divider()
-                    
-                    TextField("HEX цвет (например, FF0000)", text: $hexColor)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .padding()
-                        .onChange(of: hexColor) { newValue in
-                            if let color = Color(hex: newValue) {
-                                selectedColor = color
+                ColorPicker("Выберите цвет", selection: $selectedColor)
+                    .labelsHidden()
+                    .padding()
+                    .navigationTitle("Выбор цвета")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Готово") {
+                                feedbackGenerator.impactOccurred()
+                                showingColorPicker = false
                             }
                         }
-                        .onChange(of: selectedColor) { _ in
-                            hexColor = selectedColor.toHex()
-                        }
-                    
-                    Spacer()
-                }
-                .navigationTitle("Выбор цвета")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Отмена") {
-                            showingColorPicker = false
-                        }
                     }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Готово") {
-                            feedbackGenerator.impactOccurred()
-                            showingColorPicker = false
-                        }
-                    }
-                }
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.height(200)])
             .presentationDragIndicator(.visible)
         }
     } 
@@ -269,48 +246,6 @@ struct CategoryEditorView: View {
         }
         .presentationDetents([.height(UIScreen.main.bounds.height * 0.7)])
         .presentationDragIndicator(.visible)
-        .sheet(isPresented: $showingColorPicker) {
-            NavigationView {
-                VStack(spacing: 15) {
-                    ColorPicker("", selection: $selectedColor)
-                        .labelsHidden()
-                        .padding()
-                    
-                    Divider()
-                    
-                    TextField("HEX цвет (например, FF0000)", text: $hexColor)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .padding()
-                        .onChange(of: hexColor) { newValue in
-                            if let color = Color(hex: newValue) {
-                                selectedColor = color
-                            }
-                        }
-                        .onChange(of: selectedColor) { _ in
-                            hexColor = selectedColor.toHex()
-                        }
-                    
-                    Spacer()
-                }
-                .navigationTitle("Выбор цвета")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Отмена") {
-                            showingColorPicker = false
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Готово") {
-                            feedbackGenerator.impactOccurred()
-                            showingColorPicker = false
-                        }
-                    }
-                }
-            }
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
-        }
         .sheet(isPresented: $showingIconPicker) {
             NavigationView {
                 ScrollView {

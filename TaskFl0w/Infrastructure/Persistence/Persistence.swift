@@ -26,7 +26,7 @@ struct PersistenceController {
         task.id = UUID()
         task.title = "Тестовая задача"
         task.startTime = Date()
-        task.duration = 3600 // 1 час
+        task.endTime = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
         task.isCompleted = false
         task.category = category
         

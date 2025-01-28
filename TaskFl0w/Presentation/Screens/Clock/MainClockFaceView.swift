@@ -63,9 +63,9 @@ struct MainClockFaceView: View {
             
             let time = timeForLocation(dropPoint)
             
-            // Собираем дату с учётом выбранного дня + времени
+            // Используем selectedDate вместо currentDate
             let calendar = Calendar.current
-            let selectedComponents = calendar.dateComponents([.year, .month, .day], from: viewModel.currentDate)
+            let selectedComponents = calendar.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
             let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
             
             var newTaskComponents = DateComponents()
@@ -82,7 +82,7 @@ struct MainClockFaceView: View {
                 id: UUID(),
                 title: "Новая задача",
                 startTime: newTaskDate,
-                duration: 3600,
+                endTime: Calendar.current.date(byAdding: .hour, value: 1, to: newTaskDate) ?? newTaskDate,
                 color: category.color,
                 icon: category.iconName,
                 category: category,
@@ -134,11 +134,13 @@ struct MainClockFaceView: View {
         let hourComponent = Int(hours)
         let minuteComponent = Int((hours - Double(hourComponent)) * 60)
         
-        var components = Calendar.current.dateComponents([.year, .month, .day], from: currentDate)
+        // Используем компоненты из selectedDate вместо currentDate
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
         components.hour = hourComponent
         components.minute = minuteComponent
+        components.timeZone = TimeZone.current
         
-        return Calendar.current.date(from: components) ?? currentDate
+        return Calendar.current.date(from: components) ?? viewModel.selectedDate
     }
 }
 
