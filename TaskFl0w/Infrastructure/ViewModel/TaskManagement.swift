@@ -17,11 +17,17 @@ protocol TaskManagementProtocol {
 class TaskManagement: TaskManagementProtocol {
     private let context: NSManagedObjectContext
     private let sharedState: SharedStateService
-    private let selectedDate: Date
     
-    init(sharedState: SharedStateService = .shared, selectedDate: Date) {
-        self.context = sharedState.context
+    // Делаем selectedDate изменяемым свойством
+    var selectedDate: Date {
+        didSet {
+            // При необходимости можно добавить дополнительную логику при изменении даты
+        }
+    }
+    
+    init(sharedState: SharedStateService, selectedDate: Date) {
         self.sharedState = sharedState
+        self.context = sharedState.context
         self.selectedDate = selectedDate
         fetchTasks()
     }

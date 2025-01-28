@@ -23,7 +23,12 @@ final class ClockViewModel: ObservableObject {
     }
     
     // Текущая "выбранная" дата для отображения задач
-    @Published var selectedDate: Date = Date()
+    @Published var selectedDate: Date = Date() {
+        didSet {
+            // Обновляем selectedDate в TaskManagement при изменении
+            (taskManagement as? TaskManagement)?.selectedDate = selectedDate
+        }
+    }
     
     // Текущее время для реального обновления
     @Published var currentDate: Date = Date()
@@ -73,7 +78,8 @@ final class ClockViewModel: ObservableObject {
         self.selectedDate = initialDate
         
         // Теперь можем безопасно использовать selectedDate
-        self.taskManagement = TaskManagement(sharedState: sharedState, selectedDate: initialDate)
+        let taskManagement = TaskManagement(sharedState: sharedState, selectedDate: initialDate)
+        self.taskManagement = taskManagement
         self.categoryManagement = CategoryManagement(context: sharedState.context, sharedState: sharedState)
         
         // Подписываемся на обновления задач
