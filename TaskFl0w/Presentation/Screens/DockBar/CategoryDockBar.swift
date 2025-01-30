@@ -164,7 +164,7 @@ struct CategoryDockBar: View {
         }
         
         private func categoryDragPreview(for category: TaskCategoryModel) -> some View {
-            Circle()
+            RoundedRectangle(cornerRadius: 12)
                 .fill(category.color)
                 .frame(width: 50, height: 50)
                 .overlay(
@@ -297,51 +297,4 @@ struct CategoryDockBar: View {
         // Сбрасываем состояние перетаскивания
         self.draggedCategory = nil
     }
-}
-
-#Preview {
-    let viewModel = ClockViewModel()
-    
-    // Добавляем тестовые категории через categoryManagement
-    let testCategories = [
-        TaskCategoryModel(
-            id: UUID(),
-            rawValue: "Работа",
-            iconName: "macbook",
-            color: .blue
-        ),
-        TaskCategoryModel(
-            id: UUID(),
-            rawValue: "Спорт",
-            iconName: "figure.strengthtraining.traditional",
-            color: .green
-        ),
-        TaskCategoryModel(
-            id: UUID(),
-            rawValue: "Отдых",
-            iconName: "gamecontroller",
-            color: .orange
-        ),
-        TaskCategoryModel(
-            id: UUID(),
-            rawValue: "Учёба",
-            iconName: "book.fill",
-            color: .red
-        )
-    ]
-    
-    // Добавляем категории через proper API
-    testCategories.forEach { category in
-        viewModel.categoryManagement.addCategory(category)
-    }
-    
-    return CategoryDockBar(
-        viewModel: viewModel,
-        showingAddTask: .constant(false),
-        draggedCategory: .constant(nil),
-        showingCategoryEditor: .constant(false),
-        selectedCategory: .constant(nil)
-    )
-    .frame(height: 150)
-    .background(Color.gray.opacity(0.1))
 }
