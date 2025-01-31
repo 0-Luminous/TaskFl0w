@@ -151,10 +151,7 @@ struct CategoryDockBar: View {
             }
             .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
             .draggable(category.id.uuidString) {
-                feedbackGenerator.prepare()
-                feedbackGenerator.impactOccurred()
-                draggedCategory = category
-                return categoryDragPreview(for: category)
+                categoryDragPreview(for: category)
             }
             .dropDestination(for: String.self) { items, location in
                 guard let draggedCategory = draggedCategory,
