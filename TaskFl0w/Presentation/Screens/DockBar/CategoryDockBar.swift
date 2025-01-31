@@ -135,6 +135,9 @@ struct CategoryDockBar: View {
         @Binding var draggedCategory: TaskCategoryModel?
         let moveCategory: (Int, Int) -> Void
         
+        // Добавляем генератор обратной связи
+        private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
+        
         var body: some View {
             CategoryButton(
                 category: category,
@@ -146,21 +149,25 @@ struct CategoryDockBar: View {
             .onTapGesture {
                 selectedCategory = category
             }
-            .onDrag {
+            .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
+            .draggable(category.id.uuidString) {
+                feedbackGenerator.prepare()
+                feedbackGenerator.impactOccurred()
                 draggedCategory = category
-                return NSItemProvider(object: category.id.uuidString as NSString)
-            } preview: {
-                categoryDragPreview(for: category)
+                return categoryDragPreview(for: category)
             }
-            .onDrop(
-                of: [.text],
-                delegate: CategoryDropDelegate(
-                    item: category,
-                    items: categories,
-                    draggedItem: draggedCategory,
-                    moveAction: moveCategory
-                )
-            )
+            .dropDestination(for: String.self) { items, location in
+                guard let draggedCategory = draggedCategory,
+                      let fromIndex = categories.firstIndex(of: draggedCategory),
+                      let toIndex = categories.firstIndex(of: category) else {
+                    return false
+                }
+                
+                if fromIndex != toIndex {
+                    moveCategory(fromIndex, toIndex)
+                }
+                return true
+            }
         }
         
         private func categoryDragPreview(for category: TaskCategoryModel) -> some View {
@@ -172,35 +179,7 @@ struct CategoryDockBar: View {
                         .foregroundColor(.white)
                         .font(.system(size: 24))
                 )
-        }
-    }
-    
-    // Новый делегат для обработки перетаскивания
-    private struct CategoryDropDelegate: DropDelegate {
-        let item: TaskCategoryModel
-        let items: [TaskCategoryModel]
-        let draggedItem: TaskCategoryModel?
-        let moveAction: (Int, Int) -> Void
-        
-        func performDrop(info: DropInfo) -> Bool {
-            guard let draggedItem = draggedItem else { return false }
-            
-            let fromIndex = items.firstIndex(of: draggedItem) ?? 0
-            let toIndex = items.firstIndex(of: item) ?? 0
-            
-            if fromIndex != toIndex {
-                moveAction(fromIndex, toIndex)
-            }
-            
-            return true
-        }
-        
-        func dropUpdated(info: DropInfo) -> DropProposal? {
-            return DropProposal(operation: .move)
-        }
-        
-        func validateDrop(info: DropInfo) -> Bool {
-            return true
+                .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
         }
     }
     
