@@ -45,7 +45,7 @@ struct CategoryEditorView: View {
         }
     }
     
-    // Обновленный previewCategory для отображения текущих изменений
+    // Обновляем previewCategory
     private var previewCategory: TaskCategoryModel {
         TaskCategoryModel(
             id: editingCategory?.id ?? UUID(),
@@ -119,7 +119,7 @@ struct CategoryEditorView: View {
         }
     } 
     
-    // Кнопка добавления/удаления
+    // Обновляем кнопку действия
     private var actionButton: some View {
         Button(action: {
             feedbackGenerator.impactOccurred()
@@ -140,9 +140,56 @@ struct CategoryEditorView: View {
                     RoundedRectangle(cornerRadius: 10)
                         .fill(Color(UIColor.systemBackground))
                         .shadow(
-                            color: editingCategory == nil ? 
-                                Color.blue.opacity(0.3) : 
-                                Color.red.opacity(0.2),
+                            color: selectedDockCategory == nil ? 
+                                Color.red.opacity(0.3) : 
+                                (editingCategory == nil ? Color.blue.opacity(0.3) : Color.red.opacity(0.2)),
+                            radius: 5,
+                            x: 0,
+                            y: 2
+                        )
+                )
+        }
+    }
+    
+    // Добавляем новую кнопку добавления
+    private var addButton: some View {
+        Button(action: {
+            feedbackGenerator.impactOccurred()
+            saveCategory()
+            isPresented = false
+        }) {
+            Image(systemName: "plus")
+                .foregroundColor(.blue)
+                .font(.system(size: 20))
+                .frame(width: 50, height: 50)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color(UIColor.systemBackground))
+                        .shadow(
+                            color: Color.blue.opacity(0.3),
+                            radius: 5,
+                            x: 0,
+                            y: 2
+                        )
+                )
+        }
+    }
+    
+    // Обновляем кнопку редактирования с зеленым цветом
+    private var editButton: some View {
+        Button(action: {
+            feedbackGenerator.impactOccurred()
+            showingIconPicker = true
+        }) {
+            Image(systemName: "pencil")
+                .foregroundColor(.green)  // Меняем цвет иконки на зеленый
+                .font(.system(size: 20))
+                .frame(width: 50, height: 50)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color(UIColor.systemBackground))
+                        .shadow(
+                            color: Color.green.opacity(0.3),  // Меняем цвет тени на зеленый
                             radius: 5,
                             x: 0,
                             y: 2
@@ -187,13 +234,15 @@ struct CategoryEditorView: View {
                         get: { selectedDockCategory },
                         set: { newCategory in
                             if newCategory != selectedDockCategory {
-                                selectedDockCategory = newCategory
-                                if let category = newCategory {
-                                    editingCategory = category
-                                    categoryName = category.rawValue
-                                    selectedColor = category.color
-                                    selectedIcon = category.iconName
-                                    feedbackGenerator.impactOccurred()
+                                withAnimation {
+                                    selectedDockCategory = newCategory
+                                    if let category = newCategory {
+                                        editingCategory = category
+                                        categoryName = category.rawValue
+                                        selectedColor = category.color
+                                        selectedIcon = category.iconName
+                                        feedbackGenerator.impactOccurred()
+                                    }
                                 }
                             }
                         }
@@ -201,17 +250,25 @@ struct CategoryEditorView: View {
                     editingCategory: previewCategory
                 )
                 .padding(.top)
-                .id(previewCategory.id)
                 
-                // Кнопки выбора цвета и иконки
+                // Обновляем HStack с кнопками
                 HStack(spacing: 20) {
-                    colorButton
-                    actionButton // Заменяем deleteButton на actionButton
-                    iconButton
+                    if editingCategory != nil {
+                        HStack(spacing: 10) {
+                            actionButton  // кнопка удаления
+                            addButton    // кнопка добавления
+                            editButton   // кнопка редактирования
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    } else {
+                        actionButton
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
                 }
                 .padding(.horizontal)
                 
-                TextField("Название категории", text: $categoryName)
+                // Перемещаем TextField выше, чтобы он всегда был виден
+                TextField("Поиск по задачам", text: $categoryName)
                     .textFieldStyle(PlainTextFieldStyle())
                     .padding()
                     .background(
@@ -223,7 +280,6 @@ struct CategoryEditorView: View {
                 
                 Spacer()
             }
-            .navigationTitle(editingCategory == nil ? "Новая категория" : "Редактирование")
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled(true)
             .toolbar {
@@ -248,28 +304,83 @@ struct CategoryEditorView: View {
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $showingIconPicker) {
             NavigationView {
-                ScrollView {
-                    LazyVGrid(columns: [
-                        GridItem(.adaptive(minimum: 60))
-                    ], spacing: 20) {
-                        ForEach(availableIcons, id: \.self) { icon in
-                            Button(action: {
-                                selectedIcon = icon
-                                showingIconPicker = false
-                            }) {
-                                Image(systemName: icon)
-                                    .font(.system(size: 30))
-                                    .foregroundColor(selectedColor)
-                                    .frame(width: 60, height: 60)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(Color(UIColor.systemBackground))
-                                            .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
-                                    )
+                VStack(spacing: 15) {
+                    // Название категории
+                    TextField("Название категории", text: $categoryName)
+                        .textFieldStyle(PlainTextFieldStyle())
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(selectedColor, lineWidth: 3)
+                        )
+                        .padding(.horizontal)
+                    
+                    // Кнопка выбора цвета иконки
+                    Button(action: {
+                        feedbackGenerator.impactOccurred()
+                        showingColorPicker = true
+                    }) {
+                        HStack {
+                            Text("Цвет иконки")
+                                .foregroundColor(Color(hex: "F5F5F5"))
+                            Spacer()
+                            Circle()
+                                .fill(selectedColor)
+                                .frame(width: 30, height: 30)
+                        }
+                        .padding()
+                        .frame(height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color(UIColor.systemBackground))
+                                .shadow(color: Color(hex: "F5F5F5")!.opacity(0.1), radius: 5, x: 0, y: 2)
+                        )
+                    }
+                    .padding(.horizontal)
+                    .sheet(isPresented: $showingColorPicker) {
+                        NavigationView {
+                            ColorPicker("Выберите цвет", selection: $selectedColor)
+                                .labelsHidden()
+                                .padding()
+                                .navigationTitle("Выбор цвета")
+                                .navigationBarTitleDisplayMode(.inline)
+                                .toolbar {
+                                    ToolbarItem(placement: .confirmationAction) {
+                                        Button("Готово") {
+                                            feedbackGenerator.impactOccurred()
+                                            showingColorPicker = false
+                                        }
+                                    }
+                                }
+                        }
+                        .presentationDetents([.height(200)])
+                        .presentationDragIndicator(.visible)
+                    }
+                    
+                    // Сетка иконок с более темной подсветкой
+                    ScrollView {
+                        LazyVGrid(columns: [
+                            GridItem(.adaptive(minimum: 60))
+                        ], spacing: 20) {
+                            ForEach(availableIcons, id: \.self) { icon in
+                                Button(action: {
+                                    selectedIcon = icon
+                                    showingIconPicker = false
+                                }) {
+                                    Image(systemName: icon)
+                                        .font(.system(size: 30))
+                                        .foregroundColor(selectedColor)
+                                        .frame(width: 60, height: 60)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .fill(Color(UIColor.systemBackground))
+                                                .shadow(color: Color(hex: "474747")!.opacity(0.1), radius: 5, x: 0, y: 2)
+                                        )
+                                }
                             }
                         }
+                        .padding()
                     }
-                    .padding()
                 }
                 .navigationTitle("Выбор иконки")
                 .navigationBarTitleDisplayMode(.inline)
