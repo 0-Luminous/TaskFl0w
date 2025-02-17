@@ -150,7 +150,10 @@ struct CategoryDockBar: View {
                 selectedCategory = category
             }
             .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
-            .draggable(category.id.uuidString) {
+            .onDrag {
+                draggedCategory = category
+                return NSItemProvider(object: category.id.uuidString as NSString)
+            } preview: {
                 categoryDragPreview(for: category)
             }
             .dropDestination(for: String.self) { items, location in
@@ -177,6 +180,35 @@ struct CategoryDockBar: View {
                         .font(.system(size: 24))
                 )
                 .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
+        }
+    }
+    
+    // Новый делегат для обработки перетаскивания
+    private struct CategoryDropDelegate: DropDelegate {
+        let item: TaskCategoryModel
+        let items: [TaskCategoryModel]
+        let draggedItem: TaskCategoryModel?
+        let moveAction: (Int, Int) -> Void
+        
+        func performDrop(info: DropInfo) -> Bool {
+            guard let draggedItem = draggedItem else { return false }
+            
+            let fromIndex = items.firstIndex(of: draggedItem) ?? 0
+            let toIndex = items.firstIndex(of: item) ?? 0
+            
+            if fromIndex != toIndex {
+                moveAction(fromIndex, toIndex)
+            }
+            
+            return true
+        }
+        
+        func dropUpdated(info: DropInfo) -> DropProposal? {
+            return DropProposal(operation: .move)
+        }
+        
+        func validateDrop(info: DropInfo) -> Bool {
+            return true
         }
     }
     
