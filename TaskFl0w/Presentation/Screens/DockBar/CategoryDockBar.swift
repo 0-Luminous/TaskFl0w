@@ -146,6 +146,7 @@ struct CategoryDockBar: View {
             .onTapGesture {
                 selectedCategory = category
             }
+            .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
             .onDrag {
                 draggedCategory = category
                 return NSItemProvider(object: category.id.uuidString as NSString)
@@ -172,6 +173,7 @@ struct CategoryDockBar: View {
                         .foregroundColor(.white)
                         .font(.system(size: 24))
                 )
+                .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
         }
     }
     
