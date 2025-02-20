@@ -16,6 +16,7 @@ struct MainClockFaceView: View {
     
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
+    @AppStorage("markersOffset") private var markersOffset: Double = 40.0
     
     // Локальные состояния убраны и перенесены в ViewModel
     // Используем состояния из ViewModel через viewModel

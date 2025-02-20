@@ -9,14 +9,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     
-    // Можно использовать прямо @AppStorage("isDarkMode"), если нужно
-    // или же @ObservedObject var viewModel: ClockViewModel, если настройки в модели
     @AppStorage("isDarkMode") private var isDarkMode: Bool = false
-    
-    @AppStorage("lightModeClockFaceColor") private var lightModeClockFaceColor = Color.white.toHex()
-    @AppStorage("darkModeClockFaceColor") private var darkModeClockFaceColor = Color.black.toHex()
-    
-    @State private var showingClockFaceEditor = false
     
     var body: some View {
         NavigationView {
@@ -28,8 +21,13 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    Button("Редактировать циферблат") {
-                        showingClockFaceEditor = true
+                    NavigationLink(destination: ClockFaceEditorView()) {
+                        HStack {
+                            Text("Редактировать циферблат")
+                            Spacer()
+                            Image(systemName: "clock.circle")
+                                .foregroundColor(.gray)
+                        }
                     }
                 } header: {
                     Text("Циферблат")
@@ -43,9 +41,6 @@ struct SettingsView: View {
                         dismiss()
                     }
                 }
-            }
-            .sheet(isPresented: $showingClockFaceEditor) {
-                ClockFaceEditorView()
             }
         }
     }

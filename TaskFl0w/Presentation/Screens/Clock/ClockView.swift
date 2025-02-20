@@ -15,6 +15,9 @@ struct ClockView: View {
     // Таймер для "реал-тайм" обновления
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
+    @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
+    @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
+    
     // MARK: - Body
     
     var body: some View {
@@ -23,9 +26,9 @@ struct ClockView: View {
                 Spacer()
                 
                 ZStack {
-                    // Темное внешнее кольцо
+                    // Внешнее кольцо
                     Circle()
-                        .stroke(Color.black.opacity(0.3), lineWidth: 20)
+                        .stroke(currentOuterRingColor, lineWidth: 20)
                         .frame(
                             width: UIScreen.main.bounds.width * 0.8,
                             height: UIScreen.main.bounds.width * 0.8
@@ -146,6 +149,11 @@ struct ClockView: View {
         formatter.dateFormat = "EEEE"
         formatter.locale = Locale(identifier: "ru_RU")
         return formatter.string(from: viewModel.selectedDate).capitalized
+    }
+    
+    private var currentOuterRingColor: Color {
+        let hexColor = colorScheme == .dark ? darkModeOuterRingColor : lightModeOuterRingColor
+        return Color(hex: hexColor) ?? .gray.opacity(0.3)
     }
 }
 
