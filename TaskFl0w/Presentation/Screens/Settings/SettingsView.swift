@@ -16,6 +16,8 @@ struct SettingsView: View {
     @AppStorage("lightModeClockFaceColor") private var lightModeClockFaceColor = Color.white.toHex()
     @AppStorage("darkModeClockFaceColor") private var darkModeClockFaceColor = Color.black.toHex()
     
+    @State private var showingClockFaceEditor = false
+    
     var body: some View {
         NavigationView {
             Form {
@@ -26,19 +28,11 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    ColorPicker("Цвет циферблата (Светлая тема)", selection: Binding(get: {
-                        Color(hex: lightModeClockFaceColor) ?? .white
-                    }, set: { newColor in
-                        lightModeClockFaceColor = newColor.toHex()
-                    }))
-                    
-                    ColorPicker("Цвет циферблата (Тёмная тема)", selection: Binding(get: {
-                        Color(hex: darkModeClockFaceColor) ?? .black
-                    }, set: { newColor in
-                        darkModeClockFaceColor = newColor.toHex()
-                    }))
+                    Button("Редактировать циферблат") {
+                        showingClockFaceEditor = true
+                    }
                 } header: {
-                    Text("Цвета циферблата")
+                    Text("Циферблат")
                 }
             }
             .navigationTitle("Настройки")
@@ -49,6 +43,9 @@ struct SettingsView: View {
                         dismiss()
                     }
                 }
+            }
+            .sheet(isPresented: $showingClockFaceEditor) {
+                ClockFaceEditorView()
             }
         }
     }

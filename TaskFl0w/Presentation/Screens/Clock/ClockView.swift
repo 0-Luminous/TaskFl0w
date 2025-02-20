@@ -25,16 +25,11 @@ struct ClockView: View {
                 ZStack {
                     // Темное внешнее кольцо
                     Circle()
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 20)
+                        .stroke(Color.black.opacity(0.3), lineWidth: 20)
                         .frame(
                             width: UIScreen.main.bounds.width * 0.8,
                             height: UIScreen.main.bounds.width * 0.8
                         )
-                    
-                    // Маркеры часов (24 шт.)
-                    ForEach(0..<24) { hour in
-                        MainClockMarker(hour: hour)
-                    }
                     
                     // Сам циферблат (Arcs, Markers, Hand, и Drop)
                     MainClockFaceView(

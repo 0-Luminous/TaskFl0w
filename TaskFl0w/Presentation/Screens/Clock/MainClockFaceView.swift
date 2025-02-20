@@ -14,6 +14,9 @@ struct MainClockFaceView: View {
     @Binding var draggedCategory: TaskCategoryModel?
     let clockFaceColor: Color
     
+    @Environment(\.colorScheme) var colorScheme
+    @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
+    
     // Локальные состояния убраны и перенесены в ViewModel
     // Используем состояния из ViewModel через viewModel
     
@@ -23,12 +26,18 @@ struct MainClockFaceView: View {
                 .fill(clockFaceColor)
                 .stroke(Color.gray, lineWidth: 2)
             
+            // Маркеры часов (24 шт.)
+            ForEach(0..<24) { hour in
+                let angle = Double(hour) * (360.0 / 24.0)
+                MainClockMarker(hour: hour, style: clockStyle.markerStyle)
+                    .rotationEffect(.degrees(angle))
+                    .frame(width: UIScreen.main.bounds.width * 0.7, height: UIScreen.main.bounds.width * 0.7)
+            }
+            
             MainTaskArcsView(
                 tasks: tasksForSelectedDate,
                 viewModel: viewModel
             )
-            
-            MainClockMarksView()
             
             MainClockHandView(currentDate: viewModel.currentDate)
             
