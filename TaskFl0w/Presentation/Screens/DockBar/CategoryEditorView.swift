@@ -78,7 +78,7 @@ struct CategoryEditorView: View {
         }) {
             HStack {
                 Text("Цвет")
-                    .foregroundColor(Color(hex: "474747"))
+                    .foregroundColor(colorScheme == .dark ? .white : Color(hex: "474747"))
                 Spacer()
                 Circle()
                     .fill(selectedColor)
@@ -89,7 +89,14 @@ struct CategoryEditorView: View {
             .background(
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color(UIColor.systemBackground))
-                    .shadow(color: Color(hex: "474747")!.opacity(0.1), radius: 5, x: 0, y: 2)
+                    .shadow(
+                        color: editingCategory == nil ? 
+                            Color.white.opacity(0.2) : 
+                            selectedColor.opacity(0.3),
+                        radius: 5,
+                        x: 0,
+                        y: 2
+                    )
             )
         }
         .sheet(isPresented: $showingColorPicker) {
@@ -135,8 +142,8 @@ struct CategoryEditorView: View {
                         .fill(Color(UIColor.systemBackground))
                         .shadow(
                             color: editingCategory == nil ? 
-                                Color.blue.opacity(0.3) : 
-                                Color.red.opacity(0.2),
+                                Color.white.opacity(0.2) : 
+                                selectedColor.opacity(0.3),
                             radius: 5,
                             x: 0,
                             y: 2
@@ -152,7 +159,7 @@ struct CategoryEditorView: View {
         }) {
             HStack {
                 Text("Иконка")
-                    .foregroundColor(Color(hex: "474747"))
+                    .foregroundColor(colorScheme == .dark ? .white : Color(hex: "474747"))
                 Spacer()
                 Image(systemName: selectedIcon)
                     .foregroundColor(selectedColor)
@@ -163,7 +170,14 @@ struct CategoryEditorView: View {
             .background(
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color(UIColor.systemBackground))
-                    .shadow(color: Color(hex: "474747")!.opacity(0.1), radius: 5, x: 0, y: 2)
+                    .shadow(
+                        color: editingCategory == nil ? 
+                            Color.white.opacity(0.2) : 
+                            selectedColor.opacity(0.3),
+                        radius: 5,
+                        x: 0,
+                        y: 2
+                    )
             )
         }
     }
@@ -190,7 +204,7 @@ struct CategoryEditorView: View {
                         clockFaceColor: currentClockFaceColor
                     )
                 }
-                .padding(.top, 20)
+                .padding(.top, 30)
                 .padding(.bottom, 30)
                 
                 // DockBar с обновленным binding для выбранной категории

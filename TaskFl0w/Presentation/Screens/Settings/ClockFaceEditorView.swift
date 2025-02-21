@@ -23,13 +23,33 @@ struct ClockFaceEditorView: View {
     @AppStorage("markersOffset") private var markersOffset: Double = 40.0
     @AppStorage("numbersSize") private var numbersSize: Double = 12.0
     
+    // Добавляем необходимые свойства для MainClockFaceView
+    @StateObject private var viewModel = ClockViewModel()
+    
     var body: some View {
         VStack(spacing: 0) {
             // Предпросмотр циферблата
-            ClockPreviewView()
-                .frame(height: UIScreen.main.bounds.width * 0.8)
-                .padding(.vertical, 20)
-                .environment(\.colorScheme, isDarkMode ? .dark : .light)
+            ZStack {
+                // Внешнее кольцо
+                Circle()
+                    .stroke(currentOuterRingColor, lineWidth: 20)
+                    .frame(
+                        width: UIScreen.main.bounds.width * 0.8,
+                        height: UIScreen.main.bounds.width * 0.8
+                    )
+                
+                // Сам циферблат
+                MainClockFaceView(
+                    currentDate: viewModel.selectedDate,
+                    tasks: viewModel.tasks,
+                    viewModel: viewModel,
+                    draggedCategory: .constant(nil),
+                    clockFaceColor: currentClockFaceColor
+                )
+            }
+            .frame(height: UIScreen.main.bounds.width * 0.8)
+            .padding(.vertical, 20)
+            .environment(\.colorScheme, isDarkMode ? .dark : .light)
             
             // Настройки
             List {
@@ -152,51 +172,14 @@ struct ClockFaceEditorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .background(Color(UIColor.systemGroupedBackground))
     }
-}
-
-struct ClockPreviewView: View {
-    @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
-    @Environment(\.colorScheme) var colorScheme
-    @AppStorage("isDarkMode") private var isDarkMode = false
-    @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
-    @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
-    @AppStorage("markersOffset") private var markersOffset: Double = 40.0
-    
-    var body: some View {
-        ZStack {
-            // Внешнее кольцо
-            Circle()
-                .stroke(currentOuterRingColor, lineWidth: 20)
-                .padding(10)
-            
-            // Циферблат
-            Circle()
-                .fill(currentClockFaceColor)
-                .padding(30)
-            
-            // Маркеры
-            ForEach(0..<24) { hour in
-                let angle = Double(hour) * (360.0 / 24.0)
-                MainClockMarker(hour: hour, style: clockStyle.markerStyle)
-                    .rotationEffect(.degrees(angle))
-                    .frame(width: UIScreen.main.bounds.width * 0.7, height: UIScreen.main.bounds.width * 0.7)
-            }
-            
-            // Стрелка часов (для демонстрации)
-            MainClockHandView(currentDate: Date())
-                .frame(width: UIScreen.main.bounds.width * 0.7, height: UIScreen.main.bounds.width * 0.7)
-        }
-    }
     
     private var currentClockFaceColor: Color {
-        let hexColor = colorScheme == .dark
-            ? UserDefaults.standard.string(forKey: "darkModeClockFaceColor") ?? Color.black.toHex()
-            : UserDefaults.standard.string(forKey: "lightModeClockFaceColor") ?? Color.white.toHex()
-        return Color(hex: hexColor) ?? (colorScheme == .dark ? .black : .white)
+        let hexColor = isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
+        return Color(hex: hexColor) ?? (isDarkMode ? .black : .white)
     }
     
     private var currentOuterRingColor: Color {
-        let hexColor = colorScheme == .dark ? darkModeOuterRingColor : lightModeOuterRingColor
+        let hexColor = isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
         return Color(hex: hexColor) ?? .gray.opacity(0.3)
     }
 }

@@ -8,6 +8,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var viewModel = ClockViewModel()
     
     @AppStorage("isDarkMode") private var isDarkMode: Bool = false
     
@@ -29,8 +30,19 @@ struct SettingsView: View {
                                 .foregroundColor(.gray)
                         }
                     }
+                    
+                    Button(action: {
+                        viewModel.showingCategoryEditor = true
+                    }) {
+                        HStack {
+                            Text("Редактировать категории")
+                            Spacer()
+                            Image(systemName: "folder.badge.gearshape")
+                                .foregroundColor(.gray)
+                        }
+                    }
                 } header: {
-                    Text("Циферблат")
+                    Text("Настройки циферблата")
                 }
             }
             .navigationTitle("Настройки")
@@ -41,6 +53,12 @@ struct SettingsView: View {
                         dismiss()
                     }
                 }
+            }
+            .sheet(isPresented: $viewModel.showingCategoryEditor) {
+                CategoryEditorView(
+                    viewModel: viewModel,
+                    isPresented: $viewModel.showingCategoryEditor
+                )
             }
         }
     }
