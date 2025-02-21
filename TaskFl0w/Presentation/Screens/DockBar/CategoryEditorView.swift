@@ -91,7 +91,7 @@ struct CategoryEditorView: View {
                     .fill(Color(UIColor.systemBackground))
                     .shadow(
                         color: editingCategory == nil ? 
-                            Color.white.opacity(0.2) : 
+                            (colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.1)) : 
                             selectedColor.opacity(0.3),
                         radius: 5,
                         x: 0,
@@ -125,11 +125,9 @@ struct CategoryEditorView: View {
         Button(action: {
             feedbackGenerator.impactOccurred()
             if editingCategory == nil {
-                // Сохранение новой категории
                 saveCategory()
                 isPresented = false
             } else {
-                // Показать алерт удаления
                 showingDeleteAlert = true
             }
         }) {
@@ -142,12 +140,12 @@ struct CategoryEditorView: View {
                         .fill(Color(UIColor.systemBackground))
                         .shadow(
                             color: editingCategory == nil ? 
-                                Color.white.opacity(0.2) : 
+                                (colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.1)) : 
                                 selectedColor.opacity(0.3),
                             radius: 5,
                             x: 0,
                             y: 2
-                        )
+                    )
                 )
         }
     }
@@ -172,7 +170,7 @@ struct CategoryEditorView: View {
                     .fill(Color(UIColor.systemBackground))
                     .shadow(
                         color: editingCategory == nil ? 
-                            Color.white.opacity(0.2) : 
+                            (colorScheme == .dark ? Color.white.opacity(0.2) : Color.black.opacity(0.1)) : 
                             selectedColor.opacity(0.3),
                         radius: 5,
                         x: 0,
