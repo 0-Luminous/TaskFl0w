@@ -21,6 +21,7 @@ struct ClockFaceEditorView: View {
     @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
     @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
     @AppStorage("markersOffset") private var markersOffset: Double = 40.0
+    @AppStorage("numbersSize") private var numbersSize: Double = 12.0
     
     var body: some View {
         VStack(spacing: 0) {
@@ -98,6 +99,27 @@ struct ClockFaceEditorView: View {
                 Section(header: Text("МАРКЕРЫ")) {
                     Toggle("Показывать цифры часов", isOn: $showHourNumbers)
                     
+                    if showHourNumbers {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Размер цифр")
+                            Slider(value: $numbersSize, in: 8...16, step: 1.0)
+                                .onChange(of: numbersSize) { _ in
+                                    let generator = UIImpactFeedbackGenerator(style: .light)
+                                    generator.impactOccurred()
+                                }
+                            HStack {
+                                Text("8")
+                                    .font(.system(size: 8))
+                                    .foregroundColor(.gray)
+                                Spacer()
+                                Text("16")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Толщина маркеров")
                         Slider(value: $markersWidth, in: 1...4, step: 0.5)
@@ -108,7 +130,6 @@ struct ClockFaceEditorView: View {
                         Text("Расположение маркеров")
                         Slider(value: $markersOffset, in: 20...60, step: 1.0)
                             .onChange(of: markersOffset) { _ in
-                                // Можно добавить haptic feedback при изменении
                                 let generator = UIImpactFeedbackGenerator(style: .light)
                                 generator.impactOccurred()
                             }
