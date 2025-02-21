@@ -12,6 +12,10 @@ struct CategoryEditorView: View {
     @State var editingCategory: TaskCategoryModel?
     @State private var selectedDockCategory: TaskCategoryModel?
     
+    @Environment(\.colorScheme) var colorScheme
+    @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
+    @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
+    
     @State private var categoryName: String = ""
     @State private var selectedColor: Color = .blue
     @State private var selectedIcon: String = "star.fill"
@@ -20,8 +24,6 @@ struct CategoryEditorView: View {
     @State private var showingDeleteAlert = false
     @State private var hexColor: String = ""
     @FocusState private var isTextFieldFocused: Bool
-    
-    @Environment(\.colorScheme) private var colorScheme
     
     private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
     
@@ -55,26 +57,18 @@ struct CategoryEditorView: View {
         )
     }
     
-    // Массив доступных системных иконок
-    private let availableIcons = [
-        "star.fill", "heart.fill", "house.fill", "person.fill", "book.fill",
-        "briefcase.fill", "cart.fill", "gift.fill", "hammer.fill", "leaf.fill",
-        "lightbulb.fill", "music.note", "paintbrush.fill", "pencil", "phone.fill",
-        "plus", "scissors", "trash.fill", "wrench.fill", "xmark",
-        "circle.fill", "square.fill", "triangle.fill", "diamond.fill", "heart.fill",
-        "star.circle.fill", "flag.fill", "bell.fill", "tag.fill", "bookmark.fill",
-        "doc.fill", "folder.fill", "paperplane.fill", "tray.fill", "archivebox.fill",
-        "calendar", "clock.fill", "stopwatch.fill", "timer", "gauge",
-        "speedometer", "heart.text.square.fill", "doc.text.fill", "list.bullet",
-        "camera.fill", "video.fill", "mic.fill", "speaker.fill", "music.mic",
-        "photo.fill", "rectangle.fill.on.rectangle.fill", "person.2.fill",
-        "gamecontroller.fill", "headphones", "tv.fill", "display", "laptopcomputer",
-        "iphone", "ipad", "apps.iphone", "command", "keyboard", "printer.fill",
-        "network", "wifi", "antenna.radiowaves.left.and.right", "battery.100",
-        "location.fill", "map.fill", "pin.fill", "safari.fill", "globe",
-        "cloud.fill", "cloud.rain.fill", "sun.max.fill", "moon.fill", "star.fill",
-        "sparkles", "snow", "flame.fill", "bolt.fill", "drop.fill"
-    ]
+    // Добавляем вычисляемые свойства для цветов
+    private var currentClockFaceColor: Color {
+        let hexColor = colorScheme == .dark
+            ? viewModel.darkModeClockFaceColor
+            : viewModel.lightModeClockFaceColor
+        return Color(hex: hexColor) ?? .white
+    }
+    
+    private var currentOuterRingColor: Color {
+        let hexColor = colorScheme == .dark ? darkModeOuterRingColor : lightModeOuterRingColor
+        return Color(hex: hexColor) ?? .gray.opacity(0.3)
+    }
     
     // Выносим кнопки в отдельные представления
     private var colorButton: some View {
@@ -177,6 +171,28 @@ struct CategoryEditorView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 15) {
+                // Циферблат
+                ZStack {
+                    // Внешнее кольцо
+                    Circle()
+                        .stroke(currentOuterRingColor, lineWidth: 20)
+                        .frame(
+                            width: UIScreen.main.bounds.width * 0.8,
+                            height: UIScreen.main.bounds.width * 0.8
+                        )
+                    
+                    // Сам циферблат
+                    MainClockFaceView(
+                        currentDate: viewModel.selectedDate,
+                        tasks: viewModel.tasks,
+                        viewModel: viewModel,
+                        draggedCategory: $viewModel.draggedCategory,
+                        clockFaceColor: currentClockFaceColor
+                    )
+                }
+                .padding(.top, 20)
+                .padding(.bottom, 30)
+                
                 // DockBar с обновленным binding для выбранной категории
                 CategoryDockBar(
                     viewModel: viewModel,
@@ -200,29 +216,31 @@ struct CategoryEditorView: View {
                     ),
                     editingCategory: previewCategory
                 )
-                .padding(.top)
                 .id(previewCategory.id)
                 
-                // Кнопки выбора цвета и иконки
-                HStack(spacing: 20) {
-                    colorButton
-                    actionButton // Заменяем deleteButton на actionButton
-                    iconButton
-                }
-                .padding(.horizontal)
-                
-                TextField("Название категории", text: $categoryName)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(selectedColor, lineWidth: 3)
-                    )
+                // Настройки категории
+                VStack(spacing: 15) {
+                    HStack(spacing: 20) {
+                        colorButton
+                        actionButton
+                        iconButton
+                    }
                     .padding(.horizontal)
-                    .focused($isTextFieldFocused)
+                    
+                    TextField("Название категории", text: $categoryName)
+                        .textFieldStyle(PlainTextFieldStyle())
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(selectedColor, lineWidth: 3)
+                        )
+                        .padding(.horizontal)
+                        .focused($isTextFieldFocused)
+                }
                 
                 Spacer()
             }
+            .padding(.top)
             .navigationTitle(editingCategory == nil ? "Новая категория" : "Редактирование")
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled(true)
@@ -244,7 +262,7 @@ struct CategoryEditorView: View {
                 }
             }
         }
-        .presentationDetents([.height(UIScreen.main.bounds.height * 0.7)])
+        .presentationDetents([.height(UIScreen.main.bounds.height * 0.8)])
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $showingIconPicker) {
             NavigationView {
@@ -252,7 +270,7 @@ struct CategoryEditorView: View {
                     LazyVGrid(columns: [
                         GridItem(.adaptive(minimum: 60))
                     ], spacing: 20) {
-                        ForEach(availableIcons, id: \.self) { icon in
+                        ForEach(SystemIcons.available, id: \.self) { icon in
                             Button(action: {
                                 selectedIcon = icon
                                 showingIconPicker = false
