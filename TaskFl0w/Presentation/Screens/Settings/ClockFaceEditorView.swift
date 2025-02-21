@@ -26,151 +26,172 @@ struct ClockFaceEditorView: View {
     // Добавляем необходимые свойства для MainClockFaceView
     @StateObject private var viewModel = ClockViewModel()
     
+    // Добавляем генератор обратной связи
+    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
+    
     var body: some View {
-        VStack(spacing: 0) {
-            // Предпросмотр циферблата
-            ZStack {
-                // Внешнее кольцо
-                Circle()
-                    .stroke(currentOuterRingColor, lineWidth: 20)
-                    .frame(
-                        width: UIScreen.main.bounds.width * 0.8,
-                        height: UIScreen.main.bounds.width * 0.8
+        NavigationView {
+            VStack(spacing: 0) {
+                // Предпросмотр циферблата
+                ZStack {
+                    // Внешнее кольцо
+                    Circle()
+                        .stroke(currentOuterRingColor, lineWidth: 20)
+                        .frame(
+                            width: UIScreen.main.bounds.width * 0.8,
+                            height: UIScreen.main.bounds.width * 0.8
+                        )
+                    
+                    // Сам циферблат
+                    MainClockFaceView(
+                        currentDate: viewModel.selectedDate,
+                        tasks: viewModel.tasks,
+                        viewModel: viewModel,
+                        draggedCategory: .constant(nil),
+                        clockFaceColor: currentClockFaceColor
                     )
+                }
+                .frame(height: UIScreen.main.bounds.width * 0.8)
+                .padding(.vertical, 20)
+                .environment(\.colorScheme, isDarkMode ? .dark : .light)
                 
-                // Сам циферблат
-                MainClockFaceView(
-                    currentDate: viewModel.selectedDate,
-                    tasks: viewModel.tasks,
-                    viewModel: viewModel,
-                    draggedCategory: .constant(nil),
-                    clockFaceColor: currentClockFaceColor
-                )
-            }
-            .frame(height: UIScreen.main.bounds.width * 0.8)
-            .padding(.vertical, 20)
-            .environment(\.colorScheme, isDarkMode ? .dark : .light)
-            
-            // Настройки
-            List {
-                Section(header: Text("СТИЛЬ ЦИФЕРБЛАТА")) {
-                    HStack {
-                        Text("Стиль")
-                        Spacer()
-                        Text(clockStyle.rawValue.capitalized)
-                            .foregroundColor(.gray)
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        switch clockStyle {
-                        case .classic:
-                            clockStyle = .minimal
-                        case .minimal:
-                            clockStyle = .modern
-                        case .modern:
-                            clockStyle = .classic
+                // Настройки
+                List {
+                    Section(header: Text("СТИЛЬ ЦИФЕРБЛАТА")) {
+                        HStack {
+                            Text("Стиль")
+                            Spacer()
+                            Text(clockStyle.rawValue.capitalized)
+                                .foregroundColor(.gray)
                         }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            switch clockStyle {
+                            case .classic:
+                                clockStyle = .minimal
+                            case .minimal:
+                                clockStyle = .modern
+                            case .modern:
+                                clockStyle = .classic
+                            }
+                        }
+                        
+                        Toggle("Тёмная тема", isOn: $isDarkMode)
                     }
                     
-                    Toggle("Тёмная тема", isOn: $isDarkMode)
-                }
-                
-                Section(header: Text("ЦВЕТА")) {
-                    ColorPicker("Цвет циферблата", selection: Binding(
-                        get: {
-                            Color(hex: isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor) ?? (isDarkMode ? .black : .white)
-                        },
-                        set: { newColor in
-                            if isDarkMode {
-                                darkModeClockFaceColor = newColor.toHex()
-                            } else {
-                                lightModeClockFaceColor = newColor.toHex()
+                    Section(header: Text("ЦВЕТА")) {
+                        ColorPicker("Цвет циферблата", selection: Binding(
+                            get: {
+                                Color(hex: isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor) ?? (isDarkMode ? .black : .white)
+                            },
+                            set: { newColor in
+                                if isDarkMode {
+                                    darkModeClockFaceColor = newColor.toHex()
+                                } else {
+                                    lightModeClockFaceColor = newColor.toHex()
+                                }
                             }
-                        }
-                    ))
-                    
-                    ColorPicker("Цвет внешнего круга", selection: Binding(
-                        get: {
-                            Color(hex: isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor) ?? .gray.opacity(0.3)
-                        },
-                        set: { newColor in
-                            if isDarkMode {
-                                darkModeOuterRingColor = newColor.toHex()
-                            } else {
-                                lightModeOuterRingColor = newColor.toHex()
+                        ))
+                        
+                        ColorPicker("Цвет внешнего круга", selection: Binding(
+                            get: {
+                                Color(hex: isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor) ?? .gray.opacity(0.3)
+                            },
+                            set: { newColor in
+                                if isDarkMode {
+                                    darkModeOuterRingColor = newColor.toHex()
+                                } else {
+                                    lightModeOuterRingColor = newColor.toHex()
+                                }
                             }
-                        }
-                    ))
-                    
-                    ColorPicker("Цвет маркеров", selection: Binding(
-                        get: {
-                            Color(hex: isDarkMode ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray
-                        },
-                        set: { newColor in
-                            if isDarkMode {
-                                darkModeMarkersColor = newColor.toHex()
-                            } else {
-                                lightModeMarkersColor = newColor.toHex()
+                        ))
+                        
+                        ColorPicker("Цвет маркеров", selection: Binding(
+                            get: {
+                                Color(hex: isDarkMode ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray
+                            },
+                            set: { newColor in
+                                if isDarkMode {
+                                    darkModeMarkersColor = newColor.toHex()
+                                } else {
+                                    lightModeMarkersColor = newColor.toHex()
+                                }
                             }
-                        }
-                    ))
-                }
-                
-                Section(header: Text("МАРКЕРЫ")) {
-                    Toggle("Показывать цифры часов", isOn: $showHourNumbers)
+                        ))
+                    }
                     
-                    if showHourNumbers {
+                    Section(header: Text("МАРКЕРЫ")) {
+                        Toggle("Показывать цифры часов", isOn: $showHourNumbers)
+                        
+                        if showHourNumbers {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Размер цифр")
+                                Slider(value: $numbersSize, in: 8...16, step: 1.0)
+                                    .onChange(of: numbersSize) { _ in
+                                        let generator = UIImpactFeedbackGenerator(style: .light)
+                                        generator.impactOccurred()
+                                    }
+                                HStack {
+                                    Text("8")
+                                        .font(.system(size: 8))
+                                        .foregroundColor(.gray)
+                                    Spacer()
+                                    Text("16")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                            .padding(.vertical, 8)
+                        }
+                        
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Размер цифр")
-                            Slider(value: $numbersSize, in: 8...16, step: 1.0)
-                                .onChange(of: numbersSize) { _ in
+                            Text("Толщина маркеров")
+                            Slider(value: $markersWidth, in: 1...4, step: 0.5)
+                        }
+                        .padding(.vertical, 8)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Расположение маркеров")
+                            Slider(value: $markersOffset, in: 20...60, step: 1.0)
+                                .onChange(of: markersOffset) { _ in
                                     let generator = UIImpactFeedbackGenerator(style: .light)
                                     generator.impactOccurred()
                                 }
                             HStack {
-                                Text("8")
-                                    .font(.system(size: 8))
+                                Text("Ближе к центру")
+                                    .font(.caption)
                                     .foregroundColor(.gray)
                                 Spacer()
-                                Text("16")
-                                    .font(.system(size: 16))
+                                Text("Ближе к краю")
+                                    .font(.caption)
                                     .foregroundColor(.gray)
                             }
                         }
                         .padding(.vertical, 8)
                     }
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Толщина маркеров")
-                        Slider(value: $markersWidth, in: 1...4, step: 0.5)
+                }
+                .listStyle(InsetGroupedListStyle())
+            }
+            .navigationTitle("Редактор циферблата")
+            .navigationBarTitleDisplayMode(.inline)
+            .background(Color(UIColor.systemGroupedBackground))
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Отмена") {
+                        feedbackGenerator.impactOccurred()
+                        dismiss()
                     }
-                    .padding(.vertical, 8)
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Расположение маркеров")
-                        Slider(value: $markersOffset, in: 20...60, step: 1.0)
-                            .onChange(of: markersOffset) { _ in
-                                let generator = UIImpactFeedbackGenerator(style: .light)
-                                generator.impactOccurred()
-                            }
-                        HStack {
-                            Text("Ближе к центру")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Spacer()
-                            Text("Ближе к краю")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Готово") {
+                        feedbackGenerator.impactOccurred()
+                        dismiss()
                     }
-                    .padding(.vertical, 8)
                 }
             }
-            .listStyle(InsetGroupedListStyle())
         }
-        .navigationTitle("Редактор циферблата")
-        .navigationBarTitleDisplayMode(.inline)
-        .background(Color(UIColor.systemGroupedBackground))
+        .interactiveDismissDisabled(true)
     }
     
     private var currentClockFaceColor: Color {

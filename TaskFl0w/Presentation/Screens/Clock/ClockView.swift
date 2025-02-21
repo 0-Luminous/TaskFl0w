@@ -103,7 +103,7 @@ struct ClockView: View {
             .sheet(isPresented: $viewModel.showingTodayTasks) {
                 TodayTasksView(viewModel: viewModel)
             }
-            .sheet(isPresented: $viewModel.showingCategoryEditor) {
+            .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
                 // CategoryEditorView, например
                 CategoryEditorView(
                     viewModel: viewModel,

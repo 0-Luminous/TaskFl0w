@@ -11,6 +11,7 @@ struct SettingsView: View {
     @StateObject private var viewModel = ClockViewModel()
     
     @AppStorage("isDarkMode") private var isDarkMode: Bool = false
+    @State private var showingClockFaceEditor = false
     
     var body: some View {
         NavigationView {
@@ -22,7 +23,9 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    NavigationLink(destination: ClockFaceEditorView()) {
+                    Button(action: {
+                        showingClockFaceEditor = true
+                    }) {
                         HStack {
                             Text("Редактировать циферблат")
                             Spacer()
@@ -54,7 +57,10 @@ struct SettingsView: View {
                     }
                 }
             }
-            .sheet(isPresented: $viewModel.showingCategoryEditor) {
+            .fullScreenCover(isPresented: $showingClockFaceEditor) {
+                ClockFaceEditorView()
+            }
+            .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
                 CategoryEditorView(
                     viewModel: viewModel,
                     isPresented: $viewModel.showingCategoryEditor
