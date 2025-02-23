@@ -12,7 +12,7 @@ struct CardButtonStyle: ButtonStyle {
     
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundColor(colorScheme == .dark ? .orange : .primary)
+            .foregroundColor(colorScheme == .dark ? .orange : .coral)
             .shadow(color: colorScheme == .dark ? .white.opacity(0.3) : .clear, radius: 5)
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .opacity(configuration.isPressed ? 0.9 : 1.0)
@@ -22,4 +22,4 @@ struct CardButtonStyle: ButtonStyle {
             )
             .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
     }
-}
+} 

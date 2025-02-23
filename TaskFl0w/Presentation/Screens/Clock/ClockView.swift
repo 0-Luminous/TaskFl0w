@@ -17,6 +17,7 @@ struct ClockView: View {
     
     @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
     @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
+    @AppStorage("zeroPosition") private var zeroPosition: Double = 0.0
     
     // MARK: - Body
     
@@ -40,7 +41,8 @@ struct ClockView: View {
                         tasks: viewModel.tasks,
                         viewModel: viewModel,
                         draggedCategory: $viewModel.draggedCategory,
-                        clockFaceColor: currentClockFaceColor
+                        clockFaceColor: currentClockFaceColor,
+                        zeroPosition: zeroPosition
                     )
                 }
                 
@@ -91,7 +93,7 @@ struct ClockView: View {
             .sheet(isPresented: $viewModel.showingAddTask) {
                 TaskEditorView(viewModel: viewModel, isPresented: $viewModel.showingAddTask)
             }
-            .sheet(isPresented: $viewModel.showingSettings) {
+            .fullScreenCover(isPresented: $viewModel.showingSettings) {
                 SettingsView()
             }
             .sheet(isPresented: $viewModel.showingCalendar) {

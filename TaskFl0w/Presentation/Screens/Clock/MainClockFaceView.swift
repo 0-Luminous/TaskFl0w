@@ -13,6 +13,7 @@ struct MainClockFaceView: View {
     
     @Binding var draggedCategory: TaskCategoryModel?
     let clockFaceColor: Color
+    let zeroPosition: Double
     
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
@@ -29,7 +30,7 @@ struct MainClockFaceView: View {
             
             // Маркеры часов (24 шт.)
             ForEach(0..<24) { hour in
-                let angle = Double(hour) * (360.0 / 24.0)
+                let angle = Double(hour) * (360.0 / 24.0) + zeroPosition
                 MainClockMarker(hour: hour, style: clockStyle.markerStyle)
                     .rotationEffect(.degrees(angle))
                     .frame(width: UIScreen.main.bounds.width * 0.7, height: UIScreen.main.bounds.width * 0.7)
@@ -41,6 +42,7 @@ struct MainClockFaceView: View {
             )
             
             MainClockHandView(currentDate: viewModel.currentDate)
+                .rotationEffect(.degrees(zeroPosition))
             
             // Показ точки, куда «кидаем» категорию
             if let location = viewModel.dropLocation {
@@ -125,7 +127,9 @@ struct MainClockFaceView: View {
     // MARK: - Вспомогательные
     
     private var tasksForSelectedDate: [Task] {
-        tasks.filter { Calendar.current.isDate($0.startTime, inSameDayAs: currentDate) }
+        tasks.filter { task in
+            Calendar.current.isDate(task.startTime, inSameDayAs: viewModel.selectedDate)
+        }
     }
     
     private func timeForLocation(_ location: CGPoint) -> Date {
@@ -135,9 +139,9 @@ struct MainClockFaceView: View {
         
         let angle = atan2(vector.dy, vector.dx)
         
-        // Переводим в градусы
+        // Переводим в градусы и учитываем zeroPosition
         var degrees = angle * 180 / .pi
-        degrees = (degrees - 90 + 360).truncatingRemainder(dividingBy: 360)
+        degrees = (degrees - 90 - zeroPosition + 360).truncatingRemainder(dividingBy: 360)
         
         // 24 часа = 360 градусов => 1 час = 15 градусов
         let hours = degrees / 15

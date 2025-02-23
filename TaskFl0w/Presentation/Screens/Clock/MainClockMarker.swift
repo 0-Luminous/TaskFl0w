@@ -17,6 +17,7 @@ struct MainClockMarker: View {
     @AppStorage("markersWidth") private var markersWidth: Double = 2.0
     @AppStorage("markersOffset") private var markersOffset: Double = 40.0
     @AppStorage("numbersSize") private var numbersSize: Double = 12.0
+    @AppStorage("zeroPosition") private var zeroPosition: Double = 0.0
     
     var body: some View {
         VStack(spacing: 0) {
@@ -29,7 +30,7 @@ struct MainClockMarker: View {
                     Text("\(hour)")
                         .font(.system(size: numbersSize))
                         .foregroundColor(currentMarkersColor)
-                        .rotationEffect(.degrees(-Double(hour) * (360.0 / 24.0)))
+                        .rotationEffect(.degrees(-Double(hour) * (360.0 / 24.0) - zeroPosition))
                         .offset(y: 5)
                 }
                 

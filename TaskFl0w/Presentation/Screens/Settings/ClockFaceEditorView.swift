@@ -22,6 +22,7 @@ struct ClockFaceEditorView: View {
     @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
     @AppStorage("markersOffset") private var markersOffset: Double = 40.0
     @AppStorage("numbersSize") private var numbersSize: Double = 12.0
+    @AppStorage("zeroPosition") private var zeroPosition: Double = 0.0 // 0 градусов = верх
     
     // Добавляем необходимые свойства для MainClockFaceView
     @StateObject private var viewModel = ClockViewModel()
@@ -48,7 +49,8 @@ struct ClockFaceEditorView: View {
                         tasks: viewModel.tasks,
                         viewModel: viewModel,
                         draggedCategory: .constant(nil),
-                        clockFaceColor: currentClockFaceColor
+                        clockFaceColor: currentClockFaceColor,
+                        zeroPosition: zeroPosition
                     )
                 }
                 .frame(height: UIScreen.main.bounds.width * 0.8)
@@ -125,6 +127,27 @@ struct ClockFaceEditorView: View {
                     
                     Section(header: Text("МАРКЕРЫ")) {
                         Toggle("Показывать цифры часов", isOn: $showHourNumbers)
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Положение нуля")
+                            Slider(value: $zeroPosition, in: 0...360, step: 30)
+                                .onChange(of: zeroPosition) { _ in
+                                    feedbackGenerator.impactOccurred()
+                                }
+                            HStack {
+                                Text("0°")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                Spacer()
+                                Text("360°")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            Text("Текущее положение: \(Int(zeroPosition))°")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.vertical, 8)
                         
                         if showHourNumbers {
                             VStack(alignment: .leading, spacing: 8) {

@@ -15,6 +15,7 @@ struct CategoryEditorView: View {
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
     @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
+    @AppStorage("zeroPosition") private var zeroPosition: Double = 0.0
     
     @State private var categoryName: String = ""
     @State private var selectedColor: Color = .blue
@@ -199,7 +200,8 @@ struct CategoryEditorView: View {
                         tasks: viewModel.tasks,
                         viewModel: viewModel,
                         draggedCategory: $viewModel.draggedCategory,
-                        clockFaceColor: currentClockFaceColor
+                        clockFaceColor: currentClockFaceColor,
+                        zeroPosition: zeroPosition
                     )
                 }
                 .padding(.top, 30)

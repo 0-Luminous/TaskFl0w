@@ -14,48 +14,66 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             List {
-                // Профиль пользователя
-                NavigationLink {
-                    Text("Мой профиль")
-                } label: {
-                    SettingsRow(title: "Мой профиль")
+                // Первая секция
+                Section {
+                    // Профиль пользователя
+                    NavigationLink {
+                        MyProfileView()
+                    } label: {
+                        SettingsRow(title: "Мой профиль")
+                    }
+                    
+                    // Потоки задач
+                    NavigationLink {
+                        Text("Потоки задач")
+                    } label: {
+                        SettingsRow(title: "Потоки задач")
+                    }
                 }
                 
-                // Персонализация
-                NavigationLink {
-                    PersonalizationView()
-                } label: {
-                    SettingsRow(title: "Персонолизация")
+                // Вторая секция
+                Section {
+                    // Персонализация
+                    NavigationLink {
+                        PersonalizationView()
+                    } label: {
+                        SettingsRow(title: "Персонолизация")
+                    }
                 }
                 
-                // Данные и память
-                NavigationLink {
-                    Text("Данные и память")
-                } label: {
-                    SettingsRow(title: "Данные и память")
-                }
-                
-                // Язык
-                NavigationLink {
-                    Text("Язык")
-                } label: {
-                    SettingsRow(title: "Язык")
-                }
-                
-                // Уведомления и звук
-                NavigationLink {
-                    Text("Уведомления и звук")
-                } label: {
-                    SettingsRow(title: "Уведомления и звук")
-                }
-                
-                // Потоки задач
-                Section("Мои потоки задач") {
-                    // Здесь можно добавить дополнительные элементы для потоков задач
+                // Третья секция
+                Section {
+                    // Данные и память
+                    NavigationLink {
+                        Text("Данные и память")
+                    } label: {
+                        SettingsRow(title: "Данные и память")
+                    }
+                    
+                    // Язык
+                    NavigationLink {
+                        Text("Язык")
+                    } label: {
+                        SettingsRow(title: "Язык")
+                    }
+                    
+                    // Уведомления и звук
+                    NavigationLink {
+                        Text("Уведомления и звук")
+                    } label: {
+                        SettingsRow(title: "Уведомления и звук")
+                    }
                 }
             }
             .navigationTitle("НАСТРОЙКИ")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Готово") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }

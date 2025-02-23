@@ -18,7 +18,7 @@ struct CardView: View {
                 
                 Text(title)
                     .font(.system(size: 20))
-                    .foregroundColor(colorScheme == .dark ? .coral : .black)
+                    .foregroundColor(colorScheme == .dark ? .coral : .coral)
                     .multilineTextAlignment(.leading)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20) // Отступ снизу
@@ -35,8 +35,4 @@ struct CardView: View {
         .cornerRadius(24)
         .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.2 : 0.08), radius: 15, x: 0, y: 8)
     }
-}
-
-extension Color {
-    static let coral = Color(red: 1.0, green: 0.5, blue: 0.31)
 }
