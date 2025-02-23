@@ -1,0 +1,36 @@
+//
+//  CardView.swift
+//  TaskFl0w
+//
+//  Created by Yan on 24/2/25.
+//
+import SwiftUI
+struct CardView: View {
+    let icon: String
+    let title: String
+    
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            VStack {
+                Spacer() // Отодвигает текст вниз
+                
+                Text(title)
+                    .font(.system(size: 20))
+                    .foregroundColor(.black)
+                    .multilineTextAlignment(.leading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20) // Отступ снизу
+            }
+            
+            // Иконка в правом верхнем углу
+            Image(systemName: icon)
+                .font(.system(size: 28))
+                .foregroundColor(.black)
+                .padding([.top, .trailing], 20)
+        }
+        .frame(width: 160, height: 160)
+        .background(Color(UIColor.systemGray6))
+        .cornerRadius(24)
+        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 8)
+    }
+}

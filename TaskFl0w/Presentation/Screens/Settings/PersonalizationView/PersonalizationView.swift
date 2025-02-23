@@ -66,50 +66,6 @@ struct PersonalizationView: View {
         }
     }
 }
-
-struct CardView: View {
-    let icon: String
-    let title: String
-    
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            VStack {
-                Spacer() // Отодвигает текст вниз
-                
-                Text(title)
-                    .font(.system(size: 20))
-                    .foregroundColor(.black)
-                    .multilineTextAlignment(.leading)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20) // Отступ снизу
-            }
-            
-            // Иконка в правом верхнем углу
-            Image(systemName: icon)
-                .font(.system(size: 28))
-                .foregroundColor(.black)
-                .padding([.top, .trailing], 20)
-        }
-        .frame(width: 160, height: 160)
-        .background(Color(UIColor.systemGray6))
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 8)
-    }
-}
-
-struct CardButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .opacity(configuration.isPressed ? 0.9 : 1.0)
-            .overlay(
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(Color.blue.opacity(configuration.isPressed ? 0.3 : 0), lineWidth: 2)
-            )
-            .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
-    }
-}
-
 #Preview {
     NavigationView {
         PersonalizationView()
