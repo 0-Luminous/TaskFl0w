@@ -82,7 +82,7 @@ struct ClockView: View {
                             Image(systemName: "calendar")
                         }
                         Button(action: { viewModel.showingTodayTasks = true }) {
-                            Image(systemName: "list.bullet")
+                            Image(systemName: "sharedwithyou")
                         }
                     }
                 }

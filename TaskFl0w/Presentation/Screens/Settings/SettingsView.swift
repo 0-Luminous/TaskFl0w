@@ -4,68 +4,69 @@
 //
 //  Created by Yan on 24/12/24.
 //
+
 import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel = ClockViewModel()
-    
-    @AppStorage("isDarkMode") private var isDarkMode: Bool = false
-    @State private var showingClockFaceEditor = false
+    @AppStorage("isDarkMode") private var isDarkMode = false
     
     var body: some View {
         NavigationView {
-            Form {
-                Section {
-                    Toggle("Тёмный режим", isOn: $isDarkMode)
-                } header: {
-                    Text("Тема")
+            List {
+                // Профиль пользователя
+                NavigationLink {
+                    Text("Мой профиль")
+                } label: {
+                    SettingsRow(title: "Мой профиль")
                 }
                 
-                Section {
-                    Button(action: {
-                        showingClockFaceEditor = true
-                    }) {
-                        HStack {
-                            Text("Редактировать циферблат")
-                            Spacer()
-                            Image(systemName: "clock.circle")
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    
-                    Button(action: {
-                        viewModel.showingCategoryEditor = true
-                    }) {
-                        HStack {
-                            Text("Редактировать категории")
-                            Spacer()
-                            Image(systemName: "folder.badge.gearshape")
-                                .foregroundColor(.gray)
-                        }
-                    }
-                } header: {
-                    Text("Настройки циферблата")
+                // Персонализация
+                NavigationLink {
+                    PersonalizationView()
+                } label: {
+                    SettingsRow(title: "Персонолизация")
+                }
+                
+                // Данные и память
+                NavigationLink {
+                    Text("Данные и память")
+                } label: {
+                    SettingsRow(title: "Данные и память")
+                }
+                
+                // Язык
+                NavigationLink {
+                    Text("Язык")
+                } label: {
+                    SettingsRow(title: "Язык")
+                }
+                
+                // Уведомления и звук
+                NavigationLink {
+                    Text("Уведомления и звук")
+                } label: {
+                    SettingsRow(title: "Уведомления и звук")
+                }
+                
+                // Потоки задач
+                Section("Мои потоки задач") {
+                    // Здесь можно добавить дополнительные элементы для потоков задач
                 }
             }
-            .navigationTitle("Настройки")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Закрыть") {
-                        dismiss()
-                    }
-                }
-            }
-            .fullScreenCover(isPresented: $showingClockFaceEditor) {
-                ClockFaceEditorView()
-            }
-            .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
-                CategoryEditorView(
-                    viewModel: viewModel,
-                    isPresented: $viewModel.showingCategoryEditor
-                )
-            }
+            .navigationTitle("НАСТРОЙКИ")
+            .navigationBarTitleDisplayMode(.large)
+        }
+    }
+}
+// Вспомогательное представление для строки настроек
+struct SettingsRow: View {
+    let title: String
+    
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
         }
     }
 }
