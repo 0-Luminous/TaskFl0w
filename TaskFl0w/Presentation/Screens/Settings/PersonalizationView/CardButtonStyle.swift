@@ -6,9 +6,14 @@
 //
 
 import SwiftUI
+
 struct CardButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
+    
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .foregroundColor(colorScheme == .dark ? .orange : .primary)
+            .shadow(color: colorScheme == .dark ? .white.opacity(0.3) : .clear, radius: 5)
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .opacity(configuration.isPressed ? 0.9 : 1.0)
             .overlay(

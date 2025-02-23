@@ -77,6 +77,9 @@ struct ClockFaceEditorView: View {
                         }
                         
                         Toggle("Тёмная тема", isOn: $isDarkMode)
+                            .onChange(of: isDarkMode) { _ in
+                                feedbackGenerator.impactOccurred()
+                            }
                     }
                     
                     Section(header: Text("ЦВЕТА")) {
