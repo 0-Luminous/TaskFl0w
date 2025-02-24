@@ -52,14 +52,14 @@ struct SettingsView: View {
                     
                     // Язык
                     NavigationLink {
-                        Text("Язык")
+                        LanguagesView()
                     } label: {
                         SettingsRow(title: "Язык")
                     }
                     
                     // Уведомления и звук
                     NavigationLink {
-                        Text("Уведомления и звук")
+                        SoundAndNotification()
                     } label: {
                         SettingsRow(title: "Уведомления и звук")
                     }
