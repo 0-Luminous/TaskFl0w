@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct FaceViewIpad: View {
+struct MainClockFaceViewIpad: View {
     let currentDate: Date
     let tasks: [Task]
     @ObservedObject var viewModel: ClockViewModel
@@ -31,9 +31,9 @@ struct FaceViewIpad: View {
             // Маркеры часов (24 шт.)
             ForEach(0..<24) { hour in
                 let angle = Double(hour) * (360.0 / 24.0) + zeroPosition
-                MainClockMarker(hour: hour, style: clockStyle.markerStyle)
+                ClockMarkerForIpad(hour: hour, style: clockStyle.markerStyle)
                     .rotationEffect(.degrees(angle))
-                    .frame(width: UIScreen.main.bounds.width * 0.7, height: UIScreen.main.bounds.width * 0.7)
+                    .frame(width: UIScreen.main.bounds.width * 0.2, height: UIScreen.main.bounds.width * 0.2)
             }
             
             MainTaskArcsView(
@@ -63,7 +63,7 @@ struct FaceViewIpad: View {
             }
         }
         .aspectRatio(1, contentMode: .fit)
-        .frame(height: UIScreen.main.bounds.width * 0.7)
+        .frame(height: UIScreen.main.bounds.width * 0.2)
         .padding()
         .animation(.spring(), value: tasksForSelectedDate)
         

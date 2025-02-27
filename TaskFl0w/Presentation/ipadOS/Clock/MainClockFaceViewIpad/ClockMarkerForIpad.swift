@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct ClockMarkerIpad: View {
+struct ClockMarkerForIpad: View {
     let hour: Int
     let style: MarkerStyle
     

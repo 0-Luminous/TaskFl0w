@@ -195,7 +195,7 @@ struct CategoryEditorView: View {
                         )
                     
                     // Сам циферблат
-                    MainClockFaceView(
+                    MainClockFaceViewIOS(
                         currentDate: viewModel.selectedDate,
                         tasks: viewModel.tasks,
                         viewModel: viewModel,
@@ -208,7 +208,7 @@ struct CategoryEditorView: View {
                 .padding(.bottom, 30)
                 
                 // DockBar с обновленным binding для выбранной категории
-                CategoryDockBar(
+                DockBarIOS(
                     viewModel: viewModel,
                     showingAddTask: .constant(false),
                     draggedCategory: .constant(nil),

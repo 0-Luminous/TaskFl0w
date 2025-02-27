@@ -22,7 +22,6 @@ struct ClockViewIpad: View {
     // MARK: - Body
     
     var body: some View {
-        NavigationView {
             VStack {
                 Spacer()
                 
@@ -31,12 +30,12 @@ struct ClockViewIpad: View {
                     Circle()
                         .stroke(currentOuterRingColor, lineWidth: 20)
                         .frame(
-                            width: UIScreen.main.bounds.width * 0.8,
-                            height: UIScreen.main.bounds.width * 0.8
+                            width: UIScreen.main.bounds.width * 0.3,
+                            height: UIScreen.main.bounds.width * 0.3
                         )
                     
                     // Сам циферблат (Arcs, Markers, Hand, и Drop)
-                    MainClockFaceView(
+                    MainClockFaceViewIpad(
                         currentDate: viewModel.selectedDate,
                         tasks: viewModel.tasks,
                         viewModel: viewModel,
@@ -49,7 +48,7 @@ struct ClockViewIpad: View {
                 Spacer()
                 
                 // Набор категорий снизу
-                CategoryDockBar(
+                DockBarForIpad(
                     viewModel: viewModel,
                     showingAddTask: $viewModel.showingAddTask,
                     draggedCategory: $viewModel.draggedCategory,
@@ -112,23 +111,22 @@ struct ClockViewIpad: View {
                     isPresented: $viewModel.showingCategoryEditor
                 )
             }
-        }
-        // Подложка цветом циферблата
-        .background(currentClockFaceColor)
-        .preferredColorScheme(viewModel.isDarkMode ? .dark : .light)
-        .onReceive(timer) { _ in
-            // Если выбранная дата совпадает с сегодня, тогда обновляем "currentDate" каждую секунду
-            if Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: Date()) {
-                viewModel.currentDate = Date()
+            .background(currentClockFaceColor)
+            .preferredColorScheme(viewModel.isDarkMode ? .dark : .light)
+            .onReceive(timer) { _ in
+                // Если выбранная дата совпадает с сегодня, тогда обновляем "currentDate" каждую секунду
+                if Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: Date()) {
+                    viewModel.currentDate = Date()
+                }
             }
-        }
-        .onDrop(of: [.text], isTargeted: nil) { providers, location in
-            if let task = viewModel.draggedTask {
-                viewModel.taskManagement.removeTask(task)
+            .onDrop(of: [.text], isTargeted: nil) { providers, location in
+                if let task = viewModel.draggedTask {
+                    viewModel.taskManagement.removeTask(task)
+                }
+                return true
             }
-            return true
-        }
     }
+    
     
     // MARK: - Вспомогательные вычислимые свойства
     

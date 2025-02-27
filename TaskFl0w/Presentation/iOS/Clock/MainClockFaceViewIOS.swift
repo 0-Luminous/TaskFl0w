@@ -1,12 +1,12 @@
 //
-//  MainClockFaceView.swift
+//  MainClockFaceViewIOS.swift
 //  TaskFl0w
 //
 //  Created by Yan on 24/12/24.
 //
 import SwiftUI
 
-struct MainClockFaceView: View {
+struct MainClockFaceViewIOS: View {
     let currentDate: Date
     let tasks: [Task]
     @ObservedObject var viewModel: ClockViewModel

@@ -36,7 +36,7 @@ struct ClockView: View {
                         )
                     
                     // Сам циферблат (Arcs, Markers, Hand, и Drop)
-                    MainClockFaceView(
+                    MainClockFaceViewIOS(
                         currentDate: viewModel.selectedDate,
                         tasks: viewModel.tasks,
                         viewModel: viewModel,
@@ -49,7 +49,7 @@ struct ClockView: View {
                 Spacer()
                 
                 // Набор категорий снизу
-                CategoryDockBar(
+                DockBarIOS(
                     viewModel: viewModel,
                     showingAddTask: $viewModel.showingAddTask,
                     draggedCategory: $viewModel.draggedCategory,

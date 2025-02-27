@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct CategoryDockBar: View {
+struct DockBarIOS: View {
     @ObservedObject var viewModel: ClockViewModel
     
     @Binding var showingAddTask: Bool
