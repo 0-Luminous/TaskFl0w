@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct MainClockMarker: View {
+struct ClockMarkerForIpad: View {
     let hour: Int
     let style: MarkerStyle
     
@@ -16,7 +16,7 @@ struct MainClockMarker: View {
     @AppStorage("darkModeMarkersColor") private var darkModeMarkersColor = Color.gray.toHex()
     @AppStorage("markersWidth") private var markersWidth: Double = 2.0
     @AppStorage("markersOffset") private var markersOffset: Double = 40.0
-    @AppStorage("numbersSize") private var numbersSize: Double = 12.0
+    @AppStorage("numbersSize") private var numbersSize: Double = 16.0
     @AppStorage("zeroPosition") private var zeroPosition: Double = 0.0
     
     var body: some View {
@@ -25,27 +25,27 @@ struct MainClockMarker: View {
             case .numbers:
                 Rectangle()
                     .fill(currentMarkersColor)
-                    .frame(width: markersWidth, height: 12)
+                    .frame(width: markersWidth * 1.5, height: 18)
                 if showHourNumbers {
                     Text("\(hour)")
                         .font(.system(size: numbersSize))
                         .foregroundColor(currentMarkersColor)
                         .rotationEffect(.degrees(-Double(hour) * (360.0 / 24.0) - zeroPosition))
-                        .offset(y: 5)
+                        .offset(y: 8)
                 }
                 
             case .lines:
                 Rectangle()
                     .fill(currentMarkersColor)
-                    .frame(width: markersWidth, height: hour % 6 == 0 ? 16 : 12)
+                    .frame(width: markersWidth * 1.5, height: hour % 6 == 0 ? 24 : 18)
                 
             case .dots:
                 Circle()
                     .fill(currentMarkersColor)
-                    .frame(width: hour % 6 == 0 ? 6 : 4, height: hour % 6 == 0 ? 6 : 4)
+                    .frame(width: hour % 6 == 0 ? 10 : 6, height: hour % 6 == 0 ? 10 : 6)
             }
         }
-        .offset(y: -(UIScreen.main.bounds.width * 0.35 - markersOffset))
+        .offset(y: -(UIScreen.main.bounds.width * 0.45 - markersOffset))
     }
     
     private var currentMarkersColor: Color {

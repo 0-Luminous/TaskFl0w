@@ -1,12 +1,12 @@
 //
-//  MainClockTaskArc.swift
+//  ClockTaskArcIOS.swift
 //  TaskFl0w
 //
 //  Created by Yan on 24/12/24.
 //
 import SwiftUI
 
-struct MainClockTaskArc: View {
+struct ClockTaskArcIOS: View {
     let task: Task
     @ObservedObject var viewModel: ClockViewModel
     

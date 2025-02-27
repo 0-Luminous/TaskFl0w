@@ -36,7 +36,7 @@ struct ClockView: View {
                         )
                     
                     // Сам циферблат (Arcs, Markers, Hand, и Drop)
-                    MainClockFaceViewIOS(
+                    GlobleClockFaceViewIOS(
                         currentDate: viewModel.selectedDate,
                         tasks: viewModel.tasks,
                         viewModel: viewModel,

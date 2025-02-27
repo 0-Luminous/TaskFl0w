@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct ClockCenterView: View {
+struct ClockCenterViewIpad: View {
     let currentDate: Date
     let isDraggingStart: Bool
     let isDraggingEnd: Bool
@@ -17,17 +17,17 @@ struct ClockCenterView: View {
             if isDraggingStart {
                 // Показываем время начала задачи
                 Text(timeFormatter.string(from: currentDate))
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.system(size: 36, weight: .bold)) // Увеличенный размер шрифта для iPad
             } else if isDraggingEnd, let _ = task {
                 // Показываем время окончания задачи
                 Text(timeFormatter.string(from: currentDate))
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.system(size: 36, weight: .bold)) // Увеличенный размер шрифта для iPad
             }
         }
         .foregroundColor(.white)
         .padding()
         .background(Color.black.opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: 14)) // Увеличенный радиус для iPad
     }
     
     // Форматирование времени
@@ -47,4 +47,4 @@ struct ClockCenterView: View {
             return String(format: "%d мин", minutes)
         }
     }
-}
+} 

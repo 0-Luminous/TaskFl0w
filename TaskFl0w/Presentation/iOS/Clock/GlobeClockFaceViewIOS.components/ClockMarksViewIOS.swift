@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct MainClockMarksView: View {
+struct ClockMarksViewIOS: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {

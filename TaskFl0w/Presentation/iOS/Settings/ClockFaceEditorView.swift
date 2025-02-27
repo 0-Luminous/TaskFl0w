@@ -44,7 +44,7 @@ struct ClockFaceEditorView: View {
                         )
                     
                     // Сам циферблат
-                    MainClockFaceViewIOS(
+                    GlobleClockFaceViewIOS(
                         currentDate: viewModel.selectedDate,
                         tasks: viewModel.tasks,
                         viewModel: viewModel,

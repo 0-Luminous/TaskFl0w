@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct MainClockFaceViewIpad: View {
+struct GlobleClockFaceViewIpad: View {
     let currentDate: Date
     let tasks: [Task]
     @ObservedObject var viewModel: ClockViewModel
@@ -33,28 +33,28 @@ struct MainClockFaceViewIpad: View {
                 let angle = Double(hour) * (360.0 / 24.0) + zeroPosition
                 ClockMarkerForIpad(hour: hour, style: clockStyle.markerStyle)
                     .rotationEffect(.degrees(angle))
-                    .frame(width: UIScreen.main.bounds.width * 0.2, height: UIScreen.main.bounds.width * 0.2)
+                    .frame(width: UIScreen.main.bounds.width * 0.35, height: UIScreen.main.bounds.width * 0.35)
             }
             
-            MainTaskArcsView(
+            TaskArcsViewIpad(
                 tasks: tasksForSelectedDate,
                 viewModel: viewModel
             )
             
-            MainClockHandView(currentDate: viewModel.currentDate)
+            ClockHandViewIpad(currentDate: viewModel.currentDate)
                 .rotationEffect(.degrees(zeroPosition))
             
             // Показ точки, куда «кидаем» категорию
             if let location = viewModel.dropLocation {
                 Circle()
                     .fill(viewModel.draggedCategory?.color ?? .clear)
-                    .frame(width: 20, height: 20)
+                    .frame(width: 30, height: 30) // Увеличенный размер для iPad
                     .position(location)
             }
             
             // Если редактируем задачу
             if viewModel.isEditingMode, let time = viewModel.previewTime, let task = viewModel.editingTask {
-                ClockCenterView(
+                ClockCenterViewIpad(
                     currentDate: time,
                     isDraggingStart: viewModel.isDraggingStart,
                     isDraggingEnd: viewModel.isDraggingEnd,
@@ -63,7 +63,7 @@ struct MainClockFaceViewIpad: View {
             }
         }
         .aspectRatio(1, contentMode: .fit)
-        .frame(height: UIScreen.main.bounds.width * 0.2)
+        .frame(height: UIScreen.main.bounds.width * 0.35) // Уменьшенный размер для iPad
         .padding()
         .animation(.spring(), value: tasksForSelectedDate)
         
@@ -133,8 +133,8 @@ struct MainClockFaceViewIpad: View {
     }
     
     private func timeForLocation(_ location: CGPoint) -> Date {
-        let center = CGPoint(x: UIScreen.main.bounds.width * 0.35,
-                             y: UIScreen.main.bounds.width * 0.35)
+        let center = CGPoint(x: UIScreen.main.bounds.width * 0.45,
+                             y: UIScreen.main.bounds.width * 0.45)
         let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
         
         let angle = atan2(vector.dy, vector.dx)

@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct MainClockHandView: View {
+struct ClockHandViewIOS: View {
     
     let currentDate: Date
     @AppStorage("useManualTime") private var useManualTime = false

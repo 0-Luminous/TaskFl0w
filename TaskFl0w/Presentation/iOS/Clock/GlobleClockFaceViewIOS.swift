@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct MainClockFaceViewIOS: View {
+struct GlobleClockFaceViewIOS: View {
     let currentDate: Date
     let tasks: [Task]
     @ObservedObject var viewModel: ClockViewModel
@@ -31,17 +31,17 @@ struct MainClockFaceViewIOS: View {
             // Маркеры часов (24 шт.)
             ForEach(0..<24) { hour in
                 let angle = Double(hour) * (360.0 / 24.0) + zeroPosition
-                MainClockMarker(hour: hour, style: clockStyle.markerStyle)
+                ClockMarkerIOS(hour: hour, style: clockStyle.markerStyle)
                     .rotationEffect(.degrees(angle))
                     .frame(width: UIScreen.main.bounds.width * 0.7, height: UIScreen.main.bounds.width * 0.7)
             }
             
-            MainTaskArcsView(
+            TaskArcsViewIOS(
                 tasks: tasksForSelectedDate,
                 viewModel: viewModel
             )
             
-            MainClockHandView(currentDate: viewModel.currentDate)
+            ClockHandViewIOS(currentDate: viewModel.currentDate)
                 .rotationEffect(.degrees(zeroPosition))
             
             // Показ точки, куда «кидаем» категорию
@@ -54,7 +54,7 @@ struct MainClockFaceViewIOS: View {
             
             // Если редактируем задачу
             if viewModel.isEditingMode, let time = viewModel.previewTime, let task = viewModel.editingTask {
-                ClockCenterView(
+                ClockCenterViewIOS(
                     currentDate: time,
                     isDraggingStart: viewModel.isDraggingStart,
                     isDraggingEnd: viewModel.isDraggingEnd,
