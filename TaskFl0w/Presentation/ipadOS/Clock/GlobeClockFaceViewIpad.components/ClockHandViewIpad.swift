@@ -40,11 +40,12 @@ struct ClockHandViewIpad: View {
     
     var body: some View {
         GeometryReader { geometry in
+            // Синяя стрелка часов - тонкая и яркая
             Path { path in
                 let center = CGPoint(x: geometry.size.width / 2,
                                      y: geometry.size.height / 2)
                 let radius = min(geometry.size.width, geometry.size.height) / 2
-                let hourHandLength = radius * 1.22
+                let hourHandLength = radius * 0.75 // Укорачиваем стрелку
                 let angle = hourAngle
                 let endpoint = CGPoint(
                     x: center.x + hourHandLength * CGFloat(cos(angle)),
@@ -54,7 +55,7 @@ struct ClockHandViewIpad: View {
                 path.move(to: center)
                 path.addLine(to: endpoint)
             }
-            .stroke(Color.blue, lineWidth: 5) // Увеличенная толщина стрелки для iPad
+            .stroke(Color(red: 0.0, green: 0.47, blue: 1.0), lineWidth: 1.8) // Тонкая ярко-синяя стрелка
         }
     }
 } 

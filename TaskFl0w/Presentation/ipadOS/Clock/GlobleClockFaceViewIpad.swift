@@ -15,7 +15,7 @@ struct GlobleClockFaceViewIpad: View {
     let clockFaceColor: Color
     let zeroPosition: Double
     
-    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.colorScheme) var colorScheme 
     @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
     @AppStorage("markersOffset") private var markersOffset: Double = 40.0
     
@@ -23,47 +23,52 @@ struct GlobleClockFaceViewIpad: View {
     // Используем состояния из ViewModel через viewModel
     
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(clockFaceColor)
-                .stroke(Color.gray, lineWidth: 2)
-            
-            // Маркеры часов (24 шт.)
-            ForEach(0..<24) { hour in
-                let angle = Double(hour) * (360.0 / 24.0) + zeroPosition
-                ClockMarkerForIpad(hour: hour, style: clockStyle.markerStyle)
-                    .rotationEffect(.degrees(angle))
-                    .frame(width: UIScreen.main.bounds.width * 0.35, height: UIScreen.main.bounds.width * 0.35)
-            }
-            
-            TaskArcsViewIpad(
-                tasks: tasksForSelectedDate,
-                viewModel: viewModel
-            )
-            
-            ClockHandViewIpad(currentDate: viewModel.currentDate)
-                .rotationEffect(.degrees(zeroPosition))
-            
-            // Показ точки, куда «кидаем» категорию
-            if let location = viewModel.dropLocation {
+        GeometryReader { geometry in
+            ZStack {
+                // Круглый светло-серый фон часов с тонкой серой границей
                 Circle()
-                    .fill(viewModel.draggedCategory?.color ?? .clear)
-                    .frame(width: 30, height: 30) // Увеличенный размер для iPad
-                    .position(location)
-            }
-            
-            // Если редактируем задачу
-            if viewModel.isEditingMode, let time = viewModel.previewTime, let task = viewModel.editingTask {
-                ClockCenterViewIpad(
-                    currentDate: time,
-                    isDraggingStart: viewModel.isDraggingStart,
-                    isDraggingEnd: viewModel.isDraggingEnd,
-                    task: task
+                    .fill(Color.gray.opacity(0.15))
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                
+                // Маркеры часов (24 шт.)
+                ForEach(0..<24) { hour in
+                    let angle = Double(hour) * (360.0 / 24.0) + zeroPosition
+                    ClockMarkerForIpad(hour: hour, style: clockStyle.markerStyle)
+                        .rotationEffect(.degrees(angle))
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                }
+                
+                // Задачи
+                TaskArcsViewIpad(
+                    tasks: tasksForSelectedDate,
+                    viewModel: viewModel
                 )
+                
+                // Стрелка часов
+                ClockHandViewIpad(currentDate: viewModel.currentDate)
+                    .rotationEffect(.degrees(zeroPosition))
+                
+                // Показ точки, куда «кидаем» категорию
+                if let location = viewModel.dropLocation {
+                    Circle()
+                        .fill(viewModel.draggedCategory?.color ?? .clear)
+                        .frame(width: 30, height: 30) // Увеличенный размер для iPad
+                        .position(location)
+                }
+                
+                // Если редактируем задачу
+                if viewModel.isEditingMode, let time = viewModel.previewTime, let task = viewModel.editingTask {
+                    ClockCenterViewIpad(
+                        currentDate: time,
+                        isDraggingStart: viewModel.isDraggingStart,
+                        isDraggingEnd: viewModel.isDraggingEnd,
+                        task: task
+                    )
+                }
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .aspectRatio(1, contentMode: .fit)
-        .frame(height: UIScreen.main.bounds.width * 0.35) // Уменьшенный размер для iPad
         .padding()
         .animation(.spring(), value: tasksForSelectedDate)
         

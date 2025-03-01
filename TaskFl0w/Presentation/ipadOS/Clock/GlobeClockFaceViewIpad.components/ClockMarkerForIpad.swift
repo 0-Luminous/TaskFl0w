@@ -20,32 +20,24 @@ struct ClockMarkerForIpad: View {
     @AppStorage("zeroPosition") private var zeroPosition: Double = 0.0
     
     var body: some View {
-        VStack(spacing: 0) {
-            switch style {
-            case .numbers:
-                Rectangle()
-                    .fill(currentMarkersColor)
-                    .frame(width: markersWidth * 1.5, height: 18)
+        GeometryReader { geometry in
+            ZStack {
+                // Отображать только числа, как на скриншоте
                 if showHourNumbers {
                     Text("\(hour)")
-                        .font(.system(size: numbersSize))
-                        .foregroundColor(currentMarkersColor)
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(Color.black)
                         .rotationEffect(.degrees(-Double(hour) * (360.0 / 24.0) - zeroPosition))
-                        .offset(y: 8)
                 }
                 
-            case .lines:
+                // Маленькие черточки для каждого часа
                 Rectangle()
-                    .fill(currentMarkersColor)
-                    .frame(width: markersWidth * 1.5, height: hour % 6 == 0 ? 24 : 18)
-                
-            case .dots:
-                Circle()
-                    .fill(currentMarkersColor)
-                    .frame(width: hour % 6 == 0 ? 10 : 6, height: hour % 6 == 0 ? 10 : 6)
+                    .fill(Color.black.opacity(0.6))
+                    .frame(width: 1.5, height: 8)
+                    .offset(y: -6)
             }
+            .position(x: geometry.size.width / 2, y: geometry.size.height / 2 - geometry.size.height * 0.4 + markersOffset)
         }
-        .offset(y: -(UIScreen.main.bounds.width * 0.45 - markersOffset))
     }
     
     private var currentMarkersColor: Color {
