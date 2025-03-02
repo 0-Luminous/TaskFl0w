@@ -35,7 +35,7 @@ struct GlobleClockFaceViewIpad: View {
                     let angle = Double(hour) * (360.0 / 24.0) + zeroPosition
                     ClockMarkerForIpad(hour: hour, style: clockStyle.markerStyle)
                         .rotationEffect(.degrees(angle))
-                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .frame(width: geometry.size.width * 0.7, height: geometry.size.height * 0.7)
                 }
                 
                 // Задачи

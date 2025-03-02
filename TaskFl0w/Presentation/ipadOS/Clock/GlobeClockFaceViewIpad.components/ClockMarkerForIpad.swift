@@ -16,28 +16,36 @@ struct ClockMarkerForIpad: View {
     @AppStorage("darkModeMarkersColor") private var darkModeMarkersColor = Color.gray.toHex()
     @AppStorage("markersWidth") private var markersWidth: Double = 2.0
     @AppStorage("markersOffset") private var markersOffset: Double = 40.0
-    @AppStorage("numbersSize") private var numbersSize: Double = 16.0
+    @AppStorage("numbersSize") private var numbersSize: Double = 14.0
     @AppStorage("zeroPosition") private var zeroPosition: Double = 0.0
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Отображать только числа, как на скриншоте
+        VStack(spacing: 0) {
+            switch style {
+            case .numbers:
+                Rectangle()
+                    .fill(currentMarkersColor)
+                    .frame(width: markersWidth, height: 10)
                 if showHourNumbers {
                     Text("\(hour)")
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundColor(Color.black)
+                        .font(.system(size: numbersSize))
+                        .foregroundColor(currentMarkersColor)
                         .rotationEffect(.degrees(-Double(hour) * (360.0 / 24.0) - zeroPosition))
+                        .offset(y: 4)
                 }
                 
-                // Маленькие черточки для каждого часа
+            case .lines:
                 Rectangle()
-                    .fill(Color.black.opacity(0.6))
-                    .frame(width: 1.5, height: 8)
-                    .offset(y: -6)
+                    .fill(currentMarkersColor)
+                    .frame(width: markersWidth, height: hour % 6 == 0 ? 14 : 10)
+                
+            case .dots:
+                Circle()
+                    .fill(currentMarkersColor)
+                    .frame(width: hour % 6 == 0 ? 5 : 3, height: hour % 6 == 0 ? 5 : 3)
             }
-            .position(x: geometry.size.width / 2, y: geometry.size.height / 2 - geometry.size.height * 0.4 + markersOffset)
         }
+        .offset(y: -(UIScreen.main.bounds.width * 0.18 - markersOffset))
     }
     
     private var currentMarkersColor: Color {

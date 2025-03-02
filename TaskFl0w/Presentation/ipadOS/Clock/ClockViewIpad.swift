@@ -53,16 +53,26 @@ struct ClockViewIpad: View {
         VStack {
             Spacer()
             
-            // Циферблат часов
-            GlobleClockFaceViewIpad(
-                currentDate: viewModel.selectedDate,
-                tasks: viewModel.tasks,
-                viewModel: viewModel,
-                draggedCategory: $viewModel.draggedCategory,
-                clockFaceColor: currentClockFaceColor,
-                zeroPosition: zeroPosition
-            )
-            .frame(width: UIScreen.main.bounds.width * 0.35, height: UIScreen.main.bounds.width * 0.35)
+            ZStack {
+                // Внешнее кольцо
+                Circle()
+                    .stroke(currentOuterRingColor, lineWidth: 22) // Немного тоньше, чем в iOS (20)
+                    .frame(
+                        width: UIScreen.main.bounds.width * 0.37, // Немного больше самого циферблата
+                        height: UIScreen.main.bounds.width * 0.37
+                    )
+                
+                // Циферблат часов
+                GlobleClockFaceViewIpad(
+                    currentDate: viewModel.selectedDate,
+                    tasks: viewModel.tasks,
+                    viewModel: viewModel,
+                    draggedCategory: $viewModel.draggedCategory,
+                    clockFaceColor: currentClockFaceColor,
+                    zeroPosition: zeroPosition
+                )
+                .frame(width: UIScreen.main.bounds.width * 0.35, height: UIScreen.main.bounds.width * 0.35)
+            }
             
             Spacer()
             
