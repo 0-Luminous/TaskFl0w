@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct CategoryEditorView: View {
+struct CategoryEditorViewIpad: View {
     @ObservedObject var viewModel: ClockViewModel
     @Binding var isPresented: Bool
     @State var editingCategory: TaskCategoryModel?
@@ -195,7 +195,7 @@ struct CategoryEditorView: View {
                         )
                     
                     // Сам циферблат
-                    GlobleClockFaceViewIOS(
+                    GlobleClockFaceViewIpad(
                         currentDate: viewModel.selectedDate,
                         tasks: viewModel.tasks,
                         viewModel: viewModel,
@@ -208,7 +208,7 @@ struct CategoryEditorView: View {
                 .padding(.bottom, 30)
                 
                 // DockBar с обновленным binding для выбранной категории
-                DockBarIOS(
+                DockBarForIpad(
                     viewModel: viewModel,
                     showingAddTask: .constant(false),
                     draggedCategory: .constant(nil),
@@ -356,7 +356,7 @@ struct CategoryEditorView: View {
     )
     viewModel.categoryManagement.addCategory(testCategory)
     
-    return CategoryEditorView(
+    return CategoryEditorViewIpad(
         viewModel: viewModel,
         isPresented: .constant(true)
     )

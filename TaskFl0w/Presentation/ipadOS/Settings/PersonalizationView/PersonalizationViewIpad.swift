@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct PersonalizationView: View {
+struct PersonalizationViewIpad: View {
     @StateObject private var viewModel = ClockViewModel()
     @State private var showingClockFaceEditor = false
     @State private var showingCategoryEditor = false
@@ -56,10 +56,10 @@ struct PersonalizationView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showingClockFaceEditor) {
-            ClockFaceEditorView()
+            ClockFaceEditorViewIpad()
         }
         .fullScreenCover(isPresented: $showingCategoryEditor) {
-            CategoryEditorView(
+            CategoryEditorViewIpad(
                 viewModel: viewModel,
                 isPresented: $showingCategoryEditor
             )
@@ -68,7 +68,7 @@ struct PersonalizationView: View {
 }
 #Preview {
     NavigationView {
-        PersonalizationView()
+        PersonalizationViewIpad()
     }
 }
 

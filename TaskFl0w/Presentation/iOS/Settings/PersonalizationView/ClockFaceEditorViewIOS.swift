@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ClockFaceEditorView: View {
+struct ClockFaceEditorViewIOS: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
@@ -232,6 +232,6 @@ struct ClockFaceEditorView: View {
 }
 
 #Preview {
-    ClockFaceEditorView()
+    ClockFaceEditorViewIOS()
 }
 

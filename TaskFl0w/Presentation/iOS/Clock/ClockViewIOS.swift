@@ -1,5 +1,5 @@
 //
-//  ClockView.swift
+//  ClockViewIOS.swift
 //  TaskFl0w
 //
 //  Created by Yan on 24/12/24.
@@ -7,7 +7,7 @@
 import SwiftUI
 
 
-struct ClockView: View {
+struct ClockViewIOS: View {
     @StateObject private var viewModel = ClockViewModel()
     
     @Environment(\.colorScheme) var colorScheme
@@ -94,7 +94,7 @@ struct ClockView: View {
                 TaskEditorView(viewModel: viewModel, isPresented: $viewModel.showingAddTask)
             }
             .fullScreenCover(isPresented: $viewModel.showingSettings) {
-                SettingsView()
+                SettingsViewIOS()
             }
             .sheet(isPresented: $viewModel.showingCalendar) {
                 CalendarView(viewModel: viewModel)
@@ -107,7 +107,7 @@ struct ClockView: View {
             }
             .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
                 // CategoryEditorView, например
-                CategoryEditorView(
+                CategoryEditorViewIOS(
                     viewModel: viewModel,
                     isPresented: $viewModel.showingCategoryEditor
                 )
@@ -160,5 +160,5 @@ struct ClockView: View {
 }
 
 #Preview{
-    ClockView()
+    ClockViewIOS()
 }

@@ -18,10 +18,10 @@ struct TaskFl0wApp: App {
         WindowGroup {
             #if os(iOS)
             if UIDevice.current.userInterfaceIdiom == .pad {
-                IpadOsApp()
+                ClockViewIpad()
                     .environment(\.managedObjectContext, persistenceController.container.viewContext)
             } else {
-                IOsApp()
+                ClockViewIOS()
                     .environment(\.managedObjectContext, persistenceController.container.viewContext)
             }
             #else

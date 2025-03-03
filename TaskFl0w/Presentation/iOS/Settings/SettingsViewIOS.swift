@@ -1,5 +1,5 @@
 //
-//  SettingsView.swift
+//  SettingsViewIOS.swift
 //  TaskFl0w
 //
 //  Created by Yan on 24/12/24.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SettingsView: View {
+struct SettingsViewIOS: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("isDarkMode") private var isDarkMode = false
     
@@ -35,7 +35,7 @@ struct SettingsView: View {
                 Section {
                     // Персонализация
                     NavigationLink {
-                        PersonalizationView()
+                        PersonalizationViewIOS()
                     } label: {
                         SettingsRow(title: "Персонолизация")
                     }
