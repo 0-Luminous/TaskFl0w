@@ -6,35 +6,35 @@
 //
 import SwiftUI
 
-
 struct ClockViewIOS: View {
     @StateObject private var viewModel = ClockViewModel()
-    
+
     @Environment(\.colorScheme) var colorScheme
-    
+
     // Таймер для "реал-тайм" обновления
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    
-    @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
-    @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
+
+    @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray
+        .opacity(0.3).toHex()
+    @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray
+        .opacity(0.3).toHex()
     @AppStorage("zeroPosition") private var zeroPosition: Double = 0.0
-    
+
     // MARK: - Body
-    
+
     var body: some View {
         NavigationView {
             VStack {
                 Spacer()
-                
+
                 ZStack {
                     // Внешнее кольцо
-                    Circle()
-                        .stroke(currentOuterRingColor, lineWidth: 20)
-                        .frame(
-                            width: UIScreen.main.bounds.width * 0.8,
-                            height: UIScreen.main.bounds.width * 0.8
-                        )
-                    
+                    RingPlanner(
+                        color: currentOuterRingColor,
+                        viewModel: viewModel,
+                        zeroPosition: zeroPosition
+                    )
+
                     // Сам циферблат (Arcs, Markers, Hand, и Drop)
                     GlobleClockFaceViewIOS(
                         currentDate: viewModel.selectedDate,
@@ -45,9 +45,9 @@ struct ClockViewIOS: View {
                         zeroPosition: zeroPosition
                     )
                 }
-                
+
                 Spacer()
-                
+
                 // Набор категорий снизу
                 DockBarIOS(
                     viewModel: viewModel,
@@ -122,43 +122,38 @@ struct ClockViewIOS: View {
                 viewModel.currentDate = Date()
             }
         }
-        .onDrop(of: [.text], isTargeted: nil) { providers, location in
-            if let task = viewModel.draggedTask {
-                viewModel.taskManagement.removeTask(task)
-            }
-            return true
-        }
     }
-    
+
     // MARK: - Вспомогательные вычислимые свойства
-    
+
     private var currentClockFaceColor: Color {
-        let hexColor = colorScheme == .dark
+        let hexColor =
+            colorScheme == .dark
             ? viewModel.darkModeClockFaceColor
             : viewModel.lightModeClockFaceColor
         return Color(hex: hexColor) ?? .white
     }
-    
+
     private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMMM yyyy"
         formatter.locale = Locale(identifier: "ru_RU")
         return formatter.string(from: viewModel.selectedDate)
     }
-    
+
     private var formattedWeekday: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE"
         formatter.locale = Locale(identifier: "ru_RU")
         return formatter.string(from: viewModel.selectedDate).capitalized
     }
-    
+
     private var currentOuterRingColor: Color {
         let hexColor = colorScheme == .dark ? darkModeOuterRingColor : lightModeOuterRingColor
         return Color(hex: hexColor) ?? .gray.opacity(0.3)
     }
 }
 
-#Preview{
+#Preview {
     ClockViewIOS()
 }
