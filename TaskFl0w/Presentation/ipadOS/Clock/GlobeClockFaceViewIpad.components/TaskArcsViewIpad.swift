@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct TaskArcsViewIpad: View {
-    let tasks: [Task]
+    let tasks: [TaskOnRing]
     @ObservedObject var viewModel: ClockViewModel
 
     var body: some View {
@@ -15,4 +15,4 @@ struct TaskArcsViewIpad: View {
             ClockTaskArcIpad(task: task, viewModel: viewModel)
         }
     }
-} 
+}

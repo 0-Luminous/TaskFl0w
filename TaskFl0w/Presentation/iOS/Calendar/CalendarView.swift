@@ -8,36 +8,37 @@ import SwiftUI
 
 struct CalendarView: View {
     @StateObject private var viewModel: ClockViewModel
-    @State private var selectedTask: Task?
+    @State private var selectedTask: TaskOnRing?
     @State private var isEditingTask = false
     @State private var searchText = ""
     @Environment(\.dismiss) private var dismiss
-    
+
     init(viewModel: ClockViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
-    
+
     // MARK: - Вычислимые свойства
-    var filteredTasks: [Date: [Task]] {
-        let allTasks = searchText.isEmpty
+    var filteredTasks: [Date: [TaskOnRing]] {
+        let allTasks =
+            searchText.isEmpty
             ? viewModel.tasks
             : viewModel.tasks.filter { $0.title.lowercased().contains(searchText.lowercased()) }
         return Dictionary(grouping: allTasks) { task in
             Calendar.current.startOfDay(for: task.startTime)
         }
     }
-    
+
     var sortedDates: [Date] {
         filteredTasks.keys.sorted()
     }
-    
+
     private let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "EEEE, d MMMM"
         f.locale = Locale(identifier: "ru_RU")
         return f
     }()
-    
+
     var body: some View {
         NavigationView {
             VStack {
@@ -47,15 +48,16 @@ struct CalendarView: View {
                     .onChange(of: viewModel.selectedDate) { oldValue, newValue in
                         dismiss()
                     }
-                
+
                 // Разбиваем логику списка:
                 let dates = sortedDates
-                
+
                 List {
                     ForEach(dates, id: \.self) { date in
                         if Calendar.current.isDate(date, inSameDayAs: viewModel.selectedDate) {
-                            let tasksForDate = filteredTasks[date]?.sorted { $0.startTime < $1.startTime } ?? []
-                            
+                            let tasksForDate =
+                                filteredTasks[date]?.sorted { $0.startTime < $1.startTime } ?? []
+
                             Section(header: Text(dateFormatter.string(from: date))) {
                                 ForEach(tasksForDate) { task in
                                     CalendarTaskRow(task: task, isSelected: selectedTask == task)
@@ -90,14 +92,15 @@ struct CalendarView: View {
             .navigationTitle("Календарь")
             .sheet(isPresented: $isEditingTask) {
                 if let task = selectedTask {
-                    TaskEditorView(viewModel: viewModel,
-                                   isPresented: $isEditingTask,
-                                   task: task)
+                    TaskEditorView(
+                        viewModel: viewModel,
+                        isPresented: $isEditingTask,
+                        task: task)
                 }
             }
         }
     }
-    
+
     // MARK: - Удаление задачи
     private func deleteTask(at offsets: IndexSet, for date: Date) {
         guard let tasksForDate = filteredTasks[date] else { return }

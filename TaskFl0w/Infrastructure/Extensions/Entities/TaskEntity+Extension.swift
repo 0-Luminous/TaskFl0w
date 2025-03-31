@@ -8,16 +8,16 @@ import CoreData
 import SwiftUI
 
 extension TaskEntity {
-    var taskModel: Task {
+    var taskModel: TaskOnRing {
         let calendar = Calendar.current
-        
+
         // Нормализуем время начала
         let storedStartTime = startTime ?? Date()
         let startComponents = calendar.dateComponents(
             [.year, .month, .day, .hour, .minute],
             from: storedStartTime
         )
-        
+
         var normalizedStartComponents = DateComponents()
         normalizedStartComponents.year = startComponents.year
         normalizedStartComponents.month = startComponents.month
@@ -25,14 +25,14 @@ extension TaskEntity {
         normalizedStartComponents.hour = startComponents.hour
         normalizedStartComponents.minute = startComponents.minute
         normalizedStartComponents.timeZone = TimeZone.current
-        
+
         // Нормализуем время окончания
         let storedEndTime = endTime ?? Date()
         let endComponents = calendar.dateComponents(
             [.year, .month, .day, .hour, .minute],
             from: storedEndTime
         )
-        
+
         var normalizedEndComponents = DateComponents()
         normalizedEndComponents.year = endComponents.year
         normalizedEndComponents.month = endComponents.month
@@ -40,60 +40,61 @@ extension TaskEntity {
         normalizedEndComponents.hour = endComponents.hour
         normalizedEndComponents.minute = endComponents.minute
         normalizedEndComponents.timeZone = TimeZone.current
-        
+
         let normalizedStartTime = calendar.date(from: normalizedStartComponents) ?? storedStartTime
         let normalizedEndTime = calendar.date(from: normalizedEndComponents) ?? storedEndTime
-        
-        return Task(
+
+        return TaskOnRing(
             id: id ?? UUID(),
             title: title ?? "",
             startTime: normalizedStartTime,
             endTime: normalizedEndTime,
             color: Color(hex: category?.colorHex ?? "") ?? .blue,
             icon: category?.iconName ?? "",
-            category: category?.categoryModel ?? TaskCategoryModel(
-                id: UUID(),
-                rawValue: "Неизвестно",
-                iconName: "questionmark.circle",
-                color: .blue
-            ),
+            category: category?.categoryModel
+                ?? TaskCategoryModel(
+                    id: UUID(),
+                    rawValue: "Неизвестно",
+                    iconName: "questionmark.circle",
+                    color: .blue
+                ),
             isCompleted: isCompleted
         )
     }
-    
-    static func from(_ model: Task, context: NSManagedObjectContext) -> TaskEntity {
+
+    static func from(_ model: TaskOnRing, context: NSManagedObjectContext) -> TaskEntity {
         let entity = TaskEntity(context: context)
         entity.id = model.id
         entity.title = model.title
-        
+
         let calendar = Calendar.current
-        
+
         // Нормализуем время начала с учетом временной зоны
         let startComponents = calendar.dateComponents(
             [.year, .month, .day, .hour, .minute, .timeZone],
             from: model.startTime
         )
-        
+
         // Нормализуем время окончания с учетом временной зоны
         let endComponents = calendar.dateComponents(
             [.year, .month, .day, .hour, .minute, .timeZone],
             from: model.endTime
         )
-        
+
         entity.startTime = calendar.date(from: startComponents)
         entity.endTime = calendar.date(from: endComponents)
         entity.isCompleted = model.isCompleted
-        
+
         // Находим или создаем категорию
         let request = NSFetchRequest<CategoryEntity>(entityName: "CategoryEntity")
         request.predicate = NSPredicate(format: "id == %@", model.category.id as CVarArg)
-        
+
         if let existingCategory = try? context.fetch(request).first {
             entity.category = existingCategory
         } else {
             entity.category = CategoryEntity.from(model.category, context: context)
         }
-        
+
         return entity
     }
-} 
+}

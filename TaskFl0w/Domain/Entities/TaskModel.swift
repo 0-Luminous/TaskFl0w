@@ -1,7 +1,7 @@
-import SwiftUI
 import Foundation
+import SwiftUI
 
-struct Task: Identifiable, Hashable {
+struct TaskOnRing: Identifiable, Hashable {
     let id: UUID
     var title: String
     var startTime: Date
@@ -10,11 +10,11 @@ struct Task: Identifiable, Hashable {
     var icon: String
     var category: TaskCategoryModel
     var isCompleted: Bool
-    
+
     // Вычисляемое свойство для получения продолжительности, если оно нужно
     var duration: TimeInterval {
         endTime.timeIntervalSince(startTime)
     }
-    
+
     // Можно добавлять дополнительные поля, методы и т.д.
 }

@@ -8,7 +8,7 @@ import SwiftUI
 
 struct GlobleClockFaceViewIOS: View {
     let currentDate: Date
-    let tasks: [Task]
+    let tasks: [TaskOnRing]
     @ObservedObject var viewModel: ClockViewModel
 
     @Binding var draggedCategory: TaskCategoryModel?
@@ -82,7 +82,7 @@ struct GlobleClockFaceViewIOS: View {
 
     // MARK: - Вспомогательные
 
-    private var tasksForSelectedDate: [Task] {
+    private var tasksForSelectedDate: [TaskOnRing] {
         tasks.filter { task in
             Calendar.current.isDate(task.startTime, inSameDayAs: viewModel.selectedDate)
         }

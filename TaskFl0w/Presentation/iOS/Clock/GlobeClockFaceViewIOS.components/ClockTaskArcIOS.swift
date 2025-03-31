@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct ClockTaskArcIOS: View {
-    let task: Task
+    let task: TaskOnRing
     @ObservedObject var viewModel: ClockViewModel
 
     var body: some View {

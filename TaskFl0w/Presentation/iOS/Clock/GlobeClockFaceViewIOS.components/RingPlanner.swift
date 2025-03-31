@@ -47,7 +47,7 @@ struct RingPlanner: View {
                     let newTaskDate = calendar.date(from: newTaskComponents) ?? time
 
                     // Создаём новую задачу
-                    let newTask = Task(
+                    let newTask = TaskOnRing(
                         id: UUID(),
                         title: "Новая задача",
                         startTime: newTaskDate,

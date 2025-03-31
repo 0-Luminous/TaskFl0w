@@ -27,23 +27,30 @@ struct ClockViewIOS: View {
             VStack {
                 Spacer()
 
-                ZStack {
-                    // Внешнее кольцо
-                    RingPlanner(
-                        color: currentOuterRingColor,
-                        viewModel: viewModel,
-                        zeroPosition: zeroPosition
+                if viewModel.selectedCategory != nil {
+                    // Показываем список задач для выбранной категории
+                    TaskListView(
+                        viewModel: ListViewModel(), selectedCategory: viewModel.selectedCategory
                     )
+                    .transition(.opacity)
+                } else {
+                    // Показываем циферблат
+                    ZStack {
+                        RingPlanner(
+                            color: currentOuterRingColor,
+                            viewModel: viewModel,
+                            zeroPosition: zeroPosition
+                        )
 
-                    // Сам циферблат (Arcs, Markers, Hand, и Drop)
-                    GlobleClockFaceViewIOS(
-                        currentDate: viewModel.selectedDate,
-                        tasks: viewModel.tasks,
-                        viewModel: viewModel,
-                        draggedCategory: $viewModel.draggedCategory,
-                        clockFaceColor: currentClockFaceColor,
-                        zeroPosition: zeroPosition
-                    )
+                        GlobleClockFaceViewIOS(
+                            currentDate: viewModel.selectedDate,
+                            tasks: viewModel.tasks,
+                            viewModel: viewModel,
+                            draggedCategory: $viewModel.draggedCategory,
+                            clockFaceColor: currentClockFaceColor,
+                            zeroPosition: zeroPosition
+                        )
+                    }
                 }
 
                 Spacer()
@@ -83,8 +90,14 @@ struct ClockViewIOS: View {
                         Button(action: { viewModel.showingCalendar = true }) {
                             Image(systemName: "calendar")
                         }
-                        Button(action: { viewModel.showingTodayTasks = true }) {
-                            Image(systemName: "sharedwithyou")
+                        if viewModel.selectedCategory != nil {
+                            Button(action: {
+                                withAnimation {
+                                    viewModel.selectedCategory = nil
+                                }
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                            }
                         }
                     }
                 }
@@ -101,9 +114,6 @@ struct ClockViewIOS: View {
             }
             .sheet(isPresented: $viewModel.showingStatistics) {
                 StatisticsView(viewModel: viewModel)
-            }
-            .sheet(isPresented: $viewModel.showingTodayTasks) {
-                TodayTasksView(viewModel: viewModel)
             }
             .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
                 // CategoryEditorView, например

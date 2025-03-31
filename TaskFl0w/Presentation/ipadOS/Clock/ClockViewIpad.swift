@@ -6,63 +6,65 @@
 //
 import SwiftUI
 
-
 struct ClockViewIpad: View {
     @StateObject private var viewModel = ClockViewModel()
-    
-    @Environment(\.colorScheme) var colorScheme 
-    
+
+    @Environment(\.colorScheme) var colorScheme
+
     // Таймер для "реал-тайм" обновления
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    
-    @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
-    @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
+
+    @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray
+        .opacity(0.3).toHex()
+    @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray
+        .opacity(0.3).toHex()
     @AppStorage("zeroPosition") private var zeroPosition: Double = 0.0
-    
+
     // MARK: - Вспомогательные вычислимые свойства
-    
+
     private var currentClockFaceColor: Color {
-        let hexColor = colorScheme == .dark
+        let hexColor =
+            colorScheme == .dark
             ? viewModel.darkModeClockFaceColor
             : viewModel.lightModeClockFaceColor
         return Color(hex: hexColor) ?? .white
     }
-    
+
     private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMMM yyyy"
         formatter.locale = Locale(identifier: "ru_RU")
         return formatter.string(from: viewModel.selectedDate)
     }
-    
+
     private var formattedWeekday: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE"
         formatter.locale = Locale(identifier: "ru_RU")
         return formatter.string(from: viewModel.selectedDate).capitalized
     }
-    
+
     private var currentOuterRingColor: Color {
         let hexColor = colorScheme == .dark ? darkModeOuterRingColor : lightModeOuterRingColor
         return Color(hex: hexColor) ?? .gray.opacity(0.3)
     }
-    
+
     // MARK: - Body
-    
+
     var body: some View {
         NavigationStack {
             VStack {
                 Spacer()
-                
+
                 ZStack {
                     // Внешнее кольцо
                     Circle()
-                        .stroke(currentOuterRingColor, lineWidth: 22) // Немного тоньше, чем в iOS (20)
+                        .stroke(currentOuterRingColor, lineWidth: 22)  // Немного тоньше, чем в iOS (20)
                         .frame(
-                            width: UIScreen.main.bounds.width * 0.37, // Немного больше самого циферблата
+                            width: UIScreen.main.bounds.width * 0.37,  // Немного больше самого циферблата
                             height: UIScreen.main.bounds.width * 0.37
                         )
-                    
+
                     // Циферблат часов
                     GlobleClockFaceViewIpad(
                         currentDate: viewModel.selectedDate,
@@ -72,11 +74,13 @@ struct ClockViewIpad: View {
                         clockFaceColor: currentClockFaceColor,
                         zeroPosition: zeroPosition
                     )
-                    .frame(width: UIScreen.main.bounds.width * 0.35, height: UIScreen.main.bounds.width * 0.35)
+                    .frame(
+                        width: UIScreen.main.bounds.width * 0.35,
+                        height: UIScreen.main.bounds.width * 0.35)
                 }
-                
+
                 Spacer()
-                
+
                 // Набор категорий снизу
                 DockBarForIpad(
                     viewModel: viewModel,
@@ -131,9 +135,6 @@ struct ClockViewIpad: View {
             .sheet(isPresented: $viewModel.showingStatistics) {
                 StatisticsView(viewModel: viewModel)
             }
-            .sheet(isPresented: $viewModel.showingTodayTasks) {
-                TodayTasksView(viewModel: viewModel)
-            }
             .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
                 // CategoryEditorView, например
                 CategoryEditorViewIpad(
@@ -159,6 +160,6 @@ struct ClockViewIpad: View {
     }
 }
 
-#Preview{
+#Preview {
     ClockViewIpad()
 }

@@ -7,26 +7,26 @@
 import SwiftUI
 
 struct CalendarTaskRow: View {
-    let task: Task
+    let task: TaskOnRing
     let isSelected: Bool
-    
+
     // Пример форматтера времени
     private let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         return formatter
     }()
-    
+
     var body: some View {
         HStack {
             Circle()
                 .fill(task.category.color)
                 .frame(width: 12, height: 12)
-            
+
             VStack(alignment: .leading) {
                 Text(task.title)
                     .font(.headline)
-                
+
                 HStack {
                     Text(timeFormatter.string(from: task.startTime))
                     Text("-")
@@ -37,9 +37,9 @@ struct CalendarTaskRow: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
             }
-            
+
             Spacer()
-            
+
             Image(systemName: task.category.iconName)
                 .foregroundColor(task.category.color)
         }
