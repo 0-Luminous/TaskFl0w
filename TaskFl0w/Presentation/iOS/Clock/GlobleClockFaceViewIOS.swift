@@ -15,6 +15,9 @@ struct GlobleClockFaceViewIOS: View {
     let clockFaceColor: Color
     let zeroPosition: Double
 
+    // Добавляем новый параметр
+    var isNavigationOverlayVisible: Bool = false
+
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
     @AppStorage("markersOffset") private var markersOffset: Double = 40.0
@@ -25,7 +28,8 @@ struct GlobleClockFaceViewIOS: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(clockFaceColor)
+                // .fill(isNavigationOverlayVisible ? Color.black.opacity(0.3) : clockFaceColor)
+                .fill(Color.black)
                 .stroke(Color.gray, lineWidth: 2)
 
             // Маркеры часов (24 шт.)
