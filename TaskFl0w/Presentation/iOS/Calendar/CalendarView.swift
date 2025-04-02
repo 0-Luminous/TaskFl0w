@@ -90,14 +90,6 @@ struct CalendarView: View {
             }
             .searchable(text: $searchText)
             .navigationTitle("Календарь")
-            .sheet(isPresented: $isEditingTask) {
-                if let task = selectedTask {
-                    TaskEditorView(
-                        viewModel: viewModel,
-                        isPresented: $isEditingTask,
-                        task: task)
-                }
-            }
         }
     }
 

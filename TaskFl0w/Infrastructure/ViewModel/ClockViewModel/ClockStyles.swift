@@ -1,10 +1,10 @@
 import SwiftUI
 
 enum ClockStyle: String, CaseIterable {
-    case classic    // Классический вид с цифрами
-    case minimal    // Минималистичный вид только с черточками
-    case modern     // Современный вид с точками
-    
+    case classic  // Классический вид с цифрами
+    case minimal  // Минималистичный вид только с черточками
+    case modern  // Современный вид с точками
+
     var markerStyle: MarkerStyle {
         switch self {
         case .classic:
@@ -17,8 +17,8 @@ enum ClockStyle: String, CaseIterable {
     }
 }
 
-enum MarkerStyle {
+public enum MarkerStyle {
     case numbers
     case lines
     case dots
-} 
+}

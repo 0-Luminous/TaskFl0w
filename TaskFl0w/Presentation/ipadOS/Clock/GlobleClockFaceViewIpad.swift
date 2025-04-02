@@ -124,14 +124,6 @@ struct GlobleClockFaceViewIpad: View {
 
             return true
         }
-        .sheet(isPresented: $viewModel.showingTaskDetail) {
-            if let task = viewModel.selectedTask {
-                TaskEditorView(
-                    viewModel: viewModel,
-                    isPresented: $viewModel.showingTaskDetail,
-                    task: task)
-            }
-        }
     }
 
     // MARK: - Вспомогательные

@@ -122,10 +122,6 @@ struct ClockViewIpad: View {
                     }
                 }
             }
-            // Пример использования листов (sheet)
-            .sheet(isPresented: $viewModel.showingAddTask) {
-                TaskEditorView(viewModel: viewModel, isPresented: $viewModel.showingAddTask)
-            }
             .fullScreenCover(isPresented: $viewModel.showingSettings) {
                 SettingsViewIpad()
             }

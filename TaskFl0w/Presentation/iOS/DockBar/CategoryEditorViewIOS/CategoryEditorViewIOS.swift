@@ -208,6 +208,7 @@ struct CategoryEditorViewIOS: View {
                         currentDate: viewModel.selectedDate,
                         tasks: viewModel.tasks,
                         viewModel: viewModel,
+                        markersViewModel: viewModel.markersViewModel,
                         draggedCategory: $viewModel.draggedCategory,
                         clockFaceColor: currentClockFaceColor,
                         zeroPosition: zeroPosition

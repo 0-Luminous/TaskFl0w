@@ -14,6 +14,9 @@ final class ClockViewModel: ObservableObject {
     let taskManagement: TaskManagementProtocol
     let categoryManagement: CategoryManagementProtocol
 
+    // MARK: - View Models
+    let markersViewModel = ClockMarkersViewModel()
+
     // MARK: - Published properties
     @Published var tasks: [TaskOnRing] = []
 
@@ -69,9 +72,20 @@ final class ClockViewModel: ObservableObject {
     @Published var showingTaskDetail: Bool = false
     @Published var searchText: String = ""
 
+    // Добавляем свойство для положения нуля
+    @Published var zeroPosition: Double {
+        didSet {
+            // Сохраняем значение в UserDefaults при изменении
+            UserDefaults.standard.set(zeroPosition, forKey: "zeroPosition")
+        }
+    }
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState
+
+        // Загружаем сохраненное значение zeroPosition
+        self.zeroPosition = UserDefaults.standard.double(forKey: "zeroPosition")
 
         // Сначала инициализируем selectedDate
         let initialDate = Date()
@@ -107,5 +121,67 @@ final class ClockViewModel: ObservableObject {
 
     func updateDragPosition(isOutsideClock: Bool) {
         isDraggingOutside = isOutsideClock
+    }
+
+    // Добавляем метод для обновления положения нуля
+    func updateZeroPosition(_ newPosition: Double) {
+        zeroPosition = newPosition
+    }
+
+    // Обновляем метод коррекции времени
+    func getTimeWithZeroOffset(_ date: Date, inverse: Bool = false) -> Date {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+
+        // Получаем часы и минуты
+        let totalMinutes = Double(components.hour! * 60 + components.minute!)
+
+        // Вычисляем смещение в минутах
+        let offsetDegrees = inverse ? -zeroPosition : zeroPosition
+        let offsetHours = offsetDegrees / 15.0  // 15 градусов = 1 час
+        let offsetMinutes = offsetHours * 60
+
+        // Применяем смещение с учетом 24-часового цикла
+        let adjustedMinutes = (totalMinutes - offsetMinutes + 1440).truncatingRemainder(
+            dividingBy: 1440)
+
+        // Конвертируем обратно в часы и минуты
+        components.hour = Int(adjustedMinutes / 60)
+        components.minute = Int(adjustedMinutes.truncatingRemainder(dividingBy: 60))
+
+        return calendar.date(from: components) ?? date
+    }
+
+    // Вспомогательный метод для конвертации угла в время
+    func angleToTime(_ angle: Double) -> Date {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+
+        // Преобразуем угол в минуты (360 градусов = 24 часа = 1440 минут)
+        var totalMinutes = angle * 4  // angle * (1440 / 360)
+
+        // Учитываем zeroPosition и переводим в 24-часовой формат
+        totalMinutes = (totalMinutes + (90 - zeroPosition) * 4 + 1440).truncatingRemainder(
+            dividingBy: 1440)
+
+        components.hour = Int(totalMinutes / 60)
+        components.minute = Int(totalMinutes.truncatingRemainder(dividingBy: 60))
+
+        return calendar.date(from: components) ?? selectedDate
+    }
+
+    // Вспомогательный метод для конвертации времени в угол
+    func timeToAngle(_ date: Date) -> Double {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.hour, .minute], from: date)
+        let totalMinutes = Double(components.hour! * 60 + components.minute!)
+
+        // Преобразуем минуты в угол (1440 минут = 360 градусов)
+        var angle = totalMinutes / 4  // totalMinutes * (360 / 1440)
+
+        // Учитываем zeroPosition и 90-градусное смещение (12 часов сверху)
+        angle = (angle - (90 - zeroPosition) + 360).truncatingRemainder(dividingBy: 360)
+
+        return angle
     }
 }

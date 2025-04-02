@@ -10,6 +10,7 @@ struct GlobleClockFaceViewIOS: View {
     let currentDate: Date
     let tasks: [TaskOnRing]
     @ObservedObject var viewModel: ClockViewModel
+    @ObservedObject var markersViewModel: ClockMarkersViewModel
 
     @Binding var draggedCategory: TaskCategoryModel?
     let clockFaceColor: Color
@@ -28,14 +29,13 @@ struct GlobleClockFaceViewIOS: View {
     var body: some View {
         ZStack {
             Circle()
-                // .fill(isNavigationOverlayVisible ? Color.black.opacity(0.3) : clockFaceColor)
-                .fill(Color.black)
+                .fill(clockFaceColor)
                 .stroke(Color.gray, lineWidth: 2)
 
             // Маркеры часов (24 шт.)
             ForEach(0..<24) { hour in
                 let angle = Double(hour) * (360.0 / 24.0) + zeroPosition
-                ClockMarkerIOS(hour: hour, style: clockStyle.markerStyle)
+                ClockMarker(hour: hour, style: clockStyle.markerStyle, viewModel: markersViewModel)
                     .rotationEffect(.degrees(angle))
                     .frame(
                         width: UIScreen.main.bounds.width * 0.7,
@@ -57,31 +57,11 @@ struct GlobleClockFaceViewIOS: View {
                     .frame(width: 20, height: 20)
                     .position(location)
             }
-
-            // Если редактируем задачу
-            if viewModel.isEditingMode, let time = viewModel.previewTime,
-                let task = viewModel.editingTask
-            {
-                ClockCenterViewIOS(
-                    currentDate: time,
-                    isDraggingStart: viewModel.isDraggingStart,
-                    isDraggingEnd: viewModel.isDraggingEnd,
-                    task: task
-                )
-            }
         }
         .aspectRatio(1, contentMode: .fit)
         .frame(height: UIScreen.main.bounds.width * 0.7)
         .padding()
         .animation(.spring(), value: tasksForSelectedDate)
-        .sheet(isPresented: $viewModel.showingTaskDetail) {
-            if let task = viewModel.selectedTask {
-                TaskEditorView(
-                    viewModel: viewModel,
-                    isPresented: $viewModel.showingTaskDetail,
-                    task: task)
-            }
-        }
     }
 
     // MARK: - Вспомогательные

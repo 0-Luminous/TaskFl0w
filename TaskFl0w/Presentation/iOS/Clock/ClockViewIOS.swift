@@ -8,6 +8,7 @@ import SwiftUI
 
 struct ClockViewIOS: View {
     @StateObject private var viewModel = ClockViewModel()
+    @StateObject private var markersViewModel = ClockMarkersViewModel()
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -19,6 +20,16 @@ struct ClockViewIOS: View {
     @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray
         .opacity(0.3).toHex()
     @AppStorage("zeroPosition") private var zeroPosition: Double = 0.0
+
+    // AppStorage для маркеров
+    @AppStorage("showHourNumbers") private var showHourNumbers: Bool = true
+    @AppStorage("markersWidth") private var markersWidth: Double = 2.0
+    @AppStorage("markersOffset") private var markersOffset: Double = 40.0
+    @AppStorage("numbersSize") private var numbersSize: Double = 12.0
+    @AppStorage("lightModeMarkersColor") private var lightModeMarkersColor: String = Color.gray
+        .toHex()
+    @AppStorage("darkModeMarkersColor") private var darkModeMarkersColor: String = Color.gray
+        .toHex()
 
     // MARK: - Body
 
@@ -46,10 +57,23 @@ struct ClockViewIOS: View {
                             currentDate: viewModel.selectedDate,
                             tasks: viewModel.tasks,
                             viewModel: viewModel,
+                            markersViewModel: markersViewModel,
                             draggedCategory: $viewModel.draggedCategory,
                             clockFaceColor: currentClockFaceColor,
                             zeroPosition: zeroPosition
                         )
+
+                        if viewModel.isEditingMode, let editingTask = viewModel.editingTask {
+                            TimeTaskEditorOverlay(
+                                viewModel: viewModel,
+                                task: editingTask
+                            )
+                        }
+                        //                        CircularNavigationOverlay(
+                        //                            onPreviousDay: {},
+                        //                            onNextDay: {}
+                        //                            //isDraggingOver: .constant(nil)
+                        //                        )
                     }
                 }
 
@@ -102,10 +126,6 @@ struct ClockViewIOS: View {
                     }
                 }
             }
-            // Пример использования листов (sheet)
-            .sheet(isPresented: $viewModel.showingAddTask) {
-                TaskEditorView(viewModel: viewModel, isPresented: $viewModel.showingAddTask)
-            }
             .fullScreenCover(isPresented: $viewModel.showingSettings) {
                 SettingsViewIOS()
             }
@@ -131,6 +151,40 @@ struct ClockViewIOS: View {
             if Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: Date()) {
                 viewModel.currentDate = Date()
             }
+        }
+        .onAppear {
+            // Инициализируем начальные значения для markersViewModel
+            markersViewModel.showHourNumbers = showHourNumbers
+            markersViewModel.markersWidth = markersWidth
+            markersViewModel.markersOffset = markersOffset
+            markersViewModel.numbersSize = numbersSize
+            markersViewModel.lightModeMarkersColor = lightModeMarkersColor
+            markersViewModel.darkModeMarkersColor = darkModeMarkersColor
+            markersViewModel.isDarkMode = viewModel.isDarkMode
+        }
+        .onChange(of: showHourNumbers) { _, newValue in
+            markersViewModel.showHourNumbers = newValue
+        }
+        .onChange(of: markersWidth) { _, newValue in
+            markersViewModel.markersWidth = newValue
+        }
+        .onChange(of: markersOffset) { _, newValue in
+            markersViewModel.markersOffset = newValue
+        }
+        .onChange(of: numbersSize) { _, newValue in
+            markersViewModel.numbersSize = newValue
+        }
+        .onChange(of: lightModeMarkersColor) { _, newValue in
+            markersViewModel.lightModeMarkersColor = newValue
+            updateMarkersViewModel()
+        }
+        .onChange(of: darkModeMarkersColor) { _, newValue in
+            markersViewModel.darkModeMarkersColor = newValue
+            updateMarkersViewModel()
+        }
+        .onChange(of: viewModel.isDarkMode) { _, newValue in
+            markersViewModel.isDarkMode = newValue
+            updateMarkersViewModel()
         }
     }
 
@@ -161,6 +215,17 @@ struct ClockViewIOS: View {
     private var currentOuterRingColor: Color {
         let hexColor = colorScheme == .dark ? darkModeOuterRingColor : lightModeOuterRingColor
         return Color(hex: hexColor) ?? .gray.opacity(0.3)
+    }
+
+    private func updateMarkersViewModel() {
+        // Создаем временное обновление для принудительного обновления вида
+        DispatchQueue.main.async {
+            let tempValue = markersViewModel.markersWidth
+            markersViewModel.markersWidth = tempValue + 0.01
+            DispatchQueue.main.async {
+                markersViewModel.markersWidth = tempValue
+            }
+        }
     }
 }
 
