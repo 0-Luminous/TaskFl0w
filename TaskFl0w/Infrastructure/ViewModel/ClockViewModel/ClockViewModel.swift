@@ -105,6 +105,8 @@ final class ClockViewModel: ObservableObject {
         self.tasks = sharedState.tasks
     }
 
+    // MARK: - Методы управления задачами
+
     func startDragging(_ task: TaskOnRing) {
         draggedTask = task
     }
@@ -122,6 +124,8 @@ final class ClockViewModel: ObservableObject {
     func updateDragPosition(isOutsideClock: Bool) {
         isDraggingOutside = isOutsideClock
     }
+
+    // MARK: - Методы работы со временем и углами
 
     // Добавляем метод для обновления положения нуля
     func updateZeroPosition(_ newPosition: Double) {
@@ -183,5 +187,42 @@ final class ClockViewModel: ObservableObject {
         angle = (angle - (90 - zeroPosition) + 360).truncatingRemainder(dividingBy: 360)
 
         return angle
+    }
+
+    // MARK: - Новые методы, перенесенные из GlobleClockFaceViewIOS
+
+    /// Получает время для точки на экране
+    func timeForLocation(_ location: CGPoint, screenWidth: CGFloat) -> Date {
+        let center = CGPoint(
+            x: screenWidth * 0.35,
+            y: screenWidth * 0.35)
+        let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
+
+        let angle = atan2(vector.dy, vector.dx)
+
+        // Переводим в градусы и учитываем zeroPosition
+        var degrees = angle * 180 / .pi
+        degrees = (degrees - 90 - zeroPosition + 360).truncatingRemainder(dividingBy: 360)
+
+        // 24 часа = 360 градусов => 1 час = 15 градусов
+        let hours = degrees / 15
+        let hourComponent = Int(hours)
+        let minuteComponent = Int((hours - Double(hourComponent)) * 60)
+
+        // Используем компоненты из selectedDate вместо currentDate
+        var components = Calendar.current.dateComponents(
+            [.year, .month, .day], from: selectedDate)
+        components.hour = hourComponent
+        components.minute = minuteComponent
+        components.timeZone = TimeZone.current
+
+        return Calendar.current.date(from: components) ?? selectedDate
+    }
+
+    /// Получает задачи для выбранной даты
+    func tasksForSelectedDate(_ allTasks: [TaskOnRing]) -> [TaskOnRing] {
+        allTasks.filter { task in
+            Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
+        }
     }
 }

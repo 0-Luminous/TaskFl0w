@@ -29,15 +29,9 @@ struct RingPlanner: View {
 
                 if let category = viewModel.draggedCategory {
                     // Обработка создания новой задачи
-                    let center = CGPoint(
-                        x: UIScreen.main.bounds.width * 0.4,
-                        y: UIScreen.main.bounds.width * 0.4
-                    )
-                    let time = RingTimeCalculator.timeForLocation(
+                    let time = viewModel.timeForLocation(
                         location,
-                        center: center,
-                        baseDate: viewModel.selectedDate,
-                        zeroPosition: zeroPosition
+                        screenWidth: UIScreen.main.bounds.width
                     )
 
                     // Создаём новую задачу

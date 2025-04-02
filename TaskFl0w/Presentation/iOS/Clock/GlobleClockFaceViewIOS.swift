@@ -48,7 +48,7 @@ struct GlobleClockFaceViewIOS: View {
             }
 
             TaskArcsViewIOS(
-                tasks: tasksForSelectedDate,
+                tasks: viewModel.tasksForSelectedDate(tasks),
                 viewModel: viewModel
             )
 
@@ -66,7 +66,7 @@ struct GlobleClockFaceViewIOS: View {
         .aspectRatio(1, contentMode: .fit)
         .frame(height: UIScreen.main.bounds.width * 0.7)
         .padding()
-        .animation(.spring(), value: tasksForSelectedDate)
+        .animation(.spring(), value: viewModel.tasksForSelectedDate(tasks))
         .onAppear {
             markersViewModel.zeroPosition = zeroPosition
         }
@@ -75,38 +75,7 @@ struct GlobleClockFaceViewIOS: View {
         }
     }
 
-    // MARK: - Вспомогательные
-
-    private var tasksForSelectedDate: [TaskOnRing] {
-        tasks.filter { task in
-            Calendar.current.isDate(task.startTime, inSameDayAs: viewModel.selectedDate)
-        }
-    }
-
-    private func timeForLocation(_ location: CGPoint) -> Date {
-        let center = CGPoint(
-            x: UIScreen.main.bounds.width * 0.35,
-            y: UIScreen.main.bounds.width * 0.35)
-        let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
-
-        let angle = atan2(vector.dy, vector.dx)
-
-        // Переводим в градусы и учитываем zeroPosition
-        var degrees = angle * 180 / .pi
-        degrees = (degrees - 90 - zeroPosition + 360).truncatingRemainder(dividingBy: 360)
-
-        // 24 часа = 360 градусов => 1 час = 15 градусов
-        let hours = degrees / 15
-        let hourComponent = Int(hours)
-        let minuteComponent = Int((hours - Double(hourComponent)) * 60)
-
-        // Используем компоненты из selectedDate вместо currentDate
-        var components = Calendar.current.dateComponents(
-            [.year, .month, .day], from: viewModel.selectedDate)
-        components.hour = hourComponent
-        components.minute = minuteComponent
-        components.timeZone = TimeZone.current
-
-        return Calendar.current.date(from: components) ?? viewModel.selectedDate
-    }
+    // MARK: - Вспомогательные методы из ViewModel
+    // private var tasksForSelectedDate: [TaskOnRing] { ... } - удалено, используем viewModel.tasksForSelectedDate
+    // private func timeForLocation(_ location: CGPoint) -> Date { ... } - удалено, используем viewModel.timeForLocation
 }

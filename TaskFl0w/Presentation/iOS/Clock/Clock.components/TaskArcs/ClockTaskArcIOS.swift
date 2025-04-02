@@ -69,10 +69,9 @@ struct ClockTaskArcIOS: View {
                             DragGesture(minimumDistance: 0)
                                 .onChanged { value in
                                     viewModel.isDraggingStart = true
-                                    let newTime = RingTimeCalculator.timeForLocation(
+                                    let newTime = viewModel.timeForLocation(
                                         value.location,
-                                        center: center,
-                                        baseDate: task.startTime
+                                        screenWidth: UIScreen.main.bounds.width
                                     )
                                     viewModel.previewTime = newTime
                                     viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
@@ -97,10 +96,9 @@ struct ClockTaskArcIOS: View {
                             DragGesture(minimumDistance: 0)
                                 .onChanged { value in
                                     viewModel.isDraggingEnd = true
-                                    let newTime = RingTimeCalculator.timeForLocation(
+                                    let newTime = viewModel.timeForLocation(
                                         value.location,
-                                        center: center,
-                                        baseDate: task.startTime
+                                        screenWidth: UIScreen.main.bounds.width
                                     )
                                     viewModel.previewTime = newTime
                                     viewModel.taskManagement.updateTaskDuration(

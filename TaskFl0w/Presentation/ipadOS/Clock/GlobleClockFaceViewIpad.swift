@@ -80,7 +80,8 @@ struct GlobleClockFaceViewIpad: View {
             let dropPoint = location
             viewModel.dropLocation = dropPoint
 
-            let time = timeForLocation(dropPoint)
+            // Используем метод из viewModel вместо локального
+            let time = viewModel.timeForLocation(dropPoint, screenWidth: UIScreen.main.bounds.width)
 
             // Используем selectedDate вместо currentDate
             let calendar = Calendar.current
@@ -129,35 +130,7 @@ struct GlobleClockFaceViewIpad: View {
     // MARK: - Вспомогательные
 
     private var tasksForSelectedDate: [TaskOnRing] {
-        tasks.filter { task in
-            Calendar.current.isDate(task.startTime, inSameDayAs: viewModel.selectedDate)
-        }
-    }
-
-    private func timeForLocation(_ location: CGPoint) -> Date {
-        let center = CGPoint(
-            x: UIScreen.main.bounds.width * 0.45,
-            y: UIScreen.main.bounds.width * 0.45)
-        let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
-
-        let angle = atan2(vector.dy, vector.dx)
-
-        // Переводим в градусы и учитываем zeroPosition
-        var degrees = angle * 180 / .pi
-        degrees = (degrees - 90 - zeroPosition + 360).truncatingRemainder(dividingBy: 360)
-
-        // 24 часа = 360 градусов => 1 час = 15 градусов
-        let hours = degrees / 15
-        let hourComponent = Int(hours)
-        let minuteComponent = Int((hours - Double(hourComponent)) * 60)
-
-        // Используем компоненты из selectedDate вместо currentDate
-        var components = Calendar.current.dateComponents(
-            [.year, .month, .day], from: viewModel.selectedDate)
-        components.hour = hourComponent
-        components.minute = minuteComponent
-        components.timeZone = TimeZone.current
-
-        return Calendar.current.date(from: components) ?? viewModel.selectedDate
+        // Используем метод из viewModel
+        return viewModel.tasksForSelectedDate(tasks)
     }
 }
