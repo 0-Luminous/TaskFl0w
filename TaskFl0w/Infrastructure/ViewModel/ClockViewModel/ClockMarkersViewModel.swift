@@ -22,24 +22,36 @@ final class ClockMarkersViewModel: ObservableObject {
 
     // MARK: - Methods
     func startPoint(angle: CGFloat, length: CGFloat, geometry: GeometryProxy) -> CGPoint {
-        CGPoint(
+        // Используем angle напрямую, так как сам clockFace будет повернут на zeroPosition
+        // (zeroPosition учитывается при отрисовке всего циферблата)
+        return CGPoint(
             x: geometry.size.width / 2 + (geometry.size.width / 2 - length) * cos(angle),
             y: geometry.size.height / 2 + (geometry.size.width / 2 - length) * sin(angle)
         )
     }
 
     func endPoint(angle: CGFloat, geometry: GeometryProxy) -> CGPoint {
-        CGPoint(
+        // Используем angle напрямую, так как сам clockFace будет повернут на zeroPosition
+        // (zeroPosition учитывается при отрисовке всего циферблата)
+        return CGPoint(
             x: geometry.size.width / 2 + (geometry.size.width / 2) * cos(angle),
             y: geometry.size.height / 2 + (geometry.size.width / 2) * sin(angle)
         )
     }
 
     func textPosition(hour: Int, geometry: GeometryProxy) -> (x: CGFloat, y: CGFloat) {
-        let angle = CGFloat(hour) * .pi / 12 + .pi / 2
+        // Переводим час в угол в радианах (24-часовой циферблат)
+        // В 24-часовом циферблате: 1 час = 15 градусов = π/12 радиан
+        let hourAngle = CGFloat(hour) * .pi / 12
+
+        // В нормальном циферблате 0 часов наверху, но в системе координат
+        // 0 градусов - справа. Поэтому отнимаем π/2 (90 градусов), чтобы 0 было сверху
+        let angle = hourAngle - .pi / 2
+
         let radius = geometry.size.width / 2 - 30
         let xPosition = geometry.size.width / 2 + radius * cos(angle)
         let yPosition = geometry.size.height / 2 + radius * sin(angle)
+
         return (xPosition, yPosition)
     }
 

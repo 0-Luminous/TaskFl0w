@@ -34,12 +34,17 @@ struct GlobleClockFaceViewIOS: View {
 
             // Маркеры часов (24 шт.)
             ForEach(0..<24) { hour in
-                let angle = Double(hour) * (360.0 / 24.0) + zeroPosition
-                ClockMarker(hour: hour, style: clockStyle.markerStyle, viewModel: markersViewModel)
-                    .rotationEffect(.degrees(angle))
-                    .frame(
-                        width: UIScreen.main.bounds.width * 0.7,
-                        height: UIScreen.main.bounds.width * 0.7)
+                let angle = Double(hour) * (360.0 / 24.0)
+                ClockMarker(
+                    hour: hour,
+                    style: clockStyle.markerStyle,
+                    viewModel: markersViewModel,
+                    zeroPosition: zeroPosition
+                )
+                .rotationEffect(.degrees(angle + zeroPosition))
+                .frame(
+                    width: UIScreen.main.bounds.width * 0.7,
+                    height: UIScreen.main.bounds.width * 0.7)
             }
 
             TaskArcsViewIOS(
@@ -62,6 +67,12 @@ struct GlobleClockFaceViewIOS: View {
         .frame(height: UIScreen.main.bounds.width * 0.7)
         .padding()
         .animation(.spring(), value: tasksForSelectedDate)
+        .onAppear {
+            markersViewModel.zeroPosition = zeroPosition
+        }
+        .onChange(of: zeroPosition) { oldValue, newValue in
+            markersViewModel.zeroPosition = newValue
+        }
     }
 
     // MARK: - Вспомогательные
