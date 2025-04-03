@@ -13,9 +13,11 @@ final class ClockViewModel: ObservableObject {
     let sharedState: SharedStateService
     let taskManagement: TaskManagementProtocol
     let categoryManagement: CategoryManagementProtocol
+    let clockState: ClockStateManager
 
     // MARK: - View Models
     let markersViewModel = ClockMarkersViewModel()
+    let dragAndDropManager: DragAndDropManager
 
     // MARK: - Published properties
     @Published var tasks: [TaskOnRing] = []
@@ -83,6 +85,7 @@ final class ClockViewModel: ObservableObject {
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState
+        self.clockState = ClockStateManager()
 
         // Загружаем сохраненное значение zeroPosition
         self.zeroPosition = UserDefaults.standard.double(forKey: "zeroPosition")
@@ -97,6 +100,9 @@ final class ClockViewModel: ObservableObject {
         self.categoryManagement = CategoryManagement(
             context: sharedState.context, sharedState: sharedState)
 
+        // Инициализируем DragAndDropManager
+        self.dragAndDropManager = DragAndDropManager(taskManagement: taskManagement)
+
         // Подписываемся на обновления задач
         sharedState.subscribeToTasksUpdates { [weak self] in
             self?.tasks = sharedState.tasks
@@ -108,21 +114,15 @@ final class ClockViewModel: ObservableObject {
     // MARK: - Методы управления задачами
 
     func startDragging(_ task: TaskOnRing) {
-        draggedTask = task
+        dragAndDropManager.startDragging(task)
     }
 
     func stopDragging(didReturnToClock: Bool) {
-        if let task = draggedTask {
-            if !didReturnToClock {
-                taskManagement.removeTask(task)
-            }
-        }
-        draggedTask = nil
-        isDraggingOutside = false
+        dragAndDropManager.stopDragging(didReturnToClock: didReturnToClock)
     }
 
     func updateDragPosition(isOutsideClock: Bool) {
-        isDraggingOutside = isOutsideClock
+        dragAndDropManager.updateDragPosition(isOutsideClock: isOutsideClock)
     }
 
     // MARK: - Методы работы со временем и углами
@@ -189,40 +189,10 @@ final class ClockViewModel: ObservableObject {
         return angle
     }
 
-    // MARK: - Новые методы, перенесенные из GlobleClockFaceViewIOS
-
-    /// Получает время для точки на экране
-    func timeForLocation(_ location: CGPoint, screenWidth: CGFloat) -> Date {
-        let center = CGPoint(
-            x: screenWidth * 0.35,
-            y: screenWidth * 0.35)
-        let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
-
-        let angle = atan2(vector.dy, vector.dx)
-
-        // Переводим в градусы и учитываем zeroPosition
-        var degrees = angle * 180 / .pi
-        degrees = (degrees - 90 - zeroPosition + 360).truncatingRemainder(dividingBy: 360)
-
-        // 24 часа = 360 градусов => 1 час = 15 градусов
-        let hours = degrees / 15
-        let hourComponent = Int(hours)
-        let minuteComponent = Int((hours - Double(hourComponent)) * 60)
-
-        // Используем компоненты из selectedDate вместо currentDate
-        var components = Calendar.current.dateComponents(
-            [.year, .month, .day], from: selectedDate)
-        components.hour = hourComponent
-        components.minute = minuteComponent
-        components.timeZone = TimeZone.current
-
-        return Calendar.current.date(from: components) ?? selectedDate
-    }
-
     /// Получает задачи для выбранной даты
     func tasksForSelectedDate(_ allTasks: [TaskOnRing]) -> [TaskOnRing] {
         allTasks.filter { task in
-            Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
+            Calendar.current.isDate(task.startTime, inSameDayAs: clockState.selectedDate)
         }
     }
 }

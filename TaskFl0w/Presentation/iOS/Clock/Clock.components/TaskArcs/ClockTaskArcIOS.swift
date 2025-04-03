@@ -69,7 +69,7 @@ struct ClockTaskArcIOS: View {
                             DragGesture(minimumDistance: 0)
                                 .onChanged { value in
                                     viewModel.isDraggingStart = true
-                                    let newTime = viewModel.timeForLocation(
+                                    let newTime = viewModel.clockState.timeForLocation(
                                         value.location,
                                         screenWidth: UIScreen.main.bounds.width
                                     )
@@ -96,7 +96,7 @@ struct ClockTaskArcIOS: View {
                             DragGesture(minimumDistance: 0)
                                 .onChanged { value in
                                     viewModel.isDraggingEnd = true
-                                    let newTime = viewModel.timeForLocation(
+                                    let newTime = viewModel.clockState.timeForLocation(
                                         value.location,
                                         screenWidth: UIScreen.main.bounds.width
                                     )

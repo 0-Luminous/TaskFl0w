@@ -29,7 +29,7 @@ struct RingPlanner: View {
 
                 if let category = viewModel.draggedCategory {
                     // Обработка создания новой задачи
-                    let time = viewModel.timeForLocation(
+                    let time = viewModel.clockState.timeForLocation(
                         location,
                         screenWidth: UIScreen.main.bounds.width
                     )

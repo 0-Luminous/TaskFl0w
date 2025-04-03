@@ -6,8 +6,9 @@
 //
 
 import SwiftUI
+
 #if canImport(UIKit)
-import UIKit
+    import UIKit
 #endif
 
 @main
@@ -16,17 +17,8 @@ struct TaskFl0wApp: App {
 
     var body: some Scene {
         WindowGroup {
-            #if os(iOS)
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                ClockViewIpad()
-                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
-            } else {
-                ClockViewIOS()
-                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
-            }
-            #else
-            Text("Unsupported Platform")
-            #endif
+            ClockViewIOS()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }
 }
