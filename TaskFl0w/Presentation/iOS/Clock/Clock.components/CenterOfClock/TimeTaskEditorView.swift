@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TimeTaskEditorOverlay: View {
     @ObservedObject var viewModel: ClockViewModel
+    @Environment(\.colorScheme) private var colorScheme
     @State private var startTime: Date
     @State private var endTime: Date
     @State private var isInternalUpdate = false
@@ -30,16 +31,20 @@ struct TimeTaskEditorOverlay: View {
                 .stroke(Color(red: 0.655, green: 0.639, blue: 0.639), lineWidth: 2)
                 .frame(width: 170, height: 170)
 
-            // Внутренний темный круг
+            // Внутренний круг
             Circle()
-                .fill(Color(red: 0.192, green: 0.192, blue: 0.192))  // #313131
+                .fill(
+                    colorScheme == .dark
+                        ? Color(red: 0.192, green: 0.192, blue: 0.192)
+                        : Color(red: 0.933, green: 0.933, blue: 0.933)
+                )
                 .frame(width: 170, height: 170)
 
             VStack(spacing: 20) {
                 DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
                     .datePickerStyle(.compact)
                     .labelsHidden()
-                    .colorScheme(.dark)
+                    .colorScheme(colorScheme)
                     .scaleEffect(1)
                     .onChange(of: startTime) { newTime in
                         guard !isInternalUpdate else { return }
@@ -50,7 +55,7 @@ struct TimeTaskEditorOverlay: View {
                 DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
                     .datePickerStyle(.compact)
                     .labelsHidden()
-                    .colorScheme(.dark)
+                    .colorScheme(colorScheme)
                     .scaleEffect(1)
                     .onChange(of: endTime) { newTime in
                         guard !isInternalUpdate else { return }

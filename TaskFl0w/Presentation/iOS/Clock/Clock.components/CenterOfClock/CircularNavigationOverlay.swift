@@ -8,20 +8,25 @@
 import SwiftUI
 
 struct CircularNavigationOverlay: View {
+    @Environment(\.colorScheme) private var colorScheme
     var onPreviousDay: () -> Void
     var onNextDay: () -> Void
     //    @Binding var isDraggingOver: ClockViewModel.NavigationButton?
 
     var body: some View {
         ZStack {
-            // Основной круг-подложка с серой окантовкой
+            // Внешний круг-подложка с серой окантовкой
             Circle()
                 .stroke(Color(red: 0.655, green: 0.639, blue: 0.639), lineWidth: 2)
                 .frame(width: 170, height: 170)
 
-            // Внутренний темный круг
+            // Внутренний круг
             Circle()
-                .fill(Color(red: 0.192, green: 0.192, blue: 0.192))   // #313131
+                .fill(
+                    colorScheme == .dark
+                        ? Color(red: 0.192, green: 0.192, blue: 0.192)
+                        : Color(red: 0.933, green: 0.933, blue: 0.933)
+                )
                 .frame(width: 170, height: 170)
 
             // Кнопки навигации
