@@ -238,14 +238,12 @@ struct ClockFaceEditorViewIOS: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Положение нуля")
             Slider(
-                value: Binding(
-                    get: { viewModel.zeroPosition },
-                    set: { viewModel.updateZeroPosition($0) }
-                ),
+                value: $viewModel.zeroPosition,
                 in: 0...360,
                 step: 15
             )
             .onChange(of: viewModel.zeroPosition) { oldValue, newValue in
+                viewModel.updateZeroPosition(newValue)
                 feedbackGenerator.impactOccurred()
             }
             HStack {

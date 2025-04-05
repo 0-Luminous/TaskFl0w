@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import UIKit
 
 struct RingPlanner: View {
     let color: Color
@@ -23,7 +24,7 @@ struct RingPlanner: View {
             .onDrop(of: [.text], isTargeted: nil) { providers, location in
                 if let task = viewModel.draggedTask {
                     // Обработка удаления задачи
-                    viewModel.taskManagement.removeTask(task)
+                    viewModel.taskManager.deleteTask(task)
                     return true
                 }
 
@@ -47,7 +48,9 @@ struct RingPlanner: View {
                         isCompleted: false
                     )
 
-                    viewModel.taskManagement.addTask(newTask)
+                    viewModel.taskManager.createTaskAtLocation(
+                        location: location, screenWidth: UIScreen.main.bounds.width,
+                        clockState: viewModel.clockState)
 
                     // Включаем режим редактирования
                     viewModel.isEditingMode = true

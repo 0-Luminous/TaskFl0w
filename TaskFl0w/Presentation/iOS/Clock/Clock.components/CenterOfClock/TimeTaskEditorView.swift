@@ -5,6 +5,7 @@
 //  Created by Yan on 1/4/25.
 //
 
+import CoreData
 import SwiftUI
 
 struct TimeTaskEditorOverlay: View {
@@ -48,8 +49,7 @@ struct TimeTaskEditorOverlay: View {
                     .scaleEffect(1)
                     .onChange(of: startTime) { newTime in
                         guard !isInternalUpdate else { return }
-                        viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
-                            task, newStartTime: newTime)
+                        viewModel.updateTaskStartTime(task, newStartTime: newTime)
                     }
 
                 DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
@@ -59,7 +59,7 @@ struct TimeTaskEditorOverlay: View {
                     .scaleEffect(1)
                     .onChange(of: endTime) { newTime in
                         guard !isInternalUpdate else { return }
-                        viewModel.taskManagement.updateTaskDuration(task, newEndTime: newTime)
+                        viewModel.updateTaskEndTime(task, newEndTime: newTime)
                     }
             }
             .padding()

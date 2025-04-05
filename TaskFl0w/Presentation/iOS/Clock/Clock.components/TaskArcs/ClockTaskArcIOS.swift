@@ -74,7 +74,7 @@ struct ClockTaskArcIOS: View {
                                         screenWidth: UIScreen.main.bounds.width
                                     )
                                     viewModel.previewTime = newTime
-                                    viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
+                                    viewModel.taskManager.updateTaskStartTime(
                                         task, newStartTime: newTime)
                                 }
                                 .onEnded { _ in
@@ -101,7 +101,7 @@ struct ClockTaskArcIOS: View {
                                         screenWidth: UIScreen.main.bounds.width
                                     )
                                     viewModel.previewTime = newTime
-                                    viewModel.taskManagement.updateTaskDuration(
+                                    viewModel.taskManager.updateTaskEndTime(
                                         task, newEndTime: newTime)
                                 }
                                 .onEnded { _ in

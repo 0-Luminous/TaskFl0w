@@ -67,8 +67,8 @@ struct CategoryEditorViewIOS: View {
     private var currentClockFaceColor: Color {
         let hexColor =
             colorScheme == .dark
-            ? viewModel.darkModeClockFaceColor
-            : viewModel.lightModeClockFaceColor
+            ? viewModel.clockState.darkModeClockFaceColor
+            : viewModel.clockState.lightModeClockFaceColor
         return Color(hex: hexColor) ?? .white
     }
 
@@ -205,7 +205,7 @@ struct CategoryEditorViewIOS: View {
 
                     // Сам циферблат
                     GlobleClockFaceViewIOS(
-                        currentDate: viewModel.selectedDate,
+                        currentDate: viewModel.clockState.selectedDate,
                         tasks: viewModel.tasks,
                         viewModel: viewModel,
                         markersViewModel: viewModel.markersViewModel,
@@ -329,7 +329,7 @@ struct CategoryEditorViewIOS: View {
             Button("Отмена", role: .cancel) {}
             Button("Удалить", role: .destructive) {
                 if let category = editingCategory {
-                    viewModel.categoryManagement.removeCategory(category)
+                    viewModel.taskManager.removeCategory(category)
                     isPresented = false
                 }
             }
@@ -347,9 +347,9 @@ struct CategoryEditorViewIOS: View {
         )
 
         if editingCategory != nil {
-            viewModel.categoryManagement.updateCategory(newCategory)
+            viewModel.taskManager.updateCategory(newCategory)
         } else {
-            viewModel.categoryManagement.addCategory(newCategory)
+            viewModel.taskManager.addCategory(newCategory)
         }
         isPresented = false
     }
@@ -358,14 +358,14 @@ struct CategoryEditorViewIOS: View {
 #Preview {
     let viewModel = ClockViewModel()
 
-    // Добавляем тестовую категорию через categoryManagement
+    // Добавляем тестовую категорию через taskManager
     let testCategory = TaskCategoryModel(
         id: UUID(),
         rawValue: "Тестовая категория",
         iconName: "star.fill",
         color: .blue
     )
-    viewModel.categoryManagement.addCategory(testCategory)
+    viewModel.taskManager.addCategory(testCategory)
 
     return CategoryEditorViewIOS(
         viewModel: viewModel,

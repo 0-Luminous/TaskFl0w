@@ -287,7 +287,7 @@ struct DockBarIOS: View {
     }
 
     private func deleteCategory(_ category: TaskCategoryModel) {
-        viewModel.categoryManagement.removeCategory(category)
+        viewModel.taskManager.removeCategory(category)
     }
 
     private func moveCategory(from source: Int, to destination: Int) {
@@ -299,10 +299,9 @@ struct DockBarIOS: View {
             rawValue: draggedCategory.rawValue,
             iconName: draggedCategory.iconName,
             color: draggedCategory.color
-                // Добавьте другие необходимые свойства
         )
 
-        viewModel.categoryManagement.updateCategory(updatedCategory)
+        viewModel.taskManager.updateCategory(updatedCategory)
 
         // Сбрасываем состояние перетаскивания
         self.draggedCategory = nil

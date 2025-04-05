@@ -52,7 +52,7 @@ struct GlobleClockFaceViewIOS: View {
                 viewModel: viewModel
             )
 
-            ClockHandViewIOS(currentDate: viewModel.currentDate)
+            ClockHandViewIOS(currentDate: viewModel.selectedDate)
                 .rotationEffect(.degrees(zeroPosition))
 
             // Показ точки, куда «кидаем» категорию

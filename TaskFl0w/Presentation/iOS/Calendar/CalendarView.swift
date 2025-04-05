@@ -1,3 +1,4 @@
+import Combine
 //
 //  CalendarView.swift
 //  TaskFl0w
@@ -42,19 +43,23 @@ struct CalendarView: View {
     var body: some View {
         NavigationView {
             VStack {
-                DatePicker("", selection: $viewModel.selectedDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .padding()
-                    .onChange(of: viewModel.selectedDate) { oldValue, newValue in
-                        dismiss()
-                    }
+                DatePicker(
+                    "", selection: $viewModel.selectedDate, displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .padding()
+                .onChange(of: viewModel.selectedDate) { oldValue, newValue in
+                    dismiss()
+                }
 
                 // Разбиваем логику списка:
                 let dates = sortedDates
 
                 List {
                     ForEach(dates, id: \.self) { date in
-                        if Calendar.current.isDate(date, inSameDayAs: viewModel.selectedDate) {
+                        if Calendar.current.isDate(
+                            date, inSameDayAs: viewModel.clockState.selectedDate)
+                        {
                             let tasksForDate =
                                 filteredTasks[date]?.sorted { $0.startTime < $1.startTime } ?? []
 
@@ -98,7 +103,7 @@ struct CalendarView: View {
         guard let tasksForDate = filteredTasks[date] else { return }
         for index in offsets {
             let task = tasksForDate[index]
-            viewModel.taskManagement.removeTask(task)
+            viewModel.taskManager.deleteTask(task)
         }
     }
 }

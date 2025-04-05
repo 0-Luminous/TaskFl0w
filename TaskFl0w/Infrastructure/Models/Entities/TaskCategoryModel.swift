@@ -1,5 +1,5 @@
-import SwiftUI
 import Foundation
+import SwiftUI
 
 struct TaskCategoryModel: Identifiable, Equatable, Hashable {
     let id: UUID
