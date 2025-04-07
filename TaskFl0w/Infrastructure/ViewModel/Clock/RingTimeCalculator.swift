@@ -70,4 +70,69 @@ struct RingTimeCalculator {
         }
         return Angle(degrees: midDegrees)
     }
+    
+    // MARK: - Методы работы со временем и углами с учетом zeroPosition
+    
+    /// Корректирует время с учетом смещения нулевой позиции
+    static func getTimeWithZeroOffset(_ date: Date, baseDate: Date, zeroPosition: Double, inverse: Bool = false) -> Date {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+
+        // Получаем часы и минуты
+        let totalMinutes = Double(components.hour! * 60 + components.minute!)
+
+        // Вычисляем смещение в минутах
+        let offsetDegrees = inverse ? -zeroPosition : zeroPosition
+        let offsetHours = offsetDegrees / 15.0  // 15 градусов = 1 час
+        let offsetMinutes = offsetHours * 60
+
+        // Применяем смещение с учетом 24-часового цикла
+        let adjustedMinutes = (totalMinutes - offsetMinutes + 1440).truncatingRemainder(
+            dividingBy: 1440)
+
+        // Конвертируем обратно в часы и минуты
+        components.hour = Int(adjustedMinutes / 60)
+        components.minute = Int(adjustedMinutes.truncatingRemainder(dividingBy: 60))
+        
+        // Используем компоненты даты из baseDate
+        let baseComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
+        components.year = baseComponents.year
+        components.month = baseComponents.month
+        components.day = baseComponents.day
+
+        return calendar.date(from: components) ?? date
+    }
+
+    /// Конвертирует угол в время с учетом zeroPosition
+    static func angleToTime(_ angle: Double, baseDate: Date, zeroPosition: Double) -> Date {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day], from: baseDate)
+
+        // Преобразуем угол в минуты (360 градусов = 24 часа = 1440 минут)
+        var totalMinutes = angle * 4  // angle * (1440 / 360)
+
+        // Учитываем zeroPosition и переводим в 24-часовой формат
+        totalMinutes = (totalMinutes + (90 - zeroPosition) * 4 + 1440).truncatingRemainder(
+            dividingBy: 1440)
+
+        components.hour = Int(totalMinutes / 60)
+        components.minute = Int(totalMinutes.truncatingRemainder(dividingBy: 60))
+
+        return calendar.date(from: components) ?? baseDate
+    }
+
+    /// Конвертирует время в угол с учетом zeroPosition
+    static func timeToAngle(_ date: Date, zeroPosition: Double) -> Double {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.hour, .minute], from: date)
+        let totalMinutes = Double(components.hour! * 60 + components.minute!)
+
+        // Преобразуем минуты в угол (1440 минут = 360 градусов)
+        var angle = totalMinutes / 4  // totalMinutes * (360 / 1440)
+
+        // Учитываем zeroPosition и 90-градусное смещение (12 часов сверху)
+        angle = (angle - (90 - zeroPosition) + 360).truncatingRemainder(dividingBy: 360)
+
+        return angle
+    }
 }

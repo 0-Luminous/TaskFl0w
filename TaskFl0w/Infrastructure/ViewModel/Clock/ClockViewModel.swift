@@ -95,6 +95,44 @@ final class ClockViewModel: ObservableObject {
             UserDefaults.standard.set(zeroPosition, forKey: "zeroPosition")
         }
     }
+    
+    // AppStorage для маркеров
+    @AppStorage("showHourNumbers") var showHourNumbers: Bool = true {
+        didSet {
+            markersViewModel.showHourNumbers = showHourNumbers
+        }
+    }
+    @AppStorage("markersWidth") var markersWidth: Double = 2.0 {
+        didSet {
+            markersViewModel.markersWidth = markersWidth
+        }
+    }
+    @AppStorage("markersOffset") var markersOffset: Double = 40.0 {
+        didSet {
+            markersViewModel.markersOffset = markersOffset
+        }
+    }
+    @AppStorage("numbersSize") var numbersSize: Double = 12.0 {
+        didSet {
+            markersViewModel.numbersSize = numbersSize
+        }
+    }
+    @AppStorage("lightModeMarkersColor") var lightModeMarkersColor: String = Color.gray.toHex() {
+        didSet {
+            markersViewModel.lightModeMarkersColor = lightModeMarkersColor
+            updateMarkersViewModel()
+        }
+    }
+    @AppStorage("darkModeMarkersColor") var darkModeMarkersColor: String = Color.gray.toHex() {
+        didSet {
+            markersViewModel.darkModeMarkersColor = darkModeMarkersColor
+            updateMarkersViewModel()
+        }
+    }
+    
+    // Outer ring colors
+    @AppStorage("lightModeOuterRingColor") var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
+    @AppStorage("darkModeOuterRingColor") var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
 
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
@@ -126,9 +164,79 @@ final class ClockViewModel: ObservableObject {
         }
 
         self.tasks = sharedState.tasks
+        
+        // Инициализируем настройки маркеров
+        initializeMarkersViewModel()
     }
     
     deinit {
+    }
+    
+    // MARK: - Методы инициализации
+    
+    private func initializeMarkersViewModel() {
+        // Инициализируем начальные значения для markersViewModel
+        markersViewModel.showHourNumbers = showHourNumbers
+        markersViewModel.markersWidth = markersWidth
+        markersViewModel.markersOffset = markersOffset
+        markersViewModel.numbersSize = numbersSize
+        markersViewModel.lightModeMarkersColor = lightModeMarkersColor
+        markersViewModel.darkModeMarkersColor = darkModeMarkersColor
+        markersViewModel.isDarkMode = isDarkMode
+        markersViewModel.zeroPosition = zeroPosition
+    }
+    
+    // MARK: - Методы форматирования даты
+    
+    var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMMM yyyy"
+        formatter.locale = Locale(identifier: "ru_RU")
+        return formatter.string(from: selectedDate)
+    }
+    
+    var formattedWeekday: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE"
+        formatter.locale = Locale(identifier: "ru_RU")
+        return formatter.string(from: selectedDate).capitalized
+    }
+    
+    // MARK: - Методы обновления UI
+    
+    func updateMarkersViewModel() {
+        // Создаем временное обновление для принудительного обновления вида
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let tempValue = self.markersViewModel.markersWidth
+            self.markersViewModel.markersWidth = tempValue + 0.01
+            DispatchQueue.main.async {
+                self.markersViewModel.markersWidth = tempValue
+            }
+        }
+    }
+    
+    func updateUIForThemeChange() {
+        // Гарантируем, что UI обновится при смене темы
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Передаем статус темной темы из ThemeManager в ViewModel
+            let currentThemeIsDark = ThemeManager.shared.isDarkMode
+            if self.isDarkMode != currentThemeIsDark {
+                self.isDarkMode = currentThemeIsDark
+            }
+            if self.markersViewModel.isDarkMode != currentThemeIsDark {
+                self.markersViewModel.isDarkMode = currentThemeIsDark
+            }
+            
+            // Принудительно обновляем UI
+            self.markersViewModel.updateCurrentThemeColors()
+            
+            // Обновляем свойства моделей, которые вызовут обновление представления
+            self.objectWillChange.send()
+            self.markersViewModel.objectWillChange.send()
+        }
     }
     
     // MARK: - Методы управления задачами
@@ -152,67 +260,32 @@ final class ClockViewModel: ObservableObject {
         zeroPosition = newPosition
     }
 
-    // Обновляем метод коррекции времени
+    // Делегируем расчеты в RingTimeCalculator
     func getTimeWithZeroOffset(_ date: Date, inverse: Bool = false) -> Date {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
-
-        // Получаем часы и минуты
-        let totalMinutes = Double(components.hour! * 60 + components.minute!)
-
-        // Вычисляем смещение в минутах
-        let offsetDegrees = inverse ? -zeroPosition : zeroPosition
-        let offsetHours = offsetDegrees / 15.0  // 15 градусов = 1 час
-        let offsetMinutes = offsetHours * 60
-
-        // Применяем смещение с учетом 24-часового цикла
-        let adjustedMinutes = (totalMinutes - offsetMinutes + 1440).truncatingRemainder(
-            dividingBy: 1440)
-
-        // Конвертируем обратно в часы и минуты
-        components.hour = Int(adjustedMinutes / 60)
-        components.minute = Int(adjustedMinutes.truncatingRemainder(dividingBy: 60))
-
-        return calendar.date(from: components) ?? date
+        RingTimeCalculator.getTimeWithZeroOffset(date, baseDate: selectedDate, zeroPosition: zeroPosition, inverse: inverse)
     }
 
-    // Вспомогательный метод для конвертации угла в время
     func angleToTime(_ angle: Double) -> Date {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: selectedDate)
-
-        // Преобразуем угол в минуты (360 градусов = 24 часа = 1440 минут)
-        var totalMinutes = angle * 4  // angle * (1440 / 360)
-
-        // Учитываем zeroPosition и переводим в 24-часовой формат
-        totalMinutes = (totalMinutes + (90 - zeroPosition) * 4 + 1440).truncatingRemainder(
-            dividingBy: 1440)
-
-        components.hour = Int(totalMinutes / 60)
-        components.minute = Int(totalMinutes.truncatingRemainder(dividingBy: 60))
-
-        return calendar.date(from: components) ?? selectedDate
+        RingTimeCalculator.angleToTime(angle, baseDate: selectedDate, zeroPosition: zeroPosition)
     }
 
-    // Вспомогательный метод для конвертации времени в угол
     func timeToAngle(_ date: Date) -> Double {
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.hour, .minute], from: date)
-        let totalMinutes = Double(components.hour! * 60 + components.minute!)
-
-        // Преобразуем минуты в угол (1440 минут = 360 градусов)
-        var angle = totalMinutes / 4  // totalMinutes * (360 / 1440)
-
-        // Учитываем zeroPosition и 90-градусное смещение (12 часов сверху)
-        angle = (angle - (90 - zeroPosition) + 360).truncatingRemainder(dividingBy: 360)
-
-        return angle
+        RingTimeCalculator.timeToAngle(date, zeroPosition: zeroPosition)
     }
 
     /// Получает задачи для выбранной даты
     func tasksForSelectedDate(_ allTasks: [TaskOnRing]) -> [TaskOnRing] {
         allTasks.filter { task in
             Calendar.current.isDate(task.startTime, inSameDayAs: clockState.selectedDate)
+        }
+    }
+    
+    // MARK: - Методы обработки обновления часов
+    
+    func updateCurrentTimeIfNeeded() {
+        // Если выбранная дата совпадает с сегодня, тогда обновляем "currentDate" каждую секунду
+        if Calendar.current.isDate(selectedDate, inSameDayAs: Date()) {
+            currentDate = Date()
         }
     }
 }
