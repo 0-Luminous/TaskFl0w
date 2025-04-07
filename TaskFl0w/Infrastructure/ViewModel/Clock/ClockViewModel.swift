@@ -7,6 +7,7 @@ import CoreData
 //  Created by Yan on 24/12/24.
 //
 import SwiftUI
+import Foundation
 
 final class ClockViewModel: ObservableObject {
     // MARK: - Services
@@ -189,17 +190,11 @@ final class ClockViewModel: ObservableObject {
     // MARK: - Методы форматирования даты
     
     var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMMM yyyy"
-        formatter.locale = Locale(identifier: "ru_RU")
-        return formatter.string(from: selectedDate)
+        return selectedDate.formattedForClockDate()
     }
     
     var formattedWeekday: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        formatter.locale = Locale(identifier: "ru_RU")
-        return formatter.string(from: selectedDate).capitalized
+        return selectedDate.formattedWeekday()
     }
     
     // MARK: - Методы обновления UI
