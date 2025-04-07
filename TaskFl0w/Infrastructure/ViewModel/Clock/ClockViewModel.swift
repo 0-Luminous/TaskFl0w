@@ -118,6 +118,12 @@ final class ClockViewModel: ObservableObject {
             markersViewModel.numbersSize = numbersSize
         }
     }
+    @AppStorage("numberInterval") var numberInterval: Int = 1 {
+        didSet {
+            markersViewModel.numberInterval = numberInterval
+            updateMarkersViewModel() // Обновляем представление для немедленного отображения изменений
+        }
+    }
     @AppStorage("lightModeMarkersColor") var lightModeMarkersColor: String = Color.gray.toHex() {
         didSet {
             markersViewModel.lightModeMarkersColor = lightModeMarkersColor
@@ -185,6 +191,7 @@ final class ClockViewModel: ObservableObject {
         markersViewModel.darkModeMarkersColor = darkModeMarkersColor
         markersViewModel.isDarkMode = isDarkMode
         markersViewModel.zeroPosition = zeroPosition
+        markersViewModel.numberInterval = numberInterval
     }
     
     // MARK: - Методы форматирования даты

@@ -26,6 +26,7 @@ struct ClockFaceEditorViewIOS: View {
     @AppStorage("darkModeMarkersColor") private var darkModeMarkersColor: String = Color.gray
         .toHex()
     @AppStorage("showHourNumbers") private var showHourNumbers: Bool = true
+    @AppStorage("numberInterval") private var numberInterval: Int = 1
     @AppStorage("markersWidth") private var markersWidth: Double = 2.0
     @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray
         .opacity(0.3).toHex()
@@ -289,16 +290,37 @@ struct ClockFaceEditorViewIOS: View {
         Section(header: Text("МАРКЕРЫ")) {
             Toggle("Показывать цифры часов", isOn: $showHourNumbers)
 
-            zeroPositionSlider
-
             if showHourNumbers {
+                hourNumberIntervalPicker
                 numbersSizeSlider
             }
+
+            zeroPositionSlider
 
             markersWidthSlider
 
             markersOffsetSlider
         }
+    }
+
+    private var hourNumberIntervalPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Интервал отображения цифр")
+            
+            Picker("Интервал", selection: $numberInterval) {
+                Text("Все").tag(1)
+                Text("2 часа").tag(2)
+                Text("3 часа").tag(3)
+                Text("6 часов").tag(6)
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: numberInterval) { oldValue, newValue in
+                feedbackGenerator.impactOccurred()
+                markersViewModel.numberInterval = newValue
+                updateMarkersViewModel()
+            }
+        }
+        .padding(.vertical, 8)
     }
 
     private var zeroPositionSlider: some View {
@@ -378,6 +400,10 @@ struct ClockFaceEditorViewIOS: View {
             Slider(value: $markersOffset, in: 0...60, step: 5)
                 .onChange(of: markersOffset) { oldValue, newValue in
                     feedbackGenerator.impactOccurred()
+                    
+                    // Обновляем ViewModel немедленно
+                    markersViewModel.markersOffset = newValue
+                    updateMarkersViewModel()
                 }
             HStack {
                 Text("Ближе")
@@ -403,6 +429,7 @@ struct ClockFaceEditorViewIOS: View {
         markersViewModel.lightModeMarkersColor = lightModeMarkersColor
         markersViewModel.darkModeMarkersColor = darkModeMarkersColor
         markersViewModel.isDarkMode = isDarkMode
+        markersViewModel.numberInterval = numberInterval
         updateMarkersViewModel()
     }
 

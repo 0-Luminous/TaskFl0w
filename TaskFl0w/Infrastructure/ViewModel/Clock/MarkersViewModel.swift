@@ -9,6 +9,7 @@ final class ClockMarkersViewModel: ObservableObject {
     @Published var markersOffset: Double = 40.0
     @Published var numbersSize: Double = 12.0
     @Published var zeroPosition: Double = 0.0
+    @Published var numberInterval: Int = 1 // 1, 2, 3 или 6 - интервал отображения цифр
     @Published var isDarkMode: Bool = false {
         didSet {
             // Отправляем уведомление для обновления currentMarkersColor
@@ -70,7 +71,14 @@ final class ClockMarkersViewModel: ObservableObject {
     }
 
     func markerOffset() -> CGFloat {
-        -(UIScreen.main.bounds.width * 0.35 - markersOffset)
+        // Используем относительное значение вместо UIScreen
+        -((350 * 0.35) - markersOffset) // 350 как примерный размер экрана
+    }
+
+    // Отдельный метод для отступа цифр, не зависящий от толщины маркеров
+    func numberOffset() -> CGFloat {
+        // Отступ только на основе markersOffset, без учета толщины
+        markerOffset() + 20
     }
 
     // Добавляем метод для принудительного обновления представлений при смене темы

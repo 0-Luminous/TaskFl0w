@@ -5,7 +5,6 @@
 //  Created by Yan on 24/12/24.
 //
 import SwiftUI
-import UIKit
 
 struct GlobleClockFaceViewIOS: View {
     let currentDate: Date
@@ -23,6 +22,8 @@ struct GlobleClockFaceViewIOS: View {
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
     @AppStorage("markersOffset") private var markersOffset: Double = 40.0
+    @AppStorage("numberInterval") private var numberInterval: Int = 1
+    @AppStorage("markersWidth") private var markersWidth: Double = 2.0
 
     // Локальные состояния убраны и перенесены в ViewModel
     // Используем состояния из ViewModel через viewModel
@@ -33,7 +34,7 @@ struct GlobleClockFaceViewIOS: View {
                 .fill(themeManager.currentClockFaceColor)
                 .stroke(Color.gray, lineWidth: 2)
 
-            // Маркеры часов (24 шт.)
+            // Маркеры часов (24 шт.) - без цифр
             ForEach(0..<24, id: \.self) { hour in
                 let angle = Double(hour) * (360.0 / 24.0)
                 ClockMarker(
@@ -41,12 +42,33 @@ struct GlobleClockFaceViewIOS: View {
                     style: clockStyle.markerStyle,
                     viewModel: markersViewModel,
                     MarkersColor: themeManager.currentMarkersColor,
-                    zeroPosition: zeroPosition
+                    zeroPosition: zeroPosition,
+                    showNumbers: false // Не показываем цифры на этом слое
                 )
                 .rotationEffect(.degrees(angle + zeroPosition))
                 .frame(
                     width: UIScreen.main.bounds.width * 0.7,
                     height: UIScreen.main.bounds.width * 0.7)
+            }
+            
+            // Слой с цифрами (отдельно)
+            if markersViewModel.showHourNumbers {
+                ForEach(0..<24, id: \.self) { hour in
+                    let angle = Double(hour) * (360.0 / 24.0)
+                    // Проверяем, нужно ли отображать число в соответствии с интервалом
+                    if shouldShowHourNumber(hour: hour) {
+                        HourNumberView(
+                            hour: hour,
+                            viewModel: markersViewModel,
+                            color: themeManager.currentMarkersColor,
+                            zeroPosition: zeroPosition
+                        )
+                        .rotationEffect(.degrees(angle + zeroPosition))
+                        .frame(
+                            width: UIScreen.main.bounds.width * 0.7,
+                            height: UIScreen.main.bounds.width * 0.7)
+                    }
+                }
             }
 
             TaskArcsViewIOS(
@@ -72,6 +94,11 @@ struct GlobleClockFaceViewIOS: View {
         .onAppear {
             markersViewModel.zeroPosition = zeroPosition
             markersViewModel.isDarkMode = themeManager.isDarkMode
+            markersViewModel.numberInterval = numberInterval
+            markersViewModel.markersOffset = markersOffset
+            markersViewModel.markersWidth = markersWidth
+            // Принудительно обновляем View
+            updateMarkersViewModel()
         }
         .onChange(of: zeroPosition) { oldValue, newValue in
             markersViewModel.zeroPosition = newValue
@@ -79,6 +106,37 @@ struct GlobleClockFaceViewIOS: View {
         .onChange(of: themeManager.isDarkMode) { oldValue, newValue in
             markersViewModel.isDarkMode = newValue
         }
+        .onChange(of: numberInterval) { oldValue, newValue in
+            markersViewModel.numberInterval = newValue
+        }
+        .onChange(of: markersOffset) { oldValue, newValue in
+            markersViewModel.markersOffset = newValue
+            updateMarkersViewModel()
+        }
+        .onChange(of: markersWidth) { oldValue, newValue in
+            markersViewModel.markersWidth = newValue
+            updateMarkersViewModel()
+        }
+    }
+
+    // Метод для принудительного обновления представления маркеров
+    private func updateMarkersViewModel() {
+        let tempWidth = markersViewModel.markersWidth
+        DispatchQueue.main.async {
+            // Создаем небольшое временное изменение, чтобы View обновилось
+            markersViewModel.markersWidth = tempWidth + 0.01
+            DispatchQueue.main.async {
+                markersViewModel.markersWidth = tempWidth
+            }
+        }
+    }
+
+    // Вспомогательная функция для определения, нужно ли показывать число
+    private func shouldShowHourNumber(hour: Int) -> Bool {
+        // Вычисляем скорректированный час с учетом zeroPosition
+        let hourShift = Int(zeroPosition / 15.0)
+        let adjustedHour = (hour - hourShift + 24) % 24
+        return adjustedHour % numberInterval == 0
     }
 
     // MARK: - Вспомогательные методы из ViewModel
