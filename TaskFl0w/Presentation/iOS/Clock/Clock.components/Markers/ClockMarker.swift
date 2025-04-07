@@ -1,9 +1,14 @@
 import SwiftUI
+import UIKit
+
+// Импортируем необходимые типы
+import TaskFl0w
 
 struct ClockMarker: View {
     let hour: Int
     let style: MarkerStyle
     @ObservedObject var viewModel: ClockMarkersViewModel
+    let MarkersColor: Color
     let zeroPosition: Double
 
     // Вычисляемое свойство для получения скорректированного часа с учетом zeroPosition
@@ -23,24 +28,24 @@ struct ClockMarker: View {
             switch style {
             case .numbers:
                 Rectangle()
-                    .fill(viewModel.currentMarkersColor)
+                    .fill(MarkersColor)
                     .frame(width: viewModel.markersWidth, height: 12)
                 if viewModel.showHourNumbers {
                     Text("\(adjustedHour)")
                         .font(.system(size: viewModel.numbersSize))
-                        .foregroundColor(viewModel.currentMarkersColor)
+                        .foregroundColor(MarkersColor)
                         .rotationEffect(.degrees(-Double(hour) * (360.0 / 24.0) - zeroPosition))
                         .offset(y: 5)
                 }
 
             case .lines:
                 Rectangle()
-                    .fill(viewModel.currentMarkersColor)
+                    .fill(MarkersColor)
                     .frame(width: viewModel.markersWidth, height: viewModel.markerHeight(for: hour))
 
             case .dots:
                 Circle()
-                    .fill(viewModel.currentMarkersColor)
+                    .fill(MarkersColor)
                     .frame(
                         width: viewModel.markerWidth(for: hour),
                         height: viewModel.markerWidth(for: hour))

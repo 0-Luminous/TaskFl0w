@@ -38,8 +38,22 @@ final class ClockViewModel: ObservableObject {
     // Текущее время для реального обновления
     @Published var currentDate: Date = Date()
 
-    // В этот флаг можно прокидывать логику тёмной/светлой темы, если нужно
-    @AppStorage("isDarkMode") var isDarkMode = false
+    // Режим темной темы
+    @Published var isDarkMode: Bool = false {
+        didSet {
+            // Только если изменилось значение относительно ThemeManager
+            if isDarkMode != ThemeManager.shared.isDarkMode {
+                // При изменении isDarkMode обновляем UserDefaults и ThemeManager
+                UserDefaults.standard.set(isDarkMode, forKey: "isDarkMode")
+                // Отключаем цикличное обновление
+                ThemeManager.shared.setTheme(isDarkMode)
+                
+                // Обновляем маркеры
+                markersViewModel.isDarkMode = isDarkMode
+                markersViewModel.updateCurrentThemeColors()
+            }
+        }
+    }
 
     // Пример использования AppStorage для цвета циферблата
     @AppStorage("lightModeClockFaceColor") var lightModeClockFaceColor: String = Color.white.toHex()
@@ -89,6 +103,9 @@ final class ClockViewModel: ObservableObject {
 
         // Загружаем сохраненное значение zeroPosition
         self.zeroPosition = UserDefaults.standard.double(forKey: "zeroPosition")
+        
+        // Инициализируем isDarkMode из ThemeManager
+        self.isDarkMode = ThemeManager.shared.isDarkMode
 
         // Сначала инициализируем selectedDate
         let initialDate = Date()
@@ -110,7 +127,10 @@ final class ClockViewModel: ObservableObject {
 
         self.tasks = sharedState.tasks
     }
-
+    
+    deinit {
+    }
+    
     // MARK: - Методы управления задачами
 
     func startDragging(_ task: TaskOnRing) {

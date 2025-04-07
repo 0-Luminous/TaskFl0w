@@ -11,7 +11,12 @@ struct ClockFaceEditorViewIOS: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
-    @AppStorage("isDarkMode") private var isDarkMode = false
+    @AppStorage("isDarkMode") private var isDarkMode = false {
+        didSet {
+            // При изменении isDarkMode через AppStorage обновляем и ThemeManager
+            themeManager.setTheme(isDarkMode)
+        }
+    }
     @AppStorage("lightModeClockFaceColor") private var lightModeClockFaceColor: String = Color.white
         .toHex()
     @AppStorage("darkModeClockFaceColor") private var darkModeClockFaceColor: String = Color.black
@@ -31,6 +36,7 @@ struct ClockFaceEditorViewIOS: View {
 
     @StateObject private var viewModel = ClockViewModel()
     @StateObject private var markersViewModel = ClockMarkersViewModel()
+    @ObservedObject private var themeManager = ThemeManager.shared
 
     private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
 
@@ -50,12 +56,24 @@ struct ClockFaceEditorViewIOS: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Готово") {
                         feedbackGenerator.impactOccurred()
+                        // Гарантируем синхронизацию Theme и AppStorage перед закрытием
+                        themeManager.setTheme(isDarkMode)
                         dismiss()
                     }
                 }
             }
             .interactiveDismissDisabled(true)
+            .onAppear {
+                // Гарантируем, что isDarkMode синхронизирован с ThemeManager при появлении
+                isDarkMode = themeManager.isDarkMode
+                viewModel.isDarkMode = themeManager.isDarkMode
+                markersViewModel.isDarkMode = themeManager.isDarkMode
+                // Принудительно обновляем UI для правильного отображения
+                updateColorsForCurrentTheme()
+            }
         }
+        // Применяем цветовую схему для всего представления
+        .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
     }
 
     // MARK: - UI Components
@@ -77,13 +95,13 @@ struct ClockFaceEditorViewIOS: View {
                 viewModel: viewModel,
                 markersViewModel: markersViewModel,
                 draggedCategory: .constant(nil),
-                clockFaceColor: currentClockFaceColor,
                 zeroPosition: viewModel.zeroPosition
             )
         }
         .frame(height: UIScreen.main.bounds.width * 0.8)
         .padding(.vertical, 20)
-        .environment(\.colorScheme, isDarkMode ? .dark : .light)
+        // Используем текущую тему для предпросмотра, а не сохраненное значение
+        .environment(\.colorScheme, themeManager.isDarkMode ? .dark : .light)
         .onAppear(perform: setupInitialValues)
         .onChange(of: showHourNumbers) { _, newValue in
             markersViewModel.showHourNumbers = newValue
@@ -105,9 +123,13 @@ struct ClockFaceEditorViewIOS: View {
             markersViewModel.darkModeMarkersColor = newValue
             updateMarkersViewModel()
         }
-        .onChange(of: isDarkMode) { _, newValue in
+        .onChange(of: themeManager.isDarkMode) { _, newValue in
+            // Немедленно обновляем предпросмотр при изменении темы
             markersViewModel.isDarkMode = newValue
+            viewModel.isDarkMode = newValue
+            isDarkMode = newValue
             updateMarkersViewModel()
+            updateColorsForCurrentTheme()
         }
     }
 
@@ -144,10 +166,32 @@ struct ClockFaceEditorViewIOS: View {
                 }
             }
 
-            Toggle("Тёмная тема", isOn: $isDarkMode)
-                .onChange(of: isDarkMode) { oldValue, newValue in
-                    feedbackGenerator.impactOccurred()
+            Toggle("Тёмная тема", isOn: Binding(
+                get: { themeManager.isDarkMode },
+                set: { newValue in
+                    // Используем themeManager напрямую для переключения темы
+                    if newValue != themeManager.isDarkMode {
+                        // Переключаем тему напрямую
+                        themeManager.toggleDarkMode()
+                        
+                        // Синхронизируем локальное состояние
+                        DispatchQueue.main.async {
+                            // Обновляем isDarkMode для AppStorage
+                            isDarkMode = themeManager.isDarkMode
+                            
+                            // Синхронизируем ViewModel
+                            viewModel.isDarkMode = themeManager.isDarkMode
+                            markersViewModel.isDarkMode = themeManager.isDarkMode
+                            
+                            // Применяем эффект вибрации
+                            feedbackGenerator.impactOccurred()
+                            
+                            // Принудительно обновляем UI для правильного отображения
+                            updateColorsForCurrentTheme()
+                        }
+                    }
                 }
+            ))
         }
     }
 
@@ -172,9 +216,15 @@ struct ClockFaceEditorViewIOS: View {
                 set: { newColor in
                     if isDarkMode {
                         darkModeClockFaceColor = newColor.toHex()
+                        // Обновляем цвет в ThemeManager
+                        themeManager.updateColor(newColor, for: ThemeManager.Constants.darkModeClockFaceColorKey)
                     } else {
                         lightModeClockFaceColor = newColor.toHex()
+                        // Обновляем цвет в ThemeManager
+                        themeManager.updateColor(newColor, for: ThemeManager.Constants.lightModeClockFaceColorKey)
                     }
+                    // Принудительно обновляем UI
+                    updateColorsForCurrentTheme()
                 }
             ))
     }
@@ -192,9 +242,15 @@ struct ClockFaceEditorViewIOS: View {
                 set: { newColor in
                     if isDarkMode {
                         darkModeOuterRingColor = newColor.toHex()
+                        // Обновляем цвет в ThemeManager
+                        themeManager.updateColor(newColor, for: ThemeManager.Constants.darkModeOuterRingColorKey)
                     } else {
                         lightModeOuterRingColor = newColor.toHex()
+                        // Обновляем цвет в ThemeManager
+                        themeManager.updateColor(newColor, for: ThemeManager.Constants.lightModeOuterRingColorKey)
                     }
+                    // Принудительно обновляем UI
+                    updateColorsForCurrentTheme()
                 }
             ))
     }
@@ -211,9 +267,20 @@ struct ClockFaceEditorViewIOS: View {
                 set: { newColor in
                     if isDarkMode {
                         darkModeMarkersColor = newColor.toHex()
+                        // Обновляем цвет в ThemeManager
+                        themeManager.updateColor(newColor, for: ThemeManager.Constants.darkModeMarkersColorKey)
+                        // Обновляем markersViewModel
+                        markersViewModel.darkModeMarkersColor = newColor.toHex()
                     } else {
                         lightModeMarkersColor = newColor.toHex()
+                        // Обновляем цвет в ThemeManager
+                        themeManager.updateColor(newColor, for: ThemeManager.Constants.lightModeMarkersColorKey)
+                        // Обновляем markersViewModel
+                        markersViewModel.lightModeMarkersColor = newColor.toHex()
                     }
+                    // Принудительно обновляем UI
+                    updateColorsForCurrentTheme()
+                    updateMarkersViewModel()
                 }
             ))
     }
@@ -358,6 +425,16 @@ struct ClockFaceEditorViewIOS: View {
             DispatchQueue.main.async {
                 markersViewModel.markersWidth = tempValue
             }
+        }
+    }
+
+    // Дополнительный метод для принудительного обновления цветов
+    private func updateColorsForCurrentTheme() {
+        DispatchQueue.main.async {
+            // Принудительно вызываем обновления UI
+            viewModel.objectWillChange.send()
+            markersViewModel.objectWillChange.send()
+            themeManager.objectWillChange.send()
         }
     }
 }

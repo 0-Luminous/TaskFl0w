@@ -9,6 +9,7 @@ import SwiftUI
 struct ClockViewIOS: View {
     @StateObject private var viewModel = ClockViewModel()
     @StateObject private var markersViewModel = ClockMarkersViewModel()
+    @ObservedObject private var themeManager = ThemeManager.shared
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -48,7 +49,7 @@ struct ClockViewIOS: View {
                     // Показываем циферблат
                     ZStack {
                         RingPlanner(
-                            color: currentOuterRingColor,
+                            color: themeManager.currentOuterRingColor,
                             viewModel: viewModel,
                             zeroPosition: zeroPosition
                         )
@@ -59,7 +60,6 @@ struct ClockViewIOS: View {
                             viewModel: viewModel,
                             markersViewModel: markersViewModel,
                             draggedCategory: $viewModel.draggedCategory,
-                            clockFaceColor: currentClockFaceColor,
                             zeroPosition: zeroPosition
                         )
 
@@ -144,8 +144,8 @@ struct ClockViewIOS: View {
             }
         }
         // Подложка цветом циферблата
-        .background(currentClockFaceColor)
-        .preferredColorScheme(viewModel.isDarkMode ? .dark : .light)
+        .background(themeManager.currentClockFaceColor)
+        .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
         .onReceive(timer) { _ in
             // Если выбранная дата совпадает с сегодня, тогда обновляем "currentDate" каждую секунду
             if Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: Date()) {
@@ -160,7 +160,13 @@ struct ClockViewIOS: View {
             markersViewModel.numbersSize = numbersSize
             markersViewModel.lightModeMarkersColor = lightModeMarkersColor
             markersViewModel.darkModeMarkersColor = darkModeMarkersColor
-            markersViewModel.isDarkMode = viewModel.isDarkMode
+            
+            // Гарантируем, что ViewModel использует правильное значение темы
+            viewModel.isDarkMode = themeManager.isDarkMode
+            markersViewModel.isDarkMode = themeManager.isDarkMode
+
+            // Обновляем интерфейс для текущей темы
+            updateUIForThemeChange()
         }
         .onChange(of: showHourNumbers) { _, newValue in
             markersViewModel.showHourNumbers = newValue
@@ -186,17 +192,13 @@ struct ClockViewIOS: View {
             markersViewModel.isDarkMode = newValue
             updateMarkersViewModel()
         }
+        .onChange(of: themeManager.isDarkMode) { _, newValue in
+            markersViewModel.isDarkMode = newValue
+            updateUIForThemeChange()
+        }
     }
 
     // MARK: - Вспомогательные вычислимые свойства
-
-    private var currentClockFaceColor: Color {
-        let hexColor =
-            colorScheme == .dark
-            ? viewModel.darkModeClockFaceColor
-            : viewModel.lightModeClockFaceColor
-        return Color(hex: hexColor) ?? .white
-    }
 
     private var formattedDate: String {
         let formatter = DateFormatter()
@@ -212,11 +214,6 @@ struct ClockViewIOS: View {
         return formatter.string(from: viewModel.selectedDate).capitalized
     }
 
-    private var currentOuterRingColor: Color {
-        let hexColor = colorScheme == .dark ? darkModeOuterRingColor : lightModeOuterRingColor
-        return Color(hex: hexColor) ?? .gray.opacity(0.3)
-    }
-
     private func updateMarkersViewModel() {
         // Создаем временное обновление для принудительного обновления вида
         DispatchQueue.main.async {
@@ -225,6 +222,26 @@ struct ClockViewIOS: View {
             DispatchQueue.main.async {
                 markersViewModel.markersWidth = tempValue
             }
+        }
+    }
+    
+    private func updateUIForThemeChange() {
+        // Гарантируем, что UI обновится при смене темы
+        DispatchQueue.main.async {
+            // Передаем статус темной темы из ThemeManager в ViewModel
+            if viewModel.isDarkMode != themeManager.isDarkMode {
+                viewModel.isDarkMode = themeManager.isDarkMode
+            }
+            if markersViewModel.isDarkMode != themeManager.isDarkMode {
+                markersViewModel.isDarkMode = themeManager.isDarkMode
+            }
+            
+            // Принудительно обновляем UI
+            markersViewModel.updateCurrentThemeColors()
+            
+            // Обновляем свойства моделей, которые вызовут обновление представления
+            viewModel.objectWillChange.send()
+            markersViewModel.objectWillChange.send()
         }
     }
 }

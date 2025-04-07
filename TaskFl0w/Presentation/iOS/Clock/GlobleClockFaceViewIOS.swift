@@ -5,15 +5,16 @@
 //  Created by Yan on 24/12/24.
 //
 import SwiftUI
+import UIKit
 
 struct GlobleClockFaceViewIOS: View {
     let currentDate: Date
     let tasks: [TaskOnRing]
     @ObservedObject var viewModel: ClockViewModel
     @ObservedObject var markersViewModel: ClockMarkersViewModel
+    @ObservedObject private var themeManager = ThemeManager.shared
 
     @Binding var draggedCategory: TaskCategoryModel?
-    let clockFaceColor: Color
     let zeroPosition: Double
 
     // Добавляем новый параметр
@@ -29,16 +30,17 @@ struct GlobleClockFaceViewIOS: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(clockFaceColor)
+                .fill(themeManager.currentClockFaceColor)
                 .stroke(Color.gray, lineWidth: 2)
 
             // Маркеры часов (24 шт.)
-            ForEach(0..<24) { hour in
+            ForEach(0..<24, id: \.self) { hour in
                 let angle = Double(hour) * (360.0 / 24.0)
                 ClockMarker(
                     hour: hour,
                     style: clockStyle.markerStyle,
                     viewModel: markersViewModel,
+                    MarkersColor: themeManager.currentMarkersColor,
                     zeroPosition: zeroPosition
                 )
                 .rotationEffect(.degrees(angle + zeroPosition))
@@ -69,9 +71,13 @@ struct GlobleClockFaceViewIOS: View {
         .animation(.spring(), value: viewModel.tasksForSelectedDate(tasks))
         .onAppear {
             markersViewModel.zeroPosition = zeroPosition
+            markersViewModel.isDarkMode = themeManager.isDarkMode
         }
         .onChange(of: zeroPosition) { oldValue, newValue in
             markersViewModel.zeroPosition = newValue
+        }
+        .onChange(of: themeManager.isDarkMode) { oldValue, newValue in
+            markersViewModel.isDarkMode = newValue
         }
     }
 

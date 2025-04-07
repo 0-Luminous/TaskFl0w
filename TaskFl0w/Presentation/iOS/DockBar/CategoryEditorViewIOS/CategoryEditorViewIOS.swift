@@ -8,11 +8,14 @@ import SwiftUI
 
 struct CategoryEditorViewIOS: View {
     @ObservedObject var viewModel: ClockViewModel
+    @ObservedObject private var themeManager = ThemeManager.shared
     @Binding var isPresented: Bool
     @State var editingCategory: TaskCategoryModel?
     @State private var selectedDockCategory: TaskCategoryModel?
+    
 
     @Environment(\.colorScheme) var colorScheme
+
     @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray
         .opacity(0.3).toHex()
     @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray
@@ -194,29 +197,7 @@ struct CategoryEditorViewIOS: View {
         NavigationView {
             VStack(spacing: 15) {
                 // Циферблат
-                ZStack {
-                    // Внешнее кольцо
-                    Circle()
-                        .stroke(currentOuterRingColor, lineWidth: 20)
-                        .frame(
-                            width: UIScreen.main.bounds.width * 0.8,
-                            height: UIScreen.main.bounds.width * 0.8
-                        )
-
-                    // Сам циферблат
-                    GlobleClockFaceViewIOS(
-                        currentDate: viewModel.selectedDate,
-                        tasks: viewModel.tasks,
-                        viewModel: viewModel,
-                        markersViewModel: viewModel.markersViewModel,
-                        draggedCategory: $viewModel.draggedCategory,
-                        clockFaceColor: currentClockFaceColor,
-                        zeroPosition: zeroPosition
-                    )
-                }
-                .padding(.top, 30)
-                .padding(.bottom, 30)
-
+                
                 // DockBar с обновленным binding для выбранной категории
                 DockBarEditorIOS(
                     viewModel: viewModel,

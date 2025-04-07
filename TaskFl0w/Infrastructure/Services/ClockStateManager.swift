@@ -1,33 +1,20 @@
 import Combine
 import SwiftUI
-import UIKit
 
 final class ClockStateManager: ObservableObject {
     // MARK: - Published properties
     @Published var selectedDate: Date = Date()
     @Published var currentDate: Date = Date()
 
-    // MARK: - Theme properties
-    @AppStorage("isDarkMode") var isDarkMode = false
-    @AppStorage("lightModeClockFaceColor") var lightModeClockFaceColor: String = Color.white.toHex()
-    @AppStorage("darkModeClockFaceColor") var darkModeClockFaceColor: String = Color.black.toHex()
-
-    // MARK: - Zero position
-    @Published var zeroPosition: Double {
-        didSet {
-            UserDefaults.standard.set(zeroPosition, forKey: "zeroPosition")
-        }
-    }
+    // MARK: - Services
+    private let themeManager = ThemeManager.shared
+    private let zeroPositionManager = ZeroPositionManager.shared
 
     // MARK: - Timer for current time updates
     private var timer: Timer?
 
     // MARK: - Initialization
     init() {
-        // Загружаем сохраненное значение zeroPosition
-        self.zeroPosition = UserDefaults.standard.double(forKey: "zeroPosition")
-
-        // Запускаем таймер для обновления текущего времени
         startTimeUpdates()
     }
 
@@ -42,11 +29,6 @@ final class ClockStateManager: ObservableObject {
         }
     }
 
-    // MARK: - Zero position management
-    func updateZeroPosition(_ newPosition: Double) {
-        zeroPosition = newPosition
-    }
-
     // MARK: - Time conversion methods
     func getTimeWithZeroOffset(_ date: Date, inverse: Bool = false) -> Date {
         let calendar = Calendar.current
@@ -56,7 +38,7 @@ final class ClockStateManager: ObservableObject {
         let totalMinutes = Double(components.hour! * 60 + components.minute!)
 
         // Вычисляем смещение в минутах
-        let offsetDegrees = inverse ? -zeroPosition : zeroPosition
+        let offsetDegrees = inverse ? -zeroPositionManager.zeroPosition : zeroPositionManager.zeroPosition
         let offsetHours = offsetDegrees / 15.0  // 15 градусов = 1 час
         let offsetMinutes = offsetHours * 60
 
@@ -80,7 +62,7 @@ final class ClockStateManager: ObservableObject {
         var totalMinutes = angle * 4  // angle * (1440 / 360)
 
         // Учитываем zeroPosition и переводим в 24-часовой формат
-        totalMinutes = (totalMinutes + (90 - zeroPosition) * 4 + 1440).truncatingRemainder(
+        totalMinutes = (totalMinutes + (90 - zeroPositionManager.zeroPosition) * 4 + 1440).truncatingRemainder(
             dividingBy: 1440)
 
         components.hour = Int(totalMinutes / 60)
@@ -98,7 +80,7 @@ final class ClockStateManager: ObservableObject {
         var angle = totalMinutes / 4  // totalMinutes * (360 / 1440)
 
         // Учитываем zeroPosition и 90-градусное смещение (12 часов сверху)
-        angle = (angle - (90 - zeroPosition) + 360).truncatingRemainder(dividingBy: 360)
+        angle = (angle - (90 - zeroPositionManager.zeroPosition) + 360).truncatingRemainder(dividingBy: 360)
 
         return angle
     }
@@ -114,7 +96,7 @@ final class ClockStateManager: ObservableObject {
 
         // Переводим в градусы и учитываем zeroPosition
         var degrees = angle * 180 / .pi
-        degrees = (degrees - 90 - zeroPosition + 360).truncatingRemainder(
+        degrees = (degrees - 90 - zeroPositionManager.zeroPosition + 360).truncatingRemainder(
             dividingBy: 360)
 
         // 24 часа = 360 градусов => 1 час = 15 градусов

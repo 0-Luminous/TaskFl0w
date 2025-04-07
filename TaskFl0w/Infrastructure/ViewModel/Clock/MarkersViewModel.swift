@@ -9,7 +9,13 @@ final class ClockMarkersViewModel: ObservableObject {
     @Published var markersOffset: Double = 40.0
     @Published var numbersSize: Double = 12.0
     @Published var zeroPosition: Double = 0.0
-    @Published var isDarkMode: Bool = false
+    @Published var isDarkMode: Bool = false {
+        didSet {
+            // Отправляем уведомление для обновления currentMarkersColor
+            updateCurrentThemeColors()
+            objectWillChange.send()
+        }
+    }
 
     // MARK: - Environment
     @Environment(\.colorScheme) var colorScheme
@@ -65,5 +71,13 @@ final class ClockMarkersViewModel: ObservableObject {
 
     func markerOffset() -> CGFloat {
         -(UIScreen.main.bounds.width * 0.35 - markersOffset)
+    }
+
+    // Добавляем метод для принудительного обновления представлений при смене темы
+    func updateCurrentThemeColors() {
+        // Принудительно вызываем обновление вычисляемых свойств и представлений
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
     }
 }
