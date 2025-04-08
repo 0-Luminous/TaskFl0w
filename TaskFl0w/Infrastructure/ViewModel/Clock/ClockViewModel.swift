@@ -108,12 +108,12 @@ final class ClockViewModel: ObservableObject {
             markersViewModel.markersWidth = markersWidth
         }
     }
-    @AppStorage("markersOffset") var markersOffset: Double = 40.0 {
+    @AppStorage("markersOffset") var markersOffset: Double = 0.0 {
         didSet {
             markersViewModel.markersOffset = markersOffset
         }
     }
-    @AppStorage("numbersSize") var numbersSize: Double = 12.0 {
+    @AppStorage("numbersSize") var numbersSize: Double = 16.0 {
         didSet {
             markersViewModel.numbersSize = numbersSize
         }

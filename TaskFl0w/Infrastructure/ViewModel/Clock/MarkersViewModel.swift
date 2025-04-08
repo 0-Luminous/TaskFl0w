@@ -6,8 +6,8 @@ final class ClockMarkersViewModel: ObservableObject {
     @Published var lightModeMarkersColor: String = Color.gray.toHex()
     @Published var darkModeMarkersColor: String = Color.gray.toHex()
     @Published var markersWidth: Double = 2.0
-    @Published var markersOffset: Double = 40.0
-    @Published var numbersSize: Double = 12.0 {
+    @Published var markersOffset: Double = 0.0
+    @Published var numbersSize: Double = 16.0 {
         didSet {
             // Добавляем обработчик для немедленного обновления интерфейса при изменении размера шрифта
             objectWillChange.send()

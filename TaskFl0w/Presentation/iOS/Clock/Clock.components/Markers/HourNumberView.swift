@@ -23,9 +23,12 @@ struct HourNumberView: View {
         Text("\(adjustedHour)")
             .font(.system(size: viewModel.numbersSize))
             .foregroundColor(color)
-            .rotationEffect(.degrees(-Double(hour) * (360.0 / 24.0) - zeroPosition))
-            .offset(y: viewModel.numberOffset()) // Используем специальный метод для отступа цифр
+            // Удаляем применение zeroPosition в rotationEffect,
+            // так как цифра уже скорректирована в adjustedHour
+            // и весь циферблат уже поворачивается с учетом zeroPosition
+            .rotationEffect(.degrees(-Double(hour) * (360.0 / 24.0)))
+            .offset(y: viewModel.numberOffset())
             // Добавляем дополнительный модификатор для принудительного обновления при изменении размера
-            .id("hour-\(hour)-size-\(viewModel.numbersSize)")
+            .id("hour-\(hour)-size-\(viewModel.numbersSize)-zero-\(Int(zeroPosition))")
     }
 } 

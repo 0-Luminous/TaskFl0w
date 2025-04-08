@@ -17,7 +17,9 @@ struct ClockTaskArcIOS: View {
                 x: geometry.size.width / 2,
                 y: geometry.size.height / 2)
             let radius = min(geometry.size.width, geometry.size.height) / 2
-            // Используем стандартный метод без учета zeroPosition, так как весь циферблат вращается
+            // Используем метод с учетом zeroPosition, чтобы задачи правильно отображались на циферблате
+            // Важно: весь циферблат вращается в родительском компоненте, поэтому нам нужно 
+            // рассчитать углы без учета zeroPosition для правильного расположения дуг
             let (startAngle, endAngle) = RingTimeCalculator.calculateAngles(for: task)
 
             ZStack {
@@ -61,6 +63,10 @@ struct ClockTaskArcIOS: View {
                     Circle()
                         .fill(task.category.color)
                         .frame(width: 24, height: 24)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.gray, lineWidth: 2)
+                        )
                         .position(
                             x: center.x + (radius + 10) * CGFloat(cos(startAngle.radians)),
                             y: center.y + (radius + 10) * CGFloat(sin(startAngle.radians))
@@ -88,6 +94,10 @@ struct ClockTaskArcIOS: View {
                     Circle()
                         .fill(task.category.color)
                         .frame(width: 24, height: 24)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.gray, lineWidth: 2)
+                        )
                         .position(
                             x: center.x + (radius + 10) * CGFloat(cos(endAngle.radians)),
                             y: center.y + (radius + 10) * CGFloat(sin(endAngle.radians))
@@ -127,6 +137,8 @@ struct ClockTaskArcIOS: View {
                         x: center.x + (radius + 20) * CGFloat(cos(midAngle.radians)),
                         y: center.y + (radius + 20) * CGFloat(sin(midAngle.radians))
                     )
+                    // Добавляем идентификатор, чтобы заставить переотрисовываться при изменении zeroPosition
+                    .id("task-icon-\(task.id)-\(viewModel.zeroPosition)")
             }
         }
     }

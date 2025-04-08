@@ -21,10 +21,10 @@ struct GlobleClockFaceViewIOS: View {
 
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
-    @AppStorage("markersOffset") private var markersOffset: Double = 40.0
+    @AppStorage("markersOffset") private var markersOffset: Double = 0.0
     @AppStorage("numberInterval") private var numberInterval: Int = 1
     @AppStorage("markersWidth") private var markersWidth: Double = 2.0
-    @AppStorage("numbersSize") private var numbersSize: Double = 12.0
+    @AppStorage("numbersSize") private var numbersSize: Double = 16.0
 
     // Локальные состояния убраны и перенесены в ViewModel
     // Используем состояния из ViewModel через viewModel
@@ -50,6 +50,8 @@ struct GlobleClockFaceViewIOS: View {
                 .frame(
                     width: UIScreen.main.bounds.width * 0.7,
                     height: UIScreen.main.bounds.width * 0.7)
+                // Добавляем идентификатор для принудительной переотрисовки при изменении zeroPosition
+                .id("marker-\(hour)-\(Int(zeroPosition))")
             }
             
             // Слой с цифрами (отдельно)
@@ -68,6 +70,8 @@ struct GlobleClockFaceViewIOS: View {
                         .frame(
                             width: UIScreen.main.bounds.width * 0.7,
                             height: UIScreen.main.bounds.width * 0.7)
+                        // Добавляем идентификатор для принудительной переотрисовки
+                        .id("hour-number-\(hour)-\(Int(zeroPosition))")
                     }
                 }
             }
