@@ -7,7 +7,12 @@ final class ClockMarkersViewModel: ObservableObject {
     @Published var darkModeMarkersColor: String = Color.gray.toHex()
     @Published var markersWidth: Double = 2.0
     @Published var markersOffset: Double = 40.0
-    @Published var numbersSize: Double = 12.0
+    @Published var numbersSize: Double = 12.0 {
+        didSet {
+            // Добавляем обработчик для немедленного обновления интерфейса при изменении размера шрифта
+            objectWillChange.send()
+        }
+    }
     @Published var zeroPosition: Double = 0.0
     @Published var numberInterval: Int = 1 // 1, 2, 3 или 6 - интервал отображения цифр
     @Published var isDarkMode: Bool = false {

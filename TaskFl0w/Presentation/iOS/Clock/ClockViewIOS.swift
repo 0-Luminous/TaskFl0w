@@ -125,8 +125,20 @@ struct ClockViewIOS: View {
         }
         .onAppear {
             // Обновляем интерфейс при первом появлении
-            viewModel.updateUIForThemeChange()
+            initializeUI()
         }
+    }
+    
+    // MARK: - Инициализация при первом появлении
+    private func initializeUI() {
+        // Убедимся, что размер цифр правильно инициализирован
+        viewModel.markersViewModel.numbersSize = viewModel.numbersSize
+        
+        // Обновляем интерфейс при первом появлении
+        viewModel.updateUIForThemeChange()
+        
+        // Принудительно обновляем представление маркеров
+        viewModel.updateMarkersViewModel()
     }
 }
 

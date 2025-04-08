@@ -24,6 +24,7 @@ struct GlobleClockFaceViewIOS: View {
     @AppStorage("markersOffset") private var markersOffset: Double = 40.0
     @AppStorage("numberInterval") private var numberInterval: Int = 1
     @AppStorage("markersWidth") private var markersWidth: Double = 2.0
+    @AppStorage("numbersSize") private var numbersSize: Double = 12.0
 
     // Локальные состояния убраны и перенесены в ViewModel
     // Используем состояния из ViewModel через viewModel
@@ -97,6 +98,7 @@ struct GlobleClockFaceViewIOS: View {
             markersViewModel.numberInterval = numberInterval
             markersViewModel.markersOffset = markersOffset
             markersViewModel.markersWidth = markersWidth
+            markersViewModel.numbersSize = numbersSize
             // Принудительно обновляем View
             updateMarkersViewModel()
         }
@@ -115,6 +117,10 @@ struct GlobleClockFaceViewIOS: View {
         }
         .onChange(of: markersWidth) { oldValue, newValue in
             markersViewModel.markersWidth = newValue
+            updateMarkersViewModel()
+        }
+        .onChange(of: numbersSize) { oldValue, newValue in
+            markersViewModel.numbersSize = newValue
             updateMarkersViewModel()
         }
     }

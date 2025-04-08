@@ -358,8 +358,14 @@ struct ClockFaceEditorViewIOS: View {
             Text("Размер цифр")
             Slider(value: $numbersSize, in: 8...16, step: 1.0)
                 .onChange(of: numbersSize) { oldValue, newValue in
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
+                    feedbackGenerator.impactOccurred()
+                    
+                    // Обновляем значение в моделях представления
+                    markersViewModel.numbersSize = newValue
+                    viewModel.numbersSize = newValue
+                    
+                    // Принудительно обновляем UI для немедленного отражения изменений
+                    updateMarkersViewModel()
                 }
             HStack {
                 Text("8")
@@ -430,6 +436,12 @@ struct ClockFaceEditorViewIOS: View {
         markersViewModel.darkModeMarkersColor = darkModeMarkersColor
         markersViewModel.isDarkMode = isDarkMode
         markersViewModel.numberInterval = numberInterval
+        
+        // Синхронизируем значения между двумя viewmodel
+        viewModel.markersViewModel.numbersSize = numbersSize
+        viewModel.numbersSize = numbersSize
+        
+        // Принудительно обновляем представление
         updateMarkersViewModel()
     }
 
@@ -447,10 +459,21 @@ struct ClockFaceEditorViewIOS: View {
         // Создаем временное обновление для принудительного обновления вида
         // Этот небольшой трюк заставит SwiftUI перерисовать представление
         DispatchQueue.main.async {
-            let tempValue = markersViewModel.markersWidth
-            markersViewModel.markersWidth = tempValue + 0.01
+            // Для более надежного обновления, меняем сразу несколько свойств
+            let tempSizeValue = markersViewModel.numbersSize
+            let tempWidthValue = markersViewModel.markersWidth
+            
+            // Немного меняем значения, вызывая обновление представления
+            markersViewModel.numbersSize = tempSizeValue + 0.01
+            markersViewModel.markersWidth = tempWidthValue + 0.01
+            
+            // Восстанавливаем исходные значения
             DispatchQueue.main.async {
-                markersViewModel.markersWidth = tempValue
+                markersViewModel.numbersSize = tempSizeValue
+                markersViewModel.markersWidth = tempWidthValue
+                
+                // Дополнительно принудительно обновляем модель
+                markersViewModel.objectWillChange.send()
             }
         }
     }

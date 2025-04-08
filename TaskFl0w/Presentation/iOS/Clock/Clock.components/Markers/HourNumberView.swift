@@ -25,5 +25,7 @@ struct HourNumberView: View {
             .foregroundColor(color)
             .rotationEffect(.degrees(-Double(hour) * (360.0 / 24.0) - zeroPosition))
             .offset(y: viewModel.numberOffset()) // Используем специальный метод для отступа цифр
+            // Добавляем дополнительный модификатор для принудительного обновления при изменении размера
+            .id("hour-\(hour)-size-\(viewModel.numbersSize)")
     }
 } 
