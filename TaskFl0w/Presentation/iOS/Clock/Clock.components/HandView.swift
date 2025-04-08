@@ -34,7 +34,7 @@ struct ClockHandViewIOS: View {
         let (hour, minute) = timeComponents
         // hour * 15 градусов на час + minute * 0.25 градуса на минуту
         // При этом 0° — вверх, а у нас 0 часов = слева (90°).
-        let angle = 90 + (Double(hour) * 15 + Double(minute) * 0.25)
+        let angle = 270 + (Double(hour) * 15 + Double(minute) * 0.25)
         return angle * .pi / 180
     }
     

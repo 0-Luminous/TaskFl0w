@@ -20,7 +20,7 @@ struct RingTimeCalculator {
 
         // Переводим в градусы и учитываем zeroPosition
         var degrees = angle * 180 / .pi
-        degrees = (degrees - 90 - zeroPosition + 360).truncatingRemainder(dividingBy: 360)
+        degrees = (degrees - 270 - zeroPosition + 360).truncatingRemainder(dividingBy: 360)
 
         // 24 часа = 360 градусов => 1 час = 15 градусов
         let hours = degrees / 15
@@ -54,9 +54,9 @@ struct RingTimeCalculator {
 
         // 24 часа = 1440 минут => 360 градусов
         // Здесь метод НЕ учитывает zeroPosition потому что весь циферблат поворачивается
-        // в родительском компоненте
-        let startAngle = Angle(degrees: 90 + Double(startMinutes) / 4)
-        let endAngle = Angle(degrees: 90 + Double(endMinutes) / 4)
+        // в родительском компоненте. 270 означает, что 12 часов снизу, а 00 сверху
+        let startAngle = Angle(degrees: 270 + Double(startMinutes) / 4)
+        let endAngle = Angle(degrees: 270 + Double(endMinutes) / 4)
 
         return (startAngle, endAngle)
     }
@@ -80,9 +80,9 @@ struct RingTimeCalculator {
         }
 
         // 24 часа = 1440 минут => 360 градусов
-        // Применяем zeroPosition к углам
-        let startAngle = Angle(degrees: 90 + Double(startMinutes) / 4 + zeroPosition)
-        let endAngle = Angle(degrees: 90 + Double(endMinutes) / 4 + zeroPosition)
+        // Применяем zeroPosition к углам, 270 означает, что 12 часов снизу, а 00 сверху
+        let startAngle = Angle(degrees: 270 + Double(startMinutes) / 4 + zeroPosition)
+        let endAngle = Angle(degrees: 270 + Double(endMinutes) / 4 + zeroPosition)
 
         return (startAngle, endAngle)
     }
@@ -140,7 +140,7 @@ struct RingTimeCalculator {
         var totalMinutes = angle * 4  // angle * (1440 / 360)
 
         // Учитываем zeroPosition и переводим в 24-часовой формат
-        totalMinutes = (totalMinutes + (90 - zeroPosition) * 4 + 1440).truncatingRemainder(
+        totalMinutes = (totalMinutes + (270 - zeroPosition) * 4 + 1440).truncatingRemainder(
             dividingBy: 1440)
 
         components.hour = Int(totalMinutes / 60)
@@ -158,8 +158,8 @@ struct RingTimeCalculator {
         // Преобразуем минуты в угол (1440 минут = 360 градусов)
         var angle = totalMinutes / 4  // totalMinutes * (360 / 1440)
 
-        // Учитываем zeroPosition и 90-градусное смещение (12 часов сверху)
-        angle = (angle - (90 - zeroPosition) + 360).truncatingRemainder(dividingBy: 360)
+        // Учитываем zeroPosition и 270-градусное смещение (12 часов снизу, 00 сверху)
+        angle = (angle - (270 - zeroPosition) + 360).truncatingRemainder(dividingBy: 360)
 
         return angle
     }

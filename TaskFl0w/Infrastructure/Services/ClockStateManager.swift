@@ -62,7 +62,7 @@ final class ClockStateManager: ObservableObject {
         var totalMinutes = angle * 4  // angle * (1440 / 360)
 
         // Учитываем zeroPosition и переводим в 24-часовой формат
-        totalMinutes = (totalMinutes + (90 - zeroPositionManager.zeroPosition) * 4 + 1440).truncatingRemainder(
+        totalMinutes = (totalMinutes + (270 - zeroPositionManager.zeroPosition) * 4 + 1440).truncatingRemainder(
             dividingBy: 1440)
 
         components.hour = Int(totalMinutes / 60)
@@ -79,8 +79,8 @@ final class ClockStateManager: ObservableObject {
         // Преобразуем минуты в угол (1440 минут = 360 градусов)
         var angle = totalMinutes / 4  // totalMinutes * (360 / 1440)
 
-        // Учитываем zeroPosition и 90-градусное смещение (12 часов сверху)
-        angle = (angle - (90 - zeroPositionManager.zeroPosition) + 360).truncatingRemainder(dividingBy: 360)
+        // Учитываем zeroPosition и 270-градусное смещение (12 часов снизу)
+        angle = (angle - (270 - zeroPositionManager.zeroPosition) + 360).truncatingRemainder(dividingBy: 360)
 
         return angle
     }
@@ -96,7 +96,7 @@ final class ClockStateManager: ObservableObject {
 
         // Переводим в градусы и учитываем zeroPosition
         var degrees = angle * 180 / .pi
-        degrees = (degrees - 90 - zeroPositionManager.zeroPosition + 360).truncatingRemainder(
+        degrees = (degrees - 270 - zeroPositionManager.zeroPosition + 360).truncatingRemainder(
             dividingBy: 360)
 
         // 24 часа = 360 градусов => 1 час = 15 градусов
