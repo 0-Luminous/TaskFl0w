@@ -32,8 +32,8 @@ struct ClockFaceEditorViewIOS: View {
         .opacity(0.3).toHex()
     @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray
         .opacity(0.3).toHex()
-    @AppStorage("markersOffset") private var markersOffset: Double = 40.0
-    @AppStorage("numbersSize") private var numbersSize: Double = 12.0
+    @AppStorage("markersOffset") private var markersOffset: Double = 0.0
+    @AppStorage("numbersSize") private var numbersSize: Double = 16.0
 
     @StateObject private var viewModel = ClockViewModel()
     @StateObject private var markersViewModel = ClockMarkersViewModel()

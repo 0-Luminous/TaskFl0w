@@ -38,10 +38,10 @@ final class ThemeManager: ObservableObject {
     private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
     
     @AppStorage(Constants.lightModeMarkersColorKey) 
-    private var lightModeMarkersColor: String = Color.gray.toHex()
+    private var lightModeMarkersColor: String = Color.black.toHex()
     
     @AppStorage(Constants.darkModeMarkersColorKey) 
-    private var darkModeMarkersColor: String = Color.gray.toHex()
+    private var darkModeMarkersColor: String = Color.white.toHex()
     
     // MARK: - Computed Properties
     var currentClockFaceColor: Color {
