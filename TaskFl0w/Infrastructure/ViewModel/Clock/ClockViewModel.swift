@@ -21,7 +21,15 @@ final class ClockViewModel: ObservableObject {
     let dragAndDropManager: DragAndDropManager
 
     // MARK: - Published properties
-    @Published var tasks: [TaskOnRing] = []
+    @Published var tasks: [TaskOnRing] = [] {
+        didSet {
+            // Если есть редактируемая задача, обновляем ее из списка задач
+            if let editingTask = editingTask, 
+               let updatedTask = tasks.first(where: { $0.id == editingTask.id }) {
+                self.editingTask = updatedTask
+            }
+        }
+    }
 
     // Доступ к категориям только для чтения
     var categories: [TaskCategoryModel] {

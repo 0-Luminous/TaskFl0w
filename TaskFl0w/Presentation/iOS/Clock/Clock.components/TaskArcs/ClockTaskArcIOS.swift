@@ -85,6 +85,13 @@ struct ClockTaskArcIOS: View {
                                         task, newStartTime: newTime)
                                 }
                                 .onEnded { _ in
+                                    // Сохраняем обновленное время для редактируемой задачи
+                                    if let updatedTask = viewModel.editingTask {
+                                        // Найдем актуальную задачу в списке (она могла обновиться)
+                                        if let actualTask = viewModel.tasks.first(where: { $0.id == updatedTask.id }) {
+                                            viewModel.editingTask = actualTask
+                                        }
+                                    }
                                     viewModel.isDraggingStart = false
                                     viewModel.previewTime = nil
                                 }
@@ -116,6 +123,13 @@ struct ClockTaskArcIOS: View {
                                         task, newEndTime: newTime)
                                 }
                                 .onEnded { _ in
+                                    // Сохраняем обновленное время для редактируемой задачи
+                                    if let updatedTask = viewModel.editingTask {
+                                        // Найдем актуальную задачу в списке (она могла обновиться)
+                                        if let actualTask = viewModel.tasks.first(where: { $0.id == updatedTask.id }) {
+                                            viewModel.editingTask = actualTask
+                                        }
+                                    }
                                     viewModel.isDraggingEnd = false
                                     viewModel.previewTime = nil
                                 }

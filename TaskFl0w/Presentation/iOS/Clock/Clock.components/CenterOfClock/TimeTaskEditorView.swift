@@ -13,17 +13,15 @@ struct TimeTaskEditorOverlay: View {
     @State private var startTime: Date
     @State private var endTime: Date
     @State private var isInternalUpdate = false
-    let task: TaskOnRing
-
+    
     init(viewModel: ClockViewModel, task: TaskOnRing) {
         self.viewModel = viewModel
-        self.task = task
-
+        
         // Используем прямое время без коррекции для отображения
         _startTime = State(initialValue: task.startTime)
         _endTime = State(initialValue: task.startTime.addingTimeInterval(task.duration))
     }
-
+    
     var body: some View {
         ZStack {
             // Основной круг-подложка с серой окантовкой
@@ -40,33 +38,35 @@ struct TimeTaskEditorOverlay: View {
                 )
                 .frame(width: 170, height: 170)
 
-            VStack(spacing: 20) {
-                DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
-                    .datePickerStyle(.compact)
-                    .labelsHidden()
-                    .colorScheme(colorScheme)
-                    .scaleEffect(1)
-                    .onChange(of: startTime) { newTime in
-                        guard !isInternalUpdate else { return }
-                        viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
-                            task, newStartTime: newTime)
-                    }
+            if let task = viewModel.editingTask {
+                VStack(spacing: 20) {
+                    DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                        .colorScheme(colorScheme)
+                        .scaleEffect(1)
+                        .onChange(of: startTime) { newValue in
+                            guard !isInternalUpdate else { return }
+                            viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
+                                task, newStartTime: newValue)
+                        }
 
-                DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
-                    .datePickerStyle(.compact)
-                    .labelsHidden()
-                    .colorScheme(colorScheme)
-                    .scaleEffect(1)
-                    .onChange(of: endTime) { newTime in
-                        guard !isInternalUpdate else { return }
-                        viewModel.taskManagement.updateTaskDuration(task, newEndTime: newTime)
-                    }
+                    DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                        .colorScheme(colorScheme)
+                        .scaleEffect(1)
+                        .onChange(of: endTime) { newValue in
+                            guard !isInternalUpdate else { return }
+                            viewModel.taskManagement.updateTaskDuration(task, newEndTime: newValue)
+                        }
+                }
+                .padding()
             }
-            .padding()
         }
         .transition(.opacity)
-        .onChange(of: viewModel.previewTime) { newTime in
-            if let previewTime = newTime {
+        .onChange(of: viewModel.previewTime) { newValue in
+            if let previewTime = newValue {
                 isInternalUpdate = true
                 if viewModel.isDraggingStart {
                     startTime = previewTime
@@ -74,6 +74,15 @@ struct TimeTaskEditorOverlay: View {
                 if viewModel.isDraggingEnd {
                     endTime = previewTime
                 }
+                isInternalUpdate = false
+            }
+        }
+        .onChange(of: viewModel.editingTask) { newTask in
+            if let newTask = newTask {
+                // Обновляем времена при смене задачи
+                isInternalUpdate = true
+                startTime = newTask.startTime
+                endTime = newTask.startTime.addingTimeInterval(newTask.duration)
                 isInternalUpdate = false
             }
         }
