@@ -81,8 +81,9 @@ struct ClockTaskArcIOS: View {
                                         screenWidth: UIScreen.main.bounds.width
                                     )
                                     viewModel.previewTime = newTime
-                                    viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
-                                        task, newStartTime: newTime)
+                                    
+                                    // Обновляем время начала текущей задачи и проверяем пересечения
+                                    adjustTaskStartTimesForOverlap(task, newStartTime: newTime)
                                 }
                                 .onEnded { _ in
                                     // Сохраняем обновленное время для редактируемой задачи
@@ -119,8 +120,9 @@ struct ClockTaskArcIOS: View {
                                         screenWidth: UIScreen.main.bounds.width
                                     )
                                     viewModel.previewTime = newTime
-                                    viewModel.taskManagement.updateTaskDuration(
-                                        task, newEndTime: newTime)
+                                    
+                                    // Обновляем время окончания текущей задачи и проверяем пересечения
+                                    adjustTaskEndTimesForOverlap(task, newEndTime: newTime)
                                 }
                                 .onEnded { _ in
                                     // Сохраняем обновленное время для редактируемой задачи
@@ -153,6 +155,44 @@ struct ClockTaskArcIOS: View {
                     )
                     // Добавляем идентификатор, чтобы заставить переотрисовываться при изменении zeroPosition
                     .id("task-icon-\(task.id)-\(viewModel.zeroPosition)")
+            }
+        }
+    }
+    
+    // MARK: - Методы для предотвращения наложения задач
+    
+    /// Обновляет время начала текущей задачи и сдвигает конфликтующие задачи
+    private func adjustTaskStartTimesForOverlap(_ currentTask: TaskOnRing, newStartTime: Date) {
+        // Обновляем текущую задачу
+        viewModel.taskManagement.updateTaskStartTimeKeepingEnd(currentTask, newStartTime: newStartTime)
+        
+        // Получаем обновленную версию текущей задачи
+        guard let updatedTask = viewModel.tasks.first(where: { $0.id == currentTask.id }) else { return }
+        
+        // Проверяем наложения с другими задачами
+        for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {
+            // Если время начала updatedTask попадает внутрь otherTask
+            if updatedTask.startTime >= otherTask.startTime && updatedTask.startTime < otherTask.endTime {
+                // Сдвигаем время окончания конфликтующей задачи к времени начала редактируемой задачи
+                viewModel.taskManagement.updateTaskDuration(otherTask, newEndTime: updatedTask.startTime)
+            }
+        }
+    }
+    
+    /// Обновляет время окончания текущей задачи и сдвигает конфликтующие задачи
+    private func adjustTaskEndTimesForOverlap(_ currentTask: TaskOnRing, newEndTime: Date) {
+        // Обновляем текущую задачу
+        viewModel.taskManagement.updateTaskDuration(currentTask, newEndTime: newEndTime)
+        
+        // Получаем обновленную версию текущей задачи
+        guard let updatedTask = viewModel.tasks.first(where: { $0.id == currentTask.id }) else { return }
+        
+        // Проверяем наложения с другими задачами
+        for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {
+            // Если время окончания updatedTask попадает внутрь otherTask
+            if updatedTask.endTime > otherTask.startTime && updatedTask.endTime <= otherTask.endTime {
+                // Сдвигаем время начала конфликтующей задачи к времени окончания редактируемой задачи
+                viewModel.taskManagement.updateTaskStartTimeKeepingEnd(otherTask, newStartTime: updatedTask.endTime)
             }
         }
     }
