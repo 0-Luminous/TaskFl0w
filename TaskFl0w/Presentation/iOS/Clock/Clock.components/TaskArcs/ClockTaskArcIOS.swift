@@ -17,6 +17,7 @@ struct ClockTaskArcIOS: View {
                 x: geometry.size.width / 2,
                 y: geometry.size.height / 2)
             let radius = min(geometry.size.width, geometry.size.height) / 2
+            // Используем стандартный метод без учета zeroPosition, так как весь циферблат вращается
             let (startAngle, endAngle) = RingTimeCalculator.calculateAngles(for: task)
 
             ZStack {

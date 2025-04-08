@@ -174,9 +174,32 @@ final class ClockViewModel: ObservableObject {
         
         // Инициализируем настройки маркеров
         initializeMarkersViewModel()
+        
+        // Подписываемся на уведомления об изменении zeroPosition
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleZeroPositionChange),
+            name: .zeroPositionDidChange,
+            object: nil
+        )
     }
     
     deinit {
+        // Отписываемся от уведомлений
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    // MARK: - Обработчики уведомлений
+    
+    @objc private func handleZeroPositionChange() {
+        // Обновляем zeroPosition из ZeroPositionManager
+        DispatchQueue.main.async { [weak self] in
+            let newPosition = ZeroPositionManager.shared.zeroPosition
+            self?.zeroPosition = newPosition
+            self?.markersViewModel.zeroPosition = newPosition
+            // Принудительно обновляем UI
+            self?.objectWillChange.send()
+        }
     }
     
     // MARK: - Методы инициализации
@@ -259,6 +282,10 @@ final class ClockViewModel: ObservableObject {
 
     // Добавляем метод для обновления положения нуля
     func updateZeroPosition(_ newPosition: Double) {
+        // Обновляем через ZeroPositionManager, чтобы все подписчики получили уведомление
+        ZeroPositionManager.shared.updateZeroPosition(newPosition)
+        
+        // Локально обновляем значение (это должно произойти и через обработчик уведомления)
         zeroPosition = newPosition
     }
 

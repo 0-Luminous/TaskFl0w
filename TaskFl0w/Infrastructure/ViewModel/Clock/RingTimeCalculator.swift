@@ -53,8 +53,36 @@ struct RingTimeCalculator {
         }
 
         // 24 часа = 1440 минут => 360 градусов
+        // Здесь метод НЕ учитывает zeroPosition потому что весь циферблат поворачивается
+        // в родительском компоненте
         let startAngle = Angle(degrees: 90 + Double(startMinutes) / 4)
         let endAngle = Angle(degrees: 90 + Double(endMinutes) / 4)
+
+        return (startAngle, endAngle)
+    }
+
+    // MARK: - Новый метод для расчета углов с учетом zeroPosition
+    static func calculateAnglesWithZeroPosition(for task: TaskOnRing, zeroPosition: Double) -> (start: Angle, end: Angle) {
+        let calendar = Calendar.current
+
+        let startHour = CGFloat(calendar.component(.hour, from: task.startTime))
+        let startMinute = CGFloat(calendar.component(.minute, from: task.startTime))
+        let endTime = task.startTime.addingTimeInterval(task.duration)
+        let endHour = CGFloat(calendar.component(.hour, from: endTime))
+        let endMinute = CGFloat(calendar.component(.minute, from: endTime))
+
+        let startMinutes = startHour * 60 + startMinute
+        var endMinutes = endHour * 60 + endMinute
+
+        // Если задача идёт за полночь
+        if endMinutes < startMinutes {
+            endMinutes += 24 * 60
+        }
+
+        // 24 часа = 1440 минут => 360 градусов
+        // Применяем zeroPosition к углам
+        let startAngle = Angle(degrees: 90 + Double(startMinutes) / 4 + zeroPosition)
+        let endAngle = Angle(degrees: 90 + Double(endMinutes) / 4 + zeroPosition)
 
         return (startAngle, endAngle)
     }

@@ -46,7 +46,7 @@ struct GlobleClockFaceViewIOS: View {
                     zeroPosition: zeroPosition,
                     showNumbers: false // Не показываем цифры на этом слое
                 )
-                .rotationEffect(.degrees(angle + zeroPosition))
+                .rotationEffect(.degrees(angle))
                 .frame(
                     width: UIScreen.main.bounds.width * 0.7,
                     height: UIScreen.main.bounds.width * 0.7)
@@ -64,7 +64,7 @@ struct GlobleClockFaceViewIOS: View {
                             color: themeManager.currentMarkersColor,
                             zeroPosition: zeroPosition
                         )
-                        .rotationEffect(.degrees(angle + zeroPosition))
+                        .rotationEffect(.degrees(angle))
                         .frame(
                             width: UIScreen.main.bounds.width * 0.7,
                             height: UIScreen.main.bounds.width * 0.7)

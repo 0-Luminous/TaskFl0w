@@ -60,7 +60,7 @@ final class ClockMarkersViewModel: ObservableObject {
         // 0 градусов - справа. Поэтому отнимаем π/2 (90 градусов), чтобы 0 было сверху
         let angle = hourAngle - .pi / 2
 
-        let radius = geometry.size.width / 2 - 30
+        let radius = geometry.size.width / 2 - 15
         let xPosition = geometry.size.width / 2 + radius * cos(angle)
         let yPosition = geometry.size.height / 2 + radius * sin(angle)
 
