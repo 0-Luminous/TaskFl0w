@@ -63,6 +63,35 @@ class ToDoInteractor: ToDoInteractorProtocol {
         presenter?.didAddItem()
     }
 
+    func addItemWithCategory(title: String, content: String, category: TaskCategoryModel) {
+        print("📝 Попытка добавить новый элемент с категорией: \(title), категория: \(category.rawValue)")
+
+        // Проверка наличия сущности
+        guard let entity = NSEntityDescription.entity(forEntityName: "CDToDoItem", in: viewContext)
+        else {
+            print("❌ Ошибка: сущность CDToDoItem не найдена в модели CoreData")
+            return
+        }
+
+        print("✅ Сущность CDToDoItem найдена")
+        let newItem = NSManagedObject(entity: entity, insertInto: viewContext)
+
+        let newID = UUID()
+        newItem.setValue(newID, forKey: "id")
+        newItem.setValue(title, forKey: "title")
+        newItem.setValue(content, forKey: "content")
+        newItem.setValue(Date(), forKey: "date")
+        newItem.setValue(false, forKey: "isCompleted")
+        newItem.setValue(category.id, forKey: "categoryID")
+        newItem.setValue(category.rawValue, forKey: "categoryName")
+
+        print("📝 Созданный элемент с категорией: ID=\(newID), title=\(title), категория=\(category.rawValue)")
+
+        saveContext()
+        print("🔄 Уведомляем презентер о добавлении элемента с категорией")
+        presenter?.didAddItem()
+    }
+
     func deleteItem(id: UUID) {
         let request = NSFetchRequest<NSManagedObject>(entityName: "CDToDoItem")
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)

@@ -8,10 +8,12 @@ import SwiftUI
 import UIKit
 
 class ToDoRouter: ToDoRouterProtocol {
-
-    static func createModule() -> TaskListView {
-        let viewModel = ListViewModel()
-        let view = TaskListView(viewModel: viewModel, selectedCategory: nil)
+    // Определяем ассоциированный тип для протокола
+    typealias ContentView = TaskListView
+    
+    static func createModule(selectedCategory: TaskCategoryModel? = nil) -> TaskListView {
+        let viewModel = ListViewModel(selectedCategory: selectedCategory)
+        let view = TaskListView(viewModel: viewModel, selectedCategory: selectedCategory)
         let interactor = ToDoInteractor()
         let router = ToDoRouter()
         let presenter = ToDoPresenter(view: viewModel)

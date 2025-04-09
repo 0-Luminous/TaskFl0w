@@ -21,7 +21,8 @@ struct ClockViewIOS: View {
                 if viewModel.selectedCategory != nil {
                     // Показываем список задач для выбранной категории
                     TaskListView(
-                        viewModel: ListViewModel(), selectedCategory: viewModel.selectedCategory
+                        viewModel: ListViewModel(selectedCategory: viewModel.selectedCategory),
+                        selectedCategory: viewModel.selectedCategory
                     )
                     .transition(.opacity)
                 } else {

@@ -5,6 +5,11 @@
 //  Created by Yan on 24/12/24.
 //
 import SwiftUI
+import UIKit
+
+// Импортируем необходимые компоненты и модели
+import SwiftUI
+import UIKit
 
 struct DockBarIOS: View {
     @ObservedObject var viewModel: ClockViewModel
@@ -92,7 +97,11 @@ struct DockBarIOS: View {
                     }
                 }
                 .frame(height: 100)
+                #if os(iOS)
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                #else
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                #endif
             }
             .background(backgroundColorForTheme)
             .cornerRadius(20)
@@ -305,6 +314,6 @@ struct DockBarIOS: View {
         viewModel.categoryManagement.updateCategory(updatedCategory)
 
         // Сбрасываем состояние перетаскивания
-        self.draggedCategory = nil
+        self.draggedCategory = nil as TaskCategoryModel?
     }
 }

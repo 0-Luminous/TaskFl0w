@@ -18,10 +18,12 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
     }
     @Published var isAddingNewItem: Bool = false
     @Published var editingItem: ToDoItem? = nil
+    @Published var selectedCategory: TaskCategoryModel? = nil
 
     var presenter: ToDoPresenterProtocol?
 
-    init() {
+    init(selectedCategory: TaskCategoryModel? = nil) {
+        self.selectedCategory = selectedCategory
         self.presenter = ToDoPresenter(view: self)
         presenter?.viewDidLoad()
     }

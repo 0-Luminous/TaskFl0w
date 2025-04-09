@@ -21,7 +21,7 @@ struct BottomBar: View {
                     .padding(.vertical, 8)
                     .background(Color.gray.opacity(0.3))
                     .cornerRadius(20)
-                
+                Spacer()
                 Button(action: onAddTap) {
                     Image(systemName: "square.and.pencil")
                         .foregroundColor(.yellow)
@@ -31,8 +31,16 @@ struct BottomBar: View {
                         .cornerRadius(22)
                 }
                 Spacer()
+                Text("Архив")
+                    .foregroundColor(.gray)
+                    .font(.system(size: 17))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.gray.opacity(0.3))
+                    .cornerRadius(20)
+                Spacer()
             }
-            .padding(.horizontal, 16)
+//             .padding(.horizontal, 16)
         }
     }
 }

@@ -52,6 +52,10 @@ class ToDoPresenter: ToDoPresenterProtocol {
         interactor?.addItem(title: title, content: content)
     }
 
+    func addItemWithCategory(title: String, content: String, category: TaskCategoryModel) {
+        interactor?.addItemWithCategory(title: title, content: content, category: category)
+    }
+
     func editItem(id: UUID, title: String, content: String) {
         interactor?.editItem(id: id, title: title, content: content)
     }

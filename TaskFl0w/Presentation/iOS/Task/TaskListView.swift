@@ -17,9 +17,6 @@ struct TaskListView: View {
         NavigationView {
             VStack(spacing: 0) {
                 SearchBar(text: $viewModel.searchText)
-                    .padding(.horizontal, 17)
-                    .padding(.bottom, 16)
-
                 List {
                     ForEach(viewModel.items) { item in
                         VStack(spacing: 0) {

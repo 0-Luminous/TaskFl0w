@@ -6,25 +6,31 @@
 //
 
 import SwiftUI
+import Foundation
 
 struct FormTaskView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: ListViewModel
+    @ObservedObject private var themeManager = ThemeManager.shared
     var onDismiss: (() -> Void)?
 
     var editingItem: ToDoItem?
 
     @State private var title: String = ""
     @State private var content: String = ""
-    private var date: Date
+    @State private var date: Date = Date()
+    @FocusState private var fieldInFocus: Field?
+    
+    enum Field {
+        case title
+        case content
+    }
 
     // Инициализатор для создания новой задачи
     init(viewModel: ListViewModel, onDismiss: (() -> Void)? = nil) {
         self.viewModel = viewModel
         self.onDismiss = onDismiss
         self.editingItem = nil
-        self.date = Date()
-        // _title и _content уже инициализированы пустыми строками
     }
 
     // Инициализатор для редактирования существующей задачи
@@ -34,57 +40,74 @@ struct FormTaskView: View {
         self.editingItem = item
         self._title = State(initialValue: item.title)
         self._content = State(initialValue: item.content)
-        self.date = item.date
+        self._date = State(initialValue: item.date)
     }
 
     var body: some View {
         NavigationView {
-            ZStack {
-                Color.black.edgesIgnoringSafeArea(.all)
-
-                VStack(alignment: .leading, spacing: 20) {
+            VStack(spacing: 0) {
+                // Основное содержимое
+                VStack(spacing: 0) {
+                    TextField("", text: $title)
+                        .font(.system(size: 24, weight: .bold))
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                        .focused($fieldInFocus, equals: .title)
+                        .onAppear {
+                            // Откладываем установку фокуса, чтобы представление полностью загрузилось
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                fieldInFocus = .title
+                            }
+                        }
                     
-                    TextField("Название задачи", text: $title)
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.white)
-
-                    Text(date.formattedForTodoList())
-                        .font(.system(size: 14))
-                        .foregroundColor(.gray)
-
-                    TextField("Описание задачи", text: $content, axis: .vertical)
-                        .font(.system(size: 16))
-                        .foregroundColor(.white)
-                        .lineLimit(5...10)
-
-                    Spacer()
+                    ZStack(alignment: .topLeading) {    
+                        TextEditor(text: $content)
+                            .font(.system(size: 17))
+                            .padding(.horizontal, 12)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .focused($fieldInFocus, equals: .content)
+                            .opacity(content.isEmpty ? 0.85 : 1) // Более мягкая прозрачность для предотвращения проблем с отрисовкой
+                    }
                 }
-                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .background(themeManager.isDarkMode ? Color.black : Color.white)
             .navigationBarTitleDisplayMode(.inline)
+            .onDisappear {
+                // При скрытии представления убеждаемся, что фокус сброшен
+                fieldInFocus = nil
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
+                        // Сначала сбрасываем фокус с клавиатуры перед закрытием
+                        fieldInFocus = nil
                         onDismiss?()
                         dismiss()
                     } label: {
-                        HStack {
-                            Image(systemName: "chevron.left")
-                            Text("Назад")
-                        }
-                        .foregroundColor(.yellow)
+                        Text("Отменить")
+                            .foregroundColor(Color.accentColor)
                     }
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
+                        // Сначала сбрасываем фокус с клавиатуры
+                        fieldInFocus = nil
+                        
                         if let item = editingItem {
                             // Режим редактирования
                             viewModel.presenter?.editItem(
                                 id: item.id, title: title, content: content)
                         } else {
                             // Режим добавления
-                            viewModel.presenter?.addItem(title: title, content: content)
+                            if let selectedCategory = viewModel.selectedCategory {
+                                // Добавление задачи с выбранной категорией
+                                viewModel.presenter?.addItemWithCategory(title: title, content: content, category: selectedCategory)
+                            } else {
+                                // Обычное добавление без категории
+                                viewModel.presenter?.addItem(title: title, content: content)
+                            }
                         }
                         onDismiss?()
                         dismiss()
@@ -93,7 +116,7 @@ struct FormTaskView: View {
                             .bold()
                     }
                     .disabled(title.isEmpty)
-                    .foregroundColor(title.isEmpty ? .gray : .yellow)
+                    .foregroundColor(title.isEmpty ? Color.secondary : Color.accentColor)
                 }
             }
         }

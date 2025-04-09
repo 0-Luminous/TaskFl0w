@@ -45,7 +45,7 @@ struct TimeTaskEditorOverlay: View {
                         .labelsHidden()
                         .colorScheme(colorScheme)
                         .scaleEffect(1)
-                        .onChange(of: startTime) { newValue in
+                        .onChange(of: startTime) { oldValue, newValue in
                             guard !isInternalUpdate else { return }
                             viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
                                 task, newStartTime: newValue)
@@ -56,7 +56,7 @@ struct TimeTaskEditorOverlay: View {
                         .labelsHidden()
                         .colorScheme(colorScheme)
                         .scaleEffect(1)
-                        .onChange(of: endTime) { newValue in
+                        .onChange(of: endTime) { oldValue, newValue in
                             guard !isInternalUpdate else { return }
                             viewModel.taskManagement.updateTaskDuration(task, newEndTime: newValue)
                         }
@@ -65,7 +65,7 @@ struct TimeTaskEditorOverlay: View {
             }
         }
         .transition(.opacity)
-        .onChange(of: viewModel.previewTime) { newValue in
+        .onChange(of: viewModel.previewTime) { oldValue, newValue in
             if let previewTime = newValue {
                 isInternalUpdate = true
                 if viewModel.isDraggingStart {
@@ -77,7 +77,7 @@ struct TimeTaskEditorOverlay: View {
                 isInternalUpdate = false
             }
         }
-        .onChange(of: viewModel.editingTask) { newTask in
+        .onChange(of: viewModel.editingTask) { oldValue, newTask in
             if let newTask = newTask {
                 // Обновляем времена при смене задачи
                 isInternalUpdate = true
