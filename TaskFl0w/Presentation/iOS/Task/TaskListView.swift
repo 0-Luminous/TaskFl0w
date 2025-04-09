@@ -52,6 +52,15 @@ struct TaskListView: View {
                 .onAppear {
                     viewModel.onViewDidLoad()
                 }
+                
+                BottomBar(
+                    itemCount: viewModel.items.count,
+                    onAddTap: {
+                        viewModel.isAddingNewItem = true
+                    }
+                )
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
             }
             .fullScreenCover(isPresented: $viewModel.isAddingNewItem) {
                 AddOrEditTaskView(viewModel: viewModel)

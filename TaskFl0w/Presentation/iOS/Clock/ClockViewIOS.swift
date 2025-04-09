@@ -78,24 +78,12 @@ struct ClockViewIOS: View {
                         Button(action: { viewModel.showingSettings = true }) {
                             Image(systemName: "gear")
                         }
-                        Button(action: { viewModel.showingStatistics = true }) {
-                            Image(systemName: "chart.bar")
-                        }
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack {
                         Button(action: { viewModel.showingCalendar = true }) {
                             Image(systemName: "calendar")
-                        }
-                        if viewModel.selectedCategory != nil {
-                            Button(action: {
-                                withAnimation {
-                                    viewModel.selectedCategory = nil
-                                }
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                            }
                         }
                     }
                 }
@@ -106,11 +94,7 @@ struct ClockViewIOS: View {
             .sheet(isPresented: $viewModel.showingCalendar) {
                 CalendarView(viewModel: viewModel)
             }
-            .sheet(isPresented: $viewModel.showingStatistics) {
-                StatisticsView(viewModel: viewModel)
-            }
             .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
-                // CategoryEditorView, например
                 CategoryEditorViewIOS(
                     viewModel: viewModel,
                     isPresented: $viewModel.showingCategoryEditor
