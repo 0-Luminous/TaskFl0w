@@ -11,6 +11,7 @@ import SwiftUI
 struct TaskListView: View {
     @ObservedObject var viewModel: ListViewModel
     let selectedCategory: TaskCategoryModel?
+    @State private var showingAddForm = false
 
     var body: some View {
         NavigationView {
@@ -56,17 +57,24 @@ struct TaskListView: View {
                 BottomBar(
                     itemCount: viewModel.items.count,
                     onAddTap: {
-                        viewModel.isAddingNewItem = true
+                        showingAddForm = true
                     }
                 )
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
             }
-            .fullScreenCover(isPresented: $viewModel.isAddingNewItem) {
-                AddOrEditTaskView(viewModel: viewModel)
+           .fullScreenCover(isPresented: $showingAddForm) {
+                ZStack {
+                    FormTaskView(viewModel: viewModel, onDismiss: {
+                        showingAddForm = false
+                    })
+                    .interactiveDismissDisabled(true)
+                }
             }
             .fullScreenCover(item: $viewModel.editingItem) { item in
-                AddOrEditTaskView(viewModel: viewModel, item: item)
+                FormTaskView(viewModel: viewModel, item: item, onDismiss: {
+                    viewModel.editingItem = nil
+                })
             }
         }
     }

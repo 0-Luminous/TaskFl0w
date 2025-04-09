@@ -36,4 +36,16 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
         print("🚀 ContentViewModel: onViewDidLoad вызван")
         presenter?.viewDidLoad()
     }
+
+    func showAddNewItemForm() {
+        DispatchQueue.main.async {
+            self.isAddingNewItem = true
+        }
+    }
+    
+    func hideAddNewItemForm() {
+        DispatchQueue.main.async {
+            self.isAddingNewItem = false
+        }
+    }
 }

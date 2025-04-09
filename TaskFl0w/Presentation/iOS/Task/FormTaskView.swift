@@ -1,5 +1,5 @@
 //
-//  AddOrEditTaskView.swift
+//  FormTaskView.swift
 //  ToDoList
 //
 //  Created by Yan on 21/3/25.
@@ -7,9 +7,10 @@
 
 import SwiftUI
 
-struct AddOrEditTaskView: View {
+struct FormTaskView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: ListViewModel
+    var onDismiss: (() -> Void)?
 
     var editingItem: ToDoItem?
 
@@ -18,16 +19,18 @@ struct AddOrEditTaskView: View {
     private var date: Date
 
     // Инициализатор для создания новой задачи
-    init(viewModel: ListViewModel) {
+    init(viewModel: ListViewModel, onDismiss: (() -> Void)? = nil) {
         self.viewModel = viewModel
+        self.onDismiss = onDismiss
         self.editingItem = nil
         self.date = Date()
         // _title и _content уже инициализированы пустыми строками
     }
 
     // Инициализатор для редактирования существующей задачи
-    init(viewModel: ListViewModel, item: ToDoItem) {
+    init(viewModel: ListViewModel, item: ToDoItem, onDismiss: (() -> Void)? = nil) {
         self.viewModel = viewModel
+        self.onDismiss = onDismiss
         self.editingItem = item
         self._title = State(initialValue: item.title)
         self._content = State(initialValue: item.content)
@@ -62,6 +65,7 @@ struct AddOrEditTaskView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
+                        onDismiss?()
                         dismiss()
                     } label: {
                         HStack {
@@ -82,6 +86,7 @@ struct AddOrEditTaskView: View {
                             // Режим добавления
                             viewModel.presenter?.addItem(title: title, content: content)
                         }
+                        onDismiss?()
                         dismiss()
                     } label: {
                         Text("Готово")
