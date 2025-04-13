@@ -62,7 +62,6 @@ struct TaskRow: View {
                     .font(.caption)
                     .foregroundColor(.gray)
                     .padding(.leading, 30)
-                Divider()
             }
             .contentShape(Rectangle())
             .contextMenu {

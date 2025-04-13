@@ -17,8 +17,48 @@ struct TaskListView: View {
         NavigationView {
             VStack(spacing: 0) {
                 SearchBar(text: $viewModel.searchText)
+                
+                // Отображение выбранной категории
+                if let category = viewModel.selectedCategory {
+                    HStack {
+                        Circle()
+                            .fill(category.color)
+                            .frame(width: 20, height: 20)
+                            .overlay(
+                                Image(systemName: category.iconName)
+                                    .foregroundColor(.white)
+                                    .font(.system(size: 10))
+                            )
+                        
+                        Text("Категория: \(category.rawValue)")
+                            .font(.subheadline)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            // Сбрасываем выбранную категорию
+                            withAnimation {
+                                viewModel.selectedCategory = nil
+                            }
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.gray.opacity(0.2))
+                }
+                
                 List {
-                    ForEach(viewModel.items) { item in
+                    // Фильтруем задачи по выбранной категории
+                    let filteredItems = viewModel.selectedCategory != nil 
+                        ? viewModel.items.filter { item in
+                            item.categoryID == viewModel.selectedCategory?.id
+                        } 
+                        : viewModel.items
+                    
+                    ForEach(filteredItems) { item in
                         VStack(spacing: 0) {
                             TaskRow(
                                 item: item,
@@ -37,23 +77,32 @@ struct TaskListView: View {
                             )
                             .padding(.horizontal, 10)
                         }
-                        .listRowSeparator(.hidden)
+                        // .listRowSeparator(.hidden)
                     }
                     .onDelete { indexSet in
+                        let items = filteredItems
                         indexSet.forEach { index in
-                            let item = viewModel.items[index]
+                            let item = items[index]
                             viewModel.presenter?.deleteItem(id: item.id)
                         }
                     }
                 }
-                .listStyle(PlainListStyle())
+                .listStyle(GroupedListStyle())
                 .onAppear {
-                    viewModel.onViewDidLoad()
+                    // При появлении обновляем выбранную категорию из пропса и обновляем данные
+                    if let selectedCategory = selectedCategory {
+                        viewModel.selectedCategory = selectedCategory
+                    }
+                    viewModel.refreshData()
                 }
                 
                 BottomBar(
-                    itemCount: viewModel.items.count,
+                    itemCount: filteredItems.count,
                     onAddTap: {
+                        // Убедимся, что выбранная категория установлена перед открытием формы
+                        if let selectedCategory = selectedCategory {
+                            viewModel.selectedCategory = selectedCategory
+                        }
                         showingAddForm = true
                     }
                 )
@@ -73,6 +122,17 @@ struct TaskListView: View {
                     viewModel.editingItem = nil
                 })
             }
+        }
+    }
+    
+    // Вспомогательное свойство для фильтрации задач
+    private var filteredItems: [ToDoItem] {
+        if let selectedCategory = viewModel.selectedCategory {
+            return viewModel.items.filter { item in
+                item.categoryID == selectedCategory.id
+            }
+        } else {
+            return viewModel.items
         }
     }
 }

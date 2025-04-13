@@ -13,9 +13,19 @@ class ToDoPresenter: ToDoPresenterProtocol {
 
     init(view: ToDoViewProtocol) {
         self.view = view
+        
+        // Сначала создаем интерактор и затем устанавливаем связи
+        let todoInteractor = ToDoInteractor()
+        self.interactor = todoInteractor
+        todoInteractor.presenter = self
     }
 
     func viewDidLoad() {
+        interactor?.fetchItems()
+    }
+
+    func refreshItems() {
+        // Обновляем список без пересоздания интерактора
         interactor?.fetchItems()
     }
 

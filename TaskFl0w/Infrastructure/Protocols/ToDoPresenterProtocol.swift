@@ -9,6 +9,7 @@ import SwiftUI
 
 protocol ToDoPresenterProtocol: AnyObject {
     func viewDidLoad()
+    func refreshItems()
     func didFetchItems(ToDoItem: [ToDoItem])
     func didAddItem()
     func didDeleteItem()

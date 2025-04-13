@@ -39,6 +39,11 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
         presenter?.viewDidLoad()
     }
 
+    func refreshData() {
+        print("🔄 ContentViewModel: refreshData вызван")
+        presenter?.refreshItems()
+    }
+
     func showAddNewItemForm() {
         DispatchQueue.main.async {
             self.isAddingNewItem = true

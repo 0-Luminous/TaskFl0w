@@ -7,10 +7,11 @@
 import SwiftUI
 
 struct ClockViewIOS: View {
-    @StateObject private var viewModel = ClockViewModel()
+    @StateObject var viewModel = ClockViewModel()
+    @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
-    // Таймер для "реал-тайм" обновления
-    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    // Создаем ListViewModel один раз для многократного использования
+    @StateObject private var listViewModel = ListViewModel()
     
     // MARK: - Body
     var body: some View {
@@ -21,9 +22,17 @@ struct ClockViewIOS: View {
                 if viewModel.selectedCategory != nil {
                     // Показываем список задач для выбранной категории
                     TaskListView(
-                        viewModel: ListViewModel(selectedCategory: viewModel.selectedCategory),
+                        viewModel: listViewModel,
                         selectedCategory: viewModel.selectedCategory
                     )
+                    .onAppear {
+                        // Обновляем выбранную категорию при появлении
+                        listViewModel.selectedCategory = viewModel.selectedCategory
+                    }
+                    .onChange(of: viewModel.selectedCategory) { newCategory in
+                        // Обновляем выбранную категорию при ее изменении
+                        listViewModel.selectedCategory = newCategory
+                    }
                     .transition(.opacity)
                 } else {
                     // Показываем циферблат
@@ -100,6 +109,18 @@ struct ClockViewIOS: View {
                     viewModel: viewModel,
                     isPresented: $viewModel.showingCategoryEditor
                 )
+            }
+            .fullScreenCover(isPresented: $viewModel.showingAddTask) {
+                // При открытии формы добавления задачи, передаем выбранную категорию
+                if let selectedCategory = viewModel.selectedCategory {
+                    FormTaskView(viewModel: listViewModel, onDismiss: {
+                        viewModel.showingAddTask = false
+                    })
+                    .onAppear {
+                        // Убедимся, что категория правильно передана
+                        listViewModel.selectedCategory = selectedCategory
+                    }
+                }
             }
         }
         // Подложка цветом циферблата

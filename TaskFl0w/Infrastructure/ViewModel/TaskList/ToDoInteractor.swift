@@ -11,6 +11,11 @@ class ToDoInteractor: ToDoInteractorProtocol {
     weak var presenter: ToDoPresenterProtocol?
     private let viewContext = PersistenceController.shared.container.viewContext
 
+    init() {
+        // Стандартный инициализатор
+        print("🔧 ToDoInteractor: Инициализация")
+    }
+
     // Конвертирует CoreData объект в ToDoItem
     private func convertToToDoItem(_ entity: NSManagedObject) -> ToDoItem {
         let id = entity.value(forKey: "id") as! UUID
@@ -18,9 +23,12 @@ class ToDoInteractor: ToDoInteractorProtocol {
         let content = entity.value(forKey: "content") as! String
         let date = entity.value(forKey: "date") as! Date
         let isCompleted = entity.value(forKey: "isCompleted") as! Bool
+        let categoryID = entity.value(forKey: "categoryID") as? UUID
+        let categoryName = entity.value(forKey: "categoryName") as? String
 
         return ToDoItem(
-            id: id, title: title, content: content, date: date, isCompleted: isCompleted)
+            id: id, title: title, content: content, date: date, 
+            isCompleted: isCompleted, categoryID: categoryID, categoryName: categoryName)
     }
 
     func fetchItems() {
@@ -64,11 +72,10 @@ class ToDoInteractor: ToDoInteractorProtocol {
     }
 
     func addItemWithCategory(title: String, content: String, category: TaskCategoryModel) {
-        print("📝 Попытка добавить новый элемент с категорией: \(title), категория: \(category.rawValue)")
+        print("📝 Добавление новой задачи: \"\(title)\" в категорию: \"\(category.rawValue)\"")
 
         // Проверка наличия сущности
-        guard let entity = NSEntityDescription.entity(forEntityName: "CDToDoItem", in: viewContext)
-        else {
+        guard let entity = NSEntityDescription.entity(forEntityName: "CDToDoItem", in: viewContext) else {
             print("❌ Ошибка: сущность CDToDoItem не найдена в модели CoreData")
             return
         }
@@ -82,13 +89,14 @@ class ToDoInteractor: ToDoInteractorProtocol {
         newItem.setValue(content, forKey: "content")
         newItem.setValue(Date(), forKey: "date")
         newItem.setValue(false, forKey: "isCompleted")
+        
+        // Устанавливаем информацию о категории
         newItem.setValue(category.id, forKey: "categoryID")
         newItem.setValue(category.rawValue, forKey: "categoryName")
 
-        print("📝 Созданный элемент с категорией: ID=\(newID), title=\(title), категория=\(category.rawValue)")
+        print("✅ Создана задача с ID=\(newID), title=\"\(title)\", в категории=\"\(category.rawValue)\"")
 
         saveContext()
-        print("🔄 Уведомляем презентер о добавлении элемента с категорией")
         presenter?.didAddItem()
     }
 
@@ -152,13 +160,38 @@ class ToDoInteractor: ToDoInteractorProtocol {
         do {
             let items = try viewContext.fetch(request)
             if let item = items.first {
+                // Сохраняем старые значения категории, если они есть
+                let oldCategoryID = item.value(forKey: "categoryID") as? UUID
+                let oldCategoryName = item.value(forKey: "categoryName") as? String
+                
+                // Обновляем основные поля
                 item.setValue(title, forKey: "title")
                 item.setValue(content, forKey: "content")
+                
+                // Если есть выбранная категория в viewModel, используем её
+                if let presenter = presenter as? ToDoPresenter,
+                   let view = presenter.view as? ListViewModel,
+                   let selectedCategory = view.selectedCategory {
+                    item.setValue(selectedCategory.id, forKey: "categoryID")
+                    item.setValue(selectedCategory.rawValue, forKey: "categoryName")
+                    print("📝 Обновлена категория для задачи: \(selectedCategory.rawValue)")
+                } else if oldCategoryID != nil && oldCategoryName != nil {
+                    // Сохраняем старую категорию, если новая не выбрана
+                    item.setValue(oldCategoryID, forKey: "categoryID")
+                    item.setValue(oldCategoryName, forKey: "categoryName")
+                    print("📝 Сохранена прежняя категория для задачи: \(oldCategoryName ?? "Без имени")")
+                } else {
+                    // Очищаем категорию
+                    item.setValue(nil, forKey: "categoryID")
+                    item.setValue(nil, forKey: "categoryName")
+                    print("📝 Категория для задачи очищена")
+                }
+                
                 saveContext()
                 fetchItems()
             }
         } catch {
-            print("Ошибка при редактировании: \(error)")
+            print("❌ Ошибка при редактировании: \(error)")
         }
     }
 

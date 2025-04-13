@@ -41,14 +41,67 @@ struct FormTaskView: View {
         self._title = State(initialValue: item.title)
         self._content = State(initialValue: item.content)
         self._date = State(initialValue: item.date)
+        
+        // Если у задачи есть категория, устанавливаем её в viewModel (если она еще не установлена)
+        if let categoryID = item.categoryID, let categoryName = item.categoryName, viewModel.selectedCategory == nil {
+            // Попробуем найти существующую категорию в списке категорий
+            let categoryManager = CategoryManagement(context: PersistenceController.shared.container.viewContext)
+            if let existingCategory = categoryManager.categories.first(where: { $0.id == categoryID }) {
+                viewModel.selectedCategory = existingCategory
+            } else {
+                // Если категория не найдена в списке, создаем временную модель
+                viewModel.selectedCategory = TaskCategoryModel(
+                    id: categoryID,
+                    rawValue: categoryName,
+                    iconName: "tag.fill",
+                    color: .blue
+                )
+            }
+        }
     }
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
+                // Отображаем выбранную категорию, если она есть
+                if let selectedCategory = viewModel.selectedCategory {
+                    HStack {
+                        Circle()
+                            .fill(selectedCategory.color)
+                            .frame(width: 24, height: 24)
+                            .overlay(
+                                Image(systemName: selectedCategory.iconName)
+                                    .foregroundColor(.white)
+                                    .font(.system(size: 12))
+                            )
+                        
+                        Text("Категория: \(selectedCategory.rawValue)")
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            // Сбрасываем выбранную категорию
+                            withAnimation {
+                                viewModel.selectedCategory = nil
+                            }
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(8)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 8)
+                }
+                
                 // Основное содержимое
                 VStack(spacing: 0) {
-                    TextField("", text: $title)
+                    TextField("Название задачи", text: $title)
                         .font(.system(size: 24, weight: .bold))
                         .padding(.horizontal, 16)
                         .padding(.top, 12)
@@ -67,12 +120,24 @@ struct FormTaskView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .focused($fieldInFocus, equals: .content)
                             .opacity(content.isEmpty ? 0.85 : 1) // Более мягкая прозрачность для предотвращения проблем с отрисовкой
+                            .overlay(
+                                Group {
+                                    if content.isEmpty {
+                                        Text("Описание задачи...")
+                                            .foregroundColor(.gray.opacity(0.7))
+                                            .padding(.horizontal, 16)
+                                            .padding(.top, 8)
+                                            .allowsHitTesting(false)
+                                    }
+                                }
+                            )
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(themeManager.isDarkMode ? Color.black : Color.white)
             .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(editingItem != nil ? "Редактирование" : "Новая задача")
             .onDisappear {
                 // При скрытии представления убеждаемся, что фокус сброшен
                 fieldInFocus = nil
@@ -85,7 +150,7 @@ struct FormTaskView: View {
                         onDismiss?()
                         dismiss()
                     } label: {
-                        Text("Отменить")
+                        Text("Отмена")
                             .foregroundColor(Color.accentColor)
                     }
                 }
@@ -112,7 +177,7 @@ struct FormTaskView: View {
                         onDismiss?()
                         dismiss()
                     } label: {
-                        Text("Готово")
+                        Text("Сохранить")
                             .bold()
                     }
                     .disabled(title.isEmpty)
