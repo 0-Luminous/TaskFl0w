@@ -18,38 +18,6 @@ struct TaskListView: View {
             VStack(spacing: 0) {
                 SearchBar(text: $viewModel.searchText)
                 
-                // Отображение выбранной категории
-                if let category = viewModel.selectedCategory {
-                    HStack {
-                        Circle()
-                            .fill(category.color)
-                            .frame(width: 20, height: 20)
-                            .overlay(
-                                Image(systemName: category.iconName)
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 10))
-                            )
-                        
-                        Text("Категория: \(category.rawValue)")
-                            .font(.subheadline)
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            // Сбрасываем выбранную категорию
-                            withAnimation {
-                                viewModel.selectedCategory = nil
-                            }
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.gray.opacity(0.2))
-                }
-                
                 List {
                     // Фильтруем задачи по выбранной категории
                     let filteredItems = viewModel.selectedCategory != nil 

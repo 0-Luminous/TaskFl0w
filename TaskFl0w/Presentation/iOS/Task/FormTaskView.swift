@@ -62,43 +62,7 @@ struct FormTaskView: View {
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Отображаем выбранную категорию, если она есть
-                if let selectedCategory = viewModel.selectedCategory {
-                    HStack {
-                        Circle()
-                            .fill(selectedCategory.color)
-                            .frame(width: 24, height: 24)
-                            .overlay(
-                                Image(systemName: selectedCategory.iconName)
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 12))
-                            )
-                        
-                        Text("Категория: \(selectedCategory.rawValue)")
-                            .font(.subheadline)
-                            .foregroundColor(.primary)
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            // Сбрасываем выбранную категорию
-                            withAnimation {
-                                viewModel.selectedCategory = nil
-                            }
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(8)
-                    .padding(.horizontal, 8)
-                    .padding(.top, 8)
-                }
-                
+            VStack(spacing: 0) {    
                 // Основное содержимое
                 VStack(spacing: 0) {
                     TextField("Название задачи", text: $title)
@@ -137,7 +101,6 @@ struct FormTaskView: View {
             }
             .background(themeManager.isDarkMode ? Color.black : Color.white)
             .navigationBarTitleDisplayMode(.inline)
-            .navigationTitle(editingItem != nil ? "Редактирование" : "Новая задача")
             .onDisappear {
                 // При скрытии представления убеждаемся, что фокус сброшен
                 fieldInFocus = nil
@@ -150,7 +113,7 @@ struct FormTaskView: View {
                         onDismiss?()
                         dismiss()
                     } label: {
-                        Text("Отмена")
+                        Text("Назад")
                             .foregroundColor(Color.accentColor)
                     }
                 }
