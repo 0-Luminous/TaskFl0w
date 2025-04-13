@@ -12,11 +12,12 @@ struct TaskListView: View {
     @ObservedObject var viewModel: ListViewModel
     let selectedCategory: TaskCategoryModel?
     @State private var showingAddForm = false
+    @State private var isSearchActive = false
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                SearchBar(text: $viewModel.searchText)
+                SearchBar(text: $viewModel.searchText, isActive: $isSearchActive)
                 
                 List {
                     // Фильтруем задачи по выбранной категории
@@ -64,18 +65,22 @@ struct TaskListView: View {
                     viewModel.refreshData()
                 }
                 
-                BottomBar(
-                    itemCount: filteredItems.count,
-                    onAddTap: {
-                        // Убедимся, что выбранная категория установлена перед открытием формы
-                        if let selectedCategory = selectedCategory {
-                            viewModel.selectedCategory = selectedCategory
+                // Показываем BottomBar только если поиск не активен
+                if !isSearchActive {
+                    BottomBar(
+                        itemCount: filteredItems.count,
+                        onAddTap: {
+                            // Убедимся, что выбранная категория установлена перед открытием формы
+                            if let selectedCategory = selectedCategory {
+                                viewModel.selectedCategory = selectedCategory
+                            }
+                            showingAddForm = true
                         }
-                        showingAddForm = true
-                    }
-                )
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .transition(.move(edge: .bottom))
+                }
             }
            .fullScreenCover(isPresented: $showingAddForm) {
                 ZStack {
@@ -90,6 +95,15 @@ struct TaskListView: View {
                     viewModel.editingItem = nil
                 })
             }
+        }
+        // Сообщаем родительскому представлению о состоянии поиска
+        .onChange(of: isSearchActive) { newValue in
+            // Здесь можно выполнить дополнительные действия при изменении состояния поиска
+            NotificationCenter.default.post(
+                name: NSNotification.Name("SearchActiveStateChanged"),
+                object: nil,
+                userInfo: ["isActive": newValue]
+            )
         }
     }
     

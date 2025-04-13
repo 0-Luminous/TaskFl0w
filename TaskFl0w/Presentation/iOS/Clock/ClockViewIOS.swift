@@ -13,6 +13,9 @@ struct ClockViewIOS: View {
     // Создаем ListViewModel один раз для многократного использования
     @StateObject private var listViewModel = ListViewModel()
     
+    // Состояние активности поиска
+    @State private var isSearchActive = false
+    
     // MARK: - Body
     var body: some View {
         NavigationView {
@@ -63,14 +66,17 @@ struct ClockViewIOS: View {
 
                 Spacer()
 
-                // Набор категорий снизу
-                DockBarIOS(
-                    viewModel: viewModel,
-                    showingAddTask: $viewModel.showingAddTask,
-                    draggedCategory: $viewModel.draggedCategory,
-                    showingCategoryEditor: $viewModel.showingCategoryEditor,
-                    selectedCategory: $viewModel.selectedCategory
-                )
+                // Набор категорий снизу - скрываем при активном поиске
+                if !isSearchActive {
+                    DockBarIOS(
+                        viewModel: viewModel,
+                        showingAddTask: $viewModel.showingAddTask,
+                        draggedCategory: $viewModel.draggedCategory,
+                        showingCategoryEditor: $viewModel.showingCategoryEditor,
+                        selectedCategory: $viewModel.selectedCategory
+                    )
+                    .transition(.move(edge: .bottom))
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -132,6 +138,27 @@ struct ClockViewIOS: View {
         .onAppear {
             // Обновляем интерфейс при первом появлении
             initializeUI()
+            
+            // Регистрируем обработчик уведомлений для отслеживания состояния поиска
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("SearchActiveStateChanged"),
+                object: nil,
+                queue: .main
+            ) { notification in
+                if let isActive = notification.userInfo?["isActive"] as? Bool {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        self.isSearchActive = isActive
+                    }
+                }
+            }
+        }
+        .onDisappear {
+            // Удаляем обработчик уведомлений
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSNotification.Name("SearchActiveStateChanged"),
+                object: nil
+            )
         }
     }
     
