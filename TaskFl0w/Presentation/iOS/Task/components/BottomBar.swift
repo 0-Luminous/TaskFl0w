@@ -23,7 +23,7 @@ struct BottomBar: View {
                     .cornerRadius(20)
                 Spacer()
                 Button(action: onAddTap) {
-                    Image(systemName: "square.and.pencil")
+                    Image(systemName: "plus.circle.fill")
                         .foregroundColor(.yellow)
                         .font(.system(size: 22))
                         .frame(width: 44, height: 44)

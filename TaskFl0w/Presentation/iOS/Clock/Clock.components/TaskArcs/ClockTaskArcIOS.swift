@@ -68,8 +68,9 @@ struct ClockTaskArcIOS: View {
                                 .stroke(Color.gray, lineWidth: 2)
                         )
                         .position(
-                            x: center.x + (radius + 10) * CGFloat(cos(startAngle.radians)),
-                            y: center.y + (radius + 10) * CGFloat(sin(startAngle.radians))
+                            // Защита от NaN
+                            x: center.x + safeMultiply((radius + 10), cos(startAngle.radians)),
+                            y: center.y + safeMultiply((radius + 10), sin(startAngle.radians))
                         )
                         .animation(.none, value: startAngle)
                         .gesture(
@@ -107,8 +108,9 @@ struct ClockTaskArcIOS: View {
                                 .stroke(Color.gray, lineWidth: 2)
                         )
                         .position(
-                            x: center.x + (radius + 10) * CGFloat(cos(endAngle.radians)),
-                            y: center.y + (radius + 10) * CGFloat(sin(endAngle.radians))
+                            // Защита от NaN
+                            x: center.x + safeMultiply((radius + 10), cos(endAngle.radians)),
+                            y: center.y + safeMultiply((radius + 10), sin(endAngle.radians))
                         )
                         .animation(.none, value: endAngle)
                         .gesture(
@@ -159,8 +161,15 @@ struct ClockTaskArcIOS: View {
         }
     }
     
-    // MARK: - Методы для предотвращения наложения задач
-    
+    // Вспомогательный метод для безопасного умножения (предотвращает NaN)
+    private func safeMultiply(_ value1: CGFloat, _ value2: CGFloat) -> CGFloat {
+        // Проверка на NaN и бесконечность
+        if value1.isNaN || value2.isNaN || value1.isInfinite || value2.isInfinite {
+            return 0 // Безопасное значение по умолчанию
+        }
+        return value1 * value2
+    }
+
     /// Обновляет время начала текущей задачи и сдвигает конфликтующие задачи
     private func adjustTaskStartTimesForOverlap(_ currentTask: TaskOnRing, newStartTime: Date) {
         // Обновляем текущую задачу

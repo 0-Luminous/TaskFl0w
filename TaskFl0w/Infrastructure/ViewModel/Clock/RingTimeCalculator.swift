@@ -16,11 +16,23 @@ struct RingTimeCalculator {
         zeroPosition: Double = 0
     ) -> Date {
         let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
+        
+        // Убедимся, что zeroPosition - корректное число
+        let safeZeroPosition = zeroPosition.isNaN ? 0.0 : zeroPosition
+        
+        // Проверяем, не является ли вектор нулевым (чтобы избежать NaN)
+        if vector.dx == 0 && vector.dy == 0 {
+            // Если вектор нулевой, возвращаем время, соответствующее верху часов
+            // В соответствии с zeroPosition
+            let defaultAngle = 270 + safeZeroPosition  // Верх часов
+            return angleToTime(defaultAngle.truncatingRemainder(dividingBy: 360), baseDate: baseDate, zeroPosition: safeZeroPosition)
+        }
+        
         let angle = atan2(vector.dy, vector.dx)
 
         // Переводим в градусы и учитываем zeroPosition
         var degrees = angle * 180 / .pi
-        degrees = (degrees - 270 - zeroPosition + 360).truncatingRemainder(dividingBy: 360)
+        degrees = (degrees - 270 - safeZeroPosition + 360).truncatingRemainder(dividingBy: 360)
 
         // 24 часа = 360 градусов => 1 час = 15 градусов
         let hours = degrees / 15
@@ -44,8 +56,14 @@ struct RingTimeCalculator {
         let endHour = CGFloat(calendar.component(.hour, from: endTime))
         let endMinute = CGFloat(calendar.component(.minute, from: endTime))
 
-        let startMinutes = startHour * 60 + startMinute
-        var endMinutes = endHour * 60 + endMinute
+        // Проверка на NaN
+        let safeStartHour = startHour.isNaN ? 0 : startHour
+        let safeStartMinute = startMinute.isNaN ? 0 : startMinute
+        let safeEndHour = endHour.isNaN ? safeStartHour + 1 : endHour
+        let safeEndMinute = endMinute.isNaN ? 0 : endMinute
+
+        let startMinutes = safeStartHour * 60 + safeStartMinute
+        var endMinutes = safeEndHour * 60 + safeEndMinute
 
         // Если задача идёт за полночь
         if endMinutes < startMinutes {
@@ -71,27 +89,40 @@ struct RingTimeCalculator {
         let endHour = CGFloat(calendar.component(.hour, from: endTime))
         let endMinute = CGFloat(calendar.component(.minute, from: endTime))
 
-        let startMinutes = startHour * 60 + startMinute
-        var endMinutes = endHour * 60 + endMinute
+        // Проверка на NaN
+        let safeStartHour = startHour.isNaN ? 0 : startHour
+        let safeStartMinute = startMinute.isNaN ? 0 : startMinute
+        let safeEndHour = endHour.isNaN ? safeStartHour + 1 : endHour
+        let safeEndMinute = endMinute.isNaN ? 0 : endMinute
+
+        let startMinutes = safeStartHour * 60 + safeStartMinute
+        var endMinutes = safeEndHour * 60 + safeEndMinute
 
         // Если задача идёт за полночь
         if endMinutes < startMinutes {
             endMinutes += 24 * 60
         }
 
+        // Убедимся, что zeroPosition - корректное число
+        let safeZeroPosition = zeroPosition.isNaN ? 0.0 : zeroPosition
+
         // 24 часа = 1440 минут => 360 градусов
         // Применяем zeroPosition к углам, 270 означает, что 12 часов снизу, а 00 сверху
-        let startAngle = Angle(degrees: 270 + Double(startMinutes) / 4 + zeroPosition)
-        let endAngle = Angle(degrees: 270 + Double(endMinutes) / 4 + zeroPosition)
+        let startAngle = Angle(degrees: 270 + Double(startMinutes) / 4 + safeZeroPosition)
+        let endAngle = Angle(degrees: 270 + Double(endMinutes) / 4 + safeZeroPosition)
 
         return (startAngle, endAngle)
     }
 
     static func calculateMidAngle(start: Angle, end: Angle) -> Angle {
-        var midDegrees = (start.degrees + end.degrees) / 2
+        // Защита от NaN
+        let safeStartDegrees = start.degrees.isNaN ? 0.0 : start.degrees
+        let safeEndDegrees = end.degrees.isNaN ? safeStartDegrees + 15.0 : end.degrees
+        
+        var midDegrees = (safeStartDegrees + safeEndDegrees) / 2
         // Если дуга "переходит" через 360
-        if end.degrees < start.degrees {
-            midDegrees = (start.degrees + (end.degrees + 360)) / 2
+        if safeEndDegrees < safeStartDegrees {
+            midDegrees = (safeStartDegrees + (safeEndDegrees + 360)) / 2
             if midDegrees >= 360 {
                 midDegrees -= 360
             }
@@ -110,7 +141,8 @@ struct RingTimeCalculator {
         let totalMinutes = Double(components.hour! * 60 + components.minute!)
 
         // Вычисляем смещение в минутах
-        let offsetDegrees = inverse ? -zeroPosition : zeroPosition
+        let safeZeroPosition = zeroPosition.isNaN ? 0.0 : zeroPosition
+        let offsetDegrees = inverse ? -safeZeroPosition : safeZeroPosition
         let offsetHours = offsetDegrees / 15.0  // 15 градусов = 1 час
         let offsetMinutes = offsetHours * 60
 
@@ -140,7 +172,8 @@ struct RingTimeCalculator {
         var totalMinutes = angle * 4  // angle * (1440 / 360)
 
         // Учитываем zeroPosition и переводим в 24-часовой формат
-        totalMinutes = (totalMinutes + (270 - zeroPosition) * 4 + 1440).truncatingRemainder(
+        let safeZeroPosition = zeroPosition.isNaN ? 0.0 : zeroPosition
+        totalMinutes = (totalMinutes + (270 - safeZeroPosition) * 4 + 1440).truncatingRemainder(
             dividingBy: 1440)
 
         components.hour = Int(totalMinutes / 60)
@@ -153,13 +186,20 @@ struct RingTimeCalculator {
     static func timeToAngle(_ date: Date, zeroPosition: Double) -> Double {
         let calendar = Calendar.current
         let components = calendar.dateComponents([.hour, .minute], from: date)
-        let totalMinutes = Double(components.hour! * 60 + components.minute!)
+        
+        // Защита от некорректных значений
+        let hour = components.hour ?? 0
+        let minute = components.minute ?? 0
+        let totalMinutes = Double(hour * 60 + minute)
+        
+        // Убедимся, что zeroPosition - корректное число
+        let safeZeroPosition = zeroPosition.isNaN ? 0.0 : zeroPosition
 
         // Преобразуем минуты в угол (1440 минут = 360 градусов)
         var angle = totalMinutes / 4  // totalMinutes * (360 / 1440)
 
         // Учитываем zeroPosition и 270-градусное смещение (12 часов снизу, 00 сверху)
-        angle = (angle - (270 - zeroPosition) + 360).truncatingRemainder(dividingBy: 360)
+        angle = (angle - (270 - safeZeroPosition) + 360).truncatingRemainder(dividingBy: 360)
 
         return angle
     }
