@@ -22,6 +22,15 @@ struct CalendarView: View {
                         .datePickerStyle(.graphical)
                         .padding()
                         .onChange(of: viewModel.selectedDate) { oldValue, newValue in
+                            // Обновляем UI циферблата
+                            viewModel.objectWillChange.send()
+                            // Фильтруем задачи на выбранную дату
+                            viewModel.tasks = viewModel.sharedState.tasks.filter { task in
+                                Calendar.current.isDate(task.startTime, inSameDayAs: newValue)
+                            }
+                            // Обновляем также состояние clockState
+                            viewModel.clockState.selectedDate = newValue
+                            viewModel.updateMarkersViewModel()
                             dismiss()
                         }
                     
