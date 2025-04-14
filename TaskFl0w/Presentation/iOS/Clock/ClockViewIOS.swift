@@ -107,7 +107,7 @@ struct ClockViewIOS: View {
             .fullScreenCover(isPresented: $viewModel.showingSettings) {
                 SettingsViewIOS()
             }
-            .sheet(isPresented: $viewModel.showingCalendar) {
+            .fullScreenCover(isPresented: $viewModel.showingCalendar) {
                 CalendarView(viewModel: viewModel)
             }
             .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
