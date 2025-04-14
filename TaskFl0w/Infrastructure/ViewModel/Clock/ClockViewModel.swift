@@ -19,6 +19,8 @@ final class ClockViewModel: ObservableObject {
     // MARK: - View Models
     let markersViewModel = ClockMarkersViewModel()
     let dragAndDropManager: DragAndDropManager
+    // Добавляем ViewModel для панели категорий
+    let dockBarViewModel: DockBarViewModel
 
     // MARK: - Published properties
     @Published var tasks: [TaskOnRing] = [] {
@@ -81,10 +83,20 @@ final class ClockViewModel: ObservableObject {
     @Published var showingStatistics: Bool = false
     @Published var showingTodayTasks: Bool = false
     @Published var showingCategoryEditor: Bool = false
-    @Published var selectedCategory: TaskCategoryModel?
+    @Published var selectedCategory: TaskCategoryModel? {
+        didSet {
+            // Синхронизируем с dockBarViewModel
+            dockBarViewModel.selectedCategory = selectedCategory
+        }
+    }
 
     // Drag & Drop
-    @Published var draggedCategory: TaskCategoryModel?
+    @Published var draggedCategory: TaskCategoryModel? {
+        didSet {
+            // Синхронизируем с dockBarViewModel
+            dockBarViewModel.draggedCategory = draggedCategory
+        }
+    }
 
     // Режим редактирования
     @Published var isEditingMode: Bool = false
@@ -167,11 +179,15 @@ final class ClockViewModel: ObservableObject {
         // Теперь можем безопасно использовать selectedDate
         let taskManagement = TaskManagement(sharedState: sharedState, selectedDate: initialDate)
         self.taskManagement = taskManagement
-        self.categoryManagement = CategoryManagement(
+        let categoryManager = CategoryManagement(
             context: sharedState.context, sharedState: sharedState)
+        self.categoryManagement = categoryManager
 
         // Инициализируем DragAndDropManager
         self.dragAndDropManager = DragAndDropManager(taskManagement: taskManagement)
+        
+        // Инициализируем DockBarViewModel
+        self.dockBarViewModel = DockBarViewModel(categoryManagement: categoryManager)
 
         // Подписываемся на обновления задач
         sharedState.subscribeToTasksUpdates { [weak self] in
@@ -190,6 +206,9 @@ final class ClockViewModel: ObservableObject {
             name: .zeroPositionDidChange,
             object: nil
         )
+        
+        // Настраиваем двустороннее связывание с dockBarViewModel
+        setupDockBarBindings()
     }
     
     deinit {
@@ -325,4 +344,49 @@ final class ClockViewModel: ObservableObject {
             currentDate = Date()
         }
     }
+
+    // Метод для настройки двусторонней синхронизации с dockBarViewModel
+    private func setupDockBarBindings() {
+        // Следим за изменениями в dockBarViewModel и синхронизируем с ClockViewModel
+        dockBarViewModel.$selectedCategory
+            .sink { [weak self] newCategory in
+                if self?.selectedCategory != newCategory {
+                    self?.selectedCategory = newCategory
+                }
+            }
+            .store(in: &cancellables)
+            
+        dockBarViewModel.$draggedCategory
+            .sink { [weak self] newCategory in
+                if self?.draggedCategory != newCategory {
+                    self?.draggedCategory = newCategory
+                }
+            }
+            .store(in: &cancellables)
+            
+        dockBarViewModel.$showingAddTask
+            .sink { [weak self] newValue in
+                if self?.showingAddTask != newValue {
+                    self?.showingAddTask = newValue
+                }
+            }
+            .store(in: &cancellables)
+            
+        dockBarViewModel.$showingCategoryEditor
+            .sink { [weak self] newValue in
+                if self?.showingCategoryEditor != newValue {
+                    self?.showingCategoryEditor = newValue
+                }
+            }
+            .store(in: &cancellables)
+            
+        // Начальная синхронизация
+        dockBarViewModel.selectedCategory = selectedCategory
+        dockBarViewModel.draggedCategory = draggedCategory
+        dockBarViewModel.showingAddTask = showingAddTask
+        dockBarViewModel.showingCategoryEditor = showingCategoryEditor
+    }
+    
+    // Добавляем коллекцию для хранения подписок
+    private var cancellables = Set<AnyCancellable>()
 }

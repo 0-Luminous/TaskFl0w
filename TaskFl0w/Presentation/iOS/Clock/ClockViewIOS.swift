@@ -68,13 +68,8 @@ struct ClockViewIOS: View {
 
                 // Набор категорий снизу - скрываем при активном поиске
                 if !isSearchActive {
-                    DockBarIOS(
-                        viewModel: viewModel,
-                        showingAddTask: $viewModel.showingAddTask,
-                        draggedCategory: $viewModel.draggedCategory,
-                        showingCategoryEditor: $viewModel.showingCategoryEditor,
-                        selectedCategory: $viewModel.selectedCategory
-                    )
+                    // Обновлено: используем DockBarIOS с DockBarViewModel
+                    DockBarIOS(viewModel: viewModel.dockBarViewModel)
                     .transition(.move(edge: .bottom))
                 }
             }

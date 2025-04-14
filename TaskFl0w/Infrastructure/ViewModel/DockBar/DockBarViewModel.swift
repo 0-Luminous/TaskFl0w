@@ -122,6 +122,15 @@ final class DockBarViewModel: ObservableObject {
             }
         }
     }
+    
+    // MARK: - Helpers for UI
+    func backgroundColorForTheme(in colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color(white: 0.2) : Color.white.opacity(0.9)
+    }
+    
+    func shadowColorForTheme(in colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color.black.opacity(0.3) : Color.black.opacity(0.1)
+    }
 }
 
 // MARK: - Вспомогательные типы для поддержки DragDrop
