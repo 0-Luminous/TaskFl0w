@@ -96,8 +96,8 @@ struct TaskListView: View {
                 })
             }
         }
-        // Сообщаем родительскому представлению о состоянии поиска
-        .onChange(of: isSearchActive) { newValue in
+        // Обновленный синтаксис onChange для iOS 17
+        .onChange(of: isSearchActive) { oldValue, newValue in
             // Здесь можно выполнить дополнительные действия при изменении состояния поиска
             NotificationCenter.default.post(
                 name: NSNotification.Name("SearchActiveStateChanged"),

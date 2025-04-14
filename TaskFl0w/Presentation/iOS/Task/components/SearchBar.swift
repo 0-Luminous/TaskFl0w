@@ -23,12 +23,12 @@ struct SearchBar: View {
                     .padding(.vertical, 7)
                     .font(.system(size: 17))
                     .focused($isFocused)
-                    .onChange(of: isFocused) { newValue in
+                    .onChange(of: isFocused) { oldValue, newValue in
                         withAnimation(.easeInOut(duration: 0.2)) {
                             isActive = newValue || !text.isEmpty
                         }
                     }
-                    .onChange(of: text) { newValue in
+                    .onChange(of: text) { oldValue, newValue in
                         withAnimation(.easeInOut(duration: 0.2)) {
                             isActive = isFocused || !newValue.isEmpty
                         }

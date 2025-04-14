@@ -32,9 +32,9 @@ struct ClockViewIOS: View {
                         // Обновляем выбранную категорию при появлении
                         listViewModel.selectedCategory = viewModel.selectedCategory
                     }
-                    .onChange(of: viewModel.selectedCategory) { newCategory in
+                    .onChange(of: viewModel.selectedCategory) { oldValue, newValue in
                         // Обновляем выбранную категорию при ее изменении
-                        listViewModel.selectedCategory = newCategory
+                        listViewModel.selectedCategory = newValue
                     }
                     .transition(.opacity)
                 } else {
