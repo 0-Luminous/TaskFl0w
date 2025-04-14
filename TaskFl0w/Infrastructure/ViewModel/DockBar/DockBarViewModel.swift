@@ -1,0 +1,157 @@
+//
+//  DockBarViewModel.swift
+//  TaskFl0w
+//
+//  Created by Yan on 14/4/25.
+//
+
+import SwiftUI
+
+final class DockBarViewModel: ObservableObject {
+    // MARK: - Services
+    let categoryManagement: CategoryManagementProtocol
+    
+    // MARK: - Published properties
+    @Published var showingAddTask: Bool = false
+    @Published var draggedCategory: TaskCategoryModel?
+    @Published var showingCategoryEditor: Bool = false
+    @Published var selectedCategory: TaskCategoryModel?
+    @Published var editingCategory: TaskCategoryModel?
+    
+    @Published var isEditMode: Bool = false
+    @Published var currentPage: Int = 0
+    @Published var lastNonEditPage: Int = 0
+    
+    // MARK: - Constants
+    let categoriesPerPage = 4
+    let categoryWidth: CGFloat = 80
+    
+    // MARK: - Computed properties
+    var categories: [TaskCategoryModel] {
+        categoryManagement.categories
+    }
+    
+    var numberOfPages: Int {
+        let count = categories.count
+        // Просто делим количество категорий на categoriesPerPage и округляем вверх
+        return max((count + categoriesPerPage - 1) / categoriesPerPage, 1)
+    }
+    
+    var pageWithAddButton: Int {
+        // Если у нас ровно 4 категории или больше, кнопка добавления должна быть на второй странице
+        return categories.count >= categoriesPerPage ? 1 : 0
+    }
+    
+    // MARK: - Initialization
+    init(categoryManagement: CategoryManagementProtocol) {
+        self.categoryManagement = categoryManagement
+    }
+    
+    // MARK: - Category methods
+    func categoriesForPage(_ page: Int) -> [TaskCategoryModel] {
+        let startIndex = page * categoriesPerPage
+        
+        // Проверяем, что startIndex не выходит за пределы массива
+        guard startIndex < categories.count else {
+            return []
+        }
+        
+        let endIndex = min(startIndex + categoriesPerPage, categories.count)
+        return Array(categories[startIndex..<endIndex])
+    }
+    
+    func shouldShowAddButton(on page: Int) -> Bool {
+        if !isEditMode { return false }
+        
+        // Для 4 или более категорий показываем кнопку на второй странице
+        if categories.count >= categoriesPerPage {
+            return page == 1
+        }
+        
+        // Для менее 4 категорий показываем на первой странице
+        return page == 0
+    }
+    
+    func isEditing(_ category: TaskCategoryModel) -> Bool {
+        return editingCategory?.id == category.id
+    }
+    
+    func deleteCategory(_ category: TaskCategoryModel) {
+        categoryManagement.removeCategory(category)
+    }
+    
+    func moveCategory(from source: Int, to destination: Int) {
+        guard let draggedCategory = draggedCategory else { return }
+        
+        // Создаем новую категорию с обновленным порядком
+        let updatedCategory = TaskCategoryModel(
+            id: draggedCategory.id,
+            rawValue: draggedCategory.rawValue,
+            iconName: draggedCategory.iconName,
+            color: draggedCategory.color
+        )
+        
+        categoryManagement.updateCategory(updatedCategory)
+        
+        // Сбрасываем состояние перетаскивания
+        self.draggedCategory = nil
+    }
+    
+    // MARK: - UI Feedback
+    func triggerHapticFeedback() {
+        #if os(iOS)
+        let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
+        feedbackGenerator.prepare()
+        feedbackGenerator.impactOccurred()
+        #endif
+    }
+    
+    // MARK: - Edit mode
+    func toggleEditMode() {
+        triggerHapticFeedback()
+        
+        if !isEditMode {
+            lastNonEditPage = currentPage
+        }
+        isEditMode.toggle()
+        
+        if isEditMode {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.showingCategoryEditor = true
+                self.isEditMode = false
+            }
+        }
+    }
+}
+
+// MARK: - Вспомогательные типы для поддержки DragDrop
+extension DockBarViewModel {
+    struct CategoryDropDelegate: DropDelegate {
+        let item: TaskCategoryModel
+        let items: [TaskCategoryModel]
+        let draggedItem: TaskCategoryModel?
+        let moveAction: (Int, Int) -> Void
+        
+        func performDrop(info: DropInfo) -> Bool {
+            guard let draggedItem = draggedItem else { return false }
+            
+            let fromIndex = items.firstIndex(of: draggedItem) ?? 0
+            let toIndex = items.firstIndex(of: item) ?? 0
+            
+            if fromIndex != toIndex {
+                moveAction(fromIndex, toIndex)
+            }
+            
+            return true
+        }
+        
+        func dropUpdated(info: DropInfo) -> DropProposal? {
+            return DropProposal(operation: .move)
+        }
+        
+        func validateDrop(info: DropInfo) -> Bool {
+            return true
+        }
+    }
+}
+
