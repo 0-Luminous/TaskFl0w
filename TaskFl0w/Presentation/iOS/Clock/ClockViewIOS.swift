@@ -123,10 +123,9 @@ struct ClockViewIOS: View {
                     }
                 }
             }
+            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
         }
-        // Подложка цветом циферблата
-        .background(ThemeManager.shared.currentClockFaceColor)
-        .preferredColorScheme(ThemeManager.shared.isDarkMode ? .dark : .light)
+        // .preferredColorScheme(ThemeManager.shared.isDarkMode ? .dark : .light)
         .onReceive(timer) { _ in
             viewModel.updateCurrentTimeIfNeeded()
         }

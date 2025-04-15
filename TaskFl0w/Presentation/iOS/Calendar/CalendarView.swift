@@ -9,52 +9,56 @@ import SwiftUI
 struct CalendarView: View {
     @StateObject private var viewModel: ClockViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var temporaryDate: Date // Временная дата для хранения выбора
+    @State private var selectedMode: BottomBarCalendar.ViewMode = .week
     
     init(viewModel: ClockViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
+        // Инициализируем временную дату текущей выбранной датой
+        _temporaryDate = State(initialValue: viewModel.selectedDate)
     }
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Секция календаря с синим фоном
-                    ZStack {
-                        // Синий фон
-                        RoundedRectangle(cornerRadius: 30)
-                            .fill(Color.blue)
-                            .edgesIgnoringSafeArea(.top)
-                        
-                        VStack(spacing: 10) { 
-                            // Календарь
-                            DatePicker("", selection: $viewModel.selectedDate, displayedComponents: .date)
-                                .datePickerStyle(.graphical)
-                                .padding()
-                                .background(Color.black.opacity(0.5))
-                                .cornerRadius(20)
-                                .padding(.horizontal)
-                                .colorScheme(.dark) // Принудительно тёмная схема для календаря
-                                .onChange(of: viewModel.selectedDate) { oldValue, newValue in
-                                    // Обновляем UI циферблата
-                                    viewModel.objectWillChange.send()
-                                    // Фильтруем задачи на выбранную дату
-                                    viewModel.tasks = viewModel.sharedState.tasks.filter { task in
-                                        Calendar.current.isDate(task.startTime, inSameDayAs: newValue)
-                                    }
-                                    // Обновляем также состояние clockState
-                                    viewModel.clockState.selectedDate = newValue
-                                    viewModel.updateMarkersViewModel()
-                                    dismiss()
-                                }
-                                .padding(.bottom, 20)
+            ZStack {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Секция календаря с синим фоном
+                        ZStack {
+                            // Синий фон
+                            RoundedRectangle(cornerRadius: 30)
+                                .fill(Color.blue)
+                                .edgesIgnoringSafeArea(.top)
+                            
+                            VStack(spacing: 10) { 
+                                // Календарь
+                                DatePicker("", selection: $temporaryDate, displayedComponents: .date)
+                                    .datePickerStyle(.graphical)
+                                    .padding()
+                                    .background(Color.black.opacity(0.5))
+                                    .cornerRadius(20)
+                                    .padding(.horizontal)
+                                    .colorScheme(.dark) // Принудительно тёмная схема для календаря
+                                    .padding(.bottom, 20)
+                            }
+                            .padding(.top, 120)
                         }
-                        .padding(.top, 120)
                     }
+                    .padding(.bottom, 100) // Увеличиваем отступ для BottomBar
                 }
-                .padding(.bottom, 30)
+                .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+                .edgesIgnoringSafeArea(.top)
+                
+                VStack {
+                    Spacer()
+                    BottomBarCalendar(selectedMode: $selectedMode) {
+                        // Действие при нажатии на кнопку добавления
+                        print("Добавление новой задачи")
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 16)
+                }
             }
-            .background(Color(.systemBackground))
-            .edgesIgnoringSafeArea(.top)
             .navigationTitle("Календарь")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -72,7 +76,22 @@ struct CalendarView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
-                        // Здесь можно добавить дополнительные действия перед закрытием
+                        // Применяем выбранную дату и выполняем все необходимые обновления
+                        viewModel.selectedDate = temporaryDate
+                        
+                        // Обновляем UI циферблата
+                        viewModel.objectWillChange.send()
+                        
+                        // Фильтруем задачи на выбранную дату
+                        viewModel.tasks = viewModel.sharedState.tasks.filter { task in
+                            Calendar.current.isDate(task.startTime, inSameDayAs: temporaryDate)
+                        }
+                        
+                        // Обновляем также состояние clockState
+                        viewModel.clockState.selectedDate = temporaryDate
+                        viewModel.updateMarkersViewModel()
+                        
+                        // Закрываем календарь
                         dismiss()
                     }) {
                         Text("Готово")
@@ -81,6 +100,10 @@ struct CalendarView: View {
                     }
                 }
             }
+        }
+        .onChange(of: selectedMode) { newMode in
+            // Здесь можно добавить логику при изменении режима отображения
+            print("Выбран режим: \(newMode.rawValue)")
         }
     }
     

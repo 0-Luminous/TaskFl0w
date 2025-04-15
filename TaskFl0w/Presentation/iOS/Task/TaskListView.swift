@@ -83,6 +83,7 @@ struct TaskListView: View {
                     .transition(.move(edge: .bottom))
                 }
             }
+            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
            .fullScreenCover(isPresented: $showingAddForm) {
                 ZStack {
                     FormTaskView(viewModel: viewModel, onDismiss: {
@@ -97,6 +98,7 @@ struct TaskListView: View {
                 })
             }
         }
+        
         // Обновленный синтаксис onChange для iOS 17
         .onChange(of: isSearchActive) { oldValue, newValue in
             // Здесь можно выполнить дополнительные действия при изменении состояния поиска

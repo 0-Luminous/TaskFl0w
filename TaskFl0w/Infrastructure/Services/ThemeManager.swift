@@ -29,7 +29,7 @@ final class ThemeManager: ObservableObject {
     private var lightModeClockFaceColor: String = Color.white.toHex()
     
     @AppStorage(Constants.darkModeClockFaceColorKey) 
-    private var darkModeClockFaceColor: String = Color.black.toHex()
+    private var darkModeClockFaceColor: String = Color.white.toHex()
     
     @AppStorage(Constants.lightModeOuterRingColorKey) 
     private var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()

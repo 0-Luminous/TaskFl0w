@@ -67,9 +67,8 @@ struct CategoryEditorViewIOS: View {
 
     // Общая функция для расчета цвета тени в зависимости от темы
     private func shadowColor() -> Color {
-        return colorScheme == .dark ? 
-            Color(red: 0.6, green: 0.6, blue: 0.6) : 
-            Color(red: 0.933, green: 0.933, blue: 0.933)
+        // Возвращаем темный цвет тени независимо от темы
+        return Color.black
     }
 
     // Выносим кнопки в отдельные представления
@@ -97,7 +96,7 @@ struct CategoryEditorViewIOS: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color(red: 0.357, green: 0.357, blue: 0.357))
                     .shadow(
-                        color: shadowColor().opacity(0.3),
+                        color: shadowColor().opacity(0.5),
                         radius: 5,
                         x: 0,
                         y: 2
@@ -151,7 +150,7 @@ struct CategoryEditorViewIOS: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(editingCategory == nil ? Color.blue : Color.red)
                     .shadow(
-                        color: shadowColor().opacity(0.3),
+                        color: shadowColor().opacity(0.5),
                         radius: 5,
                         x: 0,
                         y: 2
@@ -186,7 +185,7 @@ struct CategoryEditorViewIOS: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color(red: 0.357, green: 0.357, blue: 0.357))
                     .shadow(
-                        color: shadowColor().opacity(0.3),
+                        color: shadowColor().opacity(0.5),
                         radius: 5,
                         x: 0,
                         y: 2
@@ -268,7 +267,7 @@ struct CategoryEditorViewIOS: View {
                                             .fill(categoryType == .list ? 
                                                   Color.blue : Color(red: 0.357, green: 0.357, blue: 0.357))
                                             .shadow(
-                                                color: shadowColor().opacity(0.3),
+                                                color: shadowColor().opacity(0.5),
                                                 radius: 5, x: 0, y: 2
                                             )
                                     )
@@ -296,7 +295,7 @@ struct CategoryEditorViewIOS: View {
                                             .fill(categoryType == .notes ? 
                                                   Color.orange : Color(red: 0.357, green: 0.357, blue: 0.357))
                                             .shadow(
-                                                color: shadowColor().opacity(0.3),
+                                                color: shadowColor().opacity(0.5),
                                                 radius: 5, x: 0, y: 2
                                             )
                                     )
@@ -330,7 +329,7 @@ struct CategoryEditorViewIOS: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(Color(red: 0.357, green: 0.357, blue: 0.357))
                                 .shadow(
-                                    color: shadowColor().opacity(0.3),
+                                    color: shadowColor().opacity(0.5),
                                     radius: 5, x: 0, y: 2
                                 )
                         )
@@ -344,6 +343,7 @@ struct CategoryEditorViewIOS: View {
             .padding(.top)
             .navigationTitle(editingCategory == nil ? "Новая категория" : "Редактирование")
             .navigationBarTitleDisplayMode(.inline)
+            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
             .interactiveDismissDisabled(true)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
