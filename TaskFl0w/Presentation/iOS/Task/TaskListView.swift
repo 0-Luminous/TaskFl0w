@@ -42,7 +42,8 @@ struct TaskListView: View {
                                 },
                                 onShare: {
                                     viewModel.presenter?.shareItem(id: item.id)
-                                }
+                                },
+                                categoryColor: viewModel.selectedCategory?.color ?? .blue
                             )
                             .padding(.horizontal, 10)
                         }

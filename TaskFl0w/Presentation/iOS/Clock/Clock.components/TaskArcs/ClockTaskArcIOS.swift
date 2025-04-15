@@ -10,6 +10,9 @@ import SwiftUI
 struct ClockTaskArcIOS: View {
     let task: TaskOnRing
     @ObservedObject var viewModel: ClockViewModel
+    
+    // Добавляем состояние для отслеживания перетаскивания
+    @State private var isDragging: Bool = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -21,6 +24,7 @@ struct ClockTaskArcIOS: View {
             // Важно: весь циферблат вращается в родительском компоненте, поэтому нам нужно 
             // рассчитать углы без учета zeroPosition для правильного расположения дуг
             let (startAngle, endAngle) = RingTimeCalculator.calculateAngles(for: task)
+            let midAngle = RingTimeCalculator.calculateMidAngle(start: startAngle, end: endAngle)
 
             ZStack {
                 // Дуга задачи
@@ -33,6 +37,8 @@ struct ClockTaskArcIOS: View {
                         clockwise: false)
                 }
                 .stroke(task.category.color, lineWidth: 20)
+                // Перемещаем contentShape сюда, чтобы задать форму для всех жестов
+                .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
                 .gesture(
                     TapGesture()
                         .onEnded {
@@ -56,6 +62,39 @@ struct ClockTaskArcIOS: View {
                             }
                         }
                 )
+                // Добавляем жест долгого нажатия для мгновенного удаления
+                .simultaneousGesture(
+                    LongPressGesture(minimumDuration: 0.4)
+                        .onEnded { _ in
+                            if !viewModel.isEditingMode && viewModel.editingTask == nil {
+                                // Отмечаем начало перетаскивания
+                                isDragging = true
+                                // Сохраняем задачу для перетаскивания
+                                viewModel.startDragging(task)
+                                // Сразу устанавливаем флаг, что перетаскивание за пределами
+                                viewModel.updateDragPosition(isOutsideClock: true)
+                                
+                                // Используем таймер для имитации отпускания перетаскивания через короткое время
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    // Это вызовет onChange(of: isDragging) и обработает удаление
+                                    isDragging = false
+                                }
+                            }
+                        }
+                )
+                // Добавляем возможность перетаскивания с предпросмотром
+                .onDrag {
+                    // Если мы не в режиме редактирования, позволяем перетаскивание
+                    if !viewModel.isEditingMode && viewModel.editingTask == nil {
+                        isDragging = true
+                        // Начинаем перетаскивание
+                        viewModel.startDragging(task)
+                        return NSItemProvider(object: task.id.uuidString as NSString)
+                    }
+                    return NSItemProvider()
+                } preview: {
+                    taskDragPreview(for: task)
+                }
 
                 // Если текущая задача в режиме редактирования — показываем маркеры
                 if viewModel.isEditingMode && task.id == viewModel.editingTask?.id {
@@ -141,8 +180,6 @@ struct ClockTaskArcIOS: View {
                 }
 
                 // Иконка категории на середине дуги
-                let midAngle = RingTimeCalculator.calculateMidAngle(
-                    start: startAngle, end: endAngle)
                 Image(systemName: task.category.iconName)
                     .font(.system(size: 12))
                     .foregroundColor(.white)
@@ -157,6 +194,14 @@ struct ClockTaskArcIOS: View {
                     )
                     // Добавляем идентификатор, чтобы заставить переотрисовываться при изменении zeroPosition
                     .id("task-icon-\(task.id)-\(viewModel.zeroPosition)")
+            }
+        }
+        // Добавляем обработчик событий перетаскивания и обнаружения выхода за пределы
+        .onChange(of: isDragging) { oldValue, newValue in
+            if !newValue && viewModel.draggedTask?.id == task.id {
+                // Определяем, что перетаскивание закончилось
+                // Проверка на расстояние уже не нужна, так как DropDelegate будет обрабатывать место сброса
+                viewModel.stopDragging(didReturnToClock: !viewModel.isDraggingOutside)
             }
         }
     }
@@ -204,5 +249,22 @@ struct ClockTaskArcIOS: View {
                 viewModel.taskManagement.updateTaskStartTimeKeepingEnd(otherTask, newStartTime: updatedTask.endTime)
             }
         }
+    }
+
+    // Функция для создания предпросмотра перетаскиваемой задачи
+    private func taskDragPreview(for task: TaskOnRing) -> some View {
+        // Создаем внешний вид перетаскиваемой задачи, аналогичный перетаскиванию категории
+        RoundedRectangle(cornerRadius: 12)
+            .fill(task.category.color)
+            .frame(width: 50, height: 50)
+            .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                VStack {
+                    Image(systemName: task.category.iconName)
+                        .foregroundColor(.white)
+                        .font(.system(size: 18))
+                }
+            )
+            
     }
 }

@@ -6,6 +6,10 @@
 //
 import SwiftUI
 
+enum CategoryType {
+    case list, notes
+}
+
 struct CategoryEditorViewIOS: View {
     @ObservedObject var viewModel: ClockViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
@@ -16,12 +20,6 @@ struct CategoryEditorViewIOS: View {
 
     @Environment(\.colorScheme) var colorScheme
 
-    @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray
-        .opacity(0.3).toHex()
-    @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray
-        .opacity(0.3).toHex()
-    @AppStorage("zeroPosition") private var zeroPosition: Double = 0.0
-
     @State private var categoryName: String = ""
     @State private var selectedColor: Color = .blue
     @State private var selectedIcon: String = "star.fill"
@@ -30,6 +28,7 @@ struct CategoryEditorViewIOS: View {
     @State private var showingDeleteAlert = false
     @State private var hexColor: String = ""
     @FocusState private var isTextFieldFocused: Bool
+    @State private var categoryType: CategoryType = .list
 
     private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
 
@@ -66,18 +65,11 @@ struct CategoryEditorViewIOS: View {
         )
     }
 
-    // Добавляем вычисляемые свойства для цветов
-    private var currentClockFaceColor: Color {
-        let hexColor =
-            colorScheme == .dark
-            ? viewModel.darkModeClockFaceColor
-            : viewModel.lightModeClockFaceColor
-        return Color(hex: hexColor) ?? .white
-    }
-
-    private var currentOuterRingColor: Color {
-        let hexColor = colorScheme == .dark ? darkModeOuterRingColor : lightModeOuterRingColor
-        return Color(hex: hexColor) ?? .gray.opacity(0.3)
+    // Общая функция для расчета цвета тени в зависимости от темы
+    private func shadowColor() -> Color {
+        return colorScheme == .dark ? 
+            Color(red: 0.6, green: 0.6, blue: 0.6) : 
+            Color(red: 0.933, green: 0.933, blue: 0.933)
     }
 
     // Выносим кнопки в отдельные представления
@@ -88,22 +80,24 @@ struct CategoryEditorViewIOS: View {
         }) {
             HStack {
                 Text("Цвет")
-                    .foregroundColor(colorScheme == .dark ? .white : Color(hex: "474747"))
+                    .foregroundColor(.white)
                 Spacer()
                 Circle()
                     .fill(selectedColor)
+                    .overlay(
+                        Circle()
+                            .stroke(Color(red: 0.737, green: 0.737, blue: 0.737), lineWidth: 2)
+                    )
                     .frame(width: 30, height: 30)
+                    
             }
             .padding()
             .frame(height: 50)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(UIColor.systemBackground))
+                    .fill(Color(red: 0.357, green: 0.357, blue: 0.357))
                     .shadow(
-                        color: editingCategory == nil
-                            ? (colorScheme == .dark
-                                ? Color.white.opacity(0.2) : Color.black.opacity(0.1))
-                            : selectedColor.opacity(0.3),
+                        color: shadowColor().opacity(0.3),
                         radius: 5,
                         x: 0,
                         y: 2
@@ -142,24 +136,30 @@ struct CategoryEditorViewIOS: View {
                 showingDeleteAlert = true
             }
         }) {
-            Image(systemName: editingCategory == nil ? "plus" : "trash.fill")
-                .foregroundColor(editingCategory == nil ? .blue : .red)
-                .font(.system(size: 20))
-                .frame(width: 50, height: 50)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(UIColor.systemBackground))
-                        .shadow(
-                            color: editingCategory == nil
-                                ? (colorScheme == .dark
-                                    ? Color.white.opacity(0.2) : Color.black.opacity(0.1))
-                                : selectedColor.opacity(0.3),
-                            radius: 5,
-                            x: 0,
-                            y: 2
-                        )
-                )
+            HStack {
+                Spacer()
+                Image(systemName: editingCategory == nil ? "plus" : "trash.fill")
+                    .foregroundColor(.white)
+                    .font(.system(size: 20))
+                Text(editingCategory == nil ? "Добавить категорию" : "Удалить категорию")
+                    .foregroundColor(.white)
+                    .font(.headline)
+                Spacer()
+            }
+            .padding(.vertical, 15)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(editingCategory == nil ? Color.blue : Color.red)
+                    .shadow(
+                        color: shadowColor().opacity(0.3),
+                        radius: 5,
+                        x: 0,
+                        y: 2
+                    )
+            )
+            .padding(.horizontal)
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var iconButton: some View {
@@ -169,22 +169,24 @@ struct CategoryEditorViewIOS: View {
         }) {
             HStack {
                 Text("Иконка")
-                    .foregroundColor(colorScheme == .dark ? .white : Color(hex: "474747"))
+                    .foregroundColor(.white)
                 Spacer()
                 Image(systemName: selectedIcon)
                     .foregroundColor(selectedColor)
                     .font(.system(size: 20))
+                    .padding(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(red: 0.737, green: 0.737, blue: 0.737))
+                    )
             }
             .padding()
             .frame(height: 50)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(UIColor.systemBackground))
+                    .fill(Color(red: 0.357, green: 0.357, blue: 0.357))
                     .shadow(
-                        color: editingCategory == nil
-                            ? (colorScheme == .dark
-                                ? Color.white.opacity(0.2) : Color.black.opacity(0.1))
-                            : selectedColor.opacity(0.3),
+                        color: shadowColor().opacity(0.3),
                         radius: 5,
                         x: 0,
                         y: 2
@@ -196,8 +198,7 @@ struct CategoryEditorViewIOS: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 15) {
-                // Циферблат
-                
+
                 // DockBar с обновленным binding для выбранной категории
                 DockBarEditorIOS(
                     viewModel: viewModel,
@@ -224,7 +225,6 @@ struct CategoryEditorViewIOS: View {
                 VStack(spacing: 15) {
                     HStack(spacing: 20) {
                         colorButton
-                        actionButton
                         iconButton
                     }
                     .padding(.horizontal)
@@ -238,6 +238,105 @@ struct CategoryEditorViewIOS: View {
                         )
                         .padding(.horizontal)
                         .focused($isTextFieldFocused)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Тип категории")
+                            .foregroundColor(colorScheme == .dark ? .white : Color(hex: "474747"))
+                            .font(.headline)
+                            .padding(.horizontal)
+                            .padding(.top, 10)
+                        
+                        HStack(spacing: 15) {
+                            GeometryReader { geometry in
+                                Button(action: {
+                                    categoryType = .list
+                                    feedbackGenerator.impactOccurred()
+                                }) {
+                                    VStack {
+                                        Image(systemName: "list.bullet")
+                                            .foregroundColor(.white)
+                                            .font(.system(size: 50))
+                                            .padding(.bottom, 5)
+                                        
+                                        Text("Список")
+                                            .foregroundColor(.white)
+                                            .font(.headline)
+                                    }
+                                    .frame(width: geometry.size.width, height: geometry.size.width)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(categoryType == .list ? 
+                                                  Color.blue : Color(red: 0.357, green: 0.357, blue: 0.357))
+                                            .shadow(
+                                                color: shadowColor().opacity(0.3),
+                                                radius: 5, x: 0, y: 2
+                                            )
+                                    )
+                                }
+                            }
+                            
+                            GeometryReader { geometry in
+                                Button(action: {
+                                    categoryType = .notes
+                                    feedbackGenerator.impactOccurred()
+                                }) {
+                                    VStack {
+                                        Image(systemName: "note.text")
+                                            .foregroundColor(.white)
+                                            .font(.system(size: 50))
+                                            .padding(.bottom, 5)
+                                        
+                                        Text("Заметки")
+                                            .foregroundColor(.white)
+                                            .font(.headline)
+                                    }
+                                    .frame(width: geometry.size.width, height: geometry.size.width)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(categoryType == .notes ? 
+                                                  Color.orange : Color(red: 0.357, green: 0.357, blue: 0.357))
+                                            .shadow(
+                                                color: shadowColor().opacity(0.3),
+                                                radius: 5, x: 0, y: 2
+                                            )
+                                    )
+                                }
+                            }
+                        }
+                        .frame(height: 150)
+                        .padding(.horizontal)
+                    }
+                    
+                    Spacer() 
+                    actionButton
+                        .padding(.top, 20)
+                    
+                    Button(action: {
+                        feedbackGenerator.impactOccurred()
+                        // Добавьте здесь логику архивирования
+                    }) {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "archivebox.fill")
+                                .foregroundColor(.white)
+                                .font(.system(size: 20))
+                            Text("Архив")
+                                .foregroundColor(.white)
+                                .font(.headline)
+                            Spacer()
+                        }
+                        .padding(.vertical, 15)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color(red: 0.357, green: 0.357, blue: 0.357))
+                                .shadow(
+                                    color: shadowColor().opacity(0.3),
+                                    radius: 5, x: 0, y: 2
+                                )
+                        )
+                        .padding(.horizontal)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
 
                 Spacer()

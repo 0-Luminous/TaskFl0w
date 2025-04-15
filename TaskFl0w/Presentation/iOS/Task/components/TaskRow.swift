@@ -13,27 +13,9 @@ struct TaskRow: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onShare: () -> Void
+    let categoryColor: Color
 
     @State private var isLongPressed: Bool = false
-
-    var taskBody: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(item.title)
-                .foregroundColor(.white)
-
-            Text(item.content)
-                .font(.subheadline)
-                .foregroundColor(.white)
-                .lineLimit(2)
-
-            Text(item.date.formattedForTodoList())
-                .font(.caption)
-                .foregroundColor(.gray)
-        }
-        .frame(width: 320)
-        .padding(.vertical, 12)
-        .cornerRadius(12)
-    }
 
     var body: some View {
         ZStack {
@@ -41,7 +23,7 @@ struct TaskRow: View {
                 HStack {
                     Button(action: onToggle) {
                         Image(systemName: item.isCompleted ? "checkmark.circle" : "circle")
-                            .foregroundColor(item.isCompleted ? .yellow : .gray)
+                            .foregroundColor(item.isCompleted ? .yellow : categoryColor)
                             .font(.system(size: 22))
                     }
 
@@ -63,31 +45,19 @@ struct TaskRow: View {
                     .foregroundColor(.gray)
                     .padding(.leading, 30)
             }
+            .padding(10)
+            .background(
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color(UIColor.systemBackground).opacity(0.15))
+                    
+                    // Боковая полоса с цветом категории
+                    Rectangle()
+                        .fill(categoryColor)
+                        .frame(width: 5)
+                }
+            )
             .contentShape(Rectangle())
-            .contextMenu {
-                Button(action: onEdit) {
-                    Label("Редактировать", systemImage: "pencil")
-                }
-
-                Button(action: onShare) {
-                    Label("Поделиться", systemImage: "square.and.arrow.up")
-                }
-
-                Button(role: .destructive, action: onDelete) {
-                    Label("Удалить", systemImage: "trash")
-                }
-            } preview: {
-                taskBody
-                    .onAppear {
-                        isLongPressed = true
-                    }
-            }
-            .onDisappear {
-                isLongPressed = false
-            }
         }
-    }
-    var shouldHideDivider: Bool {
-        return isLongPressed
     }
 }
