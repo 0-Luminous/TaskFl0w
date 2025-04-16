@@ -15,6 +15,7 @@ struct TaskListView: View {
     @State private var isSearchActive = false
     @State private var newTaskTitle = ""
     @State private var isAddingNewTask = false
+    @State private var isKeyboardVisible = false
     @FocusState private var isNewTaskFocused: Bool
 
     var body: some View {
@@ -103,8 +104,8 @@ struct TaskListView: View {
                     viewModel.refreshData()
                 }
                 
-                // Показываем BottomBar только если поиск не активен и не создается новая задача
-                if !isSearchActive && !isAddingNewTask {
+                // Показываем BottomBar только если поиск не активен, не создается новая задача и клавиатура не видна
+                if !isSearchActive && !isAddingNewTask && !isKeyboardVisible {
                     BottomBar(
                         itemCount: getFilteredItems().count,
                         onAddTap: {
@@ -134,6 +135,15 @@ struct TaskListView: View {
                     viewModel.editingItem = nil
                 })
             }
+        }
+        
+        // Отслеживаем появление клавиатуры
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isKeyboardVisible = true
+        }
+        // Отслеживаем скрытие клавиатуры
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardVisible = false
         }
         
         // Обновленный синтаксис onChange для iOS 17
@@ -173,9 +183,10 @@ struct TaskListView: View {
                 )
             }
             newTaskTitle = ""
-            isAddingNewTask = false
-            isNewTaskFocused = false
         }
+        // Закрываем форму ввода независимо от того, пуст ли ввод
+        isAddingNewTask = false
+        isNewTaskFocused = false
     }
     
     // Вспомогательная функция для фильтрации задач
