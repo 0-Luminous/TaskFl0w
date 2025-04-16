@@ -16,6 +16,9 @@ struct ClockViewIOS: View {
     // Состояние активности поиска
     @State private var isSearchActive = false
     
+    // Состояние видимости докбара
+    @State private var isDockBarHidden = false
+    
     // MARK: - Body
     var body: some View {
         NavigationView {
@@ -66,8 +69,8 @@ struct ClockViewIOS: View {
 
                 Spacer()
 
-                // Набор категорий снизу - скрываем при активном поиске
-                if !isSearchActive {
+                // Набор категорий снизу - скрываем при активном поиске или при создании задачи
+                if !isSearchActive && !isDockBarHidden {
                     // Обновлено: используем DockBarIOS с DockBarViewModel
                     DockBarIOS(viewModel: viewModel.dockBarViewModel)
                     .transition(.move(edge: .bottom))
@@ -145,12 +148,30 @@ struct ClockViewIOS: View {
                     }
                 }
             }
+            
+            // Добавляем обработчик для видимости докбара
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("DockBarVisibilityChanged"),
+                object: nil,
+                queue: .main
+            ) { notification in
+                if let isVisible = notification.userInfo?["isVisible"] as? Bool {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        self.isDockBarHidden = !isVisible
+                    }
+                }
+            }
         }
         .onDisappear {
-            // Удаляем обработчик уведомлений
+            // Удаляем обработчики уведомлений
             NotificationCenter.default.removeObserver(
                 self,
                 name: NSNotification.Name("SearchActiveStateChanged"),
+                object: nil
+            )
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSNotification.Name("DockBarVisibilityChanged"),
                 object: nil
             )
         }

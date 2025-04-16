@@ -13,6 +13,9 @@ struct TaskListView: View {
     let selectedCategory: TaskCategoryModel?
     @State private var showingAddForm = false
     @State private var isSearchActive = false
+    @State private var newTaskTitle = ""
+    @State private var isAddingNewTask = false
+    @FocusState private var isNewTaskFocused: Bool
 
     var body: some View {
         NavigationView {
@@ -20,14 +23,41 @@ struct TaskListView: View {
                 SearchBar(text: $viewModel.searchText, isActive: $isSearchActive)
                 
                 List {
-                    // Фильтруем задачи по выбранной категории
-                    let filteredItems = viewModel.selectedCategory != nil 
-                        ? viewModel.items.filter { item in
-                            item.categoryID == viewModel.selectedCategory?.id
-                        } 
-                        : viewModel.items
+                    // Используем вычисляемое свойство для фильтрации
+                    let items = getFilteredItems()
                     
-                    ForEach(filteredItems) { item in
+                    // Показываем поле для новой задачи, если isAddingNewTask = true
+                    if isAddingNewTask {
+                        HStack {
+                            Button(action: {
+                                // Кнопка Toggle для новой задачи неактивна
+                            }) {
+                                Image(systemName: "circle")
+                                    .foregroundColor(.black)
+                                    .font(.system(size: 22))
+                            }
+                            
+                            TextField("Новая задача", text: $newTaskTitle)
+                                .foregroundColor(.white)
+                                .onSubmit {
+                                    saveNewTask()
+                                }
+                                .focused($isNewTaskFocused)
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal, 10)
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color(.darkGray))
+                                // .strokeBorder(viewModel.selectedCategory?.color ?? .blue, lineWidth: 1)
+                                .padding(.vertical, 5)
+                                .padding(.horizontal, 8)
+                        )
+                        .listRowSeparator(.hidden)
+                    }
+                    
+                    ForEach(items) { item in
                         VStack(spacing: 0) {
                             TaskRow(
                                 item: item,
@@ -47,10 +77,17 @@ struct TaskListView: View {
                             )
                             .padding(.horizontal, 10)
                         }
-                        // .listRowSeparator(.hidden)
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color(.darkGray))
+                                // .strokeBorder(item.categoryID == viewModel.selectedCategory?.id ? viewModel.selectedCategory?.color ?? .blue : .blue, lineWidth: 2)
+                                .padding(.vertical, 5)
+                                .padding(.horizontal, 8)
+                        )
+                        .listRowSeparator(.hidden)
                     }
                     .onDelete { indexSet in
-                        let items = filteredItems
+                        let items = getFilteredItems()
                         indexSet.forEach { index in
                             let item = items[index]
                             viewModel.presenter?.deleteItem(id: item.id)
@@ -66,16 +103,21 @@ struct TaskListView: View {
                     viewModel.refreshData()
                 }
                 
-                // Показываем BottomBar только если поиск не активен
-                if !isSearchActive {
+                // Показываем BottomBar только если поиск не активен и не создается новая задача
+                if !isSearchActive && !isAddingNewTask {
                     BottomBar(
-                        itemCount: filteredItems.count,
+                        itemCount: getFilteredItems().count,
                         onAddTap: {
                             // Убедимся, что выбранная категория установлена перед открытием формы
                             if let selectedCategory = selectedCategory {
                                 viewModel.selectedCategory = selectedCategory
                             }
-                            showingAddForm = true
+                            // Вместо открытия формы, показываем строку для новой задачи
+                            isAddingNewTask = true
+                            // Устанавливаем фокус с небольшой задержкой
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isNewTaskFocused = true
+                            }
                         }
                     )
                     .padding(.horizontal, 16)
@@ -83,14 +125,9 @@ struct TaskListView: View {
                     .transition(.move(edge: .bottom))
                 }
             }
-            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
-           .fullScreenCover(isPresented: $showingAddForm) {
-                ZStack {
-                    FormTaskView(viewModel: viewModel, onDismiss: {
-                        showingAddForm = false
-                    })
-                    .interactiveDismissDisabled(true)
-                }
+            .scrollContentBackground(.hidden)
+            .background{
+                Color(red: 0.098, green: 0.098, blue: 0.098)
             }
             .fullScreenCover(item: $viewModel.editingItem) { item in
                 FormTaskView(viewModel: viewModel, item: item, onDismiss: {
@@ -108,10 +145,41 @@ struct TaskListView: View {
                 userInfo: ["isActive": newValue]
             )
         }
+        // Добавляем обработчик изменения состояния создания новой задачи
+        .onChange(of: isAddingNewTask) { oldValue, newValue in
+            // Если режим создания новой задачи активирован,
+            // то отправляем уведомление для скрытия докбара
+            NotificationCenter.default.post(
+                name: NSNotification.Name("AddingTaskStateChanged"),
+                object: nil,
+                userInfo: ["isAddingTask": newValue]
+            )
+        }
     }
     
-    // Вспомогательное свойство для фильтрации задач
-    private var filteredItems: [ToDoItem] {
+    // Функция для сохранения новой задачи
+    private func saveNewTask() {
+        if !newTaskTitle.isEmpty {
+            if let category = viewModel.selectedCategory {
+                viewModel.presenter?.addItemWithCategory(
+                    title: newTaskTitle,
+                    content: "",
+                    category: category
+                )
+            } else {
+                viewModel.presenter?.addItem(
+                    title: newTaskTitle,
+                    content: ""
+                )
+            }
+            newTaskTitle = ""
+            isAddingNewTask = false
+            isNewTaskFocused = false
+        }
+    }
+    
+    // Вспомогательная функция для фильтрации задач
+    private func getFilteredItems() -> [ToDoItem] {
         if let selectedCategory = viewModel.selectedCategory {
             return viewModel.items.filter { item in
                 item.categoryID == selectedCategory.id
@@ -120,4 +188,8 @@ struct TaskListView: View {
             return viewModel.items
         }
     }
+}
+
+#Preview {
+    TaskListView(viewModel: ListViewModel(), selectedCategory: nil)
 }

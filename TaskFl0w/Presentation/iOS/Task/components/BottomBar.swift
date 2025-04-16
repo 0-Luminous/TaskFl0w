@@ -40,7 +40,6 @@ struct BottomBar: View {
                     .cornerRadius(20)
                 Spacer()
             }
-//             .padding(.horizontal, 16)
         }
     }
 }
