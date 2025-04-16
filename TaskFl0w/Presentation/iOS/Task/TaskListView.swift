@@ -30,14 +30,6 @@ struct TaskListView: View {
                     // Показываем поле для новой задачи, если isAddingNewTask = true
                     if isAddingNewTask {
                         HStack {
-                            Button(action: {
-                                // Кнопка Toggle для новой задачи неактивна
-                            }) {
-                                Image(systemName: "circle")
-                                    .foregroundColor(.black)
-                                    .font(.system(size: 22))
-                            }
-                            
                             TextField("Новая задача", text: $newTaskTitle)
                                 .foregroundColor(.white)
                                 .onSubmit {
