@@ -116,7 +116,15 @@ struct TaskListView: View {
                             }
                         },
                         isSelectionMode: $isSelectionMode,
-                        selectedTasks: $selectedTasks
+                        selectedTasks: $selectedTasks,
+                        onDeleteSelectedTasks: {
+                            // Удаляем все выбранные задачи
+                            for taskId in selectedTasks {
+                                viewModel.presenter?.deleteItem(id: taskId)
+                            }
+                            // Очищаем множество выбранных задач
+                            selectedTasks.removeAll()
+                        }
                     )
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)

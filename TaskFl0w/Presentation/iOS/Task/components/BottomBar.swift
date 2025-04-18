@@ -11,6 +11,7 @@ struct BottomBar: View {
     let onAddTap: () -> Void
     @Binding var isSelectionMode: Bool
     @Binding var selectedTasks: Set<UUID>
+    var onDeleteSelectedTasks: () -> Void
     
     // MARK: - Body
     var body: some View {
@@ -92,12 +93,16 @@ struct BottomBar: View {
     
     private var deleteButton: some View {
         Button(action: {
-            // Действие для группировки задач
+            onDeleteSelectedTasks()
+            // После удаления выходим из режима выбора
+            toggleSelectionMode()
         }) {
             circleIconImage(systemName: "trash.circle.fill", color: .red)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
         }
+        .disabled(selectedTasks.isEmpty)
+        .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
     }
     
     private var priorityButton: some View {
@@ -158,7 +163,8 @@ struct BottomBar: View {
             BottomBar(
                 onAddTap: { print("Add tapped") }, 
                 isSelectionMode: $isSelectionMode,
-                selectedTasks: $selectedTasks
+                selectedTasks: $selectedTasks,
+                onDeleteSelectedTasks: { print("Delete selected tasks") }
             )
         }
     }
