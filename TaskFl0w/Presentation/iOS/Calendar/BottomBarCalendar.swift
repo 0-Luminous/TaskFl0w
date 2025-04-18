@@ -43,18 +43,6 @@ struct BottomBarCalendar: View {
             .cornerRadius(20)
             
             Spacer()
-            
-            Button(action: {
-                onAddButtonTapped()
-            }) {
-                Image(systemName: "plus")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.black)
-                    .frame(width: 44, height: 44)
-                    .background(Color.yellow)
-                    .clipShape(Circle())
-                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
-            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
