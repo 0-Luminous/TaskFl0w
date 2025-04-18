@@ -13,6 +13,8 @@ struct BottomBar: View {
     @Binding var selectedTasks: Set<UUID>
     var onDeleteSelectedTasks: () -> Void
     var onChangePriorityForSelectedTasks: () -> Void
+    var onArchiveTapped: () -> Void
+    @Binding var showCompletedTasksOnly: Bool
     
     // MARK: - Body
     var body: some View {
@@ -71,9 +73,12 @@ struct BottomBar: View {
     }
     
     private var archiveButton: some View {
-        Button(action: onAddTap) {
-            circleIconImage(systemName: "archivebox.circle.fill", color: .gray)
-                .frame(width: 44, height: 44)
+        Button(action: onArchiveTapped) {
+            circleIconImage(
+                systemName: "archivebox.circle.fill", 
+                color: showCompletedTasksOnly ? .blue : .gray
+            )
+            .frame(width: 44, height: 44)
         }
     }
     
@@ -164,6 +169,7 @@ struct BottomBar: View {
     struct PreviewWrapper: View {
         @State private var isSelectionMode = false
         @State private var selectedTasks: Set<UUID> = []
+        @State private var showCompletedTasksOnly = false
         
         var body: some View {
             BottomBar(
@@ -171,7 +177,9 @@ struct BottomBar: View {
                 isSelectionMode: $isSelectionMode,
                 selectedTasks: $selectedTasks,
                 onDeleteSelectedTasks: { print("Delete selected tasks") },
-                onChangePriorityForSelectedTasks: { print("Change priority for selected tasks") }
+                onChangePriorityForSelectedTasks: { print("Change priority for selected tasks") },
+                onArchiveTapped: { print("Archive completed tasks") },
+                showCompletedTasksOnly: $showCompletedTasksOnly
             )
         }
     }

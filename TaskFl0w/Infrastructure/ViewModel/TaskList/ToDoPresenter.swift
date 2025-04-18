@@ -83,4 +83,13 @@ class ToDoPresenter: ToDoPresenterProtocol {
     func didChangePriority() {
         refreshItems()
     }
+
+    func archiveCompletedTasks() {
+        interactor?.archiveCompletedTasks()
+    }
+
+    func didArchiveTasks() {
+        // После архивации обновляем список задач
+        refreshItems()
+    }
 }

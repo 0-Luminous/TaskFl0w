@@ -19,6 +19,7 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
     @Published var isAddingNewItem: Bool = false
     @Published var editingItem: ToDoItem? = nil
     @Published var selectedCategory: TaskCategoryModel? = nil
+    @Published var showCompletedTasksOnly: Bool = false
 
     var presenter: ToDoPresenterProtocol?
 

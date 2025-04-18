@@ -19,4 +19,7 @@ protocol ToDoInteractorProtocol: AnyObject {
     // Новые методы
     func editItem(id: UUID, title: String, content: String)
     func getItem(id: UUID) -> ToDoItem?
+    
+    // Функционал архива
+    func archiveCompletedTasks()
 }

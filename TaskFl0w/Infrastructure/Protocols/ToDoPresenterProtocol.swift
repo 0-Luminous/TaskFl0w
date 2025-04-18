@@ -27,4 +27,8 @@ protocol ToDoPresenterProtocol: AnyObject {
     // Новые методы для контекстного меню
     func editItem(id: UUID, title: String, content: String)
     func shareItem(id: UUID)
+    
+    // Архивация выполненных задач
+    func archiveCompletedTasks()
+    func didArchiveTasks()
 }

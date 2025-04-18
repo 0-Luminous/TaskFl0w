@@ -21,6 +21,17 @@ struct TaskRow: View {
     
     var body: some View {
         ZStack {
+            // Фоновая полоса для обозначения приоритета
+            if item.priority != .none {
+                HStack {
+                    Rectangle()
+                        .fill(priorityColor(for: item.priority))
+                        .frame(width: 4)
+                        .opacity(0.8)
+                    Spacer()
+                }
+            }
+            
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     if isSelectionMode {
@@ -39,20 +50,35 @@ struct TaskRow: View {
                         }
                     }
                     
-                    Text(item.title)
-                        .strikethrough(item.isCompleted && !isSelectionMode)
-                        .foregroundColor(item.isCompleted && !isSelectionMode ? .gray : .white)
+                    // Название задачи с отображением приоритета
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.title)
+                            .strikethrough(item.isCompleted && !isSelectionMode)
+                            .foregroundColor(item.isCompleted && !isSelectionMode ? .gray : .white)
+                            .fontWeight(getFontWeight(for: item.priority))
+                        
+                        // Строка с приоритетом
+                        if item.priority != .none {
+                            Text(getPriorityText(for: item.priority))
+                                .font(.system(size: 12))
+                                .foregroundColor(priorityColor(for: item.priority))
+                                .opacity(0.9)
+                        }
+                    }
                     
                     Spacer()
                     
-                    // Отображаем индикатор приоритета, если он не .none
+                    // Иконка приоритета
                     if item.priority != .none {
-                        priorityIndicator(for: item.priority)
+                        priorityIcon(for: item.priority)
                     }
                 }
-                .padding(.horizontal, -10)
+                .padding(.horizontal, -5)
+                .padding(.leading, item.priority != .none ? 5 : 0)
             }
+            .padding(.horizontal, 10)
         }
+        .animation(.easeInOut, value: item.priority)
     }
     
     // Проверяем, выбрана ли задача
@@ -69,28 +95,55 @@ struct TaskRow: View {
         }
     }
     
-    // Метод для отображения индикатора приоритета
-    private func priorityIndicator(for priority: TaskPriority) -> some View {
-        let color: Color
-        let text: String
+    // Цвет для приоритета
+    private func priorityColor(for priority: TaskPriority) -> Color {
+        switch priority {
+        case .high:
+            return .red
+        case .medium:
+            return .orange
+        case .low:
+            return .green
+        case .none:
+            return .clear
+        }
+    }
+    
+    // Иконка приоритета
+    private func priorityIcon(for priority: TaskPriority) -> some View {
+        let systemName: String
+        let color = priorityColor(for: priority)
         
         switch priority {
         case .high:
-            color = .red
-            text = "!"
+            systemName = "exclamationmark.triangle.fill"
         case .medium:
-            color = .orange
-            text = "!"
+            systemName = "exclamationmark.circle.fill"
         case .low:
-            color = .green
-            text = "!"
+            systemName = "arrow.up.circle.fill"
         case .none:
-            color = .clear
-            text = ""
+            systemName = ""
         }
         
-        return Text(text)
-            .font(.system(size: 18, weight: .bold))
+        return Image(systemName: systemName)
             .foregroundColor(color)
+            .font(.system(size: 18))
+    }
+    
+    // Текстовое представление приоритета
+    private func getPriorityText(for priority: TaskPriority) -> String {
+        return "Приоритет: \(priority.description)"
+    }
+    
+    // Настройка жирности шрифта в зависимости от приоритета
+    private func getFontWeight(for priority: TaskPriority) -> Font.Weight {
+        switch priority {
+        case .high:
+            return .bold
+        case .medium:
+            return .semibold
+        case .low, .none:
+            return .regular
+        }
     }
 }

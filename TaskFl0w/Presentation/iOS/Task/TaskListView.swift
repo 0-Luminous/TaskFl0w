@@ -26,6 +26,27 @@ struct TaskListView: View {
             VStack(spacing: 0) {
                 SearchBar(text: $viewModel.searchText, isActive: $isSearchActive)
                 
+                // Добавляем индикатор режима архива
+                if viewModel.showCompletedTasksOnly {
+                    HStack {
+                        Text("Архив выполненных задач")
+                            .font(.headline)
+                            .foregroundColor(.blue)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            viewModel.showCompletedTasksOnly = false
+                        }) {
+                            Text("Вернуться")
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .background(Color(.darkGray).opacity(0.3))
+                }
+                
                 List {
                     // Используем вычисляемое свойство для фильтрации
                     let items = getFilteredItems()
@@ -76,11 +97,17 @@ struct TaskListView: View {
                             .padding(.horizontal, 10)
                         }
                         .listRowBackground(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color(.darkGray))
-                                // .strokeBorder(item.categoryID == viewModel.selectedCategory?.id ? viewModel.selectedCategory?.color ?? .blue : .blue, lineWidth: 2)
-                                .padding(.vertical, 5)
-                                .padding(.horizontal, 8)
+                            ZStack {
+                                // Градиент фона в зависимости от приоритета
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color(.darkGray))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .strokeBorder(getPriorityBorderColor(for: item.priority), lineWidth: item.priority != .none ? 1.5 : 0)
+                                    )
+                                    .padding(.vertical, 5)
+                                    .padding(.horizontal, 8)
+                            }
                         )
                         .listRowSeparator(.hidden)
                     }
@@ -129,7 +156,12 @@ struct TaskListView: View {
                         onChangePriorityForSelectedTasks: {
                             // Отображаем меню выбора приоритета и применяем выбранный приоритет
                             showPriorityActionSheet()
-                        }
+                        },
+                        onArchiveTapped: {
+                            // Переключаем режим отображения выполненных задач
+                            viewModel.showCompletedTasksOnly.toggle()
+                        },
+                        showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
                     )
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
@@ -220,10 +252,11 @@ struct TaskListView: View {
         isNewTaskFocused = false
     }
     
-    // Вспомогательная функция для фильтрации задач
+    // Обновляем функцию фильтрации задач для отображения выполненных задач
     private func getFilteredItems() -> [ToDoItem] {
         var filteredItems: [ToDoItem]
         
+        // Сначала фильтруем по категории, если она выбрана
         if let selectedCategory = viewModel.selectedCategory {
             filteredItems = viewModel.items.filter { item in
                 item.categoryID == selectedCategory.id
@@ -232,18 +265,29 @@ struct TaskListView: View {
             filteredItems = viewModel.items
         }
         
-        // Сортируем задачи по приоритету (от высокого к низкому)
-        // Сначала по приоритету (в обратном порядке - высокий приоритет в начале), 
-        // затем по статусу завершения (незавершенные в начале)
-        return filteredItems.sorted { (item1, item2) -> Bool in
-            // Если статус завершения разный, незавершенные идут вначале
-            if item1.isCompleted != item2.isCompleted {
-                return !item1.isCompleted
+        // Если включен режим просмотра выполненных задач, отфильтровываем только их
+        if viewModel.showCompletedTasksOnly {
+            filteredItems = filteredItems.filter { item in
+                item.isCompleted
             }
-            
-            // Если статус завершения одинаковый, сортируем по приоритету
-            // Высокий приоритет (3) должен быть вначале списка
-            return item1.priority.rawValue > item2.priority.rawValue
+        }
+        
+        // Сортируем задачи
+        return filteredItems.sorted { (item1, item2) -> Bool in
+            // Если мы в режиме выполненных задач, меняем порядок сортировки
+            if viewModel.showCompletedTasksOnly {
+                // Сортируем по дате выполнения (предполагаем, что более поздние - сверху)
+                return item1.date > item2.date
+            } else {
+                // Стандартная сортировка
+                // Если статус завершения разный, незавершенные идут вначале
+                if item1.isCompleted != item2.isCompleted {
+                    return !item1.isCompleted
+                }
+                
+                // Если статус завершения одинаковый, сортируем по приоритету
+                return item1.priority.rawValue > item2.priority.rawValue
+            }
         }
     }
     
@@ -257,6 +301,20 @@ struct TaskListView: View {
         }
         // Выходим из режима выбора после установки приоритета
         isSelectionMode = false
+    }
+    
+    // Вспомогательный метод для получения цвета рамки в зависимости от приоритета
+    private func getPriorityBorderColor(for priority: TaskPriority) -> Color {
+        switch priority {
+        case .high:
+            return Color.red.opacity(0.6)
+        case .medium:
+            return Color.orange.opacity(0.5)
+        case .low:
+            return Color.green.opacity(0.4)
+        case .none:
+            return Color.clear
+        }
     }
 }
 

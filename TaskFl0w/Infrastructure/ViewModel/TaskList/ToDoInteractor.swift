@@ -232,20 +232,39 @@ class ToDoInteractor: ToDoInteractorProtocol {
         }
     }
 
+    func archiveCompletedTasks() {
+        print("📦 Архивирование выполненных задач")
+        let request = NSFetchRequest<NSManagedObject>(entityName: "CDToDoItem")
+        request.predicate = NSPredicate(format: "isCompleted == %@", NSNumber(value: true))
+
+        do {
+            let completedItems = try viewContext.fetch(request)
+            print("📦 Найдено выполненных задач: \(completedItems.count)")
+            
+            // Если есть выполненные задачи, удаляем их
+            if !completedItems.isEmpty {
+                for item in completedItems {
+                    viewContext.delete(item)
+                }
+                saveContext()
+                print("✅ Выполненные задачи успешно перемещены в архив")
+            }
+            
+            // Обновляем интерфейс
+            presenter?.didArchiveTasks()
+        } catch {
+            print("❌ Ошибка при архивации задач: \(error)")
+        }
+    }
+
     // Вспомогательный метод для сохранения контекста
     private func saveContext() {
-        do {
-            if viewContext.hasChanges {
+        if viewContext.hasChanges {
+            do {
                 try viewContext.save()
-                print("✅ Данные успешно сохранены в CoreData")
-            } else {
-                print("⚠️ Нет изменений для сохранения в CoreData")
-            }
-        } catch {
-            print("❌ Ошибка при сохранении контекста: \(error)")
-            // Добавим более подробную информацию об ошибке
-            if let nserror = error as NSError? {
-                print("Подробная информация об ошибке: \(nserror.userInfo)")
+                print("✅ Контекст сохранен")
+            } catch {
+                print("❌ Ошибка при сохранении контекста: \(error)")
             }
         }
     }
