@@ -14,10 +14,12 @@ struct ToDoItem: Identifiable, Codable {
     var isCompleted: Bool
     var categoryID: UUID?
     var categoryName: String?
+    var priority: TaskPriority
 
     init(
         id: UUID = UUID(), title: String, content: String, date: Date = Date(),
-        isCompleted: Bool = false, categoryID: UUID? = nil, categoryName: String? = nil
+        isCompleted: Bool = false, categoryID: UUID? = nil, categoryName: String? = nil,
+        priority: TaskPriority = .none
     ) {
         self.id = id
         self.title = title
@@ -26,5 +28,6 @@ struct ToDoItem: Identifiable, Codable {
         self.isCompleted = isCompleted
         self.categoryID = categoryID
         self.categoryName = categoryName
+        self.priority = priority
     }
 }

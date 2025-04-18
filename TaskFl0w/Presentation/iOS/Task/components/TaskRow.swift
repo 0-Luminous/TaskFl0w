@@ -44,6 +44,11 @@ struct TaskRow: View {
                         .foregroundColor(item.isCompleted && !isSelectionMode ? .gray : .white)
                     
                     Spacer()
+                    
+                    // Отображаем индикатор приоритета, если он не .none
+                    if item.priority != .none {
+                        priorityIndicator(for: item.priority)
+                    }
                 }
                 .padding(.horizontal, -10)
             }
@@ -62,5 +67,30 @@ struct TaskRow: View {
         } else {
             selectedTasks.insert(item.id)
         }
+    }
+    
+    // Метод для отображения индикатора приоритета
+    private func priorityIndicator(for priority: TaskPriority) -> some View {
+        let color: Color
+        let text: String
+        
+        switch priority {
+        case .high:
+            color = .red
+            text = "!"
+        case .medium:
+            color = .orange
+            text = "!"
+        case .low:
+            color = .green
+            text = "!"
+        case .none:
+            color = .clear
+            text = ""
+        }
+        
+        return Text(text)
+            .font(.system(size: 18, weight: .bold))
+            .foregroundColor(color)
     }
 }

@@ -19,6 +19,7 @@ struct TaskListView: View {
     @FocusState private var isNewTaskFocused: Bool
     @State private var isSelectionMode = false
     @State private var selectedTasks: Set<UUID> = []
+    @State private var showingPrioritySheet = false
 
     var body: some View {
         NavigationView {
@@ -124,6 +125,10 @@ struct TaskListView: View {
                             }
                             // Очищаем множество выбранных задач
                             selectedTasks.removeAll()
+                        },
+                        onChangePriorityForSelectedTasks: {
+                            // Отображаем меню выбора приоритета и применяем выбранный приоритет
+                            showPriorityActionSheet()
                         }
                     )
                     .padding(.horizontal, 16)
@@ -139,6 +144,27 @@ struct TaskListView: View {
                 FormTaskView(viewModel: viewModel, item: item, onDismiss: {
                     viewModel.editingItem = nil
                 })
+            }
+            .actionSheet(isPresented: $showingPrioritySheet) {
+                ActionSheet(
+                    title: Text("Выберите приоритет"),
+                    message: Text("Установить приоритет для выбранных задач"),
+                    buttons: [
+                        .default(Text("Высокий")) { 
+                            setPriorityForSelectedTasks(.high) 
+                        },
+                        .default(Text("Средний")) { 
+                            setPriorityForSelectedTasks(.medium) 
+                        },
+                        .default(Text("Низкий")) { 
+                            setPriorityForSelectedTasks(.low) 
+                        },
+                        .default(Text("Нет")) { 
+                            setPriorityForSelectedTasks(.none) 
+                        },
+                        .cancel(Text("Отмена"))
+                    ]
+                )
             }
         }
         
@@ -196,13 +222,41 @@ struct TaskListView: View {
     
     // Вспомогательная функция для фильтрации задач
     private func getFilteredItems() -> [ToDoItem] {
+        var filteredItems: [ToDoItem]
+        
         if let selectedCategory = viewModel.selectedCategory {
-            return viewModel.items.filter { item in
+            filteredItems = viewModel.items.filter { item in
                 item.categoryID == selectedCategory.id
             }
         } else {
-            return viewModel.items
+            filteredItems = viewModel.items
         }
+        
+        // Сортируем задачи по приоритету (от высокого к низкому)
+        // Сначала по приоритету (в обратном порядке - высокий приоритет в начале), 
+        // затем по статусу завершения (незавершенные в начале)
+        return filteredItems.sorted { (item1, item2) -> Bool in
+            // Если статус завершения разный, незавершенные идут вначале
+            if item1.isCompleted != item2.isCompleted {
+                return !item1.isCompleted
+            }
+            
+            // Если статус завершения одинаковый, сортируем по приоритету
+            // Высокий приоритет (3) должен быть вначале списка
+            return item1.priority.rawValue > item2.priority.rawValue
+        }
+    }
+    
+    private func showPriorityActionSheet() {
+        showingPrioritySheet = true
+    }
+    
+    private func setPriorityForSelectedTasks(_ priority: TaskPriority) {
+        for taskId in selectedTasks {
+            viewModel.presenter?.changePriority(id: taskId, priority: priority)
+        }
+        // Выходим из режима выбора после установки приоритета
+        isSelectionMode = false
     }
 }
 

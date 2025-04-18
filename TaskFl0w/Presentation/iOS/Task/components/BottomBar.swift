@@ -12,6 +12,7 @@ struct BottomBar: View {
     @Binding var isSelectionMode: Bool
     @Binding var selectedTasks: Set<UUID>
     var onDeleteSelectedTasks: () -> Void
+    var onChangePriorityForSelectedTasks: () -> Void
     
     // MARK: - Body
     var body: some View {
@@ -53,9 +54,9 @@ struct BottomBar: View {
             
             priorityButton
 
-            Spacer()
+            // Spacer()
             
-            groupButton
+//            groupButton
             
             Spacer()
             
@@ -108,11 +109,16 @@ struct BottomBar: View {
     private var priorityButton: some View {
         Button(action: {
             // Действие для изменения приоритета задач
+            if !selectedTasks.isEmpty {
+                onChangePriorityForSelectedTasks()
+            }
         }) {
-            circleIconImage(systemName: "arrow.uturn.up.circle.fill", color: .gray)
+            circleIconImage(systemName: "arrow.uturn.up.circle.fill", color: selectedTasks.isEmpty ? .gray : .blue)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
         }
+        .disabled(selectedTasks.isEmpty)
+        .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
     }
     
     private var groupButton: some View {
@@ -164,7 +170,8 @@ struct BottomBar: View {
                 onAddTap: { print("Add tapped") }, 
                 isSelectionMode: $isSelectionMode,
                 selectedTasks: $selectedTasks,
-                onDeleteSelectedTasks: { print("Delete selected tasks") }
+                onDeleteSelectedTasks: { print("Delete selected tasks") },
+                onChangePriorityForSelectedTasks: { print("Change priority for selected tasks") }
             )
         }
     }

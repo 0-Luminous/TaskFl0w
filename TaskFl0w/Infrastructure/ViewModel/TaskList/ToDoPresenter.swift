@@ -75,4 +75,12 @@ class ToDoPresenter: ToDoPresenterProtocol {
             router?.shareItem(item)
         }
     }
+
+    func changePriority(id: UUID, priority: TaskPriority) {
+        interactor?.changePriority(id: id, priority: priority)
+    }
+
+    func didChangePriority() {
+        refreshItems()
+    }
 }

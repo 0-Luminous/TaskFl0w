@@ -14,6 +14,7 @@ protocol ToDoInteractorProtocol: AnyObject {
     func deleteItem(id: UUID)
     func toggleItem(id: UUID)
     func searchItems(query: String)
+    func changePriority(id: UUID, priority: TaskPriority)
 
     // Новые методы
     func editItem(id: UUID, title: String, content: String)

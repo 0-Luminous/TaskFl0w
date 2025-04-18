@@ -25,10 +25,13 @@ class ToDoInteractor: ToDoInteractorProtocol {
         let isCompleted = entity.value(forKey: "isCompleted") as! Bool
         let categoryID = entity.value(forKey: "categoryID") as? UUID
         let categoryName = entity.value(forKey: "categoryName") as? String
+        let priorityRaw = entity.value(forKey: "priority") as? Int ?? 0
+        let priority = TaskPriority(rawValue: priorityRaw) ?? .none
 
         return ToDoItem(
             id: id, title: title, content: content, date: date, 
-            isCompleted: isCompleted, categoryID: categoryID, categoryName: categoryName)
+            isCompleted: isCompleted, categoryID: categoryID, categoryName: categoryName,
+            priority: priority)
     }
 
     func fetchItems() {
@@ -63,6 +66,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         newItem.setValue(content, forKey: "content")
         newItem.setValue(Date(), forKey: "date")
         newItem.setValue(false, forKey: "isCompleted")
+        newItem.setValue(0, forKey: "priority")
 
         print("📝 Созданный элемент: ID=\(newID), title=\(title)")
 
@@ -89,6 +93,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         newItem.setValue(content, forKey: "content")
         newItem.setValue(Date(), forKey: "date")
         newItem.setValue(false, forKey: "isCompleted")
+        newItem.setValue(0, forKey: "priority")
         
         // Устанавливаем информацию о категории
         newItem.setValue(category.id, forKey: "categoryID")
@@ -209,6 +214,22 @@ class ToDoInteractor: ToDoInteractorProtocol {
         }
 
         return nil
+    }
+
+    func changePriority(id: UUID, priority: TaskPriority) {
+        let request = NSFetchRequest<NSManagedObject>(entityName: "CDToDoItem")
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+
+        do {
+            let items = try viewContext.fetch(request)
+            if let item = items.first {
+                item.setValue(priority.rawValue, forKey: "priority")
+                saveContext()
+                presenter?.didChangePriority()
+            }
+        } catch {
+            print("Ошибка при изменении приоритета: \(error)")
+        }
     }
 
     // Вспомогательный метод для сохранения контекста
