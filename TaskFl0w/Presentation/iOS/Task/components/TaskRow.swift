@@ -15,6 +15,7 @@ struct TaskRow: View {
     let onShare: () -> Void
     let categoryColor: Color
     let isSelectionMode: Bool
+    let isInArchiveMode: Bool
     @Binding var selectedTasks: Set<UUID>
     
     @State private var isLongPressed: Bool = false
@@ -53,8 +54,8 @@ struct TaskRow: View {
                     // Название задачи с отображением приоритета
                     VStack(alignment: .leading, spacing: 4) {
                         Text(item.title)
-                            .strikethrough(item.isCompleted && !isSelectionMode)
-                            .foregroundColor(item.isCompleted && !isSelectionMode ? .gray : .white)
+                            .strikethrough(item.isCompleted && !isSelectionMode && !isInArchiveMode)
+                            .foregroundColor(item.isCompleted && !isSelectionMode && !isInArchiveMode ? .gray : .white)
                             .fontWeight(getFontWeight(for: item.priority))
                         
                         // Строка с приоритетом

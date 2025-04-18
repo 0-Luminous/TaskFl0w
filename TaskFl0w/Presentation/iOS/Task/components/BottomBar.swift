@@ -14,6 +14,7 @@ struct BottomBar: View {
     var onDeleteSelectedTasks: () -> Void
     var onChangePriorityForSelectedTasks: () -> Void
     var onArchiveTapped: () -> Void
+    var onUnarchiveSelectedTasks: () -> Void
     @Binding var showCompletedTasksOnly: Bool
     
     // MARK: - Body
@@ -43,7 +44,10 @@ struct BottomBar: View {
             
             Spacer()
             
+            // Всегда показываем кнопку добавления, но делаем её неактивной в режиме архива
             addButton
+                .disabled(showCompletedTasksOnly)
+                .opacity(showCompletedTasksOnly ? 0.5 : 1.0)
             
             Spacer()
         }
@@ -54,11 +58,14 @@ struct BottomBar: View {
         HStack {
             Spacer()
             
-            priorityButton
-
-            // Spacer()
-            
-//            groupButton
+            // Показываем разные кнопки в зависимости от режима
+            if showCompletedTasksOnly {
+                // В режиме архива показываем кнопку архивации
+                archiveActionButton
+            } else {
+                // В обычном режиме показываем кнопку изменения приоритета
+                priorityButton
+            }
             
             Spacer()
             
@@ -66,7 +73,14 @@ struct BottomBar: View {
             
             Spacer()
             
-            deleteButton
+            // Разные кнопки в зависимости от режима
+            if showCompletedTasksOnly {
+                // В режиме архива показываем кнопку возврата из архива
+                unarchiveButton
+            } else {
+                // В обычном режиме показываем кнопку удаления
+                deleteButton
+            }
             
             Spacer()
         }
@@ -126,25 +140,43 @@ struct BottomBar: View {
         .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
     }
     
-    private var groupButton: some View {
-        Button(action: {
-            // Действие для удаления выбранных задач
-        }) {
-            Image(systemName: "square.stack.3d.up.fill")
-                .font(.system(size: 18))
-                .foregroundColor(Color(red: 0.098, green: 0.098, blue: 0.098))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Circle().fill(Color.gray))
-                .cornerRadius(20)
-        }
-    }
-    
     private var exitSelectionModeButton: some View {
         Button(action: toggleSelectionMode) {
             circleIconImage(systemName: "checkmark.circle.badge.xmark.fill", color: .gray)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
+        }
+    }
+    
+    // Кнопка для возврата задач из архива
+    private var unarchiveButton: some View {
+        Button(action: {
+            onUnarchiveSelectedTasks()
+            // После возврата из архива выходим из режима выбора
+            toggleSelectionMode()
+        }) {
+            circleIconImage(systemName: "arrow.uturn.backward.circle.fill", color: .green)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+        }
+        .disabled(selectedTasks.isEmpty)
+        .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
+    }
+    
+    // Кнопка для архивных действий
+    private var archiveActionButton: some View {
+        Button(action: {
+            // Просто переключаем режим архива (так же, как и обычная кнопка архива)
+            onArchiveTapped()
+            // После действия выходим из режима выбора
+            toggleSelectionMode()
+        }) {
+            circleIconImage(
+                systemName: "archivebox.circle.fill", 
+                color: .blue  // Всегда активная, синего цвета
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
         }
     }
     
@@ -179,6 +211,7 @@ struct BottomBar: View {
                 onDeleteSelectedTasks: { print("Delete selected tasks") },
                 onChangePriorityForSelectedTasks: { print("Change priority for selected tasks") },
                 onArchiveTapped: { print("Archive completed tasks") },
+                onUnarchiveSelectedTasks: { print("Unarchive selected tasks") },
                 showCompletedTasksOnly: $showCompletedTasksOnly
             )
         }

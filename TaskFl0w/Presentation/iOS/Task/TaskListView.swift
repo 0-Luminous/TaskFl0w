@@ -28,23 +28,30 @@ struct TaskListView: View {
                 
                 // Добавляем индикатор режима архива
                 if viewModel.showCompletedTasksOnly {
-                    HStack {
-                        Text("Архив выполненных задач")
-                            .font(.headline)
-                            .foregroundColor(.blue)
+                    VStack(spacing: 0) {
+                        Rectangle()
+                            .fill(Color.clear)
+                            .frame(height: 8) // Небольшой отступ сверху
                         
-                        Spacer()
-                        
-                        Button(action: {
-                            viewModel.showCompletedTasksOnly = false
-                        }) {
-                            Text("Вернуться")
+                        HStack {
+                            Image(systemName: "archivebox.fill")
                                 .foregroundColor(.blue)
+                                .font(.system(size: 16))
+                            
+                            Text("Архив выполненных задач")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.white)
+                            
+                            Spacer()
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.darkGray).opacity(0.6))
+                        )
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
-                    .background(Color(.darkGray).opacity(0.3))
                 }
                 
                 List {
@@ -92,6 +99,7 @@ struct TaskListView: View {
                                 },
                                 categoryColor: viewModel.selectedCategory?.color ?? .blue,
                                 isSelectionMode: isSelectionMode,
+                                isInArchiveMode: viewModel.showCompletedTasksOnly,
                                 selectedTasks: $selectedTasks
                             )
                             .padding(.horizontal, 10)
@@ -160,6 +168,14 @@ struct TaskListView: View {
                         onArchiveTapped: {
                             // Переключаем режим отображения выполненных задач
                             viewModel.showCompletedTasksOnly.toggle()
+                        },
+                        onUnarchiveSelectedTasks: {
+                            // Возвращаем выбранные задачи из архива
+                            for taskId in selectedTasks {
+                                viewModel.presenter?.toggleItem(id: taskId) // Меняем статус isCompleted на false
+                            }
+                            // Очищаем множество выбранных задач
+                            selectedTasks.removeAll()
                         },
                         showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
                     )
@@ -274,9 +290,15 @@ struct TaskListView: View {
         
         // Сортируем задачи
         return filteredItems.sorted { (item1, item2) -> Bool in
-            // Если мы в режиме выполненных задач, меняем порядок сортировки
+            // Если мы в режиме выполненных задач
             if viewModel.showCompletedTasksOnly {
-                // Сортируем по дате выполнения (предполагаем, что более поздние - сверху)
+                // Сначала сортируем по приоритету
+                if item1.priority != item2.priority {
+                    return item1.priority.rawValue > item2.priority.rawValue
+                }
+                
+                // Если приоритеты одинаковые, сортируем по дате завершения
+                // (от новых к старым)
                 return item1.date > item2.date
             } else {
                 // Стандартная сортировка
