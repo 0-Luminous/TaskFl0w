@@ -7,74 +7,156 @@
 import SwiftUI
 
 struct BottomBar: View {
-    let itemCount: Int
+    // MARK: - Properties
     let onAddTap: () -> Void
     @Binding var isSelectionMode: Bool
     @Binding var selectedTasks: Set<UUID>
     
+    // MARK: - Body
     var body: some View {
-        ZStack {
-            HStack {
-                Spacer()
-                Button(action: onAddTap) {
-                    Image(systemName: "archivebox.circle.fill")
-                        .foregroundColor(.blue)
-                        .font(.system(size: 22))
-                        .frame(width: 44, height: 44)
-                        .background(Color.gray.opacity(0.3))
-                        .cornerRadius(22)
-                }
-                Spacer()
-                Text("\(itemCount) задач")
-                    .foregroundColor(.gray)
-                    .font(.system(size: 17))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.gray.opacity(0.3))
-                    .cornerRadius(20)
-                Spacer()
-                Button(action: {
-                    if isSelectionMode {
-                        // Сбрасываем выбор при выходе из режима выбора
-                        selectedTasks.removeAll()
-                    }
-                    isSelectionMode.toggle()
-                }) {
-                    Text(isSelectionMode ? "Готово" : "Выбрать")
-                        .foregroundColor(.gray)
-                        .font(.system(size: 17))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.gray.opacity(0.3))
-                        .cornerRadius(20)
-                }
-                Spacer()
-                Button(action: onAddTap) {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.blue)
-                        .font(.system(size: 22))
-                        .frame(width: 44, height: 44)
-                        .background(Color.gray.opacity(0.3))
-                        .cornerRadius(22)
-                }
-                Spacer()
+        HStack(spacing: 0) {
+            if !isSelectionMode {
+                normalModeButtons
+            } else {
+                selectionModeButtons
             }
         }
+        .padding(.horizontal)
+    }
+    
+    // MARK: - UI Components
+    
+    /// Кнопки в обычном режиме
+    private var normalModeButtons: some View {
+        HStack {
+            Spacer()
+            
+            archiveButton
+            
+            Spacer()
+            
+            selectionModeToggleButton
+            
+            Spacer()
+            
+            addButton
+            
+            Spacer()
+        }
+    }
+    
+    /// Кнопки в режиме выбора
+    private var selectionModeButtons: some View {
+        HStack {
+            Spacer()
+            
+            priorityButton
+
+            Spacer()
+            
+            groupButton
+            
+            Spacer()
+            
+            exitSelectionModeButton
+            
+            Spacer()
+            
+            deleteButton
+            
+            Spacer()
+        }
+    }
+    
+    private var archiveButton: some View {
+        Button(action: onAddTap) {
+            circleIconImage(systemName: "archivebox.circle.fill", color: .gray)
+                .frame(width: 44, height: 44)
+        }
+    }
+    
+    private var selectionModeToggleButton: some View {
+        Button(action: toggleSelectionMode) {
+            circleIconImage(systemName: "checkmark.circle.fill", color: .gray)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+        }
+    }
+    
+    private var addButton: some View {
+        Button(action: onAddTap) {
+            circleIconImage(systemName: "plus.circle.fill", color: .blue)
+                .frame(width: 44, height: 44)
+        }
+    }
+    
+    private var deleteButton: some View {
+        Button(action: {
+            // Действие для группировки задач
+        }) {
+            circleIconImage(systemName: "trash.circle.fill", color: .red)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+        }
+    }
+    
+    private var priorityButton: some View {
+        Button(action: {
+            // Действие для изменения приоритета задач
+        }) {
+            circleIconImage(systemName: "arrow.uturn.up.circle.fill", color: .gray)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+        }
+    }
+    
+    private var groupButton: some View {
+        Button(action: {
+            // Действие для удаления выбранных задач
+        }) {
+            Image(systemName: "square.stack.3d.up.fill")
+                .font(.system(size: 18))
+                .foregroundColor(Color(red: 0.098, green: 0.098, blue: 0.098))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Circle().fill(Color.gray))
+                .cornerRadius(20)
+        }
+    }
+    
+    private var exitSelectionModeButton: some View {
+        Button(action: toggleSelectionMode) {
+            circleIconImage(systemName: "checkmark.circle.badge.xmark.fill", color: .gray)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func toggleSelectionMode() {
+        if isSelectionMode {
+            selectedTasks.removeAll()
+        }
+        isSelectionMode.toggle()
+    }
+    
+    private func circleIconImage(systemName: String, color: Color) -> some View {
+        Image(systemName: systemName)
+            .foregroundColor(color)
+            .font(.system(size: 40))
     }
 }
 
+// MARK: - Preview
 #Preview {
-    // Используем StateObject для хранения состояния в превью
     struct PreviewWrapper: View {
         @State private var isSelectionMode = false
         @State private var selectedTasks: Set<UUID> = []
         
         var body: some View {
             BottomBar(
-                itemCount: 5, 
-                onAddTap: {
-                    print("Add tapped")
-                }, 
+                onAddTap: { print("Add tapped") }, 
                 isSelectionMode: $isSelectionMode,
                 selectedTasks: $selectedTasks
             )

@@ -103,7 +103,6 @@ struct TaskListView: View {
                 // Показываем BottomBar только если поиск не активен, не создается новая задача и клавиатура не видна
                 if !isSearchActive && !isAddingNewTask && !isKeyboardVisible {
                     BottomBar(
-                        itemCount: getFilteredItems().count,
                         onAddTap: {
                             // Убедимся, что выбранная категория установлена перед открытием формы
                             if let selectedCategory = selectedCategory {
