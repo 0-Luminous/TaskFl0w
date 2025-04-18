@@ -14,6 +14,8 @@ struct TaskRow: View {
     let onDelete: () -> Void
     let onShare: () -> Void
     let categoryColor: Color
+    let isSelectionMode: Bool
+    @Binding var selectedTasks: Set<UUID>
     
     @State private var isLongPressed: Bool = false
     
@@ -21,20 +23,44 @@ struct TaskRow: View {
         ZStack {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Button(action: onToggle) {
-                        Image(systemName: item.isCompleted ? "checkmark.circle" : "circle")
-                            .foregroundColor(item.isCompleted ? .black : .white)
-                            .font(.system(size: 22))
+                    if isSelectionMode {
+                        Button(action: {
+                            toggleSelection()
+                        }) {
+                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(isSelected ? categoryColor : .white)
+                                .font(.system(size: 22))
+                        }
+                    } else {
+                        Button(action: onToggle) {
+                            Image(systemName: item.isCompleted ? "checkmark.circle" : "circle")
+                                .foregroundColor(item.isCompleted ? .black : .white)
+                                .font(.system(size: 22))
+                        }
                     }
                     
                     Text(item.title)
-                        .strikethrough(item.isCompleted)
-                        .foregroundColor(item.isCompleted ? .gray : .white)
+                        .strikethrough(item.isCompleted && !isSelectionMode)
+                        .foregroundColor(item.isCompleted && !isSelectionMode ? .gray : .white)
                     
                     Spacer()
                 }
                 .padding(.horizontal, -10)
             }
+        }
+    }
+    
+    // Проверяем, выбрана ли задача
+    private var isSelected: Bool {
+        selectedTasks.contains(item.id)
+    }
+    
+    // Переключение выбора задачи
+    private func toggleSelection() {
+        if selectedTasks.contains(item.id) {
+            selectedTasks.remove(item.id)
+        } else {
+            selectedTasks.insert(item.id)
         }
     }
 }

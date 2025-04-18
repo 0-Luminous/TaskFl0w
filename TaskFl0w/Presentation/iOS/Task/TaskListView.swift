@@ -17,6 +17,8 @@ struct TaskListView: View {
     @State private var isAddingNewTask = false
     @State private var isKeyboardVisible = false
     @FocusState private var isNewTaskFocused: Bool
+    @State private var isSelectionMode = false
+    @State private var selectedTasks: Set<UUID> = []
 
     var body: some View {
         NavigationView {
@@ -66,7 +68,9 @@ struct TaskListView: View {
                                 onShare: {
                                     viewModel.presenter?.shareItem(id: item.id)
                                 },
-                                categoryColor: viewModel.selectedCategory?.color ?? .blue
+                                categoryColor: viewModel.selectedCategory?.color ?? .blue,
+                                isSelectionMode: isSelectionMode,
+                                selectedTasks: $selectedTasks
                             )
                             .padding(.horizontal, 10)
                         }
@@ -111,7 +115,9 @@ struct TaskListView: View {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                 isNewTaskFocused = true
                             }
-                        }
+                        },
+                        isSelectionMode: $isSelectionMode,
+                        selectedTasks: $selectedTasks
                     )
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)

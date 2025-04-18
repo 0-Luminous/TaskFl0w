@@ -20,6 +20,10 @@ struct CategoryButton: View {
                         .foregroundColor(.white)
                         .font(.system(size: 24))
                 )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white, lineWidth: isSelected ? 2.5 : 0)
+                )
             
             Text(category.rawValue)
                 .font(.caption)
