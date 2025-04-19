@@ -49,8 +49,12 @@ struct CalendarView: View {
                         }
                         
                         // Секция обычных задач из ToDoList
-                        TasksFromToDoListView(listViewModel: listViewModel, selectedDate: temporaryDate)
-                            .padding(.horizontal)
+                        TasksFromToDoListView(
+                            listViewModel: listViewModel, 
+                            selectedDate: temporaryDate,
+                            categoryManager: viewModel.categoryManagement
+                        )
+                        .padding(.horizontal)
                         
                         // Секция задач на циферблате, сгруппированных по категориям
                         if !tasksForSelectedDate.isEmpty {
@@ -164,6 +168,7 @@ struct CalendarView: View {
 struct TasksFromToDoListView: View {
     @ObservedObject var listViewModel: ListViewModel
     let selectedDate: Date
+    let categoryManager: CategoryManagementProtocol // Просто хранит ссылку
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -190,12 +195,12 @@ struct TasksFromToDoListView: View {
                 ForEach(Array(groupedTasks.keys), id: \.self) { categoryID in
                     if let tasks = groupedTasks[categoryID] {
                         let categoryName = tasks.first?.categoryName ?? "Без категории"
-                        let categoryColor: Color = getCategoryColor(for: categoryID)
+                        let (categoryColor, categoryIcon) = getCategoryInfo(for: categoryID)
                         
                         VStack(alignment: .leading, spacing: 8) {
                             // Заголовок категории
                             HStack {
-                                Image(systemName: "tag.fill")
+                                Image(systemName: categoryIcon)
                                     .foregroundColor(categoryColor)
                                     .font(.system(size: 14))
                                 
@@ -216,7 +221,7 @@ struct TasksFromToDoListView: View {
                             
                             // Задачи в категории
                             ForEach(tasks) { task in
-                                ToDoTaskRow(task: task)
+                                ToDoTaskRow(task: task, categoryColor: categoryColor)
                             }
                         }
                         .padding(10)
@@ -241,19 +246,31 @@ struct TasksFromToDoListView: View {
         }
     }
     
-    // Получение цвета для категории
-    private func getCategoryColor(for categoryID: UUID) -> Color {
-        // Здесь можно реализовать логику получения цвета категории
-        // Для простоты используем фиксированные цвета
+    // Получение информации о категории (цвет и иконка)
+    private func getCategoryInfo(for categoryID: UUID) -> (Color, String) {
+        // Ищем категорию в списке категорий
+        if let category = categoryManager.categories.first(where: { $0.id == categoryID }) {
+            return (category.color, category.iconName)
+        }
+        
+        // Если не нашли, используем стандартные значения
         let colors: [Color] = [.blue, .green, .orange, .red, .purple, .yellow]
         let hashValue = abs(categoryID.hashValue)
-        return colors[hashValue % colors.count]
+        let color = colors[hashValue % colors.count]
+        
+        // Используем различные иконки в зависимости от хеша
+        let icons = ["tag.fill", "folder.fill", "list.bullet", "checkmark.circle.fill", 
+                    "calendar", "book.fill", "note.text", "tray.fill"]
+        let icon = icons[(hashValue / 2) % icons.count]
+        
+        return (color, icon)
     }
 }
 
 // Компонент для отображения строки задачи из ToDoList
 struct ToDoTaskRow: View {
     let task: ToDoItem
+    let categoryColor: Color
     
     var body: some View {
         HStack(spacing: 12) {
@@ -263,7 +280,7 @@ struct ToDoTaskRow: View {
                 .frame(width: 12, height: 12)
                 .overlay(
                     Circle()
-                        .stroke(task.isCompleted ? Color.green : Color.gray, lineWidth: 1)
+                        .stroke(task.isCompleted ? Color.green : categoryColor.opacity(0.7), lineWidth: 1)
                 )
             
             VStack(alignment: .leading, spacing: 4) {

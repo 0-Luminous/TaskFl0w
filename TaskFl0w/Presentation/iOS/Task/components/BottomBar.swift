@@ -17,16 +17,31 @@ struct BottomBar: View {
     var onUnarchiveSelectedTasks: () -> Void
     @Binding var showCompletedTasksOnly: Bool
     
+    // Добавляем состояние для отслеживания нажатий
+    @State private var isAddButtonPressed = false
+    
     // MARK: - Body
     var body: some View {
-        HStack(spacing: 0) {
-            if !isSelectionMode {
-                normalModeButtons
-            } else {
-                selectionModeButtons
+        // Оборачиваем весь BottomBar в ZStack с фиксированной высотой
+        ZStack {
+            // Фоновый слой - неизменяемый
+            Color.clear
+                .frame(height: 60) // Высота фиксирована
+            
+            // Контент - все наши кнопки
+            HStack(spacing: 0) {
+                if !isSelectionMode {
+                    normalModeButtons
+                } else {
+                    selectionModeButtons
+                }
             }
+            .padding(.horizontal)
         }
-        .padding(.horizontal)
+        // Делаем фрейм фиксированным!
+        .frame(height: 60)
+        // Отключаем анимации для BottomBar
+        .animation(nil, value: isAddButtonPressed)
     }
     
     // MARK: - UI Components
@@ -44,10 +59,8 @@ struct BottomBar: View {
             
             Spacer()
             
-            // Всегда показываем кнопку добавления, но делаем её неактивной в режиме архива
+            // Для кнопки добавления используем другой подход
             addButton
-                .disabled(showCompletedTasksOnly)
-                .opacity(showCompletedTasksOnly ? 0.5 : 1.0)
             
             Spacer()
         }
@@ -104,13 +117,6 @@ struct BottomBar: View {
         }
     }
     
-    private var addButton: some View {
-        Button(action: onAddTap) {
-            circleIconImage(systemName: "plus.circle.fill", color: .blue)
-                .frame(width: 44, height: 44)
-        }
-    }
-    
     private var deleteButton: some View {
         Button(action: {
             onDeleteSelectedTasks()
@@ -132,7 +138,7 @@ struct BottomBar: View {
                 onChangePriorityForSelectedTasks()
             }
         }) {
-            circleIconImage(systemName: "arrow.uturn.up.circle.fill", color: selectedTasks.isEmpty ? .gray : .blue)
+            circleIconImage(systemName: "arrow.uturn.up.circle.fill", color: selectedTasks.isEmpty ? .gray : .gray)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
         }
@@ -142,7 +148,7 @@ struct BottomBar: View {
     
     private var exitSelectionModeButton: some View {
         Button(action: toggleSelectionMode) {
-            circleIconImage(systemName: "checkmark.circle.badge.xmark.fill", color: .gray)
+            circleIconImage(systemName: "checkmark.circle.badge.xmark.fill", color: .blue)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
         }
@@ -178,6 +184,39 @@ struct BottomBar: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
         }
+    }
+    
+    // Вместо стандартного Button используем наш собственный компонент
+    private func customButton(_ icon: String, color: Color, action: @escaping () -> Void, disabled: Bool = false) -> some View {
+        Color.clear
+            .frame(width: 44, height: 44)
+            .overlay(
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                    .font(.system(size: 40))
+            )
+            .onTapGesture {
+                if !disabled {
+                    action()
+                }
+            }
+            .opacity(disabled ? 0.5 : 1.0)
+    }
+    
+    private var addButton: some View {
+        Color.clear
+            .frame(width: 44, height: 44)
+            .overlay(
+                Image(systemName: "plus.circle.fill")
+                    .foregroundColor(showCompletedTasksOnly ? .gray : .blue)
+                    .font(.system(size: 40))
+            )
+            .onTapGesture {
+                if !showCompletedTasksOnly {
+                    onAddTap()
+                }
+            }
+            .opacity(showCompletedTasksOnly ? 0.5 : 1.0)
     }
     
     // MARK: - Helper Methods
