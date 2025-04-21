@@ -38,9 +38,10 @@ struct ClockTaskArcIOS: View {
                 }
                 .stroke(task.category.color, lineWidth: 20)
                 // Увеличиваем область contentShape для улучшения пользовательского опыта при перетаскивании
-                .contentShape(.dragPreview, 
+                .contentShape(
+                    // Определяем большую зону взаимодействия для всех жестов
                     Path { path in
-                        // Создаем зону с точной угловой длиной дуги, но увеличенной шириной
+                        // Создаем зону с точной угловой длиной дуги, но значительно увеличенной шириной
                         path.addArc(
                             center: center,
                             radius: radius + 30,  // Увеличиваем внешний радиус
@@ -51,7 +52,7 @@ struct ClockTaskArcIOS: View {
                         // Внутренняя дуга для замыкания формы
                         path.addArc(
                             center: center,
-                            radius: radius - 25,  // Увеличиваем внутренний радиус
+                            radius: radius - 40,  // Значительно увеличиваем внутренний радиус
                             startAngle: endAngle,
                             endAngle: startAngle,
                             clockwise: true
@@ -59,6 +60,8 @@ struct ClockTaskArcIOS: View {
                         path.closeSubpath()
                     }
                 )
+                // Добавляем отдельный contentShape для предпросмотра при перетаскивании
+                .contentShape(.dragPreview, Circle().scale(1.2))
                 .gesture(
                     TapGesture()
                         .onEnded {
