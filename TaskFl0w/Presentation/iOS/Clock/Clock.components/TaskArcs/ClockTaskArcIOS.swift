@@ -37,8 +37,28 @@ struct ClockTaskArcIOS: View {
                         clockwise: false)
                 }
                 .stroke(task.category.color, lineWidth: 20)
-                // Перемещаем contentShape сюда, чтобы задать форму для всех жестов
-                .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
+                // Увеличиваем область contentShape для улучшения пользовательского опыта при перетаскивании
+                .contentShape(.dragPreview, 
+                    Path { path in
+                        // Создаем зону с точной угловой длиной дуги, но увеличенной шириной
+                        path.addArc(
+                            center: center,
+                            radius: radius + 30,  // Увеличиваем внешний радиус
+                            startAngle: startAngle,  // Сохраняем оригинальные углы
+                            endAngle: endAngle,
+                            clockwise: false
+                        )
+                        // Внутренняя дуга для замыкания формы
+                        path.addArc(
+                            center: center,
+                            radius: radius - 25,  // Увеличиваем внутренний радиус
+                            startAngle: endAngle,
+                            endAngle: startAngle,
+                            clockwise: true
+                        )
+                        path.closeSubpath()
+                    }
+                )
                 .gesture(
                     TapGesture()
                         .onEnded {
@@ -64,7 +84,7 @@ struct ClockTaskArcIOS: View {
                 )
                 // Добавляем жест долгого нажатия для мгновенного удаления
                 .simultaneousGesture(
-                    LongPressGesture(minimumDuration: 0.4)
+                    LongPressGesture(minimumDuration: 0.2)
                         .onEnded { _ in
                             if !viewModel.isEditingMode && viewModel.editingTask == nil {
                                 // Отмечаем начало перетаскивания
