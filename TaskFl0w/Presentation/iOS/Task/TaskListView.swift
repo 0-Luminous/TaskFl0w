@@ -55,9 +55,6 @@ struct TaskListView: View {
                 }
                 
                 List {
-                    // Используем вычисляемое свойство для фильтрации
-                    let items = getFilteredItems()
-                    
                     // Показываем поле для новой задачи, если isAddingNewTask = true
                     if isAddingNewTask {
                         HStack {
@@ -74,15 +71,118 @@ struct TaskListView: View {
                         .listRowBackground(
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(Color(.darkGray))
-                                // .strokeBorder(viewModel.selectedCategory?.color ?? .blue, lineWidth: 1)
                                 .padding(.vertical, 5)
                                 .padding(.horizontal, 8)
                         )
                         .listRowSeparator(.hidden)
                     }
                     
-                    ForEach(items) { item in
-                        VStack(spacing: 0) {
+                    // Используем вычисляемое свойство для фильтрации
+                    let items = getFilteredItems()
+                    
+                    // Группировка задач по приоритету
+                    let groupedByPriority = Dictionary(grouping: items) { $0.priority }
+                    let sortedPriorities: [TaskPriority] = [.high, .medium, .low]
+                    
+                    // Отображаем задачи с приоритетом в секциях
+                    ForEach(sortedPriorities, id: \.self) { priority in
+                        if let tasksWithPriority = groupedByPriority[priority], !tasksWithPriority.isEmpty {
+                            Section {
+                                // Секция задач перемещается сюда, пустая
+                            } header: {
+                                // Внешний контейнер для заголовка и задач
+                                VStack(spacing: 5) {
+                                    // Заголовок секции (титул с иконкой)
+                                    HStack(spacing: 6) {
+                                        priorityIcon(for: priority)
+                                            .foregroundColor(getPriorityColor(for: priority))
+                                            .font(.system(size: 16))
+                                        
+                                        Text(getPriorityText(for: priority).uppercased())
+                                            .font(.headline)
+                                            .foregroundColor(.white)
+                                        
+                                        Spacer()
+                                        
+                                        Text("\(tasksWithPriority.count)")
+                                            .font(.caption)
+                                            .padding(6)
+                                            .background(Circle().fill(Color(.darkGray)))
+                                            .foregroundColor(.white)
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    
+                                    // Задачи располагаются внутри того же контейнера, что и заголовок
+                                    ForEach(tasksWithPriority) { item in
+                                        TaskRow(
+                                            item: item,
+                                            onToggle: {
+                                                viewModel.presenter?.toggleItem(id: item.id)
+                                            },
+                                            onEdit: {
+                                                viewModel.editingItem = item
+                                            },
+                                            onDelete: {
+                                                viewModel.presenter?.deleteItem(id: item.id)
+                                            },
+                                            onShare: {
+                                                viewModel.presenter?.shareItem(id: item.id)
+                                            },
+                                            categoryColor: viewModel.selectedCategory?.color ?? .blue,
+                                            isSelectionMode: isSelectionMode,
+                                            isInArchiveMode: viewModel.showCompletedTasksOnly,
+                                            selectedTasks: $selectedTasks
+                                        )
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 5)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .fill(Color(.darkGray))
+                                                .padding(.horizontal, 10)
+                                        )
+                                        .contentShape(Rectangle())  // Добавляем форму для регистрации нажатий
+                                        .onTapGesture {
+                                            if isSelectionMode {
+                                                // В режиме выбора, нажатие выбирает/снимает выбор задачи
+                                                if selectedTasks.contains(item.id) {
+                                                    selectedTasks.remove(item.id)
+                                                } else {
+                                                    selectedTasks.insert(item.id)
+                                                }
+                                            } else {
+                                                // В обычном режиме, нажатие делает задачу завершенной
+                                                viewModel.presenter?.toggleItem(id: item.id)
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(.vertical, 5)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .fill(
+                                            priority == .high ? Color.red.opacity(0.15) : 
+                                            priority == .medium ? Color.orange.opacity(0.15) :
+                                            Color.green.opacity(0.15)
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 15)
+                                                .strokeBorder(getPriorityColor(for: priority).opacity(0.3), lineWidth: 1.5)
+                                        )
+                                )
+                                .padding(.horizontal, 10)
+                                .padding(.top, 2)
+                                // .padding(.bottom, 2) 
+                            }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        }
+                    }
+                    
+                    // Отдельно отображаем задачи без приоритета (как раньше)
+                    if let tasksWithoutPriority = groupedByPriority[.none], !tasksWithoutPriority.isEmpty {
+                        ForEach(tasksWithoutPriority) { item in
                             TaskRow(
                                 item: item,
                                 onToggle: {
@@ -103,27 +203,27 @@ struct TaskListView: View {
                                 selectedTasks: $selectedTasks
                             )
                             .padding(.horizontal, 10)
-                        }
-                        .listRowBackground(
-                            ZStack {
-                                // Градиент фона в зависимости от приоритета
+                            .listRowBackground(
                                 RoundedRectangle(cornerRadius: 10)
                                     .fill(Color(.darkGray))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .strokeBorder(getPriorityBorderColor(for: item.priority), lineWidth: item.priority != .none ? 1.5 : 0)
-                                    )
                                     .padding(.vertical, 5)
                                     .padding(.horizontal, 8)
+                            )
+                            .contentShape(Rectangle())  // Добавляем форму для регистрации нажатий
+                            .onTapGesture {
+                                if isSelectionMode {
+                                    // В режиме выбора, нажатие выбирает/снимает выбор задачи
+                                    if selectedTasks.contains(item.id) {
+                                        selectedTasks.remove(item.id)
+                                    } else {
+                                        selectedTasks.insert(item.id)
+                                    }
+                                } else {
+                                    // В обычном режиме, нажатие делает задачу завершенной
+                                    viewModel.presenter?.toggleItem(id: item.id)
+                                }
                             }
-                        )
-                        .listRowSeparator(.hidden)
-                    }
-                    .onDelete { indexSet in
-                        let items = getFilteredItems()
-                        indexSet.forEach { index in
-                            let item = items[index]
-                            viewModel.presenter?.deleteItem(id: item.id)
+                            .listRowSeparator(.hidden)
                         }
                     }
                 }
@@ -325,17 +425,47 @@ struct TaskListView: View {
         isSelectionMode = false
     }
     
-    // Вспомогательный метод для получения цвета рамки в зависимости от приоритета
-    private func getPriorityBorderColor(for priority: TaskPriority) -> Color {
+    // Вспомогательные методы для приоритетов
+    private func getPriorityColor(for priority: TaskPriority) -> Color {
         switch priority {
         case .high:
-            return Color.red.opacity(0.6)
+            return Color.red
         case .medium:
-            return Color.orange.opacity(0.5)
+            return Color.orange
         case .low:
-            return Color.green.opacity(0.4)
+            return Color.green
         case .none:
-            return Color.clear
+            return Color.gray
+        }
+    }
+
+    private func priorityIcon(for priority: TaskPriority) -> some View {
+        let systemName: String
+        
+        switch priority {
+        case .high:
+            systemName = "exclamationmark.triangle.fill"
+        case .medium:
+            systemName = "exclamationmark.circle.fill"
+        case .low:
+            systemName = "arrow.up.circle.fill"
+        case .none:
+            systemName = "list.bullet"
+        }
+        
+        return Image(systemName: systemName)
+    }
+
+    private func getPriorityText(for priority: TaskPriority) -> String {
+        switch priority {
+        case .high:
+            return "Высокий приоритет"
+        case .medium:
+            return "Средний приоритет"
+        case .low:
+            return "Низкий приоритет"
+        case .none:
+            return "Без приоритета"
         }
     }
 }

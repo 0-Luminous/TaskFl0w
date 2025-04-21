@@ -22,16 +22,17 @@ struct TaskRow: View {
     
     var body: some View {
         ZStack {
-            // Фоновая полоса для обозначения приоритета
-            if item.priority != .none {
-                HStack {
-                    Rectangle()
-                        .fill(priorityColor(for: item.priority))
-                        .frame(width: 4)
-                        .opacity(0.8)
-                    Spacer()
-                }
-            }
+            // Удаляем фоновую полосу для обозначения приоритета, так как теперь
+            // задачи будут сгруппированы по приоритету
+            // if item.priority != .none {
+            //     HStack {
+            //         Rectangle()
+            //             .fill(priorityColor(for: item.priority))
+            //             .frame(width: 4)
+            //             .opacity(0.8)
+            //         Spacer()
+            //     }
+            // }
             
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
@@ -51,31 +52,20 @@ struct TaskRow: View {
                         }
                     }
                     
-                    // Название задачи с отображением приоритета
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.title)
-                            .strikethrough(item.isCompleted && !isSelectionMode && !isInArchiveMode)
-                            .foregroundColor(item.isCompleted && !isSelectionMode && !isInArchiveMode ? .gray : .white)
-                            .fontWeight(getFontWeight(for: item.priority))
-                        
-                        // Строка с приоритетом
-                        if item.priority != .none {
-                            Text(getPriorityText(for: item.priority))
-                                .font(.system(size: 12))
-                                .foregroundColor(priorityColor(for: item.priority))
-                                .opacity(0.9)
-                        }
-                    }
+                    // Название задачи без отображения приоритета
+                    Text(item.title)
+                        .strikethrough(item.isCompleted && !isSelectionMode && !isInArchiveMode)
+                        .foregroundColor(item.isCompleted && !isSelectionMode && !isInArchiveMode ? .gray : .white)
+                        .fontWeight(getFontWeight(for: item.priority))
                     
                     Spacer()
                     
-                    // Иконка приоритета
+                    // Можно оставить иконку приоритета для визуальной индикации
                     if item.priority != .none {
                         priorityIcon(for: item.priority)
                     }
                 }
                 .padding(.horizontal, -5)
-                .padding(.leading, item.priority != .none ? 5 : 0)
             }
             .padding(.horizontal, 10)
         }
@@ -129,11 +119,6 @@ struct TaskRow: View {
         return Image(systemName: systemName)
             .foregroundColor(color)
             .font(.system(size: 18))
-    }
-    
-    // Текстовое представление приоритета
-    private func getPriorityText(for priority: TaskPriority) -> String {
-        return "Приоритет: \(priority.description)"
     }
     
     // Настройка жирности шрифта в зависимости от приоритета
