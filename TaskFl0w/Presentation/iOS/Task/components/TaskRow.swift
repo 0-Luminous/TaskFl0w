@@ -60,14 +60,13 @@ struct TaskRow: View {
                     
                     Spacer()
                     
-                    // Можно оставить иконку приоритета для визуальной индикации
+                    // Заменяем иконку приоритета на столбец приоритета
                     if item.priority != .none {
-                        priorityIcon(for: item.priority)
+                        priorityIndicator(for: item.priority)
                     }
                 }
                 .padding(.horizontal, -5)
             }
-            .padding(.horizontal, 10)
         }
         .animation(.easeInOut, value: item.priority)
     }
@@ -100,25 +99,18 @@ struct TaskRow: View {
         }
     }
     
-    // Иконка приоритета
-    private func priorityIcon(for priority: TaskPriority) -> some View {
-        let systemName: String
-        let color = priorityColor(for: priority)
-        
-        switch priority {
-        case .high:
-            systemName = "exclamationmark.triangle.fill"
-        case .medium:
-            systemName = "exclamationmark.circle.fill"
-        case .low:
-            systemName = "arrow.up.circle.fill"
-        case .none:
-            systemName = ""
+    // Индикатор приоритета в виде столбца (увеличенный вариант)
+    private func priorityIndicator(for priority: TaskPriority) -> some View {
+        VStack(spacing: 2) {
+            ForEach(0..<priority.rawValue, id: \.self) { _ in
+                Rectangle()
+                    .fill(priorityColor(for: priority))
+                    .frame(width: 12, height: 3)
+            }
         }
-        
-        return Image(systemName: systemName)
-            .foregroundColor(color)
-            .font(.system(size: 18))
+        .padding(.vertical, 2)
+        .padding(.horizontal, 3)
+        .opacity(item.isCompleted && !isSelectionMode && !isInArchiveMode ? 0.5 : 1.0)
     }
     
     // Настройка жирности шрифта в зависимости от приоритета

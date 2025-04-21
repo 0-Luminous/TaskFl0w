@@ -58,14 +58,27 @@ struct TaskListView: View {
                     // Показываем поле для новой задачи, если isAddingNewTask = true
                     if isAddingNewTask {
                         HStack {
-                            TextField("Новая задача", text: $newTaskTitle)
+                            TextField("Новая задача", text: $newTaskTitle, axis: .vertical)
                                 .foregroundColor(.white)
+                                .lineLimit(3) // Разрешить до 3 строк
                                 .onSubmit {
                                     saveNewTask()
                                 }
+                                .submitLabel(.done)
                                 .focused($isNewTaskFocused)
-                            
-                            Spacer()
+                                .keyboardType(.default)
+                                .autocapitalization(.sentences)
+                                .disableAutocorrection(false)
+                                // Специальный модификатор для обработки ввода
+                                .onChange(of: newTaskTitle) { oldValue, newValue in
+                                    // Если в тексте есть символ новой строки, значит была нажата кнопка Return
+                                    if newValue.contains("\n") {
+                                        // Удаляем символ новой строки
+                                        newTaskTitle = newValue.replacingOccurrences(of: "\n", with: "")
+                                        // Сохраняем задачу
+                                        saveNewTask()
+                                    }
+                                }
                         }
                         .padding(.horizontal, 10)
                         .listRowBackground(
@@ -80,151 +93,58 @@ struct TaskListView: View {
                     // Используем вычисляемое свойство для фильтрации
                     let items = getFilteredItems()
                     
-                    // Группировка задач по приоритету
-                    let groupedByPriority = Dictionary(grouping: items) { $0.priority }
-                    let sortedPriorities: [TaskPriority] = [.high, .medium, .low]
-                    
-                    // Отображаем задачи с приоритетом в секциях
-                    ForEach(sortedPriorities, id: \.self) { priority in
-                        if let tasksWithPriority = groupedByPriority[priority], !tasksWithPriority.isEmpty {
-                            Section {
-                                // Секция задач перемещается сюда, пустая
-                            } header: {
-                                // Внешний контейнер для заголовка и задач
-                                VStack(spacing: 5) {
-                                    // Заголовок секции (титул с иконкой)
-                                    HStack(spacing: 6) {
-                                        priorityIcon(for: priority)
-                                            .foregroundColor(getPriorityColor(for: priority))
-                                            .font(.system(size: 16))
-                                        
-                                        Text(getPriorityText(for: priority).uppercased())
-                                            .font(.headline)
-                                            .foregroundColor(.white)
-                                        
-                                        Spacer()
-                                        
-                                        Text("\(tasksWithPriority.count)")
-                                            .font(.caption)
-                                            .padding(6)
-                                            .background(Circle().fill(Color(.darkGray)))
-                                            .foregroundColor(.white)
-                                    }
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    
-                                    // Задачи располагаются внутри того же контейнера, что и заголовок
-                                    ForEach(tasksWithPriority) { item in
-                                        TaskRow(
-                                            item: item,
-                                            onToggle: {
-                                                viewModel.presenter?.toggleItem(id: item.id)
-                                            },
-                                            onEdit: {
-                                                viewModel.editingItem = item
-                                            },
-                                            onDelete: {
-                                                viewModel.presenter?.deleteItem(id: item.id)
-                                            },
-                                            onShare: {
-                                                viewModel.presenter?.shareItem(id: item.id)
-                                            },
-                                            categoryColor: viewModel.selectedCategory?.color ?? .blue,
-                                            isSelectionMode: isSelectionMode,
-                                            isInArchiveMode: viewModel.showCompletedTasksOnly,
-                                            selectedTasks: $selectedTasks
-                                        )
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 5)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .fill(Color(.darkGray))
-                                                .padding(.horizontal, 10)
-                                        )
-                                        .contentShape(Rectangle())  // Добавляем форму для регистрации нажатий
-                                        .onTapGesture {
-                                            if isSelectionMode {
-                                                // В режиме выбора, нажатие выбирает/снимает выбор задачи
-                                                if selectedTasks.contains(item.id) {
-                                                    selectedTasks.remove(item.id)
-                                                } else {
-                                                    selectedTasks.insert(item.id)
-                                                }
-                                            } else {
-                                                // В обычном режиме, нажатие делает задачу завершенной
-                                                viewModel.presenter?.toggleItem(id: item.id)
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.vertical, 5)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .fill(
-                                            priority == .high ? Color.red.opacity(0.15) : 
-                                            priority == .medium ? Color.orange.opacity(0.15) :
-                                            Color.green.opacity(0.15)
-                                        )
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 15)
-                                                .strokeBorder(getPriorityColor(for: priority).opacity(0.3), lineWidth: 1.5)
-                                        )
-                                )
-                                .padding(.horizontal, 10)
-                                .padding(.top, 2)
-                                // .padding(.bottom, 2) 
-                            }
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        }
-                    }
-                    
-                    // Отдельно отображаем задачи без приоритета (как раньше)
-                    if let tasksWithoutPriority = groupedByPriority[.none], !tasksWithoutPriority.isEmpty {
-                        ForEach(tasksWithoutPriority) { item in
-                            TaskRow(
-                                item: item,
-                                onToggle: {
-                                    viewModel.presenter?.toggleItem(id: item.id)
-                                },
-                                onEdit: {
-                                    viewModel.editingItem = item
-                                },
-                                onDelete: {
-                                    viewModel.presenter?.deleteItem(id: item.id)
-                                },
-                                onShare: {
-                                    viewModel.presenter?.shareItem(id: item.id)
-                                },
-                                categoryColor: viewModel.selectedCategory?.color ?? .blue,
-                                isSelectionMode: isSelectionMode,
-                                isInArchiveMode: viewModel.showCompletedTasksOnly,
-                                selectedTasks: $selectedTasks
-                            )
-                            .padding(.horizontal, 10)
-                            .listRowBackground(
+                    // Отображаем все задачи в одном списке без группировки по приоритету
+                    ForEach(items) { item in
+                        TaskRow(
+                            item: item,
+                            onToggle: {
+                                viewModel.presenter?.toggleItem(id: item.id)
+                            },
+                            onEdit: {
+                                viewModel.editingItem = item
+                            },
+                            onDelete: {
+                                viewModel.presenter?.deleteItem(id: item.id)
+                            },
+                            onShare: {
+                                viewModel.presenter?.shareItem(id: item.id)
+                            },
+                            categoryColor: viewModel.selectedCategory?.color ?? .blue,
+                            isSelectionMode: isSelectionMode,
+                            isInArchiveMode: viewModel.showCompletedTasksOnly,
+                            selectedTasks: $selectedTasks
+                        )
+                        .padding(.horizontal, 10)
+                        .listRowBackground(
+                            ZStack {
                                 RoundedRectangle(cornerRadius: 10)
                                     .fill(Color(.darkGray))
-                                    .padding(.vertical, 5)
-                                    .padding(.horizontal, 8)
-                            )
-                            .contentShape(Rectangle())  // Добавляем форму для регистрации нажатий
-                            .onTapGesture {
-                                if isSelectionMode {
-                                    // В режиме выбора, нажатие выбирает/снимает выбор задачи
-                                    if selectedTasks.contains(item.id) {
-                                        selectedTasks.remove(item.id)
-                                    } else {
-                                        selectedTasks.insert(item.id)
-                                    }
-                                } else {
-                                    // В обычном режиме, нажатие делает задачу завершенной
-                                    viewModel.presenter?.toggleItem(id: item.id)
+                                
+                                // Добавляем внешний бордер для задач с приоритетом
+                                if item.priority != .none {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(getPriorityColor(for: item.priority), lineWidth: 1.5)
+                                        .opacity(item.isCompleted && !isSelectionMode && !viewModel.showCompletedTasksOnly ? 0.5 : 1.0)
                                 }
                             }
-                            .listRowSeparator(.hidden)
+                            .padding(.vertical, 5)
+                            .padding(.horizontal, 8)
+                        )
+                        .contentShape(Rectangle())  // Добавляем форму для регистрации нажатий
+                        .onTapGesture {
+                            if isSelectionMode {
+                                // В режиме выбора, нажатие выбирает/снимает выбор задачи
+                                if selectedTasks.contains(item.id) {
+                                    selectedTasks.remove(item.id)
+                                } else {
+                                    selectedTasks.insert(item.id)
+                                }
+                            } else {
+                                // В обычном режиме, нажатие делает задачу завершенной
+                                viewModel.presenter?.toggleItem(id: item.id)
+                            }
                         }
+                        .listRowSeparator(.hidden)
                     }
                 }
                 .listStyle(GroupedListStyle())
@@ -279,8 +199,6 @@ struct TaskListView: View {
                         },
                         showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
                     )
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
                     .transition(.move(edge: .bottom))
                 }
             }
