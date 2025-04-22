@@ -24,6 +24,8 @@ struct RingPlanner: View {
                 if let task = viewModel.draggedTask {
                     // Обработка удаления задачи
                     viewModel.taskManagement.removeTask(task)
+                    // Сбрасываем draggedTask, но НЕ сбрасываем draggedCategory
+                    viewModel.draggedTask = nil
                     return true
                 }
 
@@ -52,6 +54,8 @@ struct RingPlanner: View {
                     // Включаем режим редактирования
                     viewModel.isEditingMode = true
                     viewModel.editingTask = newTask
+                    // НЕ сбрасываем draggedCategory, чтобы можно было продолжать
+                    // создавать задачи той же категории
                     return true
                 }
 

@@ -12,8 +12,6 @@ struct CalendarView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var temporaryDate: Date // Временная дата для хранения выбора
     @State private var selectedMode: BottomBarCalendar.ViewMode = .week
-    @State private var tasksForSelectedDate: [TaskOnRing] = []
-    @State private var tasksByCategory: [TaskCategoryModel: [TaskOnRing]] = [:]
     @State private var showAddTaskForm = false
     
     init(viewModel: ClockViewModel) {
@@ -52,29 +50,10 @@ struct CalendarView: View {
                         TasksFromToDoListView(
                             listViewModel: listViewModel, 
                             selectedDate: temporaryDate,
-                            categoryManager: viewModel.categoryManagement
+                            categoryManager: viewModel.categoryManagement,
+                            clockTasks: viewModel.tasks
                         )
                         .padding(.horizontal)
-                        
-                        // Секция задач на циферблате, сгруппированных по категориям
-                        if !tasksForSelectedDate.isEmpty {
-                            Text("Задачи на циферблате")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .padding(.horizontal)
-                                .padding(.top, 10)
-                            
-                            ForEach(Array(tasksByCategory.keys), id: \.id) { category in
-                                if let tasks = tasksByCategory[category], !tasks.isEmpty {
-                                    CategoryTasksView(category: category, tasks: tasks)
-                                        .padding(.horizontal)
-                                }
-                            }
-                        } else {
-                            Text("Нет задач на циферблате")
-                                .foregroundColor(.gray)
-                                .padding(.top, 20)
-                        }
                     }
                     .padding(.bottom, 100) // Увеличиваем отступ для BottomBar
                 }
@@ -137,13 +116,11 @@ struct CalendarView: View {
             // Здесь можно добавить логику при изменении режима отображения
             print("Выбран режим: \(newMode.rawValue)")
         }
-        .onChange(of: temporaryDate) { newDate in
-            // Обновляем список задач при изменении выбранной даты
-            updateTasksForSelectedDate()
+        .onChange(of: temporaryDate) { oldValue, newValue in
+            // Обновляем список задач при изменении даты
+            listViewModel.refreshData()
         }
         .onAppear {
-            // Обновляем список задач при первом появлении
-            updateTasksForSelectedDate()
             listViewModel.refreshData() // Загружаем задачи из ToDo
         }
         .sheet(isPresented: $showAddTaskForm) {
@@ -151,24 +128,15 @@ struct CalendarView: View {
             NewTaskFormView(viewModel: listViewModel, isPresented: $showAddTaskForm, selectedDate: temporaryDate)
         }
     }
-    
-    // Метод для обновления списка задач на выбранную дату
-    private func updateTasksForSelectedDate() {
-        // Фильтруем задачи на выбранный день
-        tasksForSelectedDate = viewModel.sharedState.tasks.filter { task in
-            Calendar.current.isDate(task.startTime, inSameDayAs: temporaryDate)
-        }
-        
-        // Группируем задачи по категориям
-        tasksByCategory = Dictionary(grouping: tasksForSelectedDate, by: { $0.category })
-    }
 }
 
 // Компонент для отображения задач из ToDoList
 struct TasksFromToDoListView: View {
     @ObservedObject var listViewModel: ListViewModel
     let selectedDate: Date
-    let categoryManager: CategoryManagementProtocol // Просто хранит ссылку
+    let categoryManager: CategoryManagementProtocol
+    // Добавляем доступ к задачам на циферблате
+    var clockTasks: [TaskOnRing] = []
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -219,6 +187,23 @@ struct TasksFromToDoListView: View {
                             }
                             .padding(.horizontal, 10)
                             
+                            // Добавляем информацию о времени категории на циферблате
+                            if let timeRange = getCategoryTimeRange(for: categoryID) {
+                                HStack {
+                                    Image(systemName: "clock")
+                                        .foregroundColor(categoryColor.opacity(0.7))
+                                        .font(.system(size: 12))
+                                    
+                                    Text(timeRange)
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                    
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.bottom, 5)
+                            }
+                            
                             // Задачи в категории
                             ForEach(tasks) { task in
                                 ToDoTaskRow(task: task, categoryColor: categoryColor)
@@ -264,6 +249,35 @@ struct TasksFromToDoListView: View {
         let icon = icons[(hashValue / 2) % icons.count]
         
         return (color, icon)
+    }
+    
+    // Получение временного диапазона категории на циферблате
+    private func getCategoryTimeRange(for categoryID: UUID) -> String? {
+        // Фильтруем задачи циферблата по категории и дате
+        let categoryClockTasks = clockTasks.filter { task in
+            task.category.id == categoryID && Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
+        }
+        
+        guard !categoryClockTasks.isEmpty else { return nil }
+        
+        // Сортируем задачи по времени начала
+        let sortedByStartTime = categoryClockTasks.sorted { $0.startTime < $1.startTime }
+        
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        
+        // Если категория появляется только один раз
+        if sortedByStartTime.count == 1, let task = sortedByStartTime.first {
+            return "На циферблате: " + formatter.string(from: task.startTime) + " - " + formatter.string(from: task.endTime)
+        }
+        
+        // Если категория появляется несколько раз, формируем список всех временных интервалов
+        var timeRanges: [String] = []
+        for task in sortedByStartTime {
+            timeRanges.append(formatter.string(from: task.startTime) + " - " + formatter.string(from: task.endTime))
+        }
+        
+        return "На циферблате: " + timeRanges.joined(separator: ", ")
     }
 }
 

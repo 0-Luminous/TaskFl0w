@@ -294,11 +294,18 @@ final class ClockViewModel: ObservableObject {
     // MARK: - Методы управления задачами
 
     func startDragging(_ task: TaskOnRing) {
+        // Задаем задачу для перетаскивания
+        draggedTask = task
+        // Мы намеренно НЕ сбрасываем draggedCategory, так как это независимый процесс
         dragAndDropManager.startDragging(task)
+        print("Перетаскивание задачи: \(task.title), категория: \(task.category.rawValue)")
     }
 
     func stopDragging(didReturnToClock: Bool) {
+        // Делегируем остановку перетаскивания менеджеру
         dragAndDropManager.stopDragging(didReturnToClock: didReturnToClock)
+        // После окончания перетаскивания сбрасываем задачу
+        // Но НЕ сбрасываем draggedCategory - она будет сброшена в другом месте или по специальному событию
     }
 
     func updateDragPosition(isOutsideClock: Bool) {

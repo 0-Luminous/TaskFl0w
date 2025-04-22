@@ -285,7 +285,7 @@ struct ClockTaskArcIOS: View {
                 VStack {
                     Image(systemName: task.category.iconName)
                         .foregroundColor(.white)
-                        .font(.system(size: 18))
+                        .font(.system(size: 24))
                 }
             )
             
