@@ -12,6 +12,7 @@ struct TaskArcsViewIOS: View {
 
     var body: some View {
         ZStack {
+            // Не фильтруем задачи - этим будет заниматься сам ClockTaskArcIOS
             ForEach(tasks) { task in
                 ClockTaskArcIOS(task: task, viewModel: viewModel)
             }

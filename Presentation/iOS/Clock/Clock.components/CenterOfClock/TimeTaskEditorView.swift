@@ -11,7 +11,7 @@ struct TimeTaskEditorView: View {
         VStack {
             if let task = viewModel.editingTask {
                 VStack {
-                    Text("Task: \(task.title)")
+                    Text("Task: \(task.category.rawValue)")
                     Text("Start Time: \(startTime, formatter: DateFormatter.timeOnly)")
                     Text("End Time: \(endTime, formatter: DateFormatter.timeOnly)")
 

@@ -104,7 +104,6 @@ class TaskManagement: TaskManagementProtocol {
                     existingTask.endTime = normalizedEndTime
                 }
 
-                existingTask.title = task.title
                 existingTask.isCompleted = task.isCompleted
 
                 // Обновляем категорию
@@ -266,7 +265,7 @@ class TaskManagement: TaskManagementProtocol {
 
     private func validateTask(_ task: TaskOnRing) -> Bool {
         // Обновленная валидация
-        return !task.title.isEmpty && task.endTime.timeIntervalSince(task.startTime) > 0
+        return !task.category.rawValue.isEmpty && task.endTime.timeIntervalSince(task.startTime) > 0
     }
 
     func createTask(startTime: Date, endTime: Date, category: TaskCategoryModel) async throws {
@@ -318,7 +317,6 @@ class TaskManagement: TaskManagementProtocol {
 
         let newTask = TaskOnRing(
             id: UUID(),
-            title: "Новая задача",
             startTime: normalizedStartTime,
             endTime: normalizedEndTime,
             color: category.color,
@@ -371,7 +369,6 @@ class TaskManagement: TaskManagementProtocol {
             if let existingTask = try context.fetch(request).first {
                 existingTask.startTime = updatedTask.startTime
                 existingTask.endTime = updatedTask.endTime
-                existingTask.title = updatedTask.title
                 existingTask.isCompleted = updatedTask.isCompleted
 
                 // Обновляем категорию если необходимо

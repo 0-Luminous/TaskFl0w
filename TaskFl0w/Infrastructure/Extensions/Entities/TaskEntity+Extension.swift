@@ -46,7 +46,6 @@ extension TaskEntity {
 
         return TaskOnRing(
             id: id ?? UUID(),
-            title: title ?? "",
             startTime: normalizedStartTime,
             endTime: normalizedEndTime,
             color: Color(hex: category?.colorHex ?? "") ?? .blue,
@@ -65,7 +64,6 @@ extension TaskEntity {
     static func from(_ model: TaskOnRing, context: NSManagedObjectContext) -> TaskEntity {
         let entity = TaskEntity(context: context)
         entity.id = model.id
-        entity.title = model.title
 
         let calendar = Calendar.current
 

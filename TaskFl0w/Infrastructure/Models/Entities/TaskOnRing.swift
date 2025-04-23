@@ -3,7 +3,6 @@ import SwiftUI
 
 struct TaskOnRing: Identifiable, Hashable {
     let id: UUID
-    var title: String
     var startTime: Date
     var endTime: Date
     var color: Color

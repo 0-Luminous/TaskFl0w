@@ -63,7 +63,7 @@ class NotificationService: NotificationServiceProtocol {
     func scheduleNotification(for task: TaskOnRing) {
         let content = UNMutableNotificationContent()
         content.title = "Скоро начнется задача"
-        content.body = task.title
+        content.body = task.category.rawValue
         content.sound = UNNotificationSound.default
 
         // Получаем время напоминания из настроек

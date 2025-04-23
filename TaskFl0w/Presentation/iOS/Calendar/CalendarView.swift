@@ -298,7 +298,7 @@ struct ToDoTaskRow: View {
                 )
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(task.title)
+                Text(task.categoryName ?? "Без категории")
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.white)
@@ -525,7 +525,7 @@ struct TaskRowCalendar: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(task.title)
+                Text(task.category.rawValue)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.white)

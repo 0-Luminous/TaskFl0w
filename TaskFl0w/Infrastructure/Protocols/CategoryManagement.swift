@@ -97,7 +97,6 @@ class CategoryManagement: CategoryManagementProtocol {
             if task.category.id == category.id {
                 return TaskOnRing(
                     id: task.id,
-                    title: task.title,
                     startTime: task.startTime,
                     endTime: task.endTime,
                     color: category.color,

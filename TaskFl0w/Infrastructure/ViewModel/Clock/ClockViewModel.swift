@@ -298,14 +298,16 @@ final class ClockViewModel: ObservableObject {
         draggedTask = task
         // Мы намеренно НЕ сбрасываем draggedCategory, так как это независимый процесс
         dragAndDropManager.startDragging(task)
-        print("Перетаскивание задачи: \(task.title), категория: \(task.category.rawValue)")
+        print("Перетаскивание категории на циферблате: \(task.category.rawValue)")
     }
 
     func stopDragging(didReturnToClock: Bool) {
-        // Делегируем остановку перетаскивания менеджеру
+        // 1. даём менеджеру удалить задачу, если она ушла за пределы часов
         dragAndDropManager.stopDragging(didReturnToClock: didReturnToClock)
-        // После окончания перетаскивания сбрасываем задачу
-        // Но НЕ сбрасываем draggedCategory - она будет сброшена в другом месте или по специальному событию
+
+        // 2. сбрасываем локальное состояние
+        draggedTask = nil          // главное добавление
+        isDraggingOutside = false  // на всякий случай
     }
 
     func updateDragPosition(isOutsideClock: Bool) {
