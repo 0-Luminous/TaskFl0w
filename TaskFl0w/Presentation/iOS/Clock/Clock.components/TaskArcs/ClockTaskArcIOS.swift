@@ -71,20 +71,16 @@ struct ClockTaskArcIOS: View {
                                 }
                             }
                     )
-                    .onDrag {
-                        if !viewModel.isEditingMode && viewModel.editingTask == nil && !isDragging {
-                            print("onDrag: начало перетаскивания \(task.category.rawValue)")
-
-                            // Начинаем перетаскивание
-                            viewModel.startDragging(task)
-                            isDragging = true
-                            return NSItemProvider(object: task.id.uuidString as NSString)
-                        }
-                        return NSItemProvider()
-                    } preview: {
+                    .draggable(task) {
                         CategoryDragPreview(task: task)
                             .onAppear {
                                 print("preview: \(task.category.rawValue)")
+                                
+                                if !viewModel.isEditingMode && viewModel.editingTask == nil && !isDragging {
+                                    print("draggable: начало перетаскивания \(task.category.rawValue)")
+                                    viewModel.startDragging(task)
+                                    isDragging = true
+                                }
                             }
                     }
 
