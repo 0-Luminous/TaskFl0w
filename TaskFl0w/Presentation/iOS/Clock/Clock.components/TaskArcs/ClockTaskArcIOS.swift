@@ -83,41 +83,6 @@ struct ClockTaskArcIOS: View {
                                 }
                             }
                     )
-                    .simultaneousGesture(
-                        TapGesture(count: 2)
-                            .onEnded {
-                                if !viewModel.isEditingMode {
-                                    viewModel.selectedTask = task
-                                    viewModel.showingTaskDetail = true
-                                }
-                            }
-                    )
-                    // Добавляем жест долгого нажатия для мгновенного удаления
-                    .simultaneousGesture(
-                        LongPressGesture(minimumDuration: 0.2)
-                            .onEnded { _ in
-                                if !viewModel.isEditingMode && viewModel.editingTask == nil
-                                    && !isDragging
-                                {
-                                    print("LongPress: удаление задачи \(task.category.rawValue)")
-
-                                    // Отмечаем начало перетаскивания
-                                    isDragging = true
-
-                                    // Сохраняем задачу для перетаскивания
-                                    viewModel.startDragging(task)
-
-                                    // Сразу устанавливаем флаг, что перетаскивание за пределами
-                                    viewModel.updateDragPosition(isOutsideClock: true)
-
-                                    // Используем таймер для имитации отпускания перетаскивания через короткое время
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                        print("LongPress: завершение удаления \(task.category.rawValue)")
-                                        isDragging = false
-                                    }
-                                }
-                            }
-                    )
                     // Добавляем возможность перетаскивания с предпросмотром
                     .onDrag {
                         // Если мы не в режиме редактирования и не в процессе перетаскивания - разрешаем
@@ -137,7 +102,6 @@ struct ClockTaskArcIOS: View {
                         return NSItemProvider()
                     } preview: {
                         // Максимально простой preview для быстрой загрузки
-                        print("Preview создан для категории: \(task.category.rawValue)")
                         return RoundedRectangle(cornerRadius: 12)
                             .fill(task.category.color)
                             .frame(width: 50, height: 50)
@@ -270,23 +234,10 @@ struct ClockTaskArcIOS: View {
                             // Проверяем, что перетаскивание все еще активно и дуга все еще видима
                             if isDragging && viewModel.draggedTask?.id == task.id && isVisible {
                                 print("onChange: скрываем дугу \(task.category.rawValue)")
+                                viewModel.taskManagement.removeTask(task)
                                 isVisible = false
                             }
                         }
-                    }
-                }
-
-                // Когда перетаскивание заканчивается
-                if !newValue && task.id == viewModel.draggedTask?.id {
-                    print("onChange: завершение перетаскивания \(task.category.rawValue)")
-
-                    // Обработка завершения перетаскивания
-                    viewModel.stopDragging(didReturnToClock: !viewModel.isDraggingOutside)
-
-                    // Восстанавливаем видимость дуги
-                    if !isVisible {
-                        print("onChange: восстанавливаем видимость дуги \(task.category.rawValue)")
-                        isVisible = true
                     }
                 }
             }

@@ -131,9 +131,28 @@ class TaskManagement: TaskManagementProtocol {
 
         do {
             if let taskToDelete = try context.fetch(request).first {
+                // Добавляем логирование для отладки
+                print("TaskManagement.removeTask: Найдена задача для удаления с ID: \(task.id)")
+                
+                // Удаляем из CoreData
                 context.delete(taskToDelete)
+                
+                // Удаляем из sharedState.tasks напрямую перед вызовом fetchTasks
+                // Это может помочь решить проблему, если задача снова появляется
+                if let index = sharedState.tasks.firstIndex(where: { $0.id == task.id }) {
+                    sharedState.tasks.remove(at: index)
+                    print("TaskManagement.removeTask: Удалена задача из sharedState.tasks с индексом \(index)")
+                }
+                
+                // Сохраняем контекст, чтобы применить изменения в базе данных
                 saveContext()
+                
+                // Обновляем список задач после удаления
                 fetchTasks()
+                
+                print("TaskManagement.removeTask: Задача удалена из базы данных и список задач обновлен")
+            } else {
+                print("TaskManagement.removeTask: Задача с ID \(task.id) не найдена в базе данных")
             }
         } catch {
             print("Ошибка при удалении задачи: \(error)")
