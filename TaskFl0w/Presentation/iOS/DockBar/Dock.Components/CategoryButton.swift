@@ -20,6 +20,7 @@ struct CategoryButton: View {
                         .foregroundColor(.white)
                         .font(.system(size: 24))
                 )
+                .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                 .overlay(
                     Circle()
                         .stroke(Color.white, lineWidth: isSelected ? 2.5 : 0)

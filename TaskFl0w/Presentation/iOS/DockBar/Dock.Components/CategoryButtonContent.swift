@@ -40,7 +40,15 @@ struct CategoryButtonContent: View {
             draggedCategory = category
             return NSItemProvider(object: category.id.uuidString as NSString)
         } preview: {
-            categoryDragPreview(for: category)
+            CategoryDragPreview(task: TaskOnRing(
+                id: category.id,
+                startTime: Date(),
+                endTime: Date().addingTimeInterval(3600),
+                color: category.color,
+                icon: category.iconName,
+                category: category,
+                isCompleted: false
+            ))
         }
         .onDrop(
             of: [.text],
@@ -51,17 +59,5 @@ struct CategoryButtonContent: View {
                 moveAction: moveCategory
             )
         )
-    }
-
-    private func categoryDragPreview(for category: TaskCategoryModel) -> some View {
-        RoundedRectangle(cornerRadius: 12)
-            .fill(category.color)
-            .frame(width: 50, height: 50)
-            .overlay(
-                Image(systemName: category.iconName)
-                    .foregroundColor(.white)
-                    .font(.system(size: 24))
-            )
-            .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
     }
 }

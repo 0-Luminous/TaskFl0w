@@ -35,13 +35,22 @@ struct RingPlanner: View {
                         location,
                         screenWidth: UIScreen.main.bounds.width
                     )
+                    
+                    // Создаем новую дату на выбранном дне, а не на текущем
+                    let calendar = Calendar.current
+                    var dateComponents = calendar.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
+                    let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
+                    dateComponents.hour = timeComponents.hour
+                    dateComponents.minute = timeComponents.minute
+                    
+                    let adjustedTime = calendar.date(from: dateComponents) ?? time
+                    let endTime = calendar.date(byAdding: .hour, value: 1, to: adjustedTime) ?? adjustedTime
 
                     // Создаём новую задачу
                     let newTask = TaskOnRing(
                         id: UUID(),
-                        startTime: time,
-                        endTime: Calendar.current.date(byAdding: .hour, value: 1, to: time)
-                            ?? time,
+                        startTime: adjustedTime,
+                        endTime: endTime,
                         color: category.color,
                         icon: category.iconName,
                         category: category,
