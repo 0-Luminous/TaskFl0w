@@ -12,6 +12,15 @@ struct RingPlanner: View {
     let color: Color
     @ObservedObject var viewModel: ClockViewModel
     let zeroPosition: Double
+    let shouldDeleteTask: Bool
+    
+    // Инициализатор с параметром shouldDeleteTask, по умолчанию true
+    init(color: Color, viewModel: ClockViewModel, zeroPosition: Double, shouldDeleteTask: Bool = true) {
+        self.color = color
+        self.viewModel = viewModel
+        self.zeroPosition = zeroPosition
+        self.shouldDeleteTask = shouldDeleteTask
+    }
 
     var body: some View {
         Circle()
@@ -22,9 +31,11 @@ struct RingPlanner: View {
             )
             .onDrop(of: [.text], isTargeted: nil) { providers, location in
                 if let task = viewModel.draggedTask {
-                    // Обработка удаления задачи
-                    viewModel.taskManagement.removeTask(task)
-                    // Сбрасываем draggedTask, но НЕ сбрасываем draggedCategory
+                    // Обработка удаления задачи только если shouldDeleteTask == true
+                    if shouldDeleteTask {
+                        viewModel.taskManagement.removeTask(task)
+                    }
+                    // Сбрасываем draggedTask независимо от удаления
                     viewModel.draggedTask = nil
                     return true
                 }

@@ -19,85 +19,123 @@ struct ClockViewIOS: View {
     // Состояние видимости докбара
     @State private var isDockBarHidden = false
     
+    // Состояние для отслеживания объекта вне часов
+    @State private var isOutsideArea: Bool = false
+    
     // MARK: - Body
     var body: some View {
         NavigationView {
-            VStack {
-                Spacer()
-
-                if viewModel.selectedCategory != nil {
-                    // Показываем список задач для выбранной категории
-                    TaskListView(
-                        viewModel: listViewModel,
-                        selectedCategory: viewModel.selectedCategory
-                    )
-                    .onAppear {
-                        // Обновляем выбранную категорию при появлении
-                        listViewModel.selectedCategory = viewModel.selectedCategory
+            ZStack {
+                // Фоновая область для обнаружения перетаскивания за пределы часов
+                Rectangle()
+                    .foregroundColor(.clear)
+                    .contentShape(Rectangle())
+                    .onDrop(of: [.text], isTargeted: $isOutsideArea) { providers, location in
+                        if let task = viewModel.draggedTask {
+                            print("⚠️ [ClockViewIOS] Задача перетащена в зону за пределами часов: \(task.id)")
+                            
+                            // Удаляем задачу после подтверждения, что она находится вне часов
+                            print("Задача находится вне часов и будет удалена")
+                            
+                            DispatchQueue.main.async {
+                                print("⚠️ [ClockViewIOS] Удаляем задачу после подтверждения нахождения вне часов")
+                                viewModel.taskManagement.removeTask(task)
+                                viewModel.stopDragging(didReturnToClock: false)
+                            }
+                            return true
+                        }
+                        return false
                     }
-                    .onChange(of: viewModel.selectedCategory) { oldValue, newValue in
-                        // Обновляем выбранную категорию при ее изменении
-                        listViewModel.selectedCategory = newValue
+                    .onChange(of: isOutsideArea) { oldValue, newValue in
+                        if newValue {
+                            print("⚠️ [ClockViewIOS] Объект перетаскивания обнаружен во внешней зоне")
+                            if let task = viewModel.draggedTask {
+                                print("⚠️ [ClockViewIOS] Это задача \(task.id)")
+                            }
+                        } else {
+                            print("⚠️ [ClockViewIOS] Объект покинул внешнюю зону")
+                        }
                     }
-                    .transition(.opacity)
-                } else {
-                    // Показываем циферблат
-                    ZStack {
-                        RingPlanner(
-                            color: ThemeManager.shared.currentOuterRingColor,
-                            viewModel: viewModel,
-                            zeroPosition: viewModel.zeroPosition
-                        )
+                
+                VStack {
+                    Spacer()
 
-                        GlobleClockFaceViewIOS(
-                            currentDate: viewModel.selectedDate,
-                            tasks: viewModel.tasks,
-                            viewModel: viewModel,
-                            markersViewModel: viewModel.markersViewModel,
-                            draggedCategory: $viewModel.draggedCategory,
-                            zeroPosition: viewModel.zeroPosition
+                    if viewModel.selectedCategory != nil {
+                        // Показываем список задач для выбранной категории
+                        TaskListView(
+                            viewModel: listViewModel,
+                            selectedCategory: viewModel.selectedCategory
                         )
-
-                        if viewModel.isEditingMode, let editingTask = viewModel.editingTask {
-                            TimeTaskEditorOverlay(
+                        .onAppear {
+                            // Обновляем выбранную категорию при появлении
+                            listViewModel.selectedCategory = viewModel.selectedCategory
+                        }
+                        .onChange(of: viewModel.selectedCategory) { oldValue, newValue in
+                            // Обновляем выбранную категорию при ее изменении
+                            listViewModel.selectedCategory = newValue
+                        }
+                        .transition(.opacity)
+                    } else {
+                        // Показываем циферблат
+                        ZStack {
+                            // Заменяем RingPlanner на модифицированную версию без удаления задачи
+                            RingPlanner(
+                                color: ThemeManager.shared.currentOuterRingColor,
                                 viewModel: viewModel,
-                                task: editingTask
+                                zeroPosition: viewModel.zeroPosition,
+                                shouldDeleteTask: false // Новый параметр, чтобы отключить удаление
                             )
+
+                            GlobleClockFaceViewIOS(
+                                currentDate: viewModel.selectedDate,
+                                tasks: viewModel.tasks,
+                                viewModel: viewModel,
+                                markersViewModel: viewModel.markersViewModel,
+                                draggedCategory: $viewModel.draggedCategory,
+                                zeroPosition: viewModel.zeroPosition
+                            )
+
+                            if viewModel.isEditingMode, let editingTask = viewModel.editingTask {
+                                TimeTaskEditorOverlay(
+                                    viewModel: viewModel,
+                                    task: editingTask
+                                )
+                            }
                         }
                     }
-                }
 
-                Spacer()
+                    Spacer()
 
-                // Набор категорий снизу - скрываем при активном поиске или при создании задачи
-                if !isSearchActive && !isDockBarHidden {
-                    // Обновлено: используем DockBarIOS с DockBarViewModel
-                    DockBarIOS(viewModel: viewModel.dockBarViewModel)
-                    .transition(.move(edge: .bottom))
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    VStack {
-                        Text(viewModel.formattedDate)
-                            .font(.headline)
-                        Text(viewModel.formattedWeekday)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                    // Набор категорий снизу - скрываем при активном поиске или при создании задачи
+                    if !isSearchActive && !isDockBarHidden {
+                        // Обновлено: используем DockBarIOS с DockBarViewModel
+                        DockBarIOS(viewModel: viewModel.dockBarViewModel)
+                        .transition(.move(edge: .bottom))
                     }
                 }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    HStack {
-                        Button(action: { viewModel.showingSettings = true }) {
-                            Image(systemName: "gear")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        VStack {
+                            Text(viewModel.formattedDate)
+                                .font(.headline)
+                            Text(viewModel.formattedWeekday)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                         }
                     }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack {
-                        Button(action: { viewModel.showingCalendar = true }) {
-                            Image(systemName: "calendar")
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        HStack {
+                            Button(action: { viewModel.showingSettings = true }) {
+                                Image(systemName: "gear")
+                            }
+                        }
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        HStack {
+                            Button(action: { viewModel.showingCalendar = true }) {
+                                Image(systemName: "calendar")
+                            }
                         }
                     }
                 }
