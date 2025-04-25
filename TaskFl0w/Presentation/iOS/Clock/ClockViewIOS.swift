@@ -5,11 +5,6 @@
 //  Created by Yan on 24/12/24.
 //
 import SwiftUI
-import UniformTypeIdentifiers
-
-extension UTType {
-    static let task = UTType(exportedAs: "com.yourapp.nodrop")
-}
 
 struct ClockViewIOS: View {
     @StateObject var viewModel = ClockViewModel()
