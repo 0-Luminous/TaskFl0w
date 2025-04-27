@@ -20,7 +20,6 @@ class ToDoInteractor: ToDoInteractorProtocol {
     private func convertToToDoItem(_ entity: NSManagedObject) -> ToDoItem {
         let id = entity.value(forKey: "id") as! UUID
         let title = entity.value(forKey: "title") as! String
-        let content = entity.value(forKey: "content") as! String
         let date = entity.value(forKey: "date") as! Date
         let isCompleted = entity.value(forKey: "isCompleted") as! Bool
         let categoryID = entity.value(forKey: "categoryID") as? UUID
@@ -29,7 +28,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         let priority = TaskPriority(rawValue: priorityRaw) ?? .none
 
         return ToDoItem(
-            id: id, title: title, content: content, date: date, 
+            id: id, title: title, date: date, 
             isCompleted: isCompleted, categoryID: categoryID, categoryName: categoryName,
             priority: priority)
     }
@@ -47,7 +46,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         }
     }
 
-    func addItem(title: String, content: String) {
+    func addItem(title: String) {
         print("📝 Попытка добавить новый элемент: \(title)")
 
         // Проверка наличия сущности
@@ -63,7 +62,6 @@ class ToDoInteractor: ToDoInteractorProtocol {
         let newID = UUID()
         newItem.setValue(newID, forKey: "id")
         newItem.setValue(title, forKey: "title")
-        newItem.setValue(content, forKey: "content")
         newItem.setValue(Date(), forKey: "date")
         newItem.setValue(false, forKey: "isCompleted")
         newItem.setValue(0, forKey: "priority")
@@ -75,7 +73,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         presenter?.didAddItem()
     }
 
-    func addItemWithCategory(title: String, content: String, category: TaskCategoryModel) {
+    func addItemWithCategory(title: String, category: TaskCategoryModel) {
         print("📝 Добавление новой задачи: \"\(title)\" в категорию: \"\(category.rawValue)\"")
 
         // Проверка наличия сущности
@@ -90,7 +88,6 @@ class ToDoInteractor: ToDoInteractorProtocol {
         let newID = UUID()
         newItem.setValue(newID, forKey: "id")
         newItem.setValue(title, forKey: "title")
-        newItem.setValue(content, forKey: "content")
         newItem.setValue(Date(), forKey: "date")
         newItem.setValue(false, forKey: "isCompleted")
         newItem.setValue(0, forKey: "priority")
@@ -158,7 +155,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         }
     }
 
-    func editItem(id: UUID, title: String, content: String) {
+    func editItem(id: UUID, title: String) {
         let request = NSFetchRequest<NSManagedObject>(entityName: "CDToDoItem")
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
 
@@ -171,7 +168,6 @@ class ToDoInteractor: ToDoInteractorProtocol {
                 
                 // Обновляем основные поля
                 item.setValue(title, forKey: "title")
-                item.setValue(content, forKey: "content")
                 
                 // Если есть выбранная категория в viewModel, используем её
                 if let presenter = presenter as? ToDoPresenter,

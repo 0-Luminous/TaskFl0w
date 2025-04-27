@@ -30,7 +30,7 @@ class ToDoRouter: ToDoRouterProtocol {
     }
 
     func shareItem(_ item: ToDoItem) {
-        let textToShare = "\(item.title)\n\(item.content)"
+        let textToShare = "\(item.title))"
         let activityVC = UIActivityViewController(
             activityItems: [textToShare],
             applicationActivities: nil

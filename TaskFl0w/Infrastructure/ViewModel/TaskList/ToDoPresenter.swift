@@ -58,16 +58,16 @@ class ToDoPresenter: ToDoPresenterProtocol {
         interactor?.deleteItem(id: id)
     }
 
-    func addItem(title: String, content: String) {
-        interactor?.addItem(title: title, content: content)
+    func addItem(title: String) {
+        interactor?.addItem(title: title)
     }
 
-    func addItemWithCategory(title: String, content: String, category: TaskCategoryModel) {
-        interactor?.addItemWithCategory(title: title, content: content, category: category)
+    func addItemWithCategory(title: String, category: TaskCategoryModel) {
+        interactor?.addItemWithCategory(title: title, category: category)
     }
 
-    func editItem(id: UUID, title: String, content: String) {
-        interactor?.editItem(id: id, title: title, content: content)
+    func editItem(id: UUID, title: String) {
+        interactor?.editItem(id: id, title: title)
     }
 
     func shareItem(id: UUID) {

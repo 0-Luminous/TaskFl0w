@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  TaskListView.swift
 //  ToDoList
 //
 //  Created by Yan on 19/3/25.
@@ -270,13 +270,11 @@ struct TaskListView: View {
             if let category = viewModel.selectedCategory {
                 viewModel.presenter?.addItemWithCategory(
                     title: newTaskTitle,
-                    content: "",
                     category: category
                 )
             } else {
                 viewModel.presenter?.addItem(
-                    title: newTaskTitle,
-                    content: ""
+                    title: newTaskTitle
                 )
             }
             newTaskTitle = ""

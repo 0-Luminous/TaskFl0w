@@ -17,13 +17,11 @@ struct FormTaskView: View {
     var editingItem: ToDoItem?
 
     @State private var title: String = ""
-    @State private var content: String = ""
     @State private var date: Date = Date()
     @FocusState private var fieldInFocus: Field?
     
     enum Field {
         case title
-        case content
     }
 
     // Инициализатор для создания новой задачи
@@ -39,7 +37,6 @@ struct FormTaskView: View {
         self.onDismiss = onDismiss
         self.editingItem = item
         self._title = State(initialValue: item.title)
-        self._content = State(initialValue: item.content)
         self._date = State(initialValue: item.date)
         
         // Если у задачи есть категория, устанавливаем её в viewModel (если она еще не установлена)
@@ -76,26 +73,6 @@ struct FormTaskView: View {
                                 fieldInFocus = .title
                             }
                         }
-                    
-                    ZStack(alignment: .topLeading) {    
-                        TextEditor(text: $content)
-                            .font(.system(size: 17))
-                            .padding(.horizontal, 12)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .focused($fieldInFocus, equals: .content)
-                            .opacity(content.isEmpty ? 0.85 : 1) // Более мягкая прозрачность для предотвращения проблем с отрисовкой
-                            .overlay(
-                                Group {
-                                    if content.isEmpty {
-                                        Text("Описание задачи...")
-                                            .foregroundColor(.gray.opacity(0.7))
-                                            .padding(.horizontal, 16)
-                                            .padding(.top, 8)
-                                            .allowsHitTesting(false)
-                                    }
-                                }
-                            )
-                    }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -126,15 +103,15 @@ struct FormTaskView: View {
                         if let item = editingItem {
                             // Режим редактирования
                             viewModel.presenter?.editItem(
-                                id: item.id, title: title, content: content)
+                                id: item.id, title: title)
                         } else {
                             // Режим добавления
                             if let selectedCategory = viewModel.selectedCategory {
                                 // Добавление задачи с выбранной категорией
-                                viewModel.presenter?.addItemWithCategory(title: title, content: content, category: selectedCategory)
+                                viewModel.presenter?.addItemWithCategory(title: title, category: selectedCategory)
                             } else {
                                 // Обычное добавление без категории
-                                viewModel.presenter?.addItem(title: title, content: content)
+                                viewModel.presenter?.addItem(title: title)
                             }
                         }
                         onDismiss?()

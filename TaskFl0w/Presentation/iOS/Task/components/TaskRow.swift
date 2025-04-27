@@ -5,7 +5,6 @@
 //  Created by Yan on 23/3/25.
 //
 import SwiftUI
-import UIKit
 
 struct TaskRow: View {
     let item: ToDoItem
@@ -18,22 +17,9 @@ struct TaskRow: View {
     let isInArchiveMode: Bool
     @Binding var selectedTasks: Set<UUID>
     
-    @State private var isLongPressed: Bool = false
-    
     var body: some View {
         ZStack {
-            // Удаляем фоновую полосу для обозначения приоритета, так как теперь
-            // задачи будут сгруппированы по приоритету
-            // if item.priority != .none {
-            //     HStack {
-            //         Rectangle()
-            //             .fill(priorityColor(for: item.priority))
-            //             .frame(width: 4)
-            //             .opacity(0.8)
-            //         Spacer()
-            //     }
-            // }
-            
+        
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     if isSelectionMode {

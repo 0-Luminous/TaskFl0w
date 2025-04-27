@@ -7,7 +7,9 @@ struct PersonalizationViewIOS: View {
     
     var body: some View {
         ZStack {
-            // Карточки
+            Color(red: 0.098, green: 0.098, blue: 0.098) // Задний фон
+                .ignoresSafeArea() // Чтобы цвет был на весь экран
+
             VStack(spacing: 20) { // Добавили spacing между кнопками
                 Spacer()
                     .frame(height: 50) // Отступ сверху
@@ -18,10 +20,9 @@ struct PersonalizationViewIOS: View {
                 } label: {
                     CardView(
                         icon: "square.filled.on.square",
-                        title: "Основной\nцвет"
+                        title: "Базовый цвет"
                     )
                 }
-                .buttonStyle(CardButtonStyle())
                 
                 // Циферблат
                 Button {
@@ -32,7 +33,6 @@ struct PersonalizationViewIOS: View {
                         title: "Циферблат"
                     )
                 }
-                .buttonStyle(CardButtonStyle())
                 
                 // Категории
                 Button {
@@ -43,7 +43,6 @@ struct PersonalizationViewIOS: View {
                         title: "Категории"
                     )
                 }
-                .buttonStyle(CardButtonStyle())
                 
                 Spacer()
                 

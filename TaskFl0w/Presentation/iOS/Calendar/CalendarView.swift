@@ -60,15 +60,15 @@ struct CalendarView: View {
                 .background(Color(red: 0.098, green: 0.098, blue: 0.098))
                 .edgesIgnoringSafeArea(.top)
                 
-                VStack {
-                    Spacer()
-                    BottomBarCalendar(selectedMode: $selectedMode) {
-                        // Действие при нажатии на кнопку добавления
-                        showAddTaskForm = true
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom, 16)
-                }
+//                VStack {
+//                    Spacer()
+//                    BottomBarCalendar(selectedMode: $selectedMode) {
+//                        // Действие при нажатии на кнопку добавления
+//                        showAddTaskForm = true
+//                    }
+//                    .padding(.horizontal)
+//                    .padding(.bottom, 16)
+//                }
             }
             .navigationTitle("Календарь")
             .navigationBarTitleDisplayMode(.inline)
@@ -298,17 +298,11 @@ struct ToDoTaskRow: View {
                 )
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(task.categoryName ?? "Без категории")
+                Text(task.title)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.white)
                     .strikethrough(task.isCompleted)
-                
-                if !task.content.isEmpty {
-                    Text(task.content)
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
             }
             
             Spacer()
@@ -377,7 +371,6 @@ struct NewTaskFormView: View {
     let selectedDate: Date
     
     @State private var taskTitle = ""
-    @State private var taskContent = ""
     @State private var selectedCategory: TaskCategoryModel?
     
     var body: some View {
@@ -401,12 +394,7 @@ struct NewTaskFormView: View {
                             .background(Color(.darkGray).opacity(0.6))
                             .cornerRadius(10)
                             .foregroundColor(.white)
-                        
-                        TextField("Описание (опционально)", text: $taskContent)
-                            .padding()
-                            .background(Color(.darkGray).opacity(0.6))
-                            .cornerRadius(10)
-                            .foregroundColor(.white)
+
                         
                         // Здесь можно добавить выбор категории
                         
@@ -449,13 +437,11 @@ struct NewTaskFormView: View {
             if let category = selectedCategory {
                 viewModel.presenter?.addItemWithCategory(
                     title: taskTitle,
-                    content: taskContent,
                     category: category
                 )
             } else {
                 viewModel.presenter?.addItem(
-                    title: taskTitle,
-                    content: taskContent
+                    title: taskTitle
                 )
             }
         }

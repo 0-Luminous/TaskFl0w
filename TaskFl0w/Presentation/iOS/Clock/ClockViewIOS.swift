@@ -22,6 +22,9 @@ struct ClockViewIOS: View {
     // Состояние для отслеживания объекта вне часов
     @State private var isOutsideArea: Bool = false
     
+    // 1. Новое состояние
+    @State private var showingNewSettings = false
+    
     // MARK: - Body
     var body: some View {
         NavigationView {
@@ -111,7 +114,7 @@ struct ClockViewIOS: View {
                     }
                     ToolbarItem(placement: .navigationBarLeading) {
                         HStack {
-                            Button(action: { viewModel.showingSettings = true }) {
+                            Button(action: { showingNewSettings = true }) {
                                 Image(systemName: "gear")
                             }
                         }
@@ -124,9 +127,6 @@ struct ClockViewIOS: View {
                         }
                     }
                 }
-            }
-            .fullScreenCover(isPresented: $viewModel.showingSettings) {
-                SettingsViewIOS()
             }
             .fullScreenCover(isPresented: $viewModel.showingCalendar) {
                 CalendarView(viewModel: viewModel)
@@ -147,6 +147,12 @@ struct ClockViewIOS: View {
                         // Убедимся, что категория правильно передана
                         listViewModel.selectedCategory = selectedCategory
                     }
+                }
+            }
+            // 3. Новый .fullScreenCover
+            .fullScreenCover(isPresented: $showingNewSettings) {
+                NavigationStack {
+                    NewSettingsView()
                 }
             }
             .background(Color(red: 0.098, green: 0.098, blue: 0.098))
