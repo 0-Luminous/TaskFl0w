@@ -16,6 +16,7 @@ struct GlobleClockFaceViewIOS: View {
     @Binding var draggedCategory: TaskCategoryModel?
     let zeroPosition: Double
     let taskArcLineWidth: CGFloat
+    let outerRingLineWidth: CGFloat
 
     // Добавляем новый параметр
     var isNavigationOverlayVisible: Bool = false
@@ -83,7 +84,7 @@ struct GlobleClockFaceViewIOS: View {
                 arcLineWidth: taskArcLineWidth
             )
 
-            ClockHandViewIOS(currentDate: viewModel.currentDate)
+            ClockHandViewIOS(currentDate: viewModel.currentDate, outerRingLineWidth: outerRingLineWidth)
                 .rotationEffect(.degrees(zeroPosition))
 
             // Показ точки, куда «кидаем» категорию

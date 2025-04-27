@@ -88,7 +88,8 @@ struct ClockEditorView: View {
                 markersViewModel: markersViewModel,
                 draggedCategory: .constant(nil),
                 zeroPosition: viewModel.zeroPosition,
-                taskArcLineWidth: viewModel.taskArcLineWidth
+                taskArcLineWidth: viewModel.taskArcLineWidth,
+                outerRingLineWidth: viewModel.outerRingLineWidth
             )
         }
         .frame(height: UIScreen.main.bounds.width * 0.8)

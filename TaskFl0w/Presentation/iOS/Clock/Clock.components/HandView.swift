@@ -9,6 +9,7 @@ import SwiftUI
 struct ClockHandViewIOS: View {
     
     let currentDate: Date
+    let outerRingLineWidth: CGFloat
     @AppStorage("useManualTime") private var useManualTime = false
     
     private var calendar: Calendar {
@@ -44,7 +45,7 @@ struct ClockHandViewIOS: View {
                 let center = CGPoint(x: geometry.size.width / 2,
                                      y: geometry.size.height / 2)
                 let radius = min(geometry.size.width, geometry.size.height) / 2
-                let hourHandLength = radius * 1.22
+                let hourHandLength = radius + (outerRingLineWidth / 2) + 20
                 let angle = hourAngle
                 let endpoint = CGPoint(
                     x: center.x + hourHandLength * CGFloat(cos(angle)),
