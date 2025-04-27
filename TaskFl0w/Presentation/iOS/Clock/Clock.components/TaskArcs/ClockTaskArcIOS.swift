@@ -23,15 +23,25 @@ struct ClockTaskArcIOS: View {
                 let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
                 let radius = min(geometry.size.width, geometry.size.height) / 2
                 let (startAngle, endAngle) = RingTimeCalculator.calculateAngles(for: task)
-                let midAngle = RingTimeCalculator.calculateMidAngle(
-                    start: startAngle, end: endAngle)
+                let midAngle = RingTimeCalculator.calculateMidAngle(start: startAngle, end: endAngle)
+                let iconSize: CGFloat = 20
+                let arcRadius = radius + arcLineWidth / 2
+
+                let minArcWidth: CGFloat = 20
+                let maxArcWidth: CGFloat = 32
+                let minIconOffset: CGFloat = 0
+                let maxIconOffset: CGFloat = 6
+
+                let t = (arcLineWidth - minArcWidth) / (maxArcWidth - minArcWidth)
+                let iconOffset = minIconOffset + (maxIconOffset - minIconOffset) * t
+                let iconRadius = arcRadius + iconSize / 2 + iconOffset
 
                 ZStack {
                     // Дуга задачи
                     Path { path in
                         path.addArc(
                             center: center,
-                            radius: radius + 10,
+                            radius: arcRadius,
                             startAngle: startAngle,
                             endAngle: endAngle,
                             clockwise: false)
@@ -120,11 +130,11 @@ struct ClockTaskArcIOS: View {
                         .background(
                             Circle()
                                 .fill(task.category.color)
-                                .frame(width: 20, height: 20)
+                                .frame(width: iconSize, height: iconSize)
                         )
                         .position(
-                            x: center.x + (radius + 20) * cos(midAngle.radians),
-                            y: center.y + (radius + 20) * sin(midAngle.radians)
+                            x: center.x + iconRadius * cos(midAngle.radians),
+                            y: center.y + iconRadius * sin(midAngle.radians)
                         )
                         .id("task-icon-\(task.id)-\(viewModel.zeroPosition)")
                 }
@@ -161,8 +171,8 @@ struct ClockTaskArcIOS: View {
             .frame(width: 24, height: 24)
             .overlay(Circle().stroke(Color.gray, lineWidth: 2))
             .position(
-                x: center.x + (radius + 10) * cos(angle.radians),
-                y: center.y + (radius + 10) * sin(angle.radians)
+                x: center.x + (radius + arcLineWidth / 2) * cos(angle.radians),
+                y: center.y + (radius + arcLineWidth / 2) * sin(angle.radians)
             )
             .animation(.none, value: angle)
             .gesture(

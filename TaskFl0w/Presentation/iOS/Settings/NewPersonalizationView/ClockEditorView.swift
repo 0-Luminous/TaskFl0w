@@ -24,13 +24,15 @@ struct ClockEditorView: View {
     @State private var showClockControls = false
     @State private var showColorControls = false
     @State private var showOuterRingWidthControls = false
+    @State private var showArcAnalogToggle = false
+    @AppStorage("isAnalogArcStyle") private var isAnalogArcStyle: Bool = false
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 VStack {
                     clockPreviewSection
-                        .padding(.bottom, (showClockControls || showColorControls || showOuterRingWidthControls) ? 180 : 0)
+                        .padding(.bottom, (showClockControls || showColorControls || showOuterRingWidthControls || showArcAnalogToggle) ? 180 : 0)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(red: 0.098, green: 0.098, blue: 0.098))
@@ -59,6 +61,11 @@ struct ClockEditorView: View {
                     }
                     if showOuterRingWidthControls {
                         outerRingWidthControls
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .padding(.bottom, 8)
+                    }
+                    if showArcAnalogToggle {
+                        arcAnalogTogglePanel
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                             .padding(.bottom, 8)
                     }
@@ -151,11 +158,18 @@ struct ClockEditorView: View {
             }
 
             Button(action: {
-                // Действие 5
+                withAnimation {
+                    showArcAnalogToggle.toggle()
+                    if showArcAnalogToggle {
+                        showClockControls = false
+                        showColorControls = false
+                        showOuterRingWidthControls = false
+                    }
+                }
             }) {
                 Image(systemName: "gearshape")
                     .font(.system(size: 24))
-                    .foregroundColor(.white)
+                    .foregroundColor(showArcAnalogToggle ? .yellow : .white)
             }
         }
         .padding(.horizontal, 30)
@@ -259,7 +273,7 @@ struct ClockEditorView: View {
                     get: { viewModel.outerRingLineWidth },
                     set: { viewModel.outerRingLineWidth = $0 }
                 ),
-                in: 20...60,
+                in: 20...38,
                 step: 1
             )
             
@@ -268,7 +282,22 @@ struct ClockEditorView: View {
             Text("Толщина дуги задачи: \(Int(viewModel.taskArcLineWidth)) pt")
                 .font(.headline)
                 .foregroundColor(.white)
-            Slider(value: $viewModel.taskArcLineWidth, in: 20...32, step: 1)
+            Slider(value: $viewModel.taskArcLineWidth, in: 20...26, step: 1)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98))
+                .shadow(radius: 8)
+        )
+        .padding(.horizontal, 24)
+    }
+
+    private var arcAnalogTogglePanel: some View {
+        VStack(spacing: 16) {
+            Toggle("Аналоговый вид дуги", isOn: $isAnalogArcStyle)
+                .toggleStyle(SwitchToggleStyle(tint: .yellow))
+                .foregroundColor(.white)
         }
         .padding()
         .background(
