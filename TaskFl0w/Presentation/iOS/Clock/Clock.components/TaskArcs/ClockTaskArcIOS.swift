@@ -25,16 +25,34 @@ struct ClockTaskArcIOS: View {
                 let (startAngle, endAngle) = RingTimeCalculator.calculateAngles(for: task)
                 let midAngle = RingTimeCalculator.calculateMidAngle(start: startAngle, end: endAngle)
                 let iconSize: CGFloat = 20
-                let arcRadius = radius + arcLineWidth / 2
+                let isAnalog = viewModel.isAnalogArcStyle
+                let minOuterRingWidth: CGFloat = 20
+                let maxOuterRingWidth: CGFloat = 38
+                let minOffset: CGFloat = 10
+                let maxOffset: CGFloat = 0
+                let tArcOffset = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
+                let analogOffset = minOffset + (maxOffset - minOffset) * tArcOffset
+                let arcRadius: CGFloat = isAnalog
+                    ? radius + (viewModel.outerRingLineWidth / 2) + analogOffset
+                    : radius + arcLineWidth / 2
 
                 let minArcWidth: CGFloat = 20
                 let maxArcWidth: CGFloat = 32
                 let minIconOffset: CGFloat = 0
-                let maxIconOffset: CGFloat = 6
 
-                let t = (arcLineWidth - minArcWidth) / (maxArcWidth - minArcWidth)
-                let iconOffset = minIconOffset + (maxIconOffset - minIconOffset) * t
-                let iconRadius = arcRadius + iconSize / 2 + iconOffset
+                // Для аналогового режима — иконка ближе к циферблату при min толщине кольца
+                let minAnalogIconOffset: CGFloat = -16
+                let maxAnalogIconOffset: CGFloat = -4
+                let tRing = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
+                let analogIconOffset = minAnalogIconOffset + (maxAnalogIconOffset - minAnalogIconOffset) * tRing
+
+                let maxIconOffset: CGFloat = isAnalog ? analogIconOffset : 6
+
+                let tIconOffset = (arcLineWidth - minArcWidth) / (maxArcWidth - minArcWidth)
+                let iconOffset = minIconOffset + (maxIconOffset - minIconOffset) * tIconOffset
+                let iconRadius: CGFloat = isAnalog
+                    ? arcRadius
+                    : arcRadius + iconSize / 2 + iconOffset
 
                 ZStack {
                     // Дуга задачи
@@ -108,7 +126,8 @@ struct ClockTaskArcIOS: View {
                             radius: radius,
                             angle: startAngle,
                             isDraggingStart: true,
-                            adjustTask: adjustTaskStartTimesForOverlap
+                            adjustTask: adjustTaskStartTimesForOverlap,
+                            analogOffset: analogOffset
                         )
 
                         // Маркер конца
@@ -118,7 +137,8 @@ struct ClockTaskArcIOS: View {
                             radius: radius,
                             angle: endAngle,
                             isDraggingStart: false,
-                            adjustTask: adjustTaskEndTimesForOverlap
+                            adjustTask: adjustTaskEndTimesForOverlap,
+                            analogOffset: analogOffset
                         )
                     }
 
@@ -164,15 +184,35 @@ struct ClockTaskArcIOS: View {
         radius: CGFloat,
         angle: Angle,
         isDraggingStart: Bool,
-        adjustTask: @escaping (TaskOnRing, Date) -> Void
+        adjustTask: @escaping (TaskOnRing, Date) -> Void,
+        analogOffset: CGFloat
     ) -> some View {
+        let minOuterRingWidth: CGFloat = 20
+        let maxOuterRingWidth: CGFloat = 38
+        let minHandleSize: CGFloat = 24
+        let maxHandleSize: CGFloat = 36
+
+        // Интерполяция размера маркера
+        let t = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
+        let handleSize: CGFloat = viewModel.isAnalogArcStyle
+            ? minHandleSize + (maxHandleSize - minHandleSize) * t
+            : minHandleSize
+
+        let arcRadius: CGFloat = viewModel.isAnalogArcStyle
+            ? radius + (viewModel.outerRingLineWidth / 2) + analogOffset
+            : radius + arcLineWidth / 2
+
+        let handleRadius: CGFloat = viewModel.isAnalogArcStyle
+            ? arcRadius
+            : radius + arcLineWidth / 2
+
         Circle()
             .fill(color)
-            .frame(width: 24, height: 24)
+            .frame(width: handleSize, height: handleSize)
             .overlay(Circle().stroke(Color.gray, lineWidth: 2))
             .position(
-                x: center.x + (radius + arcLineWidth / 2) * cos(angle.radians),
-                y: center.y + (radius + arcLineWidth / 2) * sin(angle.radians)
+                x: center.x + handleRadius * cos(angle.radians),
+                y: center.y + handleRadius * sin(angle.radians)
             )
             .animation(.none, value: angle)
             .gesture(

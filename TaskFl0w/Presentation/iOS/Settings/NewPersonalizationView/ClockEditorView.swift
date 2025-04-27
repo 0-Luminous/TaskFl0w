@@ -25,7 +25,6 @@ struct ClockEditorView: View {
     @State private var showColorControls = false
     @State private var showOuterRingWidthControls = false
     @State private var showArcAnalogToggle = false
-    @AppStorage("isAnalogArcStyle") private var isAnalogArcStyle: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -95,7 +94,7 @@ struct ClockEditorView: View {
                 markersViewModel: markersViewModel,
                 draggedCategory: .constant(nil),
                 zeroPosition: viewModel.zeroPosition,
-                taskArcLineWidth: viewModel.taskArcLineWidth,
+                taskArcLineWidth: viewModel.isAnalogArcStyle ? viewModel.outerRingLineWidth : viewModel.taskArcLineWidth,
                 outerRingLineWidth: viewModel.outerRingLineWidth
             )
         }
@@ -277,12 +276,13 @@ struct ClockEditorView: View {
                 step: 1
             )
             
-            Divider().background(Color.white.opacity(0.2))
-            
-            Text("Толщина дуги задачи: \(Int(viewModel.taskArcLineWidth)) pt")
-                .font(.headline)
-                .foregroundColor(.white)
-            Slider(value: $viewModel.taskArcLineWidth, in: 20...26, step: 1)
+            if !viewModel.isAnalogArcStyle {
+                Divider().background(Color.white.opacity(0.2))
+                Text("Толщина дуги задачи: \(Int(viewModel.taskArcLineWidth)) pt")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Slider(value: $viewModel.taskArcLineWidth, in: 20...26, step: 1)
+            }
         }
         .padding()
         .background(
@@ -295,7 +295,7 @@ struct ClockEditorView: View {
 
     private var arcAnalogTogglePanel: some View {
         VStack(spacing: 16) {
-            Toggle("Аналоговый вид дуги", isOn: $isAnalogArcStyle)
+            Toggle("Аналоговый вид дуги", isOn: $viewModel.isAnalogArcStyle)
                 .toggleStyle(SwitchToggleStyle(tint: .yellow))
                 .foregroundColor(.white)
         }

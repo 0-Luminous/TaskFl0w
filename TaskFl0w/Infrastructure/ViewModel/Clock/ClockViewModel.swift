@@ -176,6 +176,9 @@ final class ClockViewModel: ObservableObject {
         set { outerRingLineWidthRaw = Double(newValue) }
     }
 
+    // AppStorage for isAnalogArcStyle
+    @AppStorage("isAnalogArcStyle") var isAnalogArcStyle: Bool = false
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState
