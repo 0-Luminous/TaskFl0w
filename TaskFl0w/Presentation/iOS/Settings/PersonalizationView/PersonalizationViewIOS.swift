@@ -4,6 +4,7 @@ struct PersonalizationViewIOS: View {
     @StateObject private var viewModel = ClockViewModel()
     @State private var showingClockFaceEditor = false
     @State private var showingCategoryEditor = false
+    @State private var showingClockEditor = false
     
     var body: some View {
         ZStack {
@@ -16,7 +17,7 @@ struct PersonalizationViewIOS: View {
                 
                 // Основной цвет
                 Button {
-                    // Действие для основного цвета
+                    showingClockEditor = true
                 } label: {
                     CardView(
                         icon: "square.filled.on.square",
@@ -54,6 +55,9 @@ struct PersonalizationViewIOS: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(isPresented: $showingClockEditor) {
+            ClockEditorView()
+        }
         .fullScreenCover(isPresented: $showingClockFaceEditor) {
             ClockFaceEditorViewIOS()
         }
