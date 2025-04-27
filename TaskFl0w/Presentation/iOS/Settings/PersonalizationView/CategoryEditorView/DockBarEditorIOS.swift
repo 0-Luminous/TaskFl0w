@@ -12,8 +12,8 @@ struct DockBarEditorIOS: View {
     var editingCategory: TaskCategoryModel? = nil
 
     @State private var currentPage = 0
-    let categoriesPerPage = 4
-    let categoryWidth: CGFloat = 80
+    let categoriesPerPage = 16
+    let categoryWidth: CGFloat = 70
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -21,8 +21,8 @@ struct DockBarEditorIOS: View {
         VStack(spacing: 5) {
             pageIndicator
             categoryGrid
+                .padding(.horizontal, 15)
         }
-        .padding(.horizontal, 10)
         .padding(.top, 5)
     }
 
@@ -79,7 +79,7 @@ struct DockBarEditorIOS: View {
                         content(page)
                     }
                 }
-                .frame(height: 100)
+                .frame(height: 360)
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
             .background(backgroundColorForTheme)
@@ -96,13 +96,16 @@ struct DockBarEditorIOS: View {
         let editingCategory: TaskCategoryModel?
 
         var body: some View {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: categoryWidth))], spacing: 10) {
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.fixed(categoryWidth), spacing: 10), count: 4),
+                spacing: 20
+            ) {
                 ForEach(categories) { category in
                     CategoryButton(
                         category: category,
                         isSelected: selectedCategory == category
                     )
-                    .frame(width: categoryWidth, height: 80)
+                    .frame(width: categoryWidth, height: 70)
                     .scaleEffect(selectedCategory == category ? 1.1 : 1.0)
                     .animation(.easeInOut(duration: 0.2), value: selectedCategory == category)
                     .onTapGesture {
@@ -116,6 +119,8 @@ struct DockBarEditorIOS: View {
                     }
                 }
             }
+            .padding(.top, 20)
+            .frame(maxHeight: .infinity, alignment: .top)
         }
     }
 

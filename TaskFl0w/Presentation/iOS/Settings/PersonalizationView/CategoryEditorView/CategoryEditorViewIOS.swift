@@ -174,6 +174,7 @@ struct CategoryEditorViewIOS: View {
                     .foregroundColor(selectedColor)
                     .font(.system(size: 20))
                     .padding(8)
+                    .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
                             .fill(Color(red: 0.737, green: 0.737, blue: 0.737))
@@ -237,76 +238,7 @@ struct CategoryEditorViewIOS: View {
                         )
                         .padding(.horizontal)
                         .focused($isTextFieldFocused)
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Тип категории")
-                            .foregroundColor(colorScheme == .dark ? .white : Color(hex: "474747"))
-                            .font(.headline)
-                            .padding(.horizontal)
-                            .padding(.top, 10)
-                        
-                        HStack(spacing: 15) {
-                            GeometryReader { geometry in
-                                Button(action: {
-                                    categoryType = .list
-                                    feedbackGenerator.impactOccurred()
-                                }) {
-                                    VStack {
-                                        Image(systemName: "list.bullet")
-                                            .foregroundColor(.white)
-                                            .font(.system(size: 50))
-                                            .padding(.bottom, 5)
-                                        
-                                        Text("Список")
-                                            .foregroundColor(.white)
-                                            .font(.headline)
-                                    }
-                                    .frame(width: geometry.size.width, height: geometry.size.width)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(categoryType == .list ? 
-                                                  Color.blue : Color(red: 0.357, green: 0.357, blue: 0.357))
-                                            .shadow(
-                                                color: shadowColor().opacity(0.5),
-                                                radius: 5, x: 0, y: 2
-                                            )
-                                    )
-                                }
-                            }
-                            
-                            GeometryReader { geometry in
-                                Button(action: {
-                                    categoryType = .notes
-                                    feedbackGenerator.impactOccurred()
-                                }) {
-                                    VStack {
-                                        Image(systemName: "note.text")
-                                            .foregroundColor(.white)
-                                            .font(.system(size: 50))
-                                            .padding(.bottom, 5)
-                                        
-                                        Text("Заметки")
-                                            .foregroundColor(.white)
-                                            .font(.headline)
-                                    }
-                                    .frame(width: geometry.size.width, height: geometry.size.width)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(categoryType == .notes ? 
-                                                  Color.orange : Color(red: 0.357, green: 0.357, blue: 0.357))
-                                            .shadow(
-                                                color: shadowColor().opacity(0.5),
-                                                radius: 5, x: 0, y: 2
-                                            )
-                                    )
-                                }
-                            }
-                        }
-                        .frame(height: 150)
-                        .padding(.horizontal)
-                    }
                     
-                    Spacer() 
                     actionButton
                         .padding(.top, 20)
                     
