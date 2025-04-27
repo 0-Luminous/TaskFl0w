@@ -54,6 +54,13 @@ struct ClockTaskArcIOS: View {
                     ? arcRadius
                     : arcRadius + iconSize / 2 + iconOffset
 
+                let minIconFontSize: CGFloat = 12
+                let maxIconFontSize: CGFloat = 19
+                let t = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
+                let iconFontSize: CGFloat = isAnalog
+                    ? minIconFontSize + (maxIconFontSize - minIconFontSize) * t
+                    : minIconFontSize
+
                 ZStack {
                     // Дуга задачи
                     Path { path in
@@ -144,7 +151,7 @@ struct ClockTaskArcIOS: View {
 
                     // Иконка категории на середине дуги
                     Image(systemName: task.category.iconName)
-                        .font(.system(size: 12))
+                        .font(.system(size: iconFontSize))
                         .foregroundColor(.white)
                         .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                         .background(
