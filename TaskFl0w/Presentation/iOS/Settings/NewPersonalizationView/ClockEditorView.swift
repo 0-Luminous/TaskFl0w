@@ -23,7 +23,6 @@ struct ClockEditorView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var showClockControls = false
     @State private var showColorControls = false
-    @State private var outerRingLineWidth: CGFloat = 20
     @State private var showOuterRingWidthControls = false
 
     var body: some View {
@@ -75,7 +74,7 @@ struct ClockEditorView: View {
         ZStack {
             // Внешнее кольцо
             Circle()
-                .stroke(currentOuterRingColor, lineWidth: outerRingLineWidth)
+                .stroke(currentOuterRingColor, lineWidth: viewModel.outerRingLineWidth)
                 .frame(
                     width: UIScreen.main.bounds.width * 0.8,
                     height: UIScreen.main.bounds.width * 0.8
@@ -251,10 +250,17 @@ struct ClockEditorView: View {
 
     private var outerRingWidthControls: some View {
         VStack(spacing: 16) {
-            Text("Толщина внешнего кольца: \(Int(outerRingLineWidth)) pt")
+            Text("Толщина внешнего кольца: \(Int(viewModel.outerRingLineWidth)) pt")
                 .font(.headline)
                 .foregroundColor(.white)
-            Slider(value: $outerRingLineWidth, in: 20...60, step: 1)
+            Slider(
+                value: Binding(
+                    get: { viewModel.outerRingLineWidth },
+                    set: { viewModel.outerRingLineWidth = $0 }
+                ),
+                in: 20...60,
+                step: 1
+            )
             
             Divider().background(Color.white.opacity(0.2))
             

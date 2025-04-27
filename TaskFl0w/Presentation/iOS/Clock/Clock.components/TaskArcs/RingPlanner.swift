@@ -13,18 +13,20 @@ struct RingPlanner: View {
     @ObservedObject var viewModel: ClockViewModel
     let zeroPosition: Double
     let shouldDeleteTask: Bool
+    let outerRingLineWidth: CGFloat
     
     // Инициализатор с параметром shouldDeleteTask, по умолчанию true
-    init(color: Color, viewModel: ClockViewModel, zeroPosition: Double, shouldDeleteTask: Bool = true) {
+    init(color: Color, viewModel: ClockViewModel, zeroPosition: Double, shouldDeleteTask: Bool = true, outerRingLineWidth: CGFloat) {
         self.color = color
         self.viewModel = viewModel
         self.zeroPosition = zeroPosition
         self.shouldDeleteTask = shouldDeleteTask
+        self.outerRingLineWidth = outerRingLineWidth
     }
 
     var body: some View {
         Circle()
-            .stroke(color, lineWidth: 20)
+            .stroke(color, lineWidth: outerRingLineWidth)
             .frame(
                 width: UIScreen.main.bounds.width * 0.8,
                 height: UIScreen.main.bounds.width * 0.8

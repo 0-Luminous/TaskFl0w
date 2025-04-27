@@ -169,6 +169,13 @@ final class ClockViewModel: ObservableObject {
         set { taskArcLineWidthRaw = Double(newValue) }
     }
 
+    @AppStorage("outerRingLineWidth") var outerRingLineWidthRaw: Double = 20
+
+    var outerRingLineWidth: CGFloat {
+        get { CGFloat(outerRingLineWidthRaw) }
+        set { outerRingLineWidthRaw = Double(newValue) }
+    }
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState

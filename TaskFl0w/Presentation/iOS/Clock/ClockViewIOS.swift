@@ -71,7 +71,8 @@ struct ClockViewIOS: View {
                                 color: ThemeManager.shared.currentOuterRingColor,
                                 viewModel: viewModel,
                                 zeroPosition: viewModel.zeroPosition,
-                                shouldDeleteTask: false // Новый параметр, чтобы отключить удаление
+                                shouldDeleteTask: false,
+                                outerRingLineWidth: viewModel.outerRingLineWidth
                             )
 
                             GlobleClockFaceViewIOS(
