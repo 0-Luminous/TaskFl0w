@@ -9,12 +9,13 @@ import SwiftUI
 struct TaskArcsViewIOS: View {
     let tasks: [TaskOnRing]
     @ObservedObject var viewModel: ClockViewModel
+    let arcLineWidth: CGFloat
 
     var body: some View {
         ZStack {
             // Не фильтруем задачи - этим будет заниматься сам ClockTaskArcIOS
             ForEach(tasks) { task in
-                ClockTaskArcIOS(task: task, viewModel: viewModel)
+                ClockTaskArcIOS(task: task, viewModel: viewModel, arcLineWidth: arcLineWidth)
             }
         }
         // Применяем вращение ко всем задачам сразу

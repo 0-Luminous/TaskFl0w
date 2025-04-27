@@ -11,6 +11,7 @@ struct ClockEditorView: View {
     @StateObject private var viewModel = ClockViewModel()
     @StateObject private var markersViewModel = ClockMarkersViewModel()
     @ObservedObject private var themeManager = ThemeManager.shared
+    let taskArcLineWidth: CGFloat
 
     @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
     @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
@@ -22,13 +23,15 @@ struct ClockEditorView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var showClockControls = false
     @State private var showColorControls = false
+    @State private var outerRingLineWidth: CGFloat = 20
+    @State private var showOuterRingWidthControls = false
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 VStack {
                     clockPreviewSection
-                        .padding(.bottom, (showClockControls || showColorControls) ? 180 : 0)
+                        .padding(.bottom, (showClockControls || showColorControls || showOuterRingWidthControls) ? 180 : 0)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(red: 0.098, green: 0.098, blue: 0.098))
@@ -55,6 +58,11 @@ struct ClockEditorView: View {
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                             .padding(.bottom, 8)
                     }
+                    if showOuterRingWidthControls {
+                        outerRingWidthControls
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .padding(.bottom, 8)
+                    }
                     dockBar
                 }
                 .animation(.spring(), value: showClockControls)
@@ -67,7 +75,7 @@ struct ClockEditorView: View {
         ZStack {
             // Внешнее кольцо
             Circle()
-                .stroke(currentOuterRingColor, lineWidth: 20)
+                .stroke(currentOuterRingColor, lineWidth: outerRingLineWidth)
                 .frame(
                     width: UIScreen.main.bounds.width * 0.8,
                     height: UIScreen.main.bounds.width * 0.8
@@ -80,7 +88,8 @@ struct ClockEditorView: View {
                 viewModel: viewModel,
                 markersViewModel: markersViewModel,
                 draggedCategory: .constant(nil),
-                zeroPosition: viewModel.zeroPosition
+                zeroPosition: viewModel.zeroPosition,
+                taskArcLineWidth: viewModel.taskArcLineWidth
             )
         }
         .frame(height: UIScreen.main.bounds.width * 0.8)
@@ -120,11 +129,17 @@ struct ClockEditorView: View {
             }
 
             Button(action: {
-                // Действие 3
+                withAnimation {
+                    showOuterRingWidthControls.toggle()
+                    if showOuterRingWidthControls {
+                        showClockControls = false
+                        showColorControls = false
+                    }
+                }
             }) {
                 Image(systemName: "clock.circle" )
                     .font(.system(size: 24))
-                    .foregroundColor(.white)
+                    .foregroundColor(showOuterRingWidthControls ? .yellow : .white)
             }
             
             Button(action: {
@@ -224,6 +239,29 @@ struct ClockEditorView: View {
                 }
             ))
             .foregroundColor(.white)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98))
+                .shadow(radius: 8)
+        )
+        .padding(.horizontal, 24)
+    }
+
+    private var outerRingWidthControls: some View {
+        VStack(spacing: 16) {
+            Text("Толщина внешнего кольца: \(Int(outerRingLineWidth)) pt")
+                .font(.headline)
+                .foregroundColor(.white)
+            Slider(value: $outerRingLineWidth, in: 20...60, step: 1)
+            
+            Divider().background(Color.white.opacity(0.2))
+            
+            Text("Толщина дуги задачи: \(Int(viewModel.taskArcLineWidth)) pt")
+                .font(.headline)
+                .foregroundColor(.white)
+            Slider(value: $viewModel.taskArcLineWidth, in: 20...32, step: 1)
         }
         .padding()
         .background(

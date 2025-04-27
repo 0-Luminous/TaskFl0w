@@ -80,7 +80,8 @@ struct ClockViewIOS: View {
                                 viewModel: viewModel,
                                 markersViewModel: viewModel.markersViewModel,
                                 draggedCategory: $viewModel.draggedCategory,
-                                zeroPosition: viewModel.zeroPosition
+                                zeroPosition: viewModel.zeroPosition,
+                                taskArcLineWidth: viewModel.taskArcLineWidth
                             )
 
                             if viewModel.isEditingMode, let editingTask = viewModel.editingTask {

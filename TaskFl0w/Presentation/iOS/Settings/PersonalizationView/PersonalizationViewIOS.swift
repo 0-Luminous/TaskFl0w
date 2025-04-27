@@ -56,7 +56,7 @@ struct PersonalizationViewIOS: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showingClockEditor) {
-            ClockEditorView()
+            ClockEditorView(taskArcLineWidth: viewModel.taskArcLineWidth)
         }
         .fullScreenCover(isPresented: $showingClockFaceEditor) {
             ClockFaceEditorViewIOS()

@@ -161,6 +161,14 @@ final class ClockViewModel: ObservableObject {
     @AppStorage("lightModeOuterRingColor") var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
     @AppStorage("darkModeOuterRingColor") var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
 
+    // AppStorage for taskArcLineWidth
+    @AppStorage("taskArcLineWidth") var taskArcLineWidthRaw: Double = 12
+
+    var taskArcLineWidth: CGFloat {
+        get { CGFloat(taskArcLineWidthRaw) }
+        set { taskArcLineWidthRaw = Double(newValue) }
+    }
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState

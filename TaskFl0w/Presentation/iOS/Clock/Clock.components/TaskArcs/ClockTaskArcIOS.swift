@@ -10,6 +10,7 @@ import SwiftUI
 struct ClockTaskArcIOS: View {
     let task: TaskOnRing
     @ObservedObject var viewModel: ClockViewModel
+    let arcLineWidth: CGFloat
 
     @State private var isDragging: Bool = false
     @State private var isVisible: Bool = true
@@ -35,7 +36,7 @@ struct ClockTaskArcIOS: View {
                             endAngle: endAngle,
                             clockwise: false)
                     }
-                    .stroke(task.category.color, lineWidth: 20)
+                    .stroke(task.category.color, lineWidth: arcLineWidth)
                     .contentShape(
                         Path { path in
                             path.addArc(

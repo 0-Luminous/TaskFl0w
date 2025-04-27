@@ -15,6 +15,7 @@ struct GlobleClockFaceViewIOS: View {
 
     @Binding var draggedCategory: TaskCategoryModel?
     let zeroPosition: Double
+    let taskArcLineWidth: CGFloat
 
     // Добавляем новый параметр
     var isNavigationOverlayVisible: Bool = false
@@ -78,7 +79,8 @@ struct GlobleClockFaceViewIOS: View {
 
             TaskArcsViewIOS(
                 tasks: viewModel.tasksForSelectedDate(tasks),
-                viewModel: viewModel
+                viewModel: viewModel,
+                arcLineWidth: taskArcLineWidth
             )
 
             ClockHandViewIOS(currentDate: viewModel.currentDate)

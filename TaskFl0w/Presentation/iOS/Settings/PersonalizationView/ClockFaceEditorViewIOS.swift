@@ -96,7 +96,8 @@ struct ClockFaceEditorViewIOS: View {
                 viewModel: viewModel,
                 markersViewModel: markersViewModel,
                 draggedCategory: .constant(nil),
-                zeroPosition: viewModel.zeroPosition
+                zeroPosition: viewModel.zeroPosition,
+                taskArcLineWidth: viewModel.taskArcLineWidth
             )
         }
         .frame(height: UIScreen.main.bounds.width * 0.8)
