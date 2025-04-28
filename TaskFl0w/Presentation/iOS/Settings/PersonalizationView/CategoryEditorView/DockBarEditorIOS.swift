@@ -83,7 +83,7 @@ struct DockBarEditorIOS: View {
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
             .background(backgroundColorForTheme)
-            .cornerRadius(20)
+            .cornerRadius(24)
             .shadow(color: shadowColorForTheme, radius: 8, x: 0, y: 4)
         }
     }

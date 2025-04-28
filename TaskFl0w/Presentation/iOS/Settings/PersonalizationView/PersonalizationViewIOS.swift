@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct PersonalizationViewIOS: View {
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ClockViewModel()
     @State private var showingClockFaceEditor = false
     @State private var showingCategoryEditor = false
@@ -47,14 +48,18 @@ struct PersonalizationViewIOS: View {
                 
                 Spacer()
                 
-                // Заголовок внизу
-                Text("Выберите редактор")
-                    .font(.system(size: 28, weight: .bold))
-                    .multilineTextAlignment(.center)
-                    .padding(.bottom, 30)
             }
         }
+        .navigationTitle("Настройки")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.backward")
+                    Text("Назад")
+                }
+            }
+        }
         .fullScreenCover(isPresented: $showingClockEditor) {
             ClockEditorView(taskArcLineWidth: viewModel.taskArcLineWidth)
         }

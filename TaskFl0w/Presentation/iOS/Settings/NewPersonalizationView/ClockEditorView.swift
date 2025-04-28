@@ -25,13 +25,14 @@ struct ClockEditorView: View {
     @State private var showColorControls = false
     @State private var showOuterRingWidthControls = false
     @State private var showArcAnalogToggle = false
+    @State private var showMarkersControls = false
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 VStack {
                     clockPreviewSection
-                        .padding(.bottom, (showClockControls || showColorControls || showOuterRingWidthControls || showArcAnalogToggle) ? 180 : 0)
+                        .padding(.bottom, (showClockControls || showColorControls || showOuterRingWidthControls || showArcAnalogToggle || showMarkersControls) ? 180 : 0)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(red: 0.098, green: 0.098, blue: 0.098))
@@ -65,6 +66,11 @@ struct ClockEditorView: View {
                     }
                     if showArcAnalogToggle {
                         arcAnalogTogglePanel
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .padding(.bottom, 8)
+                    }
+                    if showMarkersControls {
+                        markersControls
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                             .padding(.bottom, 8)
                     }
@@ -109,70 +115,102 @@ struct ClockEditorView: View {
     }
 
     private var dockBar: some View {
-        HStack(spacing: 40) {
-            Button(action: {
-                // Открыть clockControls, закрыть colorControls
-                withAnimation {
-                    showClockControls.toggle()
-                    if showClockControls { showColorControls = false }
-                }
-            }) {
-                Image(systemName: "clock")
-                    .font(.system(size: 24))
-                    .foregroundColor(showClockControls ? .yellow : .white)
-            }
-
-            Button(action: {
-                // Открыть colorControls, закрыть clockControls
-                withAnimation {
-                    showColorControls.toggle()
-                    if showColorControls { showClockControls = false }
-                }
-            }) {
-                Image(systemName: "paintpalette")
-                    .font(.system(size: 24))
-                    .foregroundColor(showColorControls ? .yellow : .white)
-            }
-
-            Button(action: {
-                withAnimation {
-                    showOuterRingWidthControls.toggle()
-                    if showOuterRingWidthControls {
-                        showClockControls = false
-                        showColorControls = false
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 40) {
+                Button(action: {
+                    // Открыть clockControls, закрыть colorControls
+                    withAnimation {
+                        showClockControls.toggle()
+                        if showClockControls { 
+                            showArcAnalogToggle = false
+                            showColorControls = false
+                            showOuterRingWidthControls = false
+                            showMarkersControls = false
+                        }
                     }
+                }) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 24))
+                        .foregroundColor(showClockControls ? .yellow : .white)
                 }
-            }) {
-                Image(systemName: "clock.circle" )
-                    .font(.system(size: 24))
-                    .foregroundColor(showOuterRingWidthControls ? .yellow : .white)
-            }
-            
-            Button(action: {
-                // Действие 4
-            }) {
-                Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
-                    .font(.system(size: 24))
-                    .foregroundColor(.white)
-            }
 
-            Button(action: {
-                withAnimation {
-                    showArcAnalogToggle.toggle()
-                    if showArcAnalogToggle {
-                        showClockControls = false
-                        showColorControls = false
-                        showOuterRingWidthControls = false
+                Button(action: {
+                    withAnimation {
+                        showMarkersControls.toggle()
+                        if showMarkersControls {
+                            showClockControls = false
+                            showColorControls = false
+                            showOuterRingWidthControls = false
+                            showArcAnalogToggle = false
+                        }
                     }
+                }) {
+                    Image(systemName: "gauge.open.with.lines.needle.33percent")
+                        .font(.system(size: 24))
+                        .foregroundColor(showMarkersControls ? .yellow : .white)
                 }
-            }) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 24))
-                    .foregroundColor(showArcAnalogToggle ? .yellow : .white)
+
+                Button(action: {
+                    // Открыть colorControls, закрыть clockControls
+                    withAnimation {
+                        showColorControls.toggle()
+                        if showColorControls { 
+                            showClockControls = false
+                            showArcAnalogToggle = false
+                            showOuterRingWidthControls = false
+                            showMarkersControls = false
+                        }
+                    }
+                }) {
+                    Image(systemName: "paintpalette")
+                        .font(.system(size: 24))
+                        .foregroundColor(showColorControls ? .yellow : .white)
+                }
+
+                Button(action: {
+                    withAnimation {
+                        showOuterRingWidthControls.toggle()
+                        if showOuterRingWidthControls {
+                            showClockControls = false
+                            showColorControls = false
+                            showArcAnalogToggle = false
+                            showMarkersControls = false
+                        }
+                    }
+                }) {
+                    Image(systemName: "clock.circle" )
+                        .font(.system(size: 24))
+                        .foregroundColor(showOuterRingWidthControls ? .yellow : .white)
+                }
+                
+                Button(action: {
+                    // Действие 4
+                }) {
+                    Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                        .font(.system(size: 24))
+                        .foregroundColor(.white)
+                }
+
+                Button(action: {
+                    withAnimation {
+                        showArcAnalogToggle.toggle()
+                        if showArcAnalogToggle {
+                            showClockControls = false
+                            showColorControls = false
+                            showOuterRingWidthControls = false
+                            showMarkersControls = false
+                        }
+                    }
+                }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 24))
+                        .foregroundColor(showArcAnalogToggle ? .yellow : .white)
+                }
             }
+            .padding(.horizontal, 30)
+            .padding(.vertical, 16)
         }
-        .padding(.horizontal, 30)
-        .padding(.vertical, 16)
+        .frame(width: UIScreen.main.bounds.width * 0.95)
         .background(
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color(red: 0.15, green: 0.15, blue: 0.15).opacity(0.95))
@@ -191,8 +229,8 @@ struct ClockEditorView: View {
                 .foregroundColor(.white)
             // Stepper("Интервал цифр: \(markersViewModel.numberInterval)", value: $markersViewModel.numberInterval, in: 1...6)
             //     .foregroundColor(.white)
-            Stepper("Толщина маркеров: \(markersViewModel.markersWidth, specifier: "%.1f")", value: $markersViewModel.markersWidth, in: 1...8, step: 0.5)
-                .foregroundColor(.white)
+            // Stepper("Толщина маркеров: \(markersViewModel.markersWidth, specifier: "%.1f")", value: $markersViewModel.markersWidth, in: 1...8, step: 0.5)
+            //     .foregroundColor(.white)
             Stepper("Размер цифр: \(markersViewModel.numbersSize, specifier: "%.0f")", value: $markersViewModel.numbersSize, in: 10...32, step: 1)
                 .foregroundColor(.white)
         }
@@ -298,6 +336,27 @@ struct ClockEditorView: View {
             Toggle("Аналоговый вид дуги", isOn: $viewModel.isAnalogArcStyle)
                 .toggleStyle(SwitchToggleStyle(tint: .yellow))
                 .foregroundColor(.white)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98))
+                .shadow(radius: 8)
+        )
+        .padding(.horizontal, 24)
+    }
+
+    private var markersControls: some View {
+        VStack(spacing: 16) {
+            Text("Маркеры")
+                .font(.headline)
+                .foregroundColor(.white)
+            Toggle("Показывать маркеры", isOn: $markersViewModel.showMarkers)
+                .toggleStyle(SwitchToggleStyle(tint: .yellow))
+                .foregroundColor(.white)
+            Stepper("Толщина маркеров: \(markersViewModel.markersWidth, specifier: "%.1f")", value: $markersViewModel.markersWidth, in: 1...8, step: 0.5)
+                .foregroundColor(.white)
+                .disabled(!markersViewModel.showMarkers)
         }
         .padding()
         .background(

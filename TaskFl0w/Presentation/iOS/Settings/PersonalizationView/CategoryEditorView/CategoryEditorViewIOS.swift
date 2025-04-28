@@ -93,7 +93,7 @@ struct CategoryEditorViewIOS: View {
             .padding()
             .frame(height: 50)
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 24)
                     .fill(Color(red: 0.357, green: 0.357, blue: 0.357))
                     .shadow(
                         color: shadowColor().opacity(0.5),
@@ -147,7 +147,7 @@ struct CategoryEditorViewIOS: View {
             }
             .padding(.vertical, 15)
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 24)
                     .fill(editingCategory == nil ? Color.blue : Color.red)
                     .shadow(
                         color: shadowColor().opacity(0.5),
@@ -176,14 +176,14 @@ struct CategoryEditorViewIOS: View {
                     .padding(8)
                     .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                     .background(
-                        RoundedRectangle(cornerRadius: 10)
+                        RoundedRectangle(cornerRadius: 24)
                             .fill(Color(red: 0.737, green: 0.737, blue: 0.737))
                     )
             }
             .padding()
             .frame(height: 50)
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 24)
                     .fill(Color(red: 0.357, green: 0.357, blue: 0.357))
                     .shadow(
                         color: shadowColor().opacity(0.5),
@@ -233,7 +233,7 @@ struct CategoryEditorViewIOS: View {
                         .textFieldStyle(PlainTextFieldStyle())
                         .padding()
                         .background(
-                            RoundedRectangle(cornerRadius: 10)
+                            RoundedRectangle(cornerRadius: 24)
                                 .stroke(selectedColor, lineWidth: 3)
                         )
                         .padding(.horizontal)
@@ -258,7 +258,7 @@ struct CategoryEditorViewIOS: View {
                         }
                         .padding(.vertical, 15)
                         .background(
-                            RoundedRectangle(cornerRadius: 10)
+                            RoundedRectangle(cornerRadius: 24)
                                 .fill(Color(red: 0.357, green: 0.357, blue: 0.357))
                                 .shadow(
                                     color: shadowColor().opacity(0.5),
@@ -315,7 +315,7 @@ struct CategoryEditorViewIOS: View {
                                     .foregroundColor(selectedColor)
                                     .frame(width: 60, height: 60)
                                     .background(
-                                        RoundedRectangle(cornerRadius: 10)
+                                        RoundedRectangle(cornerRadius: 24)
                                             .fill(Color(UIColor.systemBackground))
                                             .shadow(
                                                 color: Color.black.opacity(0.1), radius: 5, x: 0,
