@@ -21,8 +21,8 @@ struct PersonalizationViewIOS: View {
                     showingClockEditor = true
                 } label: {
                     CardView(
-                        icon: "square.filled.on.square",
-                        title: "Базовый цвет"
+                        icon: "nosign.app.fill",
+                        title: "Тест"
                     )
                 }
 
@@ -61,14 +61,15 @@ struct PersonalizationViewIOS: View {
             }
         }
         .fullScreenCover(isPresented: $showingClockEditor) {
+            ClockFaceEditorViewIOS()
+            
+        }
+        .fullScreenCover(isPresented: $showingClockFaceEditor) {
             ClockEditorView(
                 viewModel: viewModel,
                 markersViewModel: viewModel.markersViewModel,
                 taskArcLineWidth: viewModel.taskArcLineWidth
             )
-        }
-        .fullScreenCover(isPresented: $showingClockFaceEditor) {
-            ClockFaceEditorViewIOS()
         }
         .fullScreenCover(isPresented: $showingCategoryEditor) {
             CategoryEditorViewIOS(

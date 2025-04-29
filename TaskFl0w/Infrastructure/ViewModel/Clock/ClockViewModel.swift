@@ -162,7 +162,7 @@ final class ClockViewModel: ObservableObject {
     @AppStorage("darkModeOuterRingColor") var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
 
     // AppStorage for taskArcLineWidth
-    @AppStorage("taskArcLineWidth") var taskArcLineWidthRaw: Double = 12
+    @AppStorage("taskArcLineWidth") var taskArcLineWidthRaw: Double = 20
 
     var taskArcLineWidth: CGFloat {
         get { CGFloat(taskArcLineWidthRaw) }
@@ -178,6 +178,18 @@ final class ClockViewModel: ObservableObject {
 
     // AppStorage for isAnalogArcStyle
     @AppStorage("isAnalogArcStyle") var isAnalogArcStyle: Bool = false
+
+    @AppStorage("showMarkers") var showMarkers: Bool = true {
+        didSet {
+            markersViewModel.showMarkers = showMarkers
+        }
+    }
+
+    @AppStorage("fontName") var fontName: String = "SF Pro" {
+        didSet {
+            markersViewModel.fontName = fontName
+        }
+    }
 
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
@@ -260,6 +272,8 @@ final class ClockViewModel: ObservableObject {
         markersViewModel.isDarkMode = isDarkMode
         markersViewModel.zeroPosition = zeroPosition
         markersViewModel.numberInterval = numberInterval
+        markersViewModel.showMarkers = showMarkers
+        markersViewModel.fontName = fontName
     }
     
     // MARK: - Методы форматирования даты

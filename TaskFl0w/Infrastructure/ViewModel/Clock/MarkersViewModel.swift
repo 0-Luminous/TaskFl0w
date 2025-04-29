@@ -71,15 +71,6 @@ final class ClockMarkersViewModel: ObservableObject {
         "Menlo",
         "Menlo-Bold",
         "Menlo-Regular",
-        
-        // Кастомные шрифты из папки Fonts
-        // "Pixel",
-        // "Bold",
-        // "Space",
-        // "Future",
-        // "MoscowMetro",
-        // "Typometry_Alternate",
-        // "Typometry_Regular"
     ]
 
     // MARK: - Environment

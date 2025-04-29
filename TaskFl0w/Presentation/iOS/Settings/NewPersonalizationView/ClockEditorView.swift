@@ -17,8 +17,11 @@ struct ClockEditorView: View {
     @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
     @AppStorage("lightModeClockFaceColor") private var lightModeClockFaceColor: String = Color.white.toHex()
     @AppStorage("darkModeClockFaceColor") private var darkModeClockFaceColor: String = Color.black.toHex()
-    @AppStorage("lightModeMarkersColor") private var lightModeMarkersColor: String = Color.gray.toHex()
+    @AppStorage("lightModeMarkersColor") private var lightModeMarkersColor: String = Color.black.toHex()
     @AppStorage("darkModeMarkersColor") private var darkModeMarkersColor: String = Color.gray.toHex()
+
+    @AppStorage("showMarkers") private var showMarkers: Bool = true
+    @AppStorage("fontName") private var fontName: String = "SF Pro"
 
     @Environment(\.presentationMode) var presentationMode
     @State private var showClockControls = false
@@ -81,6 +84,12 @@ struct ClockEditorView: View {
                 .animation(.spring(), value: showClockControls)
                 .animation(.spring(), value: showColorControls)
             }
+        }
+        .onAppear {
+            syncMarkersViewModelWithAppStorage()
+        }
+        .onDisappear {
+            saveMarkersViewModelToAppStorage()
         }
     }
 
@@ -247,7 +256,13 @@ struct ClockEditorView: View {
                 }
                 .padding(.bottom, 8)
                 
-                Picker("", selection: $markersViewModel.fontName) {
+                Picker("", selection: Binding(
+                    get: { markersViewModel.fontName },
+                    set: { 
+                        markersViewModel.fontName = $0
+                        fontName = $0
+                    }
+                )) {
                     ForEach(markersViewModel.customFonts, id: \.self) { font in
                         Text(font).tag(font)
                     }
@@ -255,11 +270,23 @@ struct ClockEditorView: View {
                 .pickerStyle(.wheel)
                 .foregroundColor(.white)
             } else {
-                Toggle("Показывать цифры", isOn: $markersViewModel.showHourNumbers)
+                Toggle("Показывать цифры", isOn: Binding(
+                    get: { markersViewModel.showHourNumbers },
+                    set: { 
+                        markersViewModel.showHourNumbers = $0
+                        viewModel.showHourNumbers = $0
+                    }
+                ))
                     .toggleStyle(SwitchToggleStyle(tint: .yellow))
                     .foregroundColor(.white)
                     
-                Stepper("Размер цифр: \(markersViewModel.numbersSize, specifier: "%.0f")", value: $markersViewModel.numbersSize, in: 14...21, step: 1)
+                Stepper("Размер цифр: \(markersViewModel.numbersSize, specifier: "%.0f")", value: Binding(
+                    get: { markersViewModel.numbersSize },
+                    set: { 
+                        markersViewModel.numbersSize = $0
+                        viewModel.numbersSize = $0
+                    }
+                ), in: 14...21, step: 1)
                     .foregroundColor(.white)
                     
                 Button(action: {
@@ -300,8 +327,10 @@ struct ClockEditorView: View {
                 set: { newColor in
                     if themeManager.isDarkMode {
                         darkModeOuterRingColor = newColor.toHex()
+                        viewModel.darkModeOuterRingColor = newColor.toHex()
                     } else {
                         lightModeOuterRingColor = newColor.toHex()
+                        viewModel.lightModeOuterRingColor = newColor.toHex()
                     }
                 }
             ))
@@ -328,9 +357,15 @@ struct ClockEditorView: View {
                 set: { newColor in
                     if themeManager.isDarkMode {
                         darkModeMarkersColor = newColor.toHex()
+                        viewModel.darkModeMarkersColor = newColor.toHex()
+                        markersViewModel.darkModeMarkersColor = newColor.toHex()
                     } else {
                         lightModeMarkersColor = newColor.toHex()
+                        viewModel.lightModeMarkersColor = newColor.toHex()
+                        markersViewModel.lightModeMarkersColor = newColor.toHex()
                     }
+                    // Принудительно обновляем цвета
+                    markersViewModel.updateCurrentThemeColors()
                 }
             ))
             .foregroundColor(.white)
@@ -395,10 +430,22 @@ struct ClockEditorView: View {
             Text("Маркеры")
                 .font(.headline)
                 .foregroundColor(.white)
-            Toggle("Показывать маркеры", isOn: $markersViewModel.showMarkers)
+            Toggle("Показывать маркеры", isOn: Binding(
+                get: { markersViewModel.showMarkers },
+                set: { 
+                    markersViewModel.showMarkers = $0
+                    showMarkers = $0
+                }
+            ))
                 .toggleStyle(SwitchToggleStyle(tint: .yellow))
                 .foregroundColor(.white)
-            Stepper("Толщина маркеров: \(markersViewModel.markersWidth, specifier: "%.1f")", value: $markersViewModel.markersWidth, in: 1...8, step: 0.5)
+            Stepper("Толщина маркеров: \(markersViewModel.markersWidth, specifier: "%.1f")", value: Binding(
+                get: { markersViewModel.markersWidth },
+                set: { 
+                    markersViewModel.markersWidth = $0
+                    viewModel.markersWidth = $0
+                }
+            ), in: 1...8, step: 0.5)
                 .foregroundColor(.white)
                 .disabled(!markersViewModel.showMarkers)
         }
@@ -409,5 +456,41 @@ struct ClockEditorView: View {
                 .shadow(radius: 8)
         )
         .padding(.horizontal, 24)
+    }
+
+    private func syncMarkersViewModelWithAppStorage() {
+        markersViewModel.showHourNumbers = viewModel.showHourNumbers
+        markersViewModel.markersWidth = viewModel.markersWidth
+        markersViewModel.markersOffset = viewModel.markersOffset
+        markersViewModel.numbersSize = viewModel.numbersSize
+        markersViewModel.lightModeMarkersColor = lightModeMarkersColor
+        markersViewModel.darkModeMarkersColor = darkModeMarkersColor
+        markersViewModel.isDarkMode = themeManager.isDarkMode
+        markersViewModel.numberInterval = viewModel.numberInterval
+        markersViewModel.showMarkers = showMarkers
+        markersViewModel.fontName = fontName
+        
+        // Добавляем синхронизацию цветов маркеров с локальными переменными
+        markersViewModel.lightModeMarkersColor = lightModeMarkersColor
+        markersViewModel.darkModeMarkersColor = darkModeMarkersColor
+        
+        // Принудительно обновляем цвета
+        markersViewModel.updateCurrentThemeColors()
+    }
+
+    private func saveMarkersViewModelToAppStorage() {
+        viewModel.showHourNumbers = markersViewModel.showHourNumbers
+        viewModel.markersWidth = markersViewModel.markersWidth
+        viewModel.markersOffset = markersViewModel.markersOffset
+        viewModel.numbersSize = markersViewModel.numbersSize
+        viewModel.numberInterval = markersViewModel.numberInterval
+        viewModel.lightModeMarkersColor = markersViewModel.lightModeMarkersColor
+        viewModel.darkModeMarkersColor = markersViewModel.darkModeMarkersColor
+        showMarkers = markersViewModel.showMarkers
+        fontName = markersViewModel.fontName
+        
+        // Сохраняем цвета в локальные AppStorage переменные
+        lightModeMarkersColor = markersViewModel.lightModeMarkersColor
+        darkModeMarkersColor = markersViewModel.darkModeMarkersColor
     }
 }
