@@ -34,6 +34,7 @@ struct TaskListView: View {
                             .frame(height: 8) // Небольшой отступ сверху
                         
                         HStack {
+                            Spacer()
                             Image(systemName: "archivebox.fill")
                                 .foregroundColor(.blue)
                                 .font(.system(size: 16))
@@ -41,16 +42,10 @@ struct TaskListView: View {
                             Text("Архив выполненных задач")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.white)
-                            
                             Spacer()
                         }
                         .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(.darkGray).opacity(0.6))
-                        )
-                        .padding(.horizontal, 16)
+                        .padding(.top, 10)
                     }
                 }
                 

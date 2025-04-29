@@ -27,7 +27,10 @@ struct DockBarIOS: View {
                 HStack {
                     ForEach(0..<viewModel.numberOfPages, id: \.self) { index in
                         Circle()
-                            .fill(viewModel.currentPage == index ? Color.blue : Color.gray.opacity(0.5))
+                            .fill(
+                                viewModel.currentPage == index
+                                    ? Color.blue : Color.gray.opacity(0.5)
+                            )
                             .frame(width: 7, height: 7)
                     }
                 }
@@ -35,6 +38,9 @@ struct DockBarIOS: View {
             }
         }
     }
+
+    // Эти методы больше не используются, так как вместо них используются
+    // соответствующие методы из viewModel
 
     // Выносим сетку категорий в отдельное представление
     private var categoryGrid: some View {

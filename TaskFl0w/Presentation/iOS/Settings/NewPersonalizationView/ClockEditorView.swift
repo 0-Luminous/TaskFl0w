@@ -156,7 +156,7 @@ struct ClockEditorView: View {
                         }
                     }
                 }) {
-                    Image(systemName: "gauge.open.with.lines.needle.33percent")
+                    Image(systemName: "circle")
                         .font(.system(size: 24))
                         .foregroundColor(showMarkersControls ? .yellow : .white)
                 }

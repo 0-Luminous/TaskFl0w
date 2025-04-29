@@ -29,6 +29,7 @@ struct CategoryEditorViewIOS: View {
     @State private var hexColor: String = ""
     @FocusState private var isTextFieldFocused: Bool
     @State private var categoryType: CategoryType = .list
+    @State private var isHidden: Bool = false
 
     private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
 
@@ -47,11 +48,13 @@ struct CategoryEditorViewIOS: View {
             _categoryName = State(initialValue: category.rawValue)
             _selectedColor = State(initialValue: category.color)
             _selectedIcon = State(initialValue: category.iconName)
+            _isHidden = State(initialValue: category.isHidden)
         } else {
             // Значения по умолчанию для новой категории
             _categoryName = State(initialValue: "")
             _selectedColor = State(initialValue: .blue)
             _selectedIcon = State(initialValue: "star.fill")
+            _isHidden = State(initialValue: false)
         }
     }
 
@@ -61,7 +64,8 @@ struct CategoryEditorViewIOS: View {
             id: editingCategory?.id ?? UUID(),
             rawValue: categoryName.isEmpty ? "Новая категория" : categoryName,
             iconName: selectedIcon,
-            color: selectedColor
+            color: selectedColor,
+            isHidden: isHidden
         )
     }
 
@@ -162,8 +166,7 @@ struct CategoryEditorViewIOS: View {
         Button(action: {
             feedbackGenerator.impactOccurred()
             if editingCategory == nil {
-                saveCategory()
-                isPresented = false
+                saveCategory(autoClose: false)
             } else {
                 showingDeleteAlert = true
             }
@@ -238,12 +241,18 @@ struct CategoryEditorViewIOS: View {
                         get: { selectedDockCategory },
                         set: { newCategory in
                             if newCategory != selectedDockCategory {
+                                // Сохраняем изменения предыдущей категории, если она была выбрана
+                                if let currentCategory = editingCategory {
+                                    saveCategory(autoClose: false)
+                                }
+                                    
                                 selectedDockCategory = newCategory
                                 if let category = newCategory {
                                     editingCategory = category
                                     categoryName = category.rawValue
                                     selectedColor = category.color
                                     selectedIcon = category.iconName
+                                    isHidden = category.isHidden
                                     feedbackGenerator.impactOccurred()
                                 } else {
                                     // Когда снимаем выделение с категории
@@ -252,17 +261,19 @@ struct CategoryEditorViewIOS: View {
                                     categoryName = ""
                                     selectedColor = .blue 
                                     selectedIcon = "star.fill"
+                                    isHidden = false
                                 }
                             }
                         }
                     ),
-                    // Если редактируем категорию, используем временную модель с обновленными значениями
+                    // Передаем текущую редактируемую категорию
                     editingCategory: editingCategory != nil 
                         ? TaskCategoryModel(
                             id: editingCategory!.id, 
                             rawValue: categoryName.isEmpty ? editingCategory!.rawValue : categoryName, 
                             iconName: selectedIcon, 
-                            color: selectedColor
+                            color: selectedColor,
+                            isHidden: isHidden
                           ) 
                         : (selectedDockCategory == nil ? previewCategory : nil)
                 )
@@ -297,14 +308,14 @@ struct CategoryEditorViewIOS: View {
                         
                         Button(action: {
                             feedbackGenerator.impactOccurred()
-                            // Добавьте здесь логику архивирования
+                            isHidden.toggle()
                         }) {
                             HStack {
                                 Spacer()
-                                Image(systemName: "archivebox.fill")
+                                Image(systemName: isHidden ? "eye.fill" : "eye.slash.fill")
                                     .foregroundColor(.white)
                                     .font(.system(size: 20))
-                                Text("Архив")
+                                Text(isHidden ? "Показать" : "Скрыть")
                                     .foregroundColor(.white)
                                     .font(.headline)
                                 Spacer()
@@ -321,6 +332,8 @@ struct CategoryEditorViewIOS: View {
                             .padding(.horizontal)
                         }
                         .frame(maxWidth: .infinity)
+                        .disabled(editingCategory == nil)
+                        .opacity(editingCategory == nil ? 0.5 : 1.0)
                     }
                 }
 
@@ -342,8 +355,7 @@ struct CategoryEditorViewIOS: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Готово") {
                         feedbackGenerator.impactOccurred()
-                        saveCategory()
-                        isPresented = false
+                        saveCategory(autoClose: true)
                     }
                     .disabled(categoryName.isEmpty)
                 }
@@ -353,42 +365,7 @@ struct CategoryEditorViewIOS: View {
         .presentationDragIndicator(.visible)
         .fullScreenCover(isPresented: $showingIconPicker) {
             NavigationView {
-                ScrollView {
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.adaptive(minimum: 60))
-                        ], spacing: 20
-                    ) {
-                        ForEach(SystemIcons.available, id: \.self) { icon in
-                            Button(action: {
-                                selectedIcon = icon
-                                showingIconPicker = false
-                            }) {
-                                Image(systemName: icon)
-                                    .font(.system(size: 30))
-                                    .foregroundColor(selectedColor)
-                                    .frame(width: 60, height: 60)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 24)
-                                            .fill(Color(UIColor.systemBackground))
-                                            .shadow(
-                                                color: Color.black.opacity(0.1), radius: 5, x: 0,
-                                                y: 2)
-                                    )
-                            }
-                        }
-                    }
-                    .padding()
-                }
-                .navigationTitle("Выбор иконки")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Отмена") {
-                            showingIconPicker = false
-                        }
-                    }
-                }
+                IconPickerView(selectedIcon: $selectedIcon, iconColor: selectedColor, isPresented: $showingIconPicker)
             }
         }
         .alert("Удалить категорию?", isPresented: $showingDeleteAlert) {
@@ -404,20 +381,34 @@ struct CategoryEditorViewIOS: View {
         }
     }
 
-    private func saveCategory() {
+    private func saveCategory(autoClose: Bool = true) {
         let newCategory = TaskCategoryModel(
             id: editingCategory?.id ?? UUID(),
             rawValue: categoryName,
             iconName: selectedIcon,
-            color: selectedColor
+            color: selectedColor,
+            isHidden: isHidden
         )
 
         if editingCategory != nil {
             viewModel.categoryManagement.updateCategory(newCategory)
+            // Сохраняем текущую выбранную категорию после обновления
+            selectedDockCategory = newCategory
+            editingCategory = newCategory
         } else {
             viewModel.categoryManagement.addCategory(newCategory)
+            // Подготавливаем для добавления следующей категории
+            categoryName = ""
+            isHidden = false
+            // Сбрасываем текущую выбранную категорию
+            selectedDockCategory = nil
+            editingCategory = nil
         }
-        isPresented = false
+        
+        // Закрываем только если явно запрошено
+        if autoClose {
+            isPresented = false
+        }
     }
 }
 

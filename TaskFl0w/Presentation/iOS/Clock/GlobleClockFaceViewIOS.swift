@@ -38,25 +38,27 @@ struct GlobleClockFaceViewIOS: View {
                 .stroke(Color.gray, lineWidth: 2)
 
             // Маркеры часов (24 шт.) - без цифр
-            ForEach(0..<24, id: \.self) { hour in
-                let angle = Double(hour) * (360.0 / 24.0)
-                ClockMarker(
-                    hour: hour,
-                    style: clockStyle.markerStyle,
-                    viewModel: markersViewModel,
-                    MarkersColor: themeManager.currentMarkersColor,
-                    zeroPosition: zeroPosition,
-                    showNumbers: false // Не показываем цифры на этом слое
-                )
-                .rotationEffect(.degrees(angle))
-                .frame(
-                    width: UIScreen.main.bounds.width * 0.7,
-                    height: UIScreen.main.bounds.width * 0.7)
-                // Добавляем идентификатор для принудительной переотрисовки при изменении zeroPosition
-                .id("marker-\(hour)-\(Int(zeroPosition))")
+            if markersViewModel.showMarkers {
+                ForEach(0..<24, id: \.self) { hour in
+                    let angle = Double(hour) * (360.0 / 24.0)
+                    ClockMarker(
+                        hour: hour,
+                        style: clockStyle.markerStyle,
+                        viewModel: markersViewModel,
+                        MarkersColor: themeManager.currentMarkersColor,
+                        zeroPosition: zeroPosition,
+                        showNumbers: false // Не показываем цифры на этом слое
+                    )
+                    .rotationEffect(.degrees(angle))
+                    .frame(
+                        width: UIScreen.main.bounds.width * 0.7,
+                        height: UIScreen.main.bounds.width * 0.7)
+                    // Добавляем идентификатор для принудительной переотрисовки при изменении zeroPosition
+                    .id("marker-\(hour)-\(Int(zeroPosition))")
+                }
             }
             
-            // Слой с цифрами (отдельно)
+            // Слой с цифрами (отдельно) - показываем независимо от маркеров
             if markersViewModel.showHourNumbers {
                 ForEach(0..<24, id: \.self) { hour in
                     let angle = Double(hour) * (360.0 / 24.0)
@@ -99,6 +101,8 @@ struct GlobleClockFaceViewIOS: View {
         .frame(height: UIScreen.main.bounds.width * 0.7)
         .padding()
         .animation(.spring(), value: viewModel.tasksForSelectedDate(tasks))
+        .animation(.spring(), value: markersViewModel.showMarkers)
+        .animation(.spring(), value: markersViewModel.showHourNumbers)
         .onAppear {
             markersViewModel.zeroPosition = zeroPosition
             markersViewModel.isDarkMode = themeManager.isDarkMode

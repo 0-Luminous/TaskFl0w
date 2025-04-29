@@ -60,7 +60,8 @@ struct DockBarEditorIOS: View {
             categories: categoriesForPage(page),
             categoryWidth: categoryWidth,
             selectedCategory: $selectedCategory,
-            editingCategory: editingCategory
+            editingCategory: editingCategory,
+            isNewCategory: editingCategory != nil && selectedCategory == nil
         )
     }
 
@@ -79,7 +80,7 @@ struct DockBarEditorIOS: View {
                         content(page)
                     }
                 }
-                .frame(height: 360)
+                .frame(height: 380)
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
             .background(backgroundColorForTheme)
@@ -94,49 +95,89 @@ struct DockBarEditorIOS: View {
         let categoryWidth: CGFloat
         @Binding var selectedCategory: TaskCategoryModel?
         let editingCategory: TaskCategoryModel?
+        let isNewCategory: Bool
 
         var body: some View {
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.fixed(categoryWidth), spacing: 10), count: 4),
-                spacing: 20
-            ) {
-                // Показываем превью в двух случаях:
-                // 1. Когда это новая категория (selectedCategory == nil + editingCategory != nil)
-                // 2. Когда это редактирование и ID совпадает (selectedCategory?.id == editingCategory?.id)
-                if let previewCategory = editingCategory, 
-                  (selectedCategory == nil || selectedCategory?.id == previewCategory.id) {
-                    CategoryButton(
-                        category: previewCategory,
-                        isSelected: true
-                    )
-                    .frame(width: categoryWidth, height: 70)
-                    .scaleEffect(1.1)
-                    .id(previewCategory.id.uuidString + previewCategory.iconName + (previewCategory.color.toHex() ?? ""))
-                }
-                
-                ForEach(categories) { category in
-                    // Не показываем категорию, если она сейчас редактируется и отображается как превью
-                    if editingCategory == nil || category.id != editingCategory!.id {
-                        CategoryButton(
-                            category: category,
-                            isSelected: selectedCategory == category
-                        )
-                        .frame(width: categoryWidth, height: 70)
-                        .scaleEffect(selectedCategory == category ? 1.1 : 1.0)
-                        .animation(.easeInOut(duration: 0.2), value: selectedCategory == category)
-                        .onTapGesture {
-                            withAnimation {
-                                if selectedCategory?.id == category.id {
-                                    selectedCategory = nil
-                                } else {
-                                    selectedCategory = category
+            VStack {
+                // Создаем сетку с фиксированным числом столбцов для горизонтального расположения
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.fixed(categoryWidth), spacing: 10), count: 4),
+                    spacing: 20
+                ) {
+                    // Отображаем все существующие категории в их обычном порядке
+                    ForEach(categories) { category in
+                        if let editingCategory = editingCategory, selectedCategory?.id == editingCategory.id, category.id == editingCategory.id {
+                            // Если это выбранная категория, которая редактируется, показываем её текущую версию с изменениями
+                            CategoryButton(
+                                category: editingCategory,
+                                isSelected: true
+                            )
+                            .frame(width: categoryWidth, height: 70)
+                            .scaleEffect(1.1)
+                            .opacity(editingCategory.isHidden ? 0.5 : 1.0)
+                            .id(editingCategory.id.uuidString + editingCategory.iconName + (editingCategory.color.toHex() ?? ""))
+                        } else {
+                            // Обычные категории показываем как есть
+                            CategoryButton(
+                                category: category,
+                                isSelected: selectedCategory == category
+                            )
+                            .frame(width: categoryWidth, height: 70)
+                            .scaleEffect(selectedCategory == category ? 1.1 : 1.0)
+                            .opacity(category.isHidden ? 0.5 : 1.0)
+                            .animation(.easeInOut(duration: 0.2), value: selectedCategory == category)
+                            .onTapGesture {
+                                withAnimation {
+                                    if selectedCategory?.id == category.id {
+                                        selectedCategory = nil
+                                    } else {
+                                        selectedCategory = category
+                                    }
                                 }
                             }
                         }
                     }
+                    
+                    // Показываем новую категорию в конце, только если это добавление новой (а не редактирование)
+                    if isNewCategory, let previewCategory = editingCategory {
+                        CategoryButton(
+                            category: previewCategory,
+                            isSelected: true
+                        )
+                        .frame(width: categoryWidth, height: 70)
+                        .scaleEffect(1.1)
+                        .opacity(previewCategory.isHidden ? 0.5 : 1.0)
+                        .id(previewCategory.id.uuidString + previewCategory.iconName + (previewCategory.color.toHex() ?? ""))
+                    }
+                    
+                    // Добавляем кнопку с плюсиком, когда выбрана категория в докбаре
+                    if selectedCategory != nil && !isNewCategory {
+                        Button(action: {
+                            // Действие при нажатии кнопки - снимаем выделение с текущей категории
+                            selectedCategory = nil
+                        }) {
+                            VStack(spacing: 5) {
+                                Circle()
+                                    .fill(Color.blue)
+                                    .frame(width: 40, height: 40)
+                                    .overlay(
+                                        Image(systemName: "plus")
+                                            .foregroundColor(.white)
+                                            .font(.system(size: 24))
+                                    )
+                                    .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+                                
+                                Text("Добавить")
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .frame(width: categoryWidth, height: 70)
+                    }
                 }
+                .padding(.top, 20)
             }
-            .padding(.top, 20)
             .frame(maxHeight: .infinity, alignment: .top)
         }
     }
@@ -152,7 +193,7 @@ struct DockBarEditorIOS: View {
     }
 
     private var numberOfPages: Int {
-        let count = viewModel.categories.count
+        let count = viewModel.categories.count + (editingCategory != nil && selectedCategory == nil ? 1 : 0)
         return max((count + categoriesPerPage - 1) / categoriesPerPage, 1)
     }
 
