@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct ClockEditorView: View {
-    @StateObject private var viewModel = ClockViewModel()
-    @StateObject private var markersViewModel = ClockMarkersViewModel()
+    @ObservedObject var viewModel: ClockViewModel
+    @ObservedObject var markersViewModel: ClockMarkersViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
     let taskArcLineWidth: CGFloat
 
@@ -26,6 +26,8 @@ struct ClockEditorView: View {
     @State private var showOuterRingWidthControls = false
     @State private var showArcAnalogToggle = false
     @State private var showMarkersControls = false
+    @State private var showFontPicker = false
+
 
     var body: some View {
         NavigationStack {
@@ -97,7 +99,7 @@ struct ClockEditorView: View {
                 currentDate: viewModel.selectedDate,
                 tasks: viewModel.tasks,
                 viewModel: viewModel,
-                markersViewModel: markersViewModel,
+                markersViewModel: viewModel.markersViewModel,
                 draggedCategory: .constant(nil),
                 zeroPosition: viewModel.zeroPosition,
                 taskArcLineWidth: viewModel.isAnalogArcStyle ? viewModel.outerRingLineWidth : viewModel.taskArcLineWidth,
@@ -224,15 +226,57 @@ struct ClockEditorView: View {
             Text("Настройки циферблата")
                 .font(.headline)
                 .foregroundColor(.white)
-            Toggle("Показывать цифры", isOn: $markersViewModel.showHourNumbers)
-                .toggleStyle(SwitchToggleStyle(tint: .yellow))
+            
+            if showFontPicker {
+                HStack {
+                    Text("Выберите шрифт")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        withAnimation {
+                            showFontPicker = false
+                        }
+                    }) {
+                        Text("Готово")
+                            .foregroundColor(.yellow)
+                            .fontWeight(.medium)
+                    }
+                }
+                .padding(.bottom, 8)
+                
+                Picker("", selection: $markersViewModel.fontName) {
+                    ForEach(markersViewModel.customFonts, id: \.self) { font in
+                        Text(font).tag(font)
+                    }
+                }
+                .pickerStyle(.wheel)
                 .foregroundColor(.white)
-            // Stepper("Интервал цифр: \(markersViewModel.numberInterval)", value: $markersViewModel.numberInterval, in: 1...6)
-            //     .foregroundColor(.white)
-            // Stepper("Толщина маркеров: \(markersViewModel.markersWidth, specifier: "%.1f")", value: $markersViewModel.markersWidth, in: 1...8, step: 0.5)
-            //     .foregroundColor(.white)
-            Stepper("Размер цифр: \(markersViewModel.numbersSize, specifier: "%.0f")", value: $markersViewModel.numbersSize, in: 10...32, step: 1)
-                .foregroundColor(.white)
+            } else {
+                Toggle("Показывать цифры", isOn: $markersViewModel.showHourNumbers)
+                    .toggleStyle(SwitchToggleStyle(tint: .yellow))
+                    .foregroundColor(.white)
+                    
+                Stepper("Размер цифр: \(markersViewModel.numbersSize, specifier: "%.0f")", value: $markersViewModel.numbersSize, in: 14...21, step: 1)
+                    .foregroundColor(.white)
+                    
+                Button(action: {
+                    withAnimation {
+                        showFontPicker = true
+                    }
+                }) {
+                    HStack {
+                        Text("Изменить шрифт цифр")
+                            .foregroundColor(.white)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
         }
         .padding()
         .background(

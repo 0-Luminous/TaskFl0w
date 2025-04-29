@@ -19,6 +19,7 @@ struct NewSettingsView: View {
     @State private var selectedTitle = ""
     @State private var appeared = [false, false, false, false]
     @State private var showPersonalization = false
+    @ObservedObject var viewModel: ClockViewModel
 
     private let cards: [SettingsCard] = [
         .init(icon: "person.crop.circle", title: "Профиль"),
@@ -39,8 +40,10 @@ struct NewSettingsView: View {
             Color(red: 0.098, green: 0.098, blue: 0.098)
                 .ignoresSafeArea()
             ScrollView {
+                let enumeratedCards = Array(cards.enumerated())
+
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: cardSize), spacing: 28)], spacing: 28) {
-                    ForEach(Array(cards.enumerated()), id: \.element.id) { idx, card in
+                    ForEach(enumeratedCards, id: \.element.id) { idx, card in
                         ZStack {
                             CardView(
                                 icon: card.icon,
@@ -62,7 +65,7 @@ struct NewSettingsView: View {
                             }
                             if card.title == "Оформление" {
                                 NavigationLink(
-                                    destination: PersonalizationViewIOS(),
+                                    destination: PersonalizationViewIOS(viewModel: viewModel),
                                     isActive: $showPersonalization
                                 ) {
                                     EmptyView()

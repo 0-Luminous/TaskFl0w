@@ -22,6 +22,65 @@ final class ClockMarkersViewModel: ObservableObject {
             objectWillChange.send()
         }
     }
+    @Published var showMarkers: Bool = true
+    @Published var fontName: String = "SF Pro" // или любой дефолтный шрифт
+    
+    // Список доступных шрифтов с PostScript именами
+    let customFonts: [String] = [
+        // Системные шрифты Apple
+        "SF Pro",
+ 
+        
+        // Классические системные шрифты
+        "Arial",
+        "Arial-BoldMT",
+        "Courier",
+        "Courier New",
+        "CourierNewPS-BoldMT",
+        "Times New Roman",
+        "TimesNewRomanPS-BoldMT",
+        "Georgia",
+        "Georgia-Bold",
+        "Verdana",
+        "Verdana-Bold",
+        "Trebuchet MS",
+        "TrebuchetMS-Bold",
+        
+        // Дополнительные встроенные шрифты
+        "American Typewriter",
+        "AmericanTypewriter-Bold",
+        "Chalkboard SE",
+        "ChalkboardSE-Bold",
+        "Cochin",
+        "Cochin-Bold",
+        "Didot",
+        "Didot-Bold",
+        "Futura",
+        "Futura-Bold",
+        "Gill Sans",
+        "GillSans-Bold",
+        "Marker Felt",
+        "Optima",
+        "Optima-Bold",
+        "Palatino",
+        "Palatino-Bold",
+        "Papyrus",
+
+        
+        // Моноширинные шрифты
+        "Menlo",
+        "Menlo-Bold",
+        "Menlo-Regular",
+        
+        // Кастомные шрифты из папки Fonts
+        // "Pixel",
+        // "Bold",
+        // "Space",
+        // "Future",
+        // "MoscowMetro",
+        // "Typometry_Alternate",
+        // "Typometry_Regular"
+    ]
 
     // MARK: - Environment
     @Environment(\.colorScheme) var colorScheme
@@ -82,8 +141,13 @@ final class ClockMarkersViewModel: ObservableObject {
 
     // Отдельный метод для отступа цифр, не зависящий от толщины маркеров
     func numberOffset() -> CGFloat {
+        // Если маркеры скрыты, цифры должны быть дальше от центра
+        if !showMarkers {
+            // Например, увеличим смещение на 30 (можно подобрать опытным путем)
+            return markerOffset() + 5
+        }
         // Отступ только на основе markersOffset, без учета толщины
-        markerOffset() + 20
+        return markerOffset() + 21
     }
 
     // Добавляем метод для принудительного обновления представлений при смене темы

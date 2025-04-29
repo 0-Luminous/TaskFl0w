@@ -2,20 +2,20 @@ import SwiftUI
 
 struct PersonalizationViewIOS: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel = ClockViewModel()
+    @ObservedObject var viewModel: ClockViewModel
     @State private var showingClockFaceEditor = false
     @State private var showingCategoryEditor = false
     @State private var showingClockEditor = false
-    
+
     var body: some View {
         ZStack {
-            Color(red: 0.098, green: 0.098, blue: 0.098) // Задний фон
-                .ignoresSafeArea() // Чтобы цвет был на весь экран
+            Color(red: 0.098, green: 0.098, blue: 0.098)  // Задний фон
+                .ignoresSafeArea()  // Чтобы цвет был на весь экран
 
-            VStack(spacing: 20) { // Добавили spacing между кнопками
+            VStack(spacing: 20) {  // Добавили spacing между кнопками
                 Spacer()
-                    .frame(height: 50) // Отступ сверху
-                
+                    .frame(height: 50)  // Отступ сверху
+
                 // Основной цвет
                 Button {
                     showingClockEditor = true
@@ -25,7 +25,7 @@ struct PersonalizationViewIOS: View {
                         title: "Базовый цвет"
                     )
                 }
-                
+
                 // Циферблат
                 Button {
                     showingClockFaceEditor = true
@@ -35,7 +35,7 @@ struct PersonalizationViewIOS: View {
                         title: "Циферблат"
                     )
                 }
-                
+
                 // Категории
                 Button {
                     showingCategoryEditor = true
@@ -45,9 +45,9 @@ struct PersonalizationViewIOS: View {
                         title: "Категории"
                     )
                 }
-                
+
                 Spacer()
-                
+
             }
         }
         .navigationTitle("Настройки")
@@ -61,7 +61,11 @@ struct PersonalizationViewIOS: View {
             }
         }
         .fullScreenCover(isPresented: $showingClockEditor) {
-            ClockEditorView(taskArcLineWidth: viewModel.taskArcLineWidth)
+            ClockEditorView(
+                viewModel: viewModel,
+                markersViewModel: viewModel.markersViewModel,
+                taskArcLineWidth: viewModel.taskArcLineWidth
+            )
         }
         .fullScreenCover(isPresented: $showingClockFaceEditor) {
             ClockFaceEditorViewIOS()
@@ -76,9 +80,6 @@ struct PersonalizationViewIOS: View {
 }
 #Preview {
     NavigationView {
-        PersonalizationViewIOS()
+        PersonalizationViewIOS(viewModel: ClockViewModel())
     }
 }
-
-
-

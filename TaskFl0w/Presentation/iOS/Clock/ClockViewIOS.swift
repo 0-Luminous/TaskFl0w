@@ -155,7 +155,7 @@ struct ClockViewIOS: View {
             // 3. Новый .fullScreenCover
             .fullScreenCover(isPresented: $showingNewSettings) {
                 NavigationStack {
-                    PersonalizationViewIOS()
+                    PersonalizationViewIOS(viewModel: viewModel)
                 }
             }
             .background(Color(red: 0.098, green: 0.098, blue: 0.098))
