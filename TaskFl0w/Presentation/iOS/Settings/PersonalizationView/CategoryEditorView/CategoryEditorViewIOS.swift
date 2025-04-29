@@ -105,21 +105,54 @@ struct CategoryEditorViewIOS: View {
         }
         .sheet(isPresented: $showingColorPicker) {
             NavigationView {
-                ColorPicker("Выберите цвет", selection: $selectedColor)
-                    .labelsHidden()
-                    .padding()
-                    .navigationTitle("Выбор цвета")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Готово") {
-                                feedbackGenerator.impactOccurred()
-                                showingColorPicker = false
+                VStack(spacing: 20) {
+                    // Палитра стандартных цветов
+                    VStack(alignment: .leading) {
+                        
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 60))], spacing: 12) {
+                            let standardColors: [Color] = [
+                                .coral1, .red1, .Orange1, .Apricot1, .yellow1, .Clover1, .green0, .green1, .Mint1, 
+                                .Teal1, .Blue1, .LightBlue1, .BlueJay1, .OceanBlue1, 
+                                .StormBlue1, .Indigo1, .Purple1, .Lilac1, .Pink1, 
+                                .Peony1, .Rose1, 
+                            ]
+                            
+                            ColorPicker("Выберите цвет", selection: $selectedColor)
+                            .labelsHidden()
+                            .padding()
+                            
+                            ForEach(0..<standardColors.count, id: \.self) { index in
+                                let color = standardColors[index]
+                                Button(action: {
+                                    selectedColor = color
+                                    feedbackGenerator.impactOccurred()
+                                }) {
+                                    Circle()
+                                        .fill(color)
+                                        .frame(width: 24, height: 24)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(Color.white, lineWidth: selectedColor == color ? 3 : 0)
+                                        )
+                                }
                             }
                         }
+                        .padding(.horizontal)
+                    }                
+                }
+                .padding()
+                .navigationTitle("Выбор цвета")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Готово") {
+                            feedbackGenerator.impactOccurred()
+                            showingColorPicker = false
+                        }
                     }
+                }
             }
-            .presentationDetents([.height(200)])
+            .presentationDetents([.height(300)])
             .presentationDragIndicator(.visible)
         }
     }
@@ -145,7 +178,7 @@ struct CategoryEditorViewIOS: View {
                     .font(.headline)
                 Spacer()
             }
-            .padding(.vertical, 15)
+            .padding()
             .background(
                 RoundedRectangle(cornerRadius: 24)
                     .fill(editingCategory == nil ? Color.blue : Color.red)
@@ -198,7 +231,6 @@ struct CategoryEditorViewIOS: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 15) {
-
                 // DockBar с обновленным binding для выбранной категории
                 DockBarEditorIOS(
                     viewModel: viewModel,
@@ -213,13 +245,30 @@ struct CategoryEditorViewIOS: View {
                                     selectedColor = category.color
                                     selectedIcon = category.iconName
                                     feedbackGenerator.impactOccurred()
+                                } else {
+                                    // Когда снимаем выделение с категории
+                                    editingCategory = nil
+                                    // Сбрасываем значения к значениям по умолчанию
+                                    categoryName = ""
+                                    selectedColor = .blue 
+                                    selectedIcon = "star.fill"
                                 }
                             }
                         }
                     ),
-                    editingCategory: previewCategory
+                    // Если редактируем категорию, используем временную модель с обновленными значениями
+                    editingCategory: editingCategory != nil 
+                        ? TaskCategoryModel(
+                            id: editingCategory!.id, 
+                            rawValue: categoryName.isEmpty ? editingCategory!.rawValue : categoryName, 
+                            iconName: selectedIcon, 
+                            color: selectedColor
+                          ) 
+                        : (selectedDockCategory == nil ? previewCategory : nil)
                 )
-                .id(previewCategory.id)
+                .id("\(previewCategory.id)-\(selectedDockCategory?.id ?? UUID())-\(selectedColor.toHex() ?? "")-\(selectedIcon)")
+                .opacity(isTextFieldFocused ? 0 : 1)
+                .frame(height: isTextFieldFocused ? 0 : nil)
 
                 // Настройки категории
                 VStack(spacing: 15) {
@@ -228,6 +277,8 @@ struct CategoryEditorViewIOS: View {
                         iconButton
                     }
                     .padding(.horizontal)
+                    .opacity(isTextFieldFocused ? 0 : 1)
+                    .frame(height: isTextFieldFocused ? 0 : nil)
 
                     TextField("Название категории", text: $categoryName)
                         .textFieldStyle(PlainTextFieldStyle())
@@ -238,36 +289,39 @@ struct CategoryEditorViewIOS: View {
                         )
                         .padding(.horizontal)
                         .focused($isTextFieldFocused)
+                        .padding(.top, isTextFieldFocused ? 100 : 0)
+                        .animation(.easeInOut, value: isTextFieldFocused)
                     
-                    actionButton
-                        .padding(.top, 20)
-                    
-                    Button(action: {
-                        feedbackGenerator.impactOccurred()
-                        // Добавьте здесь логику архивирования
-                    }) {
-                        HStack {
-                            Spacer()
-                            Image(systemName: "archivebox.fill")
-                                .foregroundColor(.white)
-                                .font(.system(size: 20))
-                            Text("Архив")
-                                .foregroundColor(.white)
-                                .font(.headline)
-                            Spacer()
+                    if !isTextFieldFocused {
+                        actionButton
+                        
+                        Button(action: {
+                            feedbackGenerator.impactOccurred()
+                            // Добавьте здесь логику архивирования
+                        }) {
+                            HStack {
+                                Spacer()
+                                Image(systemName: "archivebox.fill")
+                                    .foregroundColor(.white)
+                                    .font(.system(size: 20))
+                                Text("Архив")
+                                    .foregroundColor(.white)
+                                    .font(.headline)
+                                Spacer()
+                            }
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 24)
+                                    .fill(Color(red: 0.357, green: 0.357, blue: 0.357))
+                                    .shadow(
+                                        color: shadowColor().opacity(0.5),
+                                        radius: 5, x: 0, y: 2
+                                    )
+                            )
+                            .padding(.horizontal)
                         }
-                        .padding(.vertical, 15)
-                        .background(
-                            RoundedRectangle(cornerRadius: 24)
-                                .fill(Color(red: 0.357, green: 0.357, blue: 0.357))
-                                .shadow(
-                                    color: shadowColor().opacity(0.5),
-                                    radius: 5, x: 0, y: 2
-                                )
-                        )
-                        .padding(.horizontal)
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
                 }
 
                 Spacer()
@@ -297,7 +351,7 @@ struct CategoryEditorViewIOS: View {
         }
         .presentationDetents([.height(UIScreen.main.bounds.height * 0.8)])
         .presentationDragIndicator(.visible)
-        .sheet(isPresented: $showingIconPicker) {
+        .fullScreenCover(isPresented: $showingIconPicker) {
             NavigationView {
                 ScrollView {
                     LazyVGrid(

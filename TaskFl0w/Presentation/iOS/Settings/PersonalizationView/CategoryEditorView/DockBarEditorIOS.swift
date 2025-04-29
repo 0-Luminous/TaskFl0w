@@ -100,20 +100,37 @@ struct DockBarEditorIOS: View {
                 columns: Array(repeating: GridItem(.fixed(categoryWidth), spacing: 10), count: 4),
                 spacing: 20
             ) {
-                ForEach(categories) { category in
+                // Показываем превью в двух случаях:
+                // 1. Когда это новая категория (selectedCategory == nil + editingCategory != nil)
+                // 2. Когда это редактирование и ID совпадает (selectedCategory?.id == editingCategory?.id)
+                if let previewCategory = editingCategory, 
+                  (selectedCategory == nil || selectedCategory?.id == previewCategory.id) {
                     CategoryButton(
-                        category: category,
-                        isSelected: selectedCategory == category
+                        category: previewCategory,
+                        isSelected: true
                     )
                     .frame(width: categoryWidth, height: 70)
-                    .scaleEffect(selectedCategory == category ? 1.1 : 1.0)
-                    .animation(.easeInOut(duration: 0.2), value: selectedCategory == category)
-                    .onTapGesture {
-                        withAnimation {
-                            if selectedCategory?.id == category.id {
-                                selectedCategory = nil
-                            } else {
-                                selectedCategory = category
+                    .scaleEffect(1.1)
+                    .id(previewCategory.id.uuidString + previewCategory.iconName + (previewCategory.color.toHex() ?? ""))
+                }
+                
+                ForEach(categories) { category in
+                    // Не показываем категорию, если она сейчас редактируется и отображается как превью
+                    if editingCategory == nil || category.id != editingCategory!.id {
+                        CategoryButton(
+                            category: category,
+                            isSelected: selectedCategory == category
+                        )
+                        .frame(width: categoryWidth, height: 70)
+                        .scaleEffect(selectedCategory == category ? 1.1 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: selectedCategory == category)
+                        .onTapGesture {
+                            withAnimation {
+                                if selectedCategory?.id == category.id {
+                                    selectedCategory = nil
+                                } else {
+                                    selectedCategory = category
+                                }
                             }
                         }
                     }

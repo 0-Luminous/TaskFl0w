@@ -86,7 +86,7 @@ struct NewSettingsView: View {
                 Button(action: { dismiss() }) {
                     Label("Назад", systemImage: "chevron.left")
                 }
-                .foregroundColor(.coral)
+                .foregroundColor(.coral1)
             }
         }
         .alert("Вы выбрали: \(selectedTitle)", isPresented: $showAlert) {
