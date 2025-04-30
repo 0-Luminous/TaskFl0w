@@ -22,25 +22,28 @@ struct BottomBar: View {
     
     // MARK: - Body
     var body: some View {
-        // Оборачиваем весь BottomBar в ZStack с фиксированной высотой
         ZStack {
-            // Фоновый слой - неизменяемый
-            Color.clear
-                .frame(height: 60) // Высота фиксирована
-            
-            // Контент - все наши кнопки
-            HStack(spacing: 0) {
+            // Основной контейнер с размытым фоном
+            HStack(spacing: 16) {
                 if !isSelectionMode {
                     normalModeButtons
                 } else {
                     selectionModeButtons
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .frame(height: 56)
+            .background {
+                // Размытый фон
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .environment(\.colorScheme, .dark)
+                    .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
+            }
         }
-        // Делаем фрейм фиксированным!
-        .frame(height: 60)
-        // Отключаем анимации для BottomBar
+        .padding(.horizontal, 20)
+        .padding(.bottom, 8)
         .animation(nil, value: isAddButtonPressed)
     }
     
@@ -48,29 +51,16 @@ struct BottomBar: View {
     
     /// Кнопки в обычном режиме
     private var normalModeButtons: some View {
-        HStack {
-            Spacer()
-            
+        HStack(spacing: 24) {
             archiveButton
-            
-            Spacer()
-            
             selectionModeToggleButton
-            
-            Spacer()
-            
-            // Для кнопки добавления используем другой подход
             addButton
-            
-            Spacer()
         }
     }
     
     /// Кнопки в режиме выбора
     private var selectionModeButtons: some View {
-        HStack {
-            Spacer()
-            
+        HStack(spacing: 24) {
             // Показываем разные кнопки в зависимости от режима
             if showCompletedTasksOnly {
                 // В режиме архива показываем кнопку архивации
@@ -80,11 +70,7 @@ struct BottomBar: View {
                 priorityButton
             }
             
-            Spacer()
-            
             exitSelectionModeButton
-            
-            Spacer()
             
             // Разные кнопки в зависимости от режима
             if showCompletedTasksOnly {
@@ -94,38 +80,29 @@ struct BottomBar: View {
                 // В обычном режиме показываем кнопку удаления
                 deleteButton
             }
-            
-            Spacer()
         }
     }
     
     private var archiveButton: some View {
         Button(action: onArchiveTapped) {
-            circleIconImage(
-                systemName: "archivebox.circle.fill", 
-                color: showCompletedTasksOnly ? .blue : .gray
-            )
-            .frame(width: 44, height: 44)
+            toolbarIcon(systemName: "archivebox.fill", 
+                       color: showCompletedTasksOnly ? .blue : .gray)
         }
     }
     
     private var selectionModeToggleButton: some View {
         Button(action: toggleSelectionMode) {
-            circleIconImage(systemName: "checkmark.circle.fill", color: .gray)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+            toolbarIcon(systemName: "checkmark.circle", color: .gray)
         }
     }
+    
     
     private var deleteButton: some View {
         Button(action: {
             onDeleteSelectedTasks()
-            // После удаления выходим из режима выбора
             toggleSelectionMode()
         }) {
-            circleIconImage(systemName: "trash.circle.fill", color: .red)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+            toolbarIcon(systemName: "trash", color: .red)
         }
         .disabled(selectedTasks.isEmpty)
         .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
@@ -133,14 +110,11 @@ struct BottomBar: View {
     
     private var priorityButton: some View {
         Button(action: {
-            // Действие для изменения приоритета задач
             if !selectedTasks.isEmpty {
                 onChangePriorityForSelectedTasks()
             }
         }) {
-            circleIconImage(systemName: "arrow.uturn.up.circle.fill", color: selectedTasks.isEmpty ? .gray : .gray)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+            toolbarIcon(systemName: "arrow.up.arrow.down", color: .gray)
         }
         .disabled(selectedTasks.isEmpty)
         .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
@@ -148,75 +122,40 @@ struct BottomBar: View {
     
     private var exitSelectionModeButton: some View {
         Button(action: toggleSelectionMode) {
-            circleIconImage(systemName: "checkmark.circle.badge.xmark.fill", color: .blue)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+            toolbarIcon(systemName: "xmark", color: .blue)
         }
     }
     
-    // Кнопка для возврата задач из архива
     private var unarchiveButton: some View {
         Button(action: {
             onUnarchiveSelectedTasks()
-            // После возврата из архива выходим из режима выбора
             toggleSelectionMode()
         }) {
-            circleIconImage(systemName: "arrow.uturn.backward.circle.fill", color: .green)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+            toolbarIcon(systemName: "arrow.uturn.backward", color: .green)
         }
         .disabled(selectedTasks.isEmpty)
         .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
     }
     
-    // Кнопка для архивных действий
     private var archiveActionButton: some View {
         Button(action: {
-            // Просто переключаем режим архива (так же, как и обычная кнопка архива)
             onArchiveTapped()
-            // После действия выходим из режима выбора
             toggleSelectionMode()
         }) {
-            circleIconImage(
-                systemName: "archivebox.circle.fill", 
-                color: .blue  // Всегда активная, синего цвета
-            )
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            toolbarIcon(systemName: "archivebox", color: .blue)
         }
     }
     
-    // Вместо стандартного Button используем наш собственный компонент
-    private func customButton(_ icon: String, color: Color, action: @escaping () -> Void, disabled: Bool = false) -> some View {
-        Color.clear
-            .frame(width: 44, height: 44)
-            .overlay(
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                    .font(.system(size: 40))
-            )
-            .onTapGesture {
-                if !disabled {
-                    action()
-                }
-            }
-            .opacity(disabled ? 0.5 : 1.0)
-    }
-    
     private var addButton: some View {
-        Color.clear
-            .frame(width: 44, height: 44)
-            .overlay(
-                Image(systemName: "plus.circle.fill")
-                    .foregroundColor(showCompletedTasksOnly ? .gray : .blue)
-                    .font(.system(size: 40))
-            )
-            .onTapGesture {
-                if !showCompletedTasksOnly {
-                    onAddTap()
-                }
+        Button(action: {
+            if !showCompletedTasksOnly {
+                onAddTap()
             }
-            .opacity(showCompletedTasksOnly ? 0.5 : 1.0)
+        }) {
+            toolbarIcon(systemName: "plus", color: showCompletedTasksOnly ? .gray : .blue)
+        }
+        .disabled(showCompletedTasksOnly)
+        .opacity(showCompletedTasksOnly ? 0.5 : 1.0)
     }
     
     // MARK: - Helper Methods
@@ -228,10 +167,11 @@ struct BottomBar: View {
         isSelectionMode.toggle()
     }
     
-    private func circleIconImage(systemName: String, color: Color) -> some View {
+    private func toolbarIcon(systemName: String, color: Color) -> some View {
         Image(systemName: systemName)
+            .font(.system(size: 22))
             .foregroundColor(color)
-            .font(.system(size: 40))
+            .frame(width: 36, height: 36)
     }
 }
 
@@ -243,16 +183,29 @@ struct BottomBar: View {
         @State private var showCompletedTasksOnly = false
         
         var body: some View {
-            BottomBar(
-                onAddTap: { print("Add tapped") }, 
-                isSelectionMode: $isSelectionMode,
-                selectedTasks: $selectedTasks,
-                onDeleteSelectedTasks: { print("Delete selected tasks") },
-                onChangePriorityForSelectedTasks: { print("Change priority for selected tasks") },
-                onArchiveTapped: { print("Archive completed tasks") },
-                onUnarchiveSelectedTasks: { print("Unarchive selected tasks") },
-                showCompletedTasksOnly: $showCompletedTasksOnly
-            )
+            ZStack {
+                // Добавляем градиентный фон для лучшей визуализации эффекта размытия
+                LinearGradient(
+                    colors: [.blue.opacity(0.6), Color(uiColor: .systemBackground)],
+                    startPoint: .topTrailing,
+                    endPoint: .bottomLeading
+                )
+                .ignoresSafeArea()
+                
+                VStack {
+                    Spacer()
+                    BottomBar(
+                        onAddTap: { print("Add tapped") }, 
+                        isSelectionMode: $isSelectionMode,
+                        selectedTasks: $selectedTasks,
+                        onDeleteSelectedTasks: { print("Delete selected tasks") },
+                        onChangePriorityForSelectedTasks: { print("Change priority for selected tasks") },
+                        onArchiveTapped: { print("Archive completed tasks") },
+                        onUnarchiveSelectedTasks: { print("Unarchive selected tasks") },
+                        showCompletedTasksOnly: $showCompletedTasksOnly
+                    )
+                }
+            }
         }
     }
     

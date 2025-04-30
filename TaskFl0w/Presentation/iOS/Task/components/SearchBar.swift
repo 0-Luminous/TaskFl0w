@@ -20,7 +20,7 @@ struct SearchBar: View {
             
             ZStack(alignment: .trailing) {
                 TextField("Search", text: $text)
-                    .padding(.vertical, 7)
+                    .padding(.vertical, 10)
                     .font(.system(size: 17))
                     .focused($isFocused)
                     .onChange(of: isFocused) { oldValue, newValue in
@@ -59,9 +59,9 @@ struct SearchBar: View {
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-        .background(Color.gray.opacity(0.2))
+        .background(Color(red: 0.2, green: 0.2, blue: 0.2))
         .cornerRadius(10)
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 8)
         .onAppear {
             // При появлении проверяем, есть ли текст
             if !text.isEmpty {

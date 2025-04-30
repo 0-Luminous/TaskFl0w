@@ -7,6 +7,7 @@
 
 import CoreData
 import SwiftUI
+import UIKit
 
 struct TaskListView: View {
     @ObservedObject var viewModel: ListViewModel
@@ -18,128 +19,144 @@ struct TaskListView: View {
     @State private var isKeyboardVisible = false
     @FocusState private var isNewTaskFocused: Bool
     @State private var showingPrioritySheet = false
+    @State private var scrollOffset: CGFloat = 0
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                SearchBar(text: $viewModel.searchText, isActive: $isSearchActive)
-                
-                // Добавляем индикатор режима архива
-                if viewModel.showCompletedTasksOnly {
-                    ArchiveView()
-                }
-                
-                List {
-                    // Показываем поле для новой задачи, если isAddingNewTask = true
-                    if isAddingNewTask {
-                        NewTaskInput(
-                            newTaskTitle: $newTaskTitle,
-                            isNewTaskFocused: _isNewTaskFocused,
-                            onSave: {
-                                viewModel.saveNewTask(title: newTaskTitle)
-                                newTaskTitle = ""
-                                isAddingNewTask = false
-                                isNewTaskFocused = false
-                            }
-                        )
+            ZStack(alignment: .top) {
+                // Основное содержимое списка
+                VStack(spacing: 0) {
+                    // Добавляем индикатор режима архива
+                    if viewModel.showCompletedTasksOnly {
+                        ArchiveView()
                     }
                     
-                    // Используем метод из ViewModel для фильтрации
-                    let items = viewModel.getFilteredItems()
-                    
-                    // Отображаем все задачи в одном списке без группировки по приоритету
-                    ForEach(items) { item in
-                        TaskRow(
-                            item: item,
-                            onToggle: {
-                                viewModel.presenter?.toggleItem(id: item.id)
-                            },
-                            onEdit: {
-                                viewModel.editingItem = item
-                            },
-                            onDelete: {
-                                viewModel.presenter?.deleteItem(id: item.id)
-                            },
-                            onShare: {
-                                viewModel.presenter?.shareItem(id: item.id)
-                            },
-                            categoryColor: viewModel.selectedCategory?.color ?? .blue,
-                            isSelectionMode: viewModel.isSelectionMode,
-                            isInArchiveMode: viewModel.showCompletedTasksOnly,
-                            selectedTasks: $viewModel.selectedTasks
-                        )
-                        .padding(.horizontal, 10)
-                        .listRowBackground(
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(.darkGray))
-                                
-                                // Добавляем внешний бордер для задач с приоритетом
-                                if item.priority != .none {
+                    List {
+                        // Пустой элемент для отступа под SearchBar
+                        Color.clear
+                            .frame(height: 60)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            
+                        // Показываем поле для новой задачи, если isAddingNewTask = true
+                        if isAddingNewTask {
+                            NewTaskInput(
+                                newTaskTitle: $newTaskTitle,
+                                isNewTaskFocused: _isNewTaskFocused,
+                                onSave: {
+                                    viewModel.saveNewTask(title: newTaskTitle)
+                                    newTaskTitle = ""
+                                    isAddingNewTask = false
+                                    isNewTaskFocused = false
+                                }
+                            )
+                        }
+                        
+                        // Используем метод из ViewModel для фильтрации
+                        let items = viewModel.getFilteredItems()
+                        
+                        // Отображаем все задачи в одном списке без группировки по приоритету
+                        ForEach(items) { item in
+                            TaskRow(
+                                item: item,
+                                onToggle: {
+                                    viewModel.presenter?.toggleItem(id: item.id)
+                                },
+                                onEdit: {
+                                    viewModel.editingItem = item
+                                },
+                                onDelete: {
+                                    viewModel.presenter?.deleteItem(id: item.id)
+                                },
+                                onShare: {
+                                    viewModel.presenter?.shareItem(id: item.id)
+                                },
+                                categoryColor: viewModel.selectedCategory?.color ?? .blue,
+                                isSelectionMode: viewModel.isSelectionMode,
+                                isInArchiveMode: viewModel.showCompletedTasksOnly,
+                                selectedTasks: $viewModel.selectedTasks
+                            )
+                            .padding(.trailing, 5)
+                            .listRowBackground(
+                                ZStack {
                                     RoundedRectangle(cornerRadius: 10)
-                                        .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
-                                        .opacity(item.isCompleted && !viewModel.isSelectionMode && !viewModel.showCompletedTasksOnly ? 0.5 : 1.0)
+                                        .fill(Color(.darkGray))
+                                    
+                                    // Добавляем внешний бордер для задач с приоритетом
+                                    if item.priority != .none {
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
+                                            .opacity(item.isCompleted && !viewModel.isSelectionMode && !viewModel.showCompletedTasksOnly ? 0.5 : 1.0)
+                                    }
+                                }
+                                .padding(.vertical, 5)
+                                .padding(.horizontal, 12)
+                            )
+                            .contentShape(Rectangle())  // Добавляем форму для регистрации нажатий
+                            .onTapGesture {
+                                if viewModel.isSelectionMode {
+                                    // В режиме выбора используем метод ViewModel
+                                    viewModel.toggleTaskSelection(taskId: item.id)
+                                } else {
+                                    // В обычном режиме, нажатие делает задачу завершенной
+                                    viewModel.presenter?.toggleItem(id: item.id)
                                 }
                             }
-                            .padding(.vertical, 5)
-                            .padding(.horizontal, 8)
-                        )
-                        .contentShape(Rectangle())  // Добавляем форму для регистрации нажатий
-                        .onTapGesture {
-                            if viewModel.isSelectionMode {
-                                // В режиме выбора используем метод ViewModel
-                                viewModel.toggleTaskSelection(taskId: item.id)
-                            } else {
-                                // В обычном режиме, нажатие делает задачу завершенной
-                                viewModel.presenter?.toggleItem(id: item.id)
-                            }
+                            .listRowSeparator(.hidden)
                         }
-                        .listRowSeparator(.hidden)
                     }
-                }
-                .listStyle(GroupedListStyle())
-                .onAppear {
-                    // При появлении обновляем выбранную категорию из пропса и обновляем данные
-                    if let selectedCategory = selectedCategory {
-                        viewModel.selectedCategory = selectedCategory
+                    .listStyle(GroupedListStyle())
+                    .onAppear {
+                        // При появлении обновляем выбранную категорию из пропса и обновляем данные
+                        if let selectedCategory = selectedCategory {
+                            viewModel.selectedCategory = selectedCategory
+                        }
+                        viewModel.refreshData()
                     }
-                    viewModel.refreshData()
                 }
                 
-                // Показываем BottomBar только если поиск не активен, не создается новая задача и клавиатура не видна
+                // SearchBar сверху с эффектом размытия для фона
+                VStack {
+                    SearchBar(text: $viewModel.searchText, isActive: $isSearchActive)
+                }
+
+                // Перемещаем BottomBar на уровень ZStack для изменения порядка слоев
                 if !isSearchActive && !isAddingNewTask && !isKeyboardVisible {
-                    BottomBar(
-                        onAddTap: {
-                            // Убедимся, что выбранная категория установлена перед открытием формы
-                            if let selectedCategory = selectedCategory {
-                                viewModel.selectedCategory = selectedCategory
-                            }
-                            // Вместо открытия формы, показываем строку для новой задачи
-                            isAddingNewTask = true
-                            // Устанавливаем фокус с небольшой задержкой
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                isNewTaskFocused = true
-                            }
-                        },
-                        isSelectionMode: $viewModel.isSelectionMode,
-                        selectedTasks: $viewModel.selectedTasks,
-                        onDeleteSelectedTasks: {
-                            viewModel.deleteSelectedTasks()
-                        },
-                        onChangePriorityForSelectedTasks: {
-                            // Отображаем меню выбора приоритета
-                            showingPrioritySheet = true
-                        },
-                        onArchiveTapped: {
-                            // Переключаем режим отображения выполненных задач
-                            viewModel.showCompletedTasksOnly.toggle()
-                        },
-                        onUnarchiveSelectedTasks: {
-                            viewModel.unarchiveSelectedTasks()
-                        },
-                        showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
-                    )
-                    .transition(.move(edge: .bottom))
+                    VStack {
+                        Spacer()
+                        BottomBar(
+                            onAddTap: {
+                                // Убедимся, что выбранная категория установлена перед открытием формы
+                                if let selectedCategory = selectedCategory {
+                                    viewModel.selectedCategory = selectedCategory
+                                }
+                                // Вместо открытия формы, показываем строку для новой задачи
+                                isAddingNewTask = true
+                                // Устанавливаем фокус с небольшой задержкой
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    isNewTaskFocused = true
+                                }
+                            },
+                            isSelectionMode: $viewModel.isSelectionMode,
+                            selectedTasks: $viewModel.selectedTasks,
+                            onDeleteSelectedTasks: {
+                                viewModel.deleteSelectedTasks()
+                            },
+                            onChangePriorityForSelectedTasks: {
+                                // Отображаем меню выбора приоритета
+                                showingPrioritySheet = true
+                            },
+                            onArchiveTapped: {
+                                // Переключаем режим отображения выполненных задач
+                                viewModel.showCompletedTasksOnly.toggle()
+                            },
+                            onUnarchiveSelectedTasks: {
+                                viewModel.unarchiveSelectedTasks()
+                            },
+                            showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
+                        )
+                        .transition(.move(edge: .bottom))
+                    }
                 }
             }
             .scrollContentBackground(.hidden)
@@ -204,6 +221,7 @@ struct TaskListView: View {
         }
     }
 }
+
 
 #Preview {
     TaskListView(viewModel: ListViewModel(), selectedCategory: nil)

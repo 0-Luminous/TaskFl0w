@@ -51,7 +51,6 @@ struct TaskRow: View {
                         priorityIndicator(for: item.priority)
                     }
                 }
-                .padding(.horizontal, -5)
             }
         }
         .animation(.easeInOut, value: item.priority)
