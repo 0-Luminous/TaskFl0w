@@ -19,13 +19,16 @@ struct TaskListView: View {
     @State private var isKeyboardVisible = false
     @FocusState private var isNewTaskFocused: Bool
     @State private var showingPrioritySheet = false
-    @State private var scrollOffset: CGFloat = 0
 
     var body: some View {
         NavigationView {
             ZStack(alignment: .top) {
                 // Основное содержимое списка
                 VStack(spacing: 0) {
+                    // Добавляем отступ сверху, чтобы всё содержимое было ниже на 10
+                    Spacer()
+                        .frame(height: 10)
+                        
                     // Добавляем индикатор режима архива
                     if viewModel.showCompletedTasksOnly {
                         ArchiveView()
@@ -33,10 +36,10 @@ struct TaskListView: View {
                     
                     List {
                         // Пустой элемент для отступа под SearchBar
-                        Color.clear
-                            .frame(height: 10)
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
+                        // Color.clear
+                        //     .frame(height: 10)
+                        //     .listRowBackground(Color.clear)
+                        //     .listRowSeparator(.hidden)
                             
                         // Показываем поле для новой задачи, если isAddingNewTask = true
                         if isAddingNewTask {

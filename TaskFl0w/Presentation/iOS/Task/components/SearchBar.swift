@@ -61,7 +61,7 @@ struct SearchBar: View {
         }
         .background(Color(red: 0.2, green: 0.2, blue: 0.2))
         .cornerRadius(10)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 10)
         .onAppear {
             // При появлении проверяем, есть ли текст
             if !text.isEmpty {
