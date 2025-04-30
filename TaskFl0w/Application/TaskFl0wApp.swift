@@ -6,11 +6,6 @@
 //
 
 import SwiftUI
-import WidgetKit
-
-#if canImport(UIKit)
-    import UIKit
-#endif
 
 @main
 struct TaskFl0wApp: App {
@@ -24,10 +19,4 @@ struct TaskFl0wApp: App {
     }
 }
 
-#if canImport(WidgetKit)
-struct TaskFlowWidgets: WidgetBundle {
-    var body: some Widget {
-        CategoryWidget()
-    }
-}
-#endif
+
