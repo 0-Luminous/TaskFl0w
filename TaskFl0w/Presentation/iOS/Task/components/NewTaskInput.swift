@@ -10,6 +10,7 @@ import SwiftUI
 struct NewTaskInput: View {
     @Binding var newTaskTitle: String
     @FocusState var isNewTaskFocused: Bool
+    @Binding var selectedPriority: TaskPriority
     var onSave: () -> Void
     
     var body: some View {
@@ -38,26 +39,72 @@ struct NewTaskInput: View {
                     }
                 }
                 .fixedSize(horizontal: false, vertical: true) // Позволяет расширяться по вертикали
+            
+            // Иконка приоритета, если приоритет выбран
+            if selectedPriority != .none {
+                priorityIcon
+            }
         }
         .padding(.horizontal, 10)
         .listRowBackground(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color(.darkGray))
-                .padding(.vertical, 5)
-                .padding(.horizontal, 8)
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(.darkGray))
+                    .padding(.vertical, 5)
+                    .padding(.horizontal, 8)
+                
+                // Добавляем бордер для выбранного приоритета
+                if selectedPriority != .none {
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(getPriorityColor(for: selectedPriority), lineWidth: 1.5)
+                        .padding(.vertical, 5)
+                        .padding(.horizontal, 8)
+                }
+            }
         )
         .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0)) // Добавляем верхний и нижний отступы для строки
         .listRowSeparator(.hidden)
+    }
+    
+    // Индикатор приоритета
+    private var priorityIcon: some View {
+        // Используем тот же индикатор приоритета, что и в TaskRow
+        VStack(spacing: 2) {
+            ForEach(0..<selectedPriority.rawValue, id: \.self) { _ in
+                Rectangle()
+                    .fill(getPriorityColor(for: selectedPriority))
+                    .frame(width: 12, height: 3)
+            }
+        }
+        .padding(.vertical, 2)
+        .padding(.horizontal, 3)
+        .padding(.trailing, 12)
+    }
+    
+    // Цвет для приоритета
+    private func getPriorityColor(for priority: TaskPriority) -> Color {
+        switch priority {
+        case .high:
+            return .red
+        case .medium:
+            return .orange
+        case .low:
+            return .green
+        case .none:
+            return .gray
+        }
     }
 }
 
 #Preview {
     @State var text = ""
+    @State var priority: TaskPriority = .none
     @FocusState var focus
     
     NewTaskInput(
         newTaskTitle: $text,
         isNewTaskFocused: _focus,
+        selectedPriority: $priority,
         onSave: {}
     )
     .background(Color(red: 0.098, green: 0.098, blue: 0.098))

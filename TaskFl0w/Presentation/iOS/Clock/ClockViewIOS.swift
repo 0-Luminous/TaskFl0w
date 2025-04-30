@@ -46,14 +46,12 @@ struct ClockViewIOS: View {
                 .background(Color.clear)
                 
                 VStack {
-                    Spacer()
-
                     if viewModel.selectedCategory != nil {
                         // Показываем список задач для выбранной категории
                         VStack(spacing: 0) {
-                            // Добавляем отступ сверху
-                            // Spacer()
-                            //     .frame(height: 30)
+                            // Верхний Spacer только для режима списка задач
+                            Spacer()
+                                .frame(height: 20)
                             
                             TaskListView(
                                 viewModel: listViewModel,
@@ -74,7 +72,9 @@ struct ClockViewIOS: View {
                         }
                         .transition(.opacity)
                     } else {
-                        // Показываем циферблат
+                        // Показываем циферблат - поднимаем на 20 пикселей выше центра
+                        Spacer()
+                        
                         ZStack {
                             // Заменяем RingPlanner на модифицированную версию без удаления задачи
                             RingPlanner(
@@ -103,9 +103,11 @@ struct ClockViewIOS: View {
                                 )
                             }
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .offset(y: -50) // Сдвигаем циферблат на 20 пикселей вверх
+                        
+                        Spacer()
                     }
-
-                    Spacer()
                 }
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -151,18 +153,6 @@ struct ClockViewIOS: View {
                     viewModel: viewModel,
                     isPresented: $viewModel.showingCategoryEditor
                 )
-            }
-            .fullScreenCover(isPresented: $viewModel.showingAddTask) {
-                // При открытии формы добавления задачи, передаем выбранную категорию
-                if let selectedCategory = viewModel.selectedCategory {
-                    FormTaskView(viewModel: listViewModel, onDismiss: {
-                        viewModel.showingAddTask = false
-                    })
-                    .onAppear {
-                        // Убедимся, что категория правильно передана
-                        listViewModel.selectedCategory = selectedCategory
-                    }
-                }
             }
             // 3. Новый .fullScreenCover
             .fullScreenCover(isPresented: $showingNewSettings) {

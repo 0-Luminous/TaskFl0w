@@ -58,14 +58,6 @@ class ToDoPresenter: ToDoPresenterProtocol {
         interactor?.deleteItem(id: id)
     }
 
-    func addItem(title: String) {
-        interactor?.addItem(title: title)
-    }
-
-    func addItemWithCategory(title: String, category: TaskCategoryModel) {
-        interactor?.addItemWithCategory(title: title, category: category)
-    }
-
     func editItem(id: UUID, title: String) {
         interactor?.editItem(id: id, title: title)
     }
@@ -91,5 +83,13 @@ class ToDoPresenter: ToDoPresenterProtocol {
     func didArchiveTasks() {
         // После архивации обновляем список задач
         refreshItems()
+    }
+
+    func addItem(title: String, priority: TaskPriority) {
+        interactor?.addItem(title: title)
+    }
+
+    func addItemWithCategory(title: String, category: TaskCategoryModel, priority: TaskPriority) {
+        interactor?.addItemWithCategory(title: title, category: category)
     }
 }

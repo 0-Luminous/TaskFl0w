@@ -70,7 +70,7 @@ struct TasksFromToDoListView: View {
         }
     }
     
-    // Компонент для отображения одной категории (перенесено из CategoryTaskGroupView)
+    // Компонент для отображения одной категории
     private struct CategoryView: View {
         let category: TaskCategoryModel
         let todoTasks: [ToDoItem]
@@ -129,8 +129,19 @@ struct TasksFromToDoListView: View {
                             .padding(.top, 5)
                     }
                     
-                    // Отображаем все задачи вместо только активных
-                    ForEach(todoTasks) { task in
+                    // Сортируем задачи: сначала по статусу завершения, затем по приоритету
+                    let sortedTasks = todoTasks.sorted { (task1, task2) -> Bool in
+                        // Сначала незавершенные задачи
+                        if task1.isCompleted != task2.isCompleted {
+                            return !task1.isCompleted
+                        }
+                        
+                        // Потом по приоритету от высокого к низкому
+                        return task1.priority.rawValue > task2.priority.rawValue
+                    }
+                    
+                    // Отображаем отсортированные задачи
+                    ForEach(sortedTasks) { task in
                         ToDoTaskRow(task: task, categoryColor: category.color)
                     }
                 }
@@ -182,6 +193,14 @@ struct TasksFromToDoListView: View {
     private func getFilteredItemsForDate(_ date: Date) -> [ToDoItem] {
         return listViewModel.items.filter { item in
             Calendar.current.isDate(item.date, inSameDayAs: date)
+        }.sorted { (item1, item2) -> Bool in
+            // Сначала приоритизируем незавершенные задачи
+            if item1.isCompleted != item2.isCompleted {
+                return !item1.isCompleted
+            }
+            
+            // Затем сортируем по приоритету (от высокого к низкому)
+            return item1.priority.rawValue > item2.priority.rawValue
         }
     }
 }

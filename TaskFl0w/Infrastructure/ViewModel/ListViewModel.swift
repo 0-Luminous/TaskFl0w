@@ -59,18 +59,36 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
         }
     }
     
-    // Функция для сохранения новой задачи
-    func saveNewTask(title: String) {
+    // Функция для сохранения новой задачи с приоритетом
+    func saveNewTask(title: String, priority: TaskPriority) {
         if !title.isEmpty {
             if let category = selectedCategory {
                 presenter?.addItemWithCategory(
                     title: title,
-                    category: category
+                    category: category,
+                    priority: priority
                 )
+                // Находим только что созданную задачу и обновляем приоритет
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self.refreshData() // Обновляем данные, чтобы получить актуальный список задач
+                    let newItems = self.items.filter { $0.title == title && !$0.isCompleted }
+                    if let newestItem = newItems.sorted(by: { $0.date > $1.date }).first {
+                        self.presenter?.changePriority(id: newestItem.id, priority: priority)
+                    }
+                }
             } else {
                 presenter?.addItem(
-                    title: title
+                    title: title,
+                    priority: priority
                 )
+                // Находим только что созданную задачу и обновляем приоритет
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self.refreshData() // Обновляем данные, чтобы получить актуальный список задач
+                    let newItems = self.items.filter { $0.title == title && !$0.isCompleted }
+                    if let newestItem = newItems.sorted(by: { $0.date > $1.date }).first {
+                        self.presenter?.changePriority(id: newestItem.id, priority: priority)
+                    }
+                }
             }
         }
     }

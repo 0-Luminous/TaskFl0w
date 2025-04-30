@@ -20,8 +20,8 @@ protocol ToDoPresenterProtocol: AnyObject {
     // Добавим методы для взаимодействия с View
     func toggleItem(id: UUID)
     func deleteItem(id: UUID)
-    func addItem(title: String)
-    func addItemWithCategory(title: String, category: TaskCategoryModel)
+    func addItem(title: String, priority: TaskPriority)
+    func addItemWithCategory(title: String, category: TaskCategoryModel, priority: TaskPriority)
     func changePriority(id: UUID, priority: TaskPriority)
 
     // Новые методы для контекстного меню

@@ -19,6 +19,7 @@ struct TaskListView: View {
     @State private var isKeyboardVisible = false
     @FocusState private var isNewTaskFocused: Bool
     @State private var showingPrioritySheet = false
+    @State private var newTaskPriority: TaskPriority = .none
     
     // Добавляем ID для прокрутки к началу списка
     private let topID = "top_of_list"
@@ -61,9 +62,11 @@ struct TaskListView: View {
                                 NewTaskInput(
                                     newTaskTitle: $newTaskTitle,
                                     isNewTaskFocused: _isNewTaskFocused,
+                                    selectedPriority: $newTaskPriority,
                                     onSave: {
-                                        viewModel.saveNewTask(title: newTaskTitle)
+                                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
                                         newTaskTitle = ""
+                                        newTaskPriority = .none
                                         isAddingNewTask = false
                                         isNewTaskFocused = false
                                     }
@@ -163,53 +166,83 @@ struct TaskListView: View {
                 }
 
                 // Перемещаем BottomBar на уровень ZStack для изменения порядка слоев
-                if !isSearchActive && !isAddingNewTask && !isKeyboardVisible {
-                    VStack {
-                        Spacer()
-                        BottomBar(
-                            onAddTap: {
-                                // Убедимся, что выбранная категория установлена перед открытием формы
-                                if let selectedCategory = selectedCategory {
-                                    viewModel.selectedCategory = selectedCategory
-                                }
-                                // Вместо открытия формы, показываем строку для новой задачи
-                                isAddingNewTask = true
-                                // Устанавливаем фокус с небольшой задержкой
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    isNewTaskFocused = true
-                                }
-                            },
-                            isSelectionMode: $viewModel.isSelectionMode,
-                            selectedTasks: $viewModel.selectedTasks,
-                            onDeleteSelectedTasks: {
-                                viewModel.deleteSelectedTasks()
-                            },
-                            onChangePriorityForSelectedTasks: {
-                                // Отображаем меню выбора приоритета
-                                showingPrioritySheet = true
-                            },
-                            onArchiveTapped: {
-                                // Переключаем режим отображения выполненных задач
-                                viewModel.showCompletedTasksOnly.toggle()
-                            },
-                            onUnarchiveSelectedTasks: {
-                                viewModel.unarchiveSelectedTasks()
-                            },
-                            showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
-                        )
-                        .transition(.move(edge: .bottom))
-                        .padding(.bottom, 50)
+                if !isSearchActive && !isKeyboardVisible {
+                    // Для стандартной панели используем существующую реализацию
+                    if !isAddingNewTask {
+                        VStack {
+                            Spacer()
+                            BottomBar(
+                                onAddTap: {
+                                    // Убедимся, что выбранная категория установлена перед открытием формы
+                                    if let selectedCategory = selectedCategory {
+                                        viewModel.selectedCategory = selectedCategory
+                                    }
+                                    // Вместо открытия формы, показываем строку для новой задачи
+                                    isAddingNewTask = true
+                                    // Устанавливаем фокус с небольшой задержкой
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        isNewTaskFocused = true
+                                    }
+                                },
+                                isSelectionMode: $viewModel.isSelectionMode,
+                                selectedTasks: $viewModel.selectedTasks,
+                                onDeleteSelectedTasks: {
+                                    viewModel.deleteSelectedTasks()
+                                },
+                                onChangePriorityForSelectedTasks: {
+                                    // Отображаем меню выбора приоритета
+                                    showingPrioritySheet = true
+                                },
+                                onArchiveTapped: {
+                                    // Переключаем режим отображения выполненных задач
+                                    viewModel.showCompletedTasksOnly.toggle()
+                                },
+                                onUnarchiveSelectedTasks: {
+                                    viewModel.unarchiveSelectedTasks()
+                                },
+                                showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
+                            )
+                            .transition(.move(edge: .bottom))
+                            .padding(.bottom, 50)
+                        }
                     }
+                }
+
+                // Панель выбора приоритета при создании новой задачи
+                // Размещаем её в отдельном ZStack слое для лучшего позиционирования
+                if isAddingNewTask {
+                    VStack {
+                        // Размещаем панель примерно на середине экрана
+                        Spacer().frame(height: UIScreen.main.bounds.height * 0.28)
+                        
+                        NewTaskPriorityBar(
+                            selectedPriority: $newTaskPriority,
+                            onSave: {
+                                if !newTaskTitle.isEmpty {
+                                    viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                                    newTaskTitle = ""
+                                    newTaskPriority = .none
+                                    isAddingNewTask = false
+                                    isNewTaskFocused = false
+                                }
+                            },
+                            onCancel: {
+                                newTaskTitle = ""
+                                newTaskPriority = .none
+                                isAddingNewTask = false
+                                isNewTaskFocused = false
+                            }
+                        )
+                        .transition(.scale)
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
                 }
             }
             .scrollContentBackground(.hidden)
             .background{
                 Color(red: 0.098, green: 0.098, blue: 0.098)
-            }
-            .fullScreenCover(item: $viewModel.editingItem) { item in
-                FormTaskView(viewModel: viewModel, item: item, onDismiss: {
-                    viewModel.editingItem = nil
-                })
             }
             .actionSheet(isPresented: $showingPrioritySheet) {
                 ActionSheet(
