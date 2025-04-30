@@ -12,10 +12,9 @@ struct ArchiveView: View {
         VStack(spacing: 0) {
             Rectangle()
                 .fill(Color.clear)
-                .frame(height: 8) // Небольшой отступ сверху
+                .frame(height: 50) // Небольшой отступ сверху
             
             HStack {
-                Spacer()
                 Image(systemName: "archivebox.fill")
                     .foregroundColor(.blue)
                     .font(.system(size: 16))
@@ -23,10 +22,18 @@ struct ArchiveView: View {
                 Text("Архив выполненных задач")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white)
-                Spacer()
             }
             .padding(.horizontal, 16)
             .padding(.top, 10)
+            .padding(.bottom, 10)
+            .background {
+                // Размытый фон
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .environment(\.colorScheme, .dark)
+                    .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
+            }
+            .padding(.horizontal, 20)
         }
     }
     

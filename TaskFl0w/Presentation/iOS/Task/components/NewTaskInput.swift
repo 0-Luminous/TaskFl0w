@@ -13,7 +13,7 @@ struct NewTaskInput: View {
     var onSave: () -> Void
     
     var body: some View {
-        HStack {
+        HStack(alignment: .center) {
             TextField("Новая задача", text: $newTaskTitle, axis: .vertical)
                 .foregroundColor(.white)
                 .lineLimit(3) // Разрешить до 3 строк
@@ -25,6 +25,8 @@ struct NewTaskInput: View {
                 .keyboardType(.default)
                 .autocapitalization(.sentences)
                 .disableAutocorrection(false)
+                .padding(.leading, 5) // Добавляем отступ слева 5 пикселей
+                .padding(.vertical, 8) // Добавляем вертикальный отступ
                 // Специальный модификатор для обработки ввода
                 .onChange(of: newTaskTitle) { oldValue, newValue in
                     // Если в тексте есть символ новой строки, значит была нажата кнопка Return
@@ -35,6 +37,7 @@ struct NewTaskInput: View {
                         onSave()
                     }
                 }
+                .fixedSize(horizontal: false, vertical: true) // Позволяет расширяться по вертикали
         }
         .padding(.horizontal, 10)
         .listRowBackground(
@@ -43,6 +46,7 @@ struct NewTaskInput: View {
                 .padding(.vertical, 5)
                 .padding(.horizontal, 8)
         )
+        .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0)) // Добавляем верхний и нижний отступы для строки
         .listRowSeparator(.hidden)
     }
 }

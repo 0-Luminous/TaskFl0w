@@ -31,11 +31,6 @@ struct TaskListView: View {
                     // Добавляем отступ сверху, чтобы всё содержимое было ниже на 10
                     Spacer()
                         .frame(height: 10)
-                        
-                    // Добавляем индикатор режима архива
-                    if viewModel.showCompletedTasksOnly {
-                        ArchiveView()
-                    }
                     
                     // Добавляем ScrollViewReader для управления прокруткой
                     ScrollViewReader { scrollProxy in
@@ -48,13 +43,21 @@ struct TaskListView: View {
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)
                             
-
+                            // Добавляем отступ сверху 60 когда отображается архив
+                            if viewModel.showCompletedTasksOnly {
+                                Color.clear
+                                .frame(height: 40)
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                            }
+                            
                             // Показываем поле для новой задачи, если isAddingNewTask = true
                             if isAddingNewTask {
                                 Spacer()
                                     .frame(height: 40)
                                     .listRowSeparator(.hidden)
                                     .listRowBackground(Color.clear)
+                                
                                 NewTaskInput(
                                     newTaskTitle: $newTaskTitle,
                                     isNewTaskFocused: _isNewTaskFocused,
@@ -143,6 +146,14 @@ struct TaskListView: View {
                                 }
                             }
                         }
+                    }
+                }
+                
+                // Добавляем индикатор режима архива на уровне ZStack перед SearchBar
+                if viewModel.showCompletedTasksOnly {
+                    VStack {
+                        ArchiveView()
+                        Spacer()
                     }
                 }
                 
