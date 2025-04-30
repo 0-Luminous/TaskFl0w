@@ -17,23 +17,8 @@ struct ClockFaceEditorViewIOS: View {
             themeManager.setTheme(isDarkMode)
         }
     }
-    @AppStorage("lightModeClockFaceColor") private var lightModeClockFaceColor: String = Color.white
-        .toHex()
-    @AppStorage("darkModeClockFaceColor") private var darkModeClockFaceColor: String = Color.black
-        .toHex()
-    @AppStorage("lightModeMarkersColor") private var lightModeMarkersColor: String = Color.gray
-        .toHex()
-    @AppStorage("darkModeMarkersColor") private var darkModeMarkersColor: String = Color.gray
-        .toHex()
     @AppStorage("showHourNumbers") private var showHourNumbers: Bool = true
     @AppStorage("numberInterval") private var numberInterval: Int = 1
-    @AppStorage("markersWidth") private var markersWidth: Double = 2.0
-    @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray
-        .opacity(0.3).toHex()
-    @AppStorage("darkModeOuterRingColor") private var darkModeOuterRingColor: String = Color.gray
-        .opacity(0.3).toHex()
-    @AppStorage("markersOffset") private var markersOffset: Double = 0.0
-    @AppStorage("numbersSize") private var numbersSize: Double = 16.0
 
     @StateObject private var viewModel = ClockViewModel()
     @StateObject private var markersViewModel = ClockMarkersViewModel()
@@ -69,8 +54,6 @@ struct ClockFaceEditorViewIOS: View {
                 isDarkMode = themeManager.isDarkMode
                 viewModel.isDarkMode = themeManager.isDarkMode
                 markersViewModel.isDarkMode = themeManager.isDarkMode
-                // Принудительно обновляем UI для правильного отображения
-                updateColorsForCurrentTheme()
             }
         }
         // Применяем цветовую схему для всего представления
@@ -81,14 +64,6 @@ struct ClockFaceEditorViewIOS: View {
 
     private var clockPreviewSection: some View {
         ZStack {
-            // Внешнее кольцо
-            Circle()
-                .stroke(currentOuterRingColor, lineWidth: 20)
-                .frame(
-                    width: UIScreen.main.bounds.width * 0.8,
-                    height: UIScreen.main.bounds.width * 0.8
-                )
-
             // Сам циферблат
             GlobleClockFaceViewIOS(
                 currentDate: viewModel.selectedDate,
@@ -105,34 +80,18 @@ struct ClockFaceEditorViewIOS: View {
         .padding(.vertical, 20)
         // Используем текущую тему для предпросмотра, а не сохраненное значение
         .environment(\.colorScheme, themeManager.isDarkMode ? .dark : .light)
-        .onAppear(perform: setupInitialValues)
+        .onAppear {
+            markersViewModel.showHourNumbers = showHourNumbers
+            markersViewModel.numberInterval = numberInterval
+        }
         .onChange(of: showHourNumbers) { _, newValue in
             markersViewModel.showHourNumbers = newValue
-        }
-        .onChange(of: markersWidth) { _, newValue in
-            markersViewModel.markersWidth = newValue
-        }
-        .onChange(of: markersOffset) { _, newValue in
-            markersViewModel.markersOffset = newValue
-        }
-        .onChange(of: numbersSize) { _, newValue in
-            markersViewModel.numbersSize = newValue
-        }
-        .onChange(of: lightModeMarkersColor) { _, newValue in
-            markersViewModel.lightModeMarkersColor = newValue
-            updateMarkersViewModel()
-        }
-        .onChange(of: darkModeMarkersColor) { _, newValue in
-            markersViewModel.darkModeMarkersColor = newValue
-            updateMarkersViewModel()
         }
         .onChange(of: themeManager.isDarkMode) { _, newValue in
             // Немедленно обновляем предпросмотр при изменении темы
             markersViewModel.isDarkMode = newValue
             viewModel.isDarkMode = newValue
             isDarkMode = newValue
-            updateMarkersViewModel()
-            updateColorsForCurrentTheme()
         }
     }
 
@@ -141,10 +100,7 @@ struct ClockFaceEditorViewIOS: View {
             // Секция стиля циферблата
             clockStyleSection
 
-            // Секция цветов
-            colorsSection
-
-            // Секция маркеров
+            // Секция маркеров (оставляем только интервал отображения цифр)
             markersSection
         }
     }
@@ -188,104 +144,11 @@ struct ClockFaceEditorViewIOS: View {
                             
                             // Применяем эффект вибрации
                             feedbackGenerator.impactOccurred()
-                            
-                            // Принудительно обновляем UI для правильного отображения
-                            updateColorsForCurrentTheme()
                         }
                     }
                 }
             ))
         }
-    }
-
-    private var colorsSection: some View {
-        Section(header: Text("ЦВЕТА")) {
-            clockFaceColorPicker
-            outerRingColorPicker
-            markersColorPicker
-        }
-    }
-
-    private var clockFaceColorPicker: some View {
-        ColorPicker(
-            "Цвет циферблата",
-            selection: Binding(
-                get: {
-                    Color(
-                        hex: isDarkMode
-                            ? darkModeClockFaceColor : lightModeClockFaceColor)
-                        ?? (isDarkMode ? .black : .white)
-                },
-                set: { newColor in
-                    if isDarkMode {
-                        darkModeClockFaceColor = newColor.toHex()
-                        // Обновляем цвет в ThemeManager
-                        themeManager.updateColor(newColor, for: ThemeManager.Constants.darkModeClockFaceColorKey)
-                    } else {
-                        lightModeClockFaceColor = newColor.toHex()
-                        // Обновляем цвет в ThemeManager
-                        themeManager.updateColor(newColor, for: ThemeManager.Constants.lightModeClockFaceColorKey)
-                    }
-                    // Принудительно обновляем UI
-                    updateColorsForCurrentTheme()
-                }
-            ))
-    }
-
-    private var outerRingColorPicker: some View {
-        ColorPicker(
-            "Цвет внешнего круга",
-            selection: Binding(
-                get: {
-                    Color(
-                        hex: isDarkMode
-                            ? darkModeOuterRingColor : lightModeOuterRingColor)
-                        ?? .gray.opacity(0.3)
-                },
-                set: { newColor in
-                    if isDarkMode {
-                        darkModeOuterRingColor = newColor.toHex()
-                        // Обновляем цвет в ThemeManager
-                        themeManager.updateColor(newColor, for: ThemeManager.Constants.darkModeOuterRingColorKey)
-                    } else {
-                        lightModeOuterRingColor = newColor.toHex()
-                        // Обновляем цвет в ThemeManager
-                        themeManager.updateColor(newColor, for: ThemeManager.Constants.lightModeOuterRingColorKey)
-                    }
-                    // Принудительно обновляем UI
-                    updateColorsForCurrentTheme()
-                }
-            ))
-    }
-
-    private var markersColorPicker: some View {
-        ColorPicker(
-            "Цвет маркеров",
-            selection: Binding(
-                get: {
-                    Color(
-                        hex: isDarkMode
-                            ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray
-                },
-                set: { newColor in
-                    if isDarkMode {
-                        darkModeMarkersColor = newColor.toHex()
-                        // Обновляем цвет в ThemeManager
-                        themeManager.updateColor(newColor, for: ThemeManager.Constants.darkModeMarkersColorKey)
-                        // Обновляем markersViewModel
-                        markersViewModel.darkModeMarkersColor = newColor.toHex()
-                    } else {
-                        lightModeMarkersColor = newColor.toHex()
-                        // Обновляем цвет в ThemeManager
-                        themeManager.updateColor(newColor, for: ThemeManager.Constants.lightModeMarkersColorKey)
-                        // Обновляем markersViewModel
-                        markersViewModel.lightModeMarkersColor = newColor.toHex()
-                    }
-                    // Принудительно обновляем UI
-                    updateColorsForCurrentTheme()
-                    updateMarkersViewModel()
-                }
-            ))
     }
 
     private var markersSection: some View {
@@ -294,14 +157,9 @@ struct ClockFaceEditorViewIOS: View {
 
             if showHourNumbers {
                 hourNumberIntervalPicker
-                numbersSizeSlider
             }
 
             zeroPositionSlider
-
-            markersWidthSlider
-
-            markersOffsetSlider
         }
     }
 
@@ -319,7 +177,6 @@ struct ClockFaceEditorViewIOS: View {
             .onChange(of: numberInterval) { oldValue, newValue in
                 feedbackGenerator.impactOccurred()
                 markersViewModel.numberInterval = newValue
-                updateMarkersViewModel()
             }
         }
         .padding(.vertical, 8)
@@ -353,141 +210,6 @@ struct ClockFaceEditorViewIOS: View {
                 .foregroundColor(.gray)
         }
         .padding(.vertical, 8)
-    }
-
-    private var numbersSizeSlider: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Размер цифр")
-            Slider(value: $numbersSize, in: 8...16, step: 1.0)
-                .onChange(of: numbersSize) { oldValue, newValue in
-                    feedbackGenerator.impactOccurred()
-                    
-                    // Обновляем значение в моделях представления
-                    markersViewModel.numbersSize = newValue
-                    viewModel.numbersSize = newValue
-                    
-                    // Принудительно обновляем UI для немедленного отражения изменений
-                    updateMarkersViewModel()
-                }
-            HStack {
-                Text("8")
-                    .font(.system(size: 8))
-                    .foregroundColor(.gray)
-                Spacer()
-                Text("16")
-                    .font(.system(size: 16))
-                    .foregroundColor(.gray)
-            }
-        }
-        .padding(.vertical, 8)
-    }
-
-    private var markersWidthSlider: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Толщина маркеров")
-            Slider(value: $markersWidth, in: 1...4, step: 0.5)
-                .onChange(of: markersWidth) { oldValue, newValue in
-                    feedbackGenerator.impactOccurred()
-                }
-            HStack {
-                Text("Тонкие")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                Spacer()
-                Text("Жирные")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-        }
-        .padding(.vertical, 8)
-    }
-
-    private var markersOffsetSlider: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Отступ маркеров")
-            Slider(value: $markersOffset, in: 0...60, step: 5)
-                .onChange(of: markersOffset) { oldValue, newValue in
-                    feedbackGenerator.impactOccurred()
-                    
-                    // Обновляем ViewModel немедленно
-                    markersViewModel.markersOffset = newValue
-                    updateMarkersViewModel()
-                }
-            HStack {
-                Text("Ближе")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                Spacer()
-                Text("Дальше")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-        }
-        .padding(.vertical, 8)
-    }
-
-    // MARK: - Helper Methods
-
-    private func setupInitialValues() {
-        // Инициализируем начальные значения
-        markersViewModel.showHourNumbers = showHourNumbers
-        markersViewModel.markersWidth = markersWidth
-        markersViewModel.markersOffset = markersOffset
-        markersViewModel.numbersSize = numbersSize
-        markersViewModel.lightModeMarkersColor = lightModeMarkersColor
-        markersViewModel.darkModeMarkersColor = darkModeMarkersColor
-        markersViewModel.isDarkMode = isDarkMode
-        markersViewModel.numberInterval = numberInterval
-        
-        // Синхронизируем значения между двумя viewmodel
-        viewModel.markersViewModel.numbersSize = numbersSize
-        viewModel.numbersSize = numbersSize
-        
-        // Принудительно обновляем представление
-        updateMarkersViewModel()
-    }
-
-    private var currentClockFaceColor: Color {
-        let hexColor = isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
-        return Color(hex: hexColor) ?? (isDarkMode ? .black : .white)
-    }
-
-    private var currentOuterRingColor: Color {
-        let hexColor = isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
-        return Color(hex: hexColor) ?? .gray.opacity(0.3)
-    }
-
-    private func updateMarkersViewModel() {
-        // Создаем временное обновление для принудительного обновления вида
-        // Этот небольшой трюк заставит SwiftUI перерисовать представление
-        DispatchQueue.main.async {
-            // Для более надежного обновления, меняем сразу несколько свойств
-            let tempSizeValue = markersViewModel.numbersSize
-            let tempWidthValue = markersViewModel.markersWidth
-            
-            // Немного меняем значения, вызывая обновление представления
-            markersViewModel.numbersSize = tempSizeValue + 0.01
-            markersViewModel.markersWidth = tempWidthValue + 0.01
-            
-            // Восстанавливаем исходные значения
-            DispatchQueue.main.async {
-                markersViewModel.numbersSize = tempSizeValue
-                markersViewModel.markersWidth = tempWidthValue
-                
-                // Дополнительно принудительно обновляем модель
-                markersViewModel.objectWillChange.send()
-            }
-        }
-    }
-
-    // Дополнительный метод для принудительного обновления цветов
-    private func updateColorsForCurrentTheme() {
-        DispatchQueue.main.async {
-            // Принудительно вызываем обновления UI
-            viewModel.objectWillChange.send()
-            markersViewModel.objectWillChange.send()
-            themeManager.objectWillChange.send()
-        }
     }
 }
 
