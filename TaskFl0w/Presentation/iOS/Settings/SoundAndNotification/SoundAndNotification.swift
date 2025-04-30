@@ -1,7 +1,9 @@
 import SwiftUI
 import UIKit
+import UserNotifications
 
 struct SoundAndNotification: View {
+    @Environment(\.dismiss) private var dismiss
     @AppStorage("soundEnabled") private var soundEnabled = true
     @AppStorage("notificationsEnabled") private var notificationsEnabled = true
     @AppStorage("reminderTime") private var reminderTime = 5  // минут до начала задачи
@@ -118,6 +120,15 @@ struct SoundAndNotification: View {
             }
         }
         .navigationTitle("Звук и уведомления")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.backward")
+                    Text("Назад")
+                }
+            }
+        }
         .alert("Требуется разрешение", isPresented: $showingPermissionAlert) {
             Button("Настройки") {
                 openSettings()
@@ -158,7 +169,10 @@ struct SoundAndNotification: View {
     }
 
     private func sendTestNotification() {
-        guard notificationsEnabled else { return }
+        // Явно устанавливаем значение в UserDefaults, чтобы синхронизировать с интерфейсом
+        UserDefaults.standard.set(true, forKey: "notificationsEnabled")
+        
+        // Просто отправляем запрос на тестовое уведомление
         notificationService.sendTestNotification()
     }
 

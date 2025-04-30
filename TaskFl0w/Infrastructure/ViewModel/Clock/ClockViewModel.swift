@@ -191,6 +191,15 @@ final class ClockViewModel: ObservableObject {
         }
     }
 
+    // Добавляем сервис уведомлений
+    private let notificationService: NotificationServiceProtocol = NotificationService.shared
+    
+    // Для отслеживания текущей активной категории
+    private var currentActiveCategory: TaskCategoryModel?
+    
+    // Флаг для проверки, разрешены ли уведомления
+    @AppStorage("notificationsEnabled") private var notificationsEnabled = true
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState
@@ -383,6 +392,42 @@ final class ClockViewModel: ObservableObject {
         // Если выбранная дата совпадает с сегодня, тогда обновляем "currentDate" каждую секунду
         if Calendar.current.isDate(selectedDate, inSameDayAs: Date()) {
             currentDate = Date()
+            
+            // Проверяем, изменилась ли активная категория
+            checkForCategoryChange()
+        }
+    }
+
+    // Проверка изменения активной категории на циферблате
+    private func checkForCategoryChange() {
+        // Проверяем, включены ли уведомления
+        guard notificationsEnabled else { return }
+        
+        // Получаем текущие задачи на сегодня
+        let todayTasks = tasksForSelectedDate(tasks)
+        
+        // Ищем задачу, которая активна в данный момент времени
+        let now = Date()
+        let activeTask = todayTasks.first { task in
+            task.startTime <= now && task.endTime > now
+        }
+        
+        // Получаем категорию текущей активной задачи
+        let newActiveCategory = activeTask?.category
+        
+        // Если категория изменилась, отправляем уведомление
+        if let newCategory = newActiveCategory, newCategory != currentActiveCategory {
+            print("Обнаружена новая активная категория: \(newCategory.rawValue)")
+            
+            // Сохраняем новую активную категорию
+            currentActiveCategory = newCategory
+            
+            // Отправляем уведомление о начале новой категории
+            notificationService.sendCategoryStartNotification(category: newCategory)
+        } else if newActiveCategory == nil && currentActiveCategory != nil {
+            print("Больше нет активной категории")
+            // Если больше нет активной категории, сбрасываем текущую
+            currentActiveCategory = nil
         }
     }
 

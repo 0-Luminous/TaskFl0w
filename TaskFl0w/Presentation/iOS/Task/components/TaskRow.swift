@@ -26,8 +26,8 @@ struct TaskRow: View {
                         Button(action: {
                             toggleSelection()
                         }) {
-                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                .foregroundColor(isSelected ? categoryColor : .white)
+                            Image(systemName: isSelected ? "checkmark.circle.fill" : (item.isCompleted ? "checkmark.circle" : "circle"))
+                                .foregroundColor(isSelected ? categoryColor : (item.isCompleted ? .black : .white))
                                 .font(.system(size: 22))
                         }
                     } else {

@@ -61,8 +61,9 @@ struct PersonalizationViewIOS: View {
             }
         }
         .fullScreenCover(isPresented: $showingClockEditor) {
-            ClockFaceEditorViewIOS()
-            
+            NavigationView {
+                SoundAndNotification()
+            }
         }
         .fullScreenCover(isPresented: $showingClockFaceEditor) {
             ClockEditorView(

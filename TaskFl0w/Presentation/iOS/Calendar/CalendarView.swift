@@ -94,10 +94,23 @@ struct CalendarView: View {
                         // Обновляем UI циферблата
                         viewModel.objectWillChange.send()
                         
+                        // Получаем все задачи из SharedState
+                        let allTasks = viewModel.sharedState.tasks
+                        
                         // Фильтруем задачи на выбранную дату
-                        viewModel.tasks = viewModel.sharedState.tasks.filter { task in
+                        let tasksOnSelectedDate = allTasks.filter { task in
                             Calendar.current.isDate(task.startTime, inSameDayAs: temporaryDate)
                         }
+                        
+                        // Получаем незавершенные задачи с предыдущих дней
+                        let incompleteTasksFromPreviousDays = allTasks.filter { task in
+                            // Проверяем, что задача не выполнена и относится к дате до выбранной
+                            !task.isCompleted && 
+                            Calendar.current.compare(task.startTime, to: temporaryDate, toGranularity: .day) == .orderedAscending
+                        }
+                        
+                        // Объединяем задачи текущего дня и невыполненные с предыдущих дней
+                        viewModel.tasks = tasksOnSelectedDate + incompleteTasksFromPreviousDays
                         
                         // Обновляем также состояние clockState
                         viewModel.clockState.selectedDate = temporaryDate
@@ -128,9 +141,24 @@ struct CalendarView: View {
     
     // Функция для обновления отфильтрованных задач циферблата
     private func updateFilteredClockTasks() {
-        // Фильтруем все задачи из SharedState, а не только viewModel.tasks
-        filteredClockTasks = viewModel.sharedState.tasks.filter { task in
+        // Получаем все задачи из SharedState
+        let allTasks = viewModel.sharedState.tasks
+        
+        // Фильтруем задачи на выбранную дату
+        let tasksOnSelectedDate = allTasks.filter { task in
             Calendar.current.isDate(task.startTime, inSameDayAs: temporaryDate)
         }
+        
+        // Получаем незавершенные задачи с предыдущих дней
+        let incompleteTasksFromPreviousDays = allTasks.filter { task in
+            // Проверяем, что:
+            // 1. Задача не выполнена
+            // 2. Задача относится к дате ДО выбранной даты
+            !task.isCompleted && 
+            Calendar.current.compare(task.startTime, to: temporaryDate, toGranularity: .day) == .orderedAscending
+        }
+        
+        // Объединяем задачи текущего дня и невыполненные с предыдущих дней
+        filteredClockTasks = tasksOnSelectedDate + incompleteTasksFromPreviousDays
     }
 }
