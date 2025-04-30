@@ -50,17 +50,27 @@ struct ClockViewIOS: View {
 
                     if viewModel.selectedCategory != nil {
                         // Показываем список задач для выбранной категории
-                        TaskListView(
-                            viewModel: listViewModel,
-                            selectedCategory: viewModel.selectedCategory
-                        )
-                        .onAppear {
-                            // Обновляем выбранную категорию при появлении
-                            listViewModel.selectedCategory = viewModel.selectedCategory
-                        }
-                        .onChange(of: viewModel.selectedCategory) { oldValue, newValue in
-                            // Обновляем выбранную категорию при ее изменении
-                            listViewModel.selectedCategory = newValue
+                        VStack(spacing: 0) {
+                            // Добавляем отступ сверху
+                            // Spacer()
+                            //     .frame(height: 30)
+                            
+                            TaskListView(
+                                viewModel: listViewModel,
+                                selectedCategory: viewModel.selectedCategory
+                            )
+                            .onAppear {
+                                // Обновляем выбранную категорию при появлении
+                                listViewModel.selectedCategory = viewModel.selectedCategory
+                            }
+                            .onChange(of: viewModel.selectedCategory) { oldValue, newValue in
+                                // Обновляем выбранную категорию при ее изменении
+                                listViewModel.selectedCategory = newValue
+                            }
+                            
+                            // Добавляем отступ снизу
+                            Spacer()
+                                .frame(height: 50)
                         }
                         .transition(.opacity)
                     } else {
@@ -96,13 +106,6 @@ struct ClockViewIOS: View {
                     }
 
                     Spacer()
-
-                    // Набор категорий снизу - скрываем при активном поиске или при создании задачи
-                    if !isSearchActive && !isDockBarHidden {
-                        // Обновлено: используем DockBarIOS с DockBarViewModel
-                        DockBarIOS(viewModel: viewModel.dockBarViewModel)
-                        .transition(.move(edge: .bottom))
-                    }
                 }
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -128,6 +131,15 @@ struct ClockViewIOS: View {
                                 Image(systemName: "calendar")
                             }
                         }
+                    }
+                }
+                
+                // Набор категорий снизу - скрываем при активном поиске или при создании задачи
+                if !isSearchActive && !isDockBarHidden {
+                    VStack {
+                        Spacer()
+                        DockBarIOS(viewModel: viewModel.dockBarViewModel)
+                            .transition(.move(edge: .bottom))
                     }
                 }
             }

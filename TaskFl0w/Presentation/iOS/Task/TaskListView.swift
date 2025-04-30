@@ -34,7 +34,7 @@ struct TaskListView: View {
                     List {
                         // Пустой элемент для отступа под SearchBar
                         Color.clear
-                            .frame(height: 60)
+                            .frame(height: 10)
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                             
@@ -104,6 +104,12 @@ struct TaskListView: View {
                             }
                             .listRowSeparator(.hidden)
                         }
+                        
+                        // Добавляем пустой элемент для отступа снизу
+                        Color.clear
+                            .frame(height: 90)
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
                     }
                     .listStyle(GroupedListStyle())
                     .onAppear {
@@ -156,6 +162,7 @@ struct TaskListView: View {
                             showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
                         )
                         .transition(.move(edge: .bottom))
+                        .padding(.bottom, 50)
                     }
                 }
             }
