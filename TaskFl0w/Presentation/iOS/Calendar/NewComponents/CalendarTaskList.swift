@@ -118,8 +118,10 @@ struct TaskTimeline: View {
                 .padding(.bottom, 5)
                 
                 // Блоки задач по часам
-                ForEach(createTimeBlocks(), id: \.hour) { timeBlock in
-                    hourBlock(for: timeBlock)
+                VStack(spacing: 0) {
+                    ForEach(createTimeBlocks(), id: \.hour) { timeBlock in
+                        timeBlockView(for: timeBlock)
+                    }
                 }
                 
                 // Иконка луны внизу
@@ -138,10 +140,10 @@ struct TaskTimeline: View {
         }
     }
     
-    // Отображение блока часа с задачами
-    private func hourBlock(for timeBlock: TimeBlock) -> some View {
+    // Отображение блока часа с задачами - переименованный метод для ясности
+    private func timeBlockView(for timeBlock: TimeBlock) -> some View {
         VStack(spacing: 0) {
-            // Если есть отметка часа
+            // Если есть отметка часа, показываем большим текстом
             if timeBlock.showHourLabel {
                 ZStack {
                     // Метка часа
@@ -154,39 +156,76 @@ struct TaskTimeline: View {
                 }
             }
             
-            // Блоки задач для этого часа
-            VStack(spacing: 8) {
-                ForEach(timeBlock.tasks, id: \.id) { task in
-                    taskView(for: task)
+            // Создаем горизонтальный стек для линии времени и списка задач
+            HStack(alignment: .top, spacing: 0) {
+                // Левая колонка с индикаторами цвета и иконками
+                if !timeBlock.tasks.isEmpty {
+                    // Вертикальный стек цветных блоков
+                    VStack(spacing: 0) {
+                        ForEach(timeBlock.tasks, id: \.id) { task in
+                            // Цветной индикатор задачи с иконкой внутри
+                            ZStack {
+                                Rectangle()
+                                    .fill(getCategoryColor(for: task))
+                                    .frame(width: 30, height: getTaskHeight(for: task))
+                                    .cornerRadius(5)
+                                
+                                // Иконка категории
+                                Image(systemName: task.icon)
+                                    .foregroundColor(.white)
+                                    .font(.system(size: 14))
+                            }
+                        }
+                    }
                 }
+                
+                // Правая колонка с задачами
+                VStack(spacing: 8) {
+                    ForEach(timeBlock.tasks, id: \.id) { task in
+                        taskView(for: task)
+                    }
+                }
+                .padding(.leading, 15)
             }
-            .padding(.leading, 65)
             
             // Если есть индикатор текущего времени
             if timeBlock.showCurrentTime {
-                HStack(spacing: 5) {
+                HStack(alignment: .center, spacing: 5) {
+                    // Метка времени слева от линии
                     Text(formatTime(currentTime))
                         .font(.caption)
                         .foregroundColor(.pink)
                     
+                    // Горизонтальная линия, показывающая текущее время
                     Rectangle()
                         .fill(Color.pink)
                         .frame(height: 1)
                 }
                 .padding(.leading, 7)
+                .padding(.top, 5)
             }
+        }
+    }
+    
+    // Вычисление высоты блока задачи в зависимости от длительности
+    private func getTaskHeight(for task: TaskOnRing) -> CGFloat {
+        // Базовая высота для коротких задач
+        let baseHeight: CGFloat = 60
+        
+        // Определяем высоту в зависимости от длительности
+        let minutes = Int(task.duration / 60)
+        if minutes <= 15 {
+            return baseHeight
+        } else if minutes <= 30 {
+            return baseHeight * 1.5
+        } else {
+            return baseHeight * 2
         }
     }
     
     // Отображение задачи
     private func taskView(for task: TaskOnRing) -> some View {
         HStack(spacing: 0) {
-            // Цветной блок категории слева
-            Rectangle()
-                .fill(getCategoryColor(for: task))
-                .frame(width: 30)
-                .cornerRadius(5, corners: [.topLeft, .bottomLeft])
-            
             // Основное содержимое задачи
             VStack(alignment: .leading, spacing: 4) {
                 if task.isCompleted {
@@ -272,7 +311,7 @@ struct TaskTimeline: View {
     // Создаем структуры блоков времени для отображения
     private func createTimeBlocks() -> [TimeBlock] {
         let calendar = Calendar.current
-        let now = Date()
+        let now = currentTime
         let currentHour = calendar.component(.hour, from: now)
         
         // Группируем задачи по часам
@@ -312,24 +351,6 @@ struct TimeBlock {
     let tasks: [TaskOnRing]
     let showHourLabel: Bool
     let showCurrentTime: Bool
-}
-
-// Расширение для создания скругленных углов только с определенных сторон
-extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-        clipShape(RoundedCornerShape(radius: radius, corners: corners))
-    }
-}
-
-struct RoundedCornerShape: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(roundedRect: rect, byRoundingCorners: corners, 
-                                cornerRadii: CGSize(width: radius, height: radius))
-        return Path(path.cgPath)
-    }
 }
 
 struct TaskTimeline_Previews: PreviewProvider {
