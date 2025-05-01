@@ -10,6 +10,8 @@ import SwiftUI
 struct TaskTimeline: View {
     let tasks: [TaskOnRing]
     let selectedDate: Date
+    @ObservedObject var listViewModel: ListViewModel
+    let categoryManager: CategoryManagementProtocol
     
     // Вычисляем задачи на выбранную дату, сортированные по времени начала
     private var filteredTasks: [TaskOnRing] {
@@ -181,9 +183,16 @@ struct TaskTimeline: View {
                 
                 // Правая колонка с задачами, сгруппированными по категориям
                 VStack(spacing: 15) {
-                    // Группируем задачи по категориям
+                    // Группируем задачи по категориям и используем CategoryTaskView
                     ForEach(groupTasksByCategory(timeBlock.tasks), id: \.key) { category, tasksInCategory in
-                        categoryTasksView(category: category, tasks: tasksInCategory)
+                        if let firstTask = tasksInCategory.first {
+                            TasksFromToDoListView(
+                                listViewModel: listViewModel,
+                                selectedDate: selectedDate,
+                                categoryManager: categoryManager,
+                                selectedCategoryID: firstTask.category.id
+                            )
+                        }
                     }
                 }
                 .padding(.leading, 15)
@@ -214,93 +223,30 @@ struct TaskTimeline: View {
         return grouped.sorted { $0.key < $1.key }
     }
     
-    // Отображение категории и ее задач
-    private func categoryTasksView(category: String, tasks: [TaskOnRing]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Заголовок категории
-            Text(category)
-                .font(.headline)
-                .foregroundColor(.white)
-                .padding(.bottom, 2)
-            
-            // Задачи в категории
-            ForEach(tasks, id: \.id) { task in
-                taskInCategoryView(for: task)
-            }
-        }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color.black.opacity(0.2))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-        )
-    }
-    
-    // Отображение задачи внутри категории
-    private func taskInCategoryView(for task: TaskOnRing) -> some View {
-        HStack {
-            // Время и продолжительность
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(formatTime(task.startTime)) – \(formatTime(task.endTime))")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                
-                Text("(\(formatDuration(task.duration)))")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-            
-            Spacer()
-            
-            // Индикатор завершения
-            checkboxView(isCompleted: task.isCompleted, color: getCategoryColor(for: task))
-        }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 6)
-                .fill(Color.black.opacity(0.1))
-        )
-    }
-    
     // Вычисление высоты блока задачи в зависимости от длительности
     private func getTaskHeight(for task: TaskOnRing) -> CGFloat {
-        // Базовая высота для задачи в 15 минут
-        let baseHeightFor15Min: CGFloat = 60
-        
-        // Рассчитываем высоту пропорционально длительности задачи
-        let minutes = Int(task.duration / 60)
-        
-        // Минимальная высота для очень коротких задач
-        let minHeight: CGFloat = 40
-        
-        // Коэффициент преобразования: каждые 15 минут = baseHeightFor15Min
-        let heightPerMinute = baseHeightFor15Min / 15
-        
-        return max(CGFloat(minutes) * heightPerMinute, minHeight)
+    // Получаем задачи из ToDoList для этой категории
+    let todoTasks = listViewModel.items.filter { item in
+        Calendar.current.isDate(item.date, inSameDayAs: selectedDate) && 
+        item.categoryID == task.category.id
     }
     
-    // Чекбокс для отображения статуса завершения
-    private func checkboxView(isCompleted: Bool, color: Color) -> some View {
-        ZStack {
-            if isCompleted {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(color)
-                    .frame(width: 20, height: 20)
-                
-                Image(systemName: "checkmark")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white)
-            } else {
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(color, lineWidth: 2)
-                    .frame(width: 20, height: 20)
-            }
-        }
+    if todoTasks.isEmpty {
+        // Минимальная высота если нет задач (пустой блок с сообщением "Нет задач")
+        return 100
+    } else {
+        // Базовая высота для категории (заголовок, отступы)
+        let baseHeight: CGFloat = 60 // Заголовок + отступы
+        
+        // Высота одной строки задачи (ToDoTaskRow)
+        let taskRowHeight: CGFloat = 45 // Включая содержимое и отступы
+        
+        // Общая высота всех задач
+        let tasksHeight = CGFloat(todoTasks.count) * taskRowHeight
+        
+        return baseHeight + tasksHeight
     }
+}
     
     // Получение цвета категории задачи (с немного увеличенной яркостью для соответствия дизайну)
     private func getCategoryColor(for task: TaskOnRing) -> Color {
@@ -365,6 +311,13 @@ struct TaskTimeline: View {
         
         return blocks
     }
+    
+    // Добавляем метод для получения задач из ToDo-списка
+    private func getAllTodoTasks() -> [ToDoItem] {
+        return listViewModel.items.filter { item in
+            Calendar.current.isDate(item.date, inSameDayAs: selectedDate)
+        }
+    }
 }
 
 // Структура для блока времени
@@ -414,9 +367,18 @@ struct TaskTimeline_Previews: PreviewProvider {
         
         let exampleTasks = [workoutTask, showerTask, breakfastTask, emailTask]
         
+        // Создаем необходимый CategoryManagement для превью
+        let context = PersistenceController.shared.container.viewContext
+        let categoryManager = CategoryManagement(context: context)
+        
         ZStack {
             Color.black.edgesIgnoringSafeArea(.all)
-            TaskTimeline(tasks: exampleTasks, selectedDate: now)
+            TaskTimeline(
+                tasks: exampleTasks, 
+                selectedDate: now,
+                listViewModel: ListViewModel(),
+                categoryManager: categoryManager
+            )
         }
     }
 }

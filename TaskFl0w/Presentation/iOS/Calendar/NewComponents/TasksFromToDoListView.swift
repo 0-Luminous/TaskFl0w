@@ -12,60 +12,38 @@ struct TasksFromToDoListView: View {
     @ObservedObject var listViewModel: ListViewModel
     let selectedDate: Date
     let categoryManager: CategoryManagementProtocol
-    // Добавляем доступ к задачам на циферблате
-    var clockTasks: [TaskOnRing] = []
+    let selectedCategoryID: UUID
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Получаем все задачи из списка на выбранную дату
             let items = getFilteredItemsForDate(selectedDate)
             
-            // Получаем задачи из циферблата на выбранную дату
-            let filteredClockTasks = clockTasks.filter { task in
-                Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
-            }
+            // Отфильтровываем только задачи с нужной категорией
+            let categoryTasks = items.filter { $0.categoryID == selectedCategoryID }
             
-            // Получаем уникальные категории из задач на циферблате И из ToDo списка
-            let categoriesFromToDo = items.compactMap { $0.categoryID }
-                .reduce(into: Set<UUID>()) { set, id in set.insert(id) }
-
-            let allCategoryIds = Set(filteredClockTasks.map { $0.category.id }) 
-                .union(categoriesFromToDo)
-
-            // Получаем информацию о каждой категории
-            let allCategories = allCategoryIds.compactMap { categoryId -> TaskCategoryModel? in
-                if let category = filteredClockTasks.first(where: { $0.category.id == categoryId })?.category {
-                    return category
-                }
+            // Получаем информацию о категории
+            if let categoryItem = categoryTasks.first,
+               let categoryName = categoryItem.categoryName {
+                let (color, icon) = getCategoryInfo(for: selectedCategoryID, categoryManager: categoryManager)
+                let category = TaskCategoryModel(id: selectedCategoryID, rawValue: categoryName, iconName: icon, color: color)
                 
-                // Если категория не найдена в clockTasks, ищем информацию через categoryManager
-                if let categoryItem = items.first(where: { $0.categoryID == categoryId }),
-                   let categoryName = categoryItem.categoryName {
-                    let (color, icon) = getCategoryInfo(for: categoryId, categoryManager: categoryManager)
-                    return TaskCategoryModel(id: categoryId, rawValue: categoryName, iconName: icon, color: color)
+                if categoryTasks.isEmpty {
+                    Text("Нет задач на этот день")
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 15)
+                } else {
+                    CategoryView(
+                        category: category,
+                        todoTasks: categoryTasks
+                    )
                 }
-                
-                return nil
-            }
-            .sorted { $0.rawValue < $1.rawValue }
-            
-            if allCategories.isEmpty {
-                Text("Нет задач на этот день")
+            } else {
+                Text("Категория не найдена")
                     .foregroundColor(.gray)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 15)
-            } else {
-                ForEach(allCategories, id: \.id) { category in
-                    let categoryTasks = items.filter { $0.categoryID == category.id }
-                    let ringTasks = filteredClockTasks.filter { $0.category.id == category.id }
-                    
-                    CategoryView(
-                        category: category,
-                        todoTasks: categoryTasks,
-                        ringTasks: ringTasks
-                    )
-                    .padding(.bottom, 8)
-                }
             }
         }
     }
@@ -74,7 +52,6 @@ struct TasksFromToDoListView: View {
     private struct CategoryView: View {
         let category: TaskCategoryModel
         let todoTasks: [ToDoItem]
-        let ringTasks: [TaskOnRing]
         
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
@@ -91,8 +68,8 @@ struct TasksFromToDoListView: View {
                     
                     Spacer()
                     
-                    // Показываем общее количество задач (из ToDo и с циферблата)
-                    let totalCount = todoTasks.count + ringTasks.count
+                    // Показываем общее количество задач
+                    let totalCount = todoTasks.count
                     if totalCount > 0 {
                         Text("\(totalCount)")
                             .font(.caption)
@@ -102,33 +79,8 @@ struct TasksFromToDoListView: View {
                 }
                 .padding(.horizontal, 10)
                 
-                // Добавляем информацию о времени категории на циферблате
-                if !ringTasks.isEmpty {
-                    HStack {
-                        Image(systemName: "clock")
-                            .foregroundColor(category.color.opacity(0.7))
-                            .font(.system(size: 12))
-                        
-                        Text(getCategoryTimeRangeText())
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.bottom, 5)
-                }
-                
                 // Отображаем все задачи из категории
-                if !todoTasks.isEmpty {
-                    if !ringTasks.isEmpty {
-                        Text("В списке:")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                            .padding(.horizontal, 10)
-                            .padding(.top, 5)
-                    }
-                    
+                if !todoTasks.isEmpty {                    
                     // Сортируем задачи: сначала по статусу завершения, затем по приоритету
                     let sortedTasks = todoTasks.sorted { (task1, task2) -> Bool in
                         // Сначала незавершенные задачи
@@ -147,7 +99,7 @@ struct TasksFromToDoListView: View {
                 }
                 
                 // Если нет задач в категории, показываем информационное сообщение
-                if todoTasks.isEmpty && ringTasks.isEmpty {
+                if todoTasks.isEmpty {
                     Text("Нет задач на этот день")
                         .font(.caption)
                         .foregroundColor(.gray)
@@ -164,28 +116,6 @@ struct TasksFromToDoListView: View {
                             .strokeBorder(category.color.opacity(0.3), lineWidth: 1)
                     )
             )
-        }
-        
-        // Форматирование временных интервалов категории
-        private func getCategoryTimeRangeText() -> String {
-            // Сортируем задачи по времени начала
-            let sortedByStartTime = ringTasks.sorted { $0.startTime < $1.startTime }
-            
-            let formatter = DateFormatter()
-            formatter.timeStyle = .short
-            
-            // Если категория появляется только один раз
-            if sortedByStartTime.count == 1, let task = sortedByStartTime.first {
-                return "На циферблате: " + formatter.string(from: task.startTime) + " - " + formatter.string(from: task.endTime)
-            }
-            
-            // Если категория появляется несколько раз, формируем список всех временных интервалов
-            var timeRanges: [String] = []
-            for task in sortedByStartTime {
-                timeRanges.append(formatter.string(from: task.startTime) + " - " + formatter.string(from: task.endTime))
-            }
-            
-            return "На циферблате: " + timeRanges.joined(separator: ", ")
         }
     }
     
@@ -225,15 +155,15 @@ func getCategoryInfo(for categoryID: UUID, categoryManager: CategoryManagementPr
     return (color, icon)
 }
 
-//#Preview {
-//    let context = PersistenceController.shared.container.viewContext
-//    let categoryManager = CategoryManagement(context: context)
-//    let selectedDate = Date()
-//    
-//    TasksFromToDoListView(
-//        listViewModel: ListViewModel(),
-//        selectedDate: selectedDate,
-//        categoryManager: categoryManager,
-//        clockTasks: [TaskOnRing.example]
-//    )
-//}
+#Preview {
+    let context = PersistenceController.shared.container.viewContext
+    let categoryManager = CategoryManagement(context: context)
+    let selectedDate = Date()
+    
+    TasksFromToDoListView(
+        listViewModel: ListViewModel(),
+        selectedDate: selectedDate,
+        categoryManager: categoryManager,
+        selectedCategoryID: UUID()
+    )
+}

@@ -57,7 +57,9 @@ struct CalendarView: View {
                         // .padding(.horizontal)
                         TaskTimeline(
                             tasks: filteredClockTasks,
-                            selectedDate: temporaryDate
+                            selectedDate: temporaryDate,
+                            listViewModel: listViewModel,
+                            categoryManager: viewModel.categoryManagement
                         )
                         .padding(.horizontal)
                     }

@@ -27,8 +27,8 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
 
     init(selectedCategory: TaskCategoryModel? = nil) {
         self.selectedCategory = selectedCategory
-        self.presenter = ToDoPresenter(view: self)
-        presenter?.viewDidLoad()
+        let todoPresenter = ToDoPresenter(view: self)
+        self.presenter = todoPresenter
     }
 
     func displayItems(_ items: [ToDoItem]) {
