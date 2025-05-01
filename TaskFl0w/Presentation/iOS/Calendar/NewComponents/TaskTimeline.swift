@@ -190,7 +190,9 @@ struct TaskTimeline: View {
                                 listViewModel: listViewModel,
                                 selectedDate: selectedDate,
                                 categoryManager: categoryManager,
-                                selectedCategoryID: firstTask.category.id
+                                selectedCategoryID: firstTask.category.id,
+                                startTime: getEarliestStartTime(for: tasksInCategory),
+                                endTime: getLatestEndTime(for: tasksInCategory)
                             )
                         }
                     }
@@ -276,29 +278,60 @@ struct TaskTimeline: View {
     // Создаем структуры блоков времени для отображения
     private func createTimeBlocks() -> [TimeBlock] {
         let calendar = Calendar.current
-        let now = currentTime
+        let now = Date()
         let currentHour = calendar.component(.hour, from: now)
         
-        // Группируем задачи по часам только по времени начала
+        // Группируем задачи по часам
         var tasksByHour: [Int: [TaskOnRing]] = [:]
+        // Отдельно отслеживаем часы окончания задач
+        var endHours: Set<Int> = []
+        
+        // Отслеживаем все занятые диапазоны (чтобы скрыть ненужные метки внутри задач)
+        var occupiedRanges: [(start: Int, end: Int)] = []
         
         for task in filteredTasks {
             let startHour = calendar.component(.hour, from: task.startTime)
+            let endHour = calendar.component(.hour, from: task.endTime)
             
-            // Добавляем задачу только в час её начала
+            // Добавляем час начала в коллекцию задач
             if tasksByHour[startHour] == nil {
                 tasksByHour[startHour] = []
             }
             tasksByHour[startHour]?.append(task)
+            
+            // Добавляем час окончания в множество часов окончания
+            endHours.insert(endHour)
+            
+            // Добавляем диапазон в занятые часы
+            if endHour > startHour {
+                occupiedRanges.append((startHour, endHour))
+            } else if endHour < startHour { // Задача через полночь
+                occupiedRanges.append((startHour, 24))
+                occupiedRanges.append((0, endHour))
+            }
         }
         
         // Создаем блоки времени
         var blocks: [TimeBlock] = []
         
-        // Берем все часы с 0 до 24 (полные сутки с завершающим часом)
+        // Берем все часы с 0 до 24
         for hour in 0...24 {
-            let tasks = tasksByHour[hour % 24] ?? [] // Используем модуль для обработки 24 часа как 0
-            let showHourLabel = !tasks.isEmpty || hour % 3 == 0 // Показываем каждые 3 часа или где есть задачи
+            let tasks = tasksByHour[hour % 24] ?? []
+            let hourMod24 = hour % 24
+            
+            // Проверяем, находится ли час внутри занятого диапазона
+            let isInsideTask = occupiedRanges.contains { range in
+                hourMod24 > range.start && hourMod24 < range.end
+            }
+            
+            // Показываем метку для часа если:
+            // 1. В этот час начинается задача
+            // 2. Это час окончания задачи
+            // 3. Это каждый третий час (для разметки), но только если не внутри задачи
+            let showHourLabel = !tasks.isEmpty || 
+                               endHours.contains(hourMod24) || 
+                               (hour % 3 == 0 && !isInsideTask)
+            
             let showCurrentTime = hour == currentHour
             
             blocks.append(TimeBlock(
@@ -317,6 +350,16 @@ struct TaskTimeline: View {
         return listViewModel.items.filter { item in
             Calendar.current.isDate(item.date, inSameDayAs: selectedDate)
         }
+    }
+    
+    // Получаем самое раннее время начала задач в категории
+    private func getEarliestStartTime(for tasks: [TaskOnRing]) -> Date {
+        return tasks.min { $0.startTime < $1.startTime }?.startTime ?? Date()
+    }
+    
+    // Получаем самое позднее время окончания задач в категории
+    private func getLatestEndTime(for tasks: [TaskOnRing]) -> Date {
+        return tasks.max { $0.endTime < $1.endTime }?.endTime ?? Date()
     }
 }
 

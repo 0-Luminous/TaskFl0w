@@ -13,6 +13,8 @@ struct TasksFromToDoListView: View {
     let selectedDate: Date
     let categoryManager: CategoryManagementProtocol
     let selectedCategoryID: UUID
+    var startTime: Date? = nil
+    var endTime: Date? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -36,7 +38,9 @@ struct TasksFromToDoListView: View {
                 } else {
                     CategoryView(
                         category: category,
-                        todoTasks: categoryTasks
+                        todoTasks: categoryTasks,
+                        startTime: startTime,
+                        endTime: endTime
                     )
                 }
             } else {
@@ -52,29 +56,63 @@ struct TasksFromToDoListView: View {
     private struct CategoryView: View {
         let category: TaskCategoryModel
         let todoTasks: [ToDoItem]
+        let startTime: Date?
+        let endTime: Date?
         
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
                 // Заголовок категории
-                HStack {
-                    Image(systemName: category.iconName)
-                        .foregroundColor(category.color)
-                        .font(.system(size: 14))
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Image(systemName: category.iconName)
+                            .foregroundColor(category.color)
+                            .font(.system(size: 14))
+                        
+                        Text(category.rawValue)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                        
+                        Spacer()
+                        
+                        // Показываем общее количество задач
+                        let totalCount = todoTasks.count
+                        if totalCount > 0 {
+                            Text("\(totalCount)")
+                                .font(.caption)
+                                .padding(6)
+                                .background(Circle().fill(category.color.opacity(0.3)))
+                        }
+                    }
                     
-                    Text(category.rawValue)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
-                    
-                    Spacer()
-                    
-                    // Показываем общее количество задач
-                    let totalCount = todoTasks.count
-                    if totalCount > 0 {
-                        Text("\(totalCount)")
-                            .font(.caption)
-                            .padding(6)
-                            .background(Circle().fill(category.color.opacity(0.3)))
+                    // Показываем время начала и окончания, если они доступны
+                    if let start = startTime, let end = endTime {
+                        HStack {
+                            Text(formatTime(start))
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            
+                            Text("-")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            
+                            Text(formatTime(end))
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            
+                            Spacer()
+                            
+                            // Добавляем продолжительность
+                            Text("\(formatDuration(end.timeIntervalSince(start)))")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(category.color.opacity(0.2))
+                                )
+                        }
                     }
                 }
                 .padding(.horizontal, 10)
@@ -116,6 +154,19 @@ struct TasksFromToDoListView: View {
                             .strokeBorder(category.color.opacity(0.3), lineWidth: 1)
                     )
             )
+        }
+        
+        // Форматирование времени
+        private func formatTime(_ date: Date) -> String {
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            return formatter.string(from: date)
+        }
+        
+        // Форматирование продолжительности
+        private func formatDuration(_ interval: TimeInterval) -> String {
+            let minutes = Int(interval / 60)
+            return "\(minutes) мин"
         }
     }
     
@@ -159,11 +210,15 @@ func getCategoryInfo(for categoryID: UUID, categoryManager: CategoryManagementPr
     let context = PersistenceController.shared.container.viewContext
     let categoryManager = CategoryManagement(context: context)
     let selectedDate = Date()
+    let startTime = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate)
+    let endTime = Calendar.current.date(bySettingHour: 10, minute: 30, second: 0, of: selectedDate)
     
-    TasksFromToDoListView(
+    return TasksFromToDoListView(
         listViewModel: ListViewModel(),
         selectedDate: selectedDate,
         categoryManager: categoryManager,
-        selectedCategoryID: UUID()
+        selectedCategoryID: UUID(),
+        startTime: startTime,
+        endTime: endTime
     )
 }
