@@ -179,10 +179,11 @@ struct TaskTimeline: View {
                     }
                 }
                 
-                // Правая колонка с задачами
-                VStack(spacing: 8) {
-                    ForEach(timeBlock.tasks, id: \.id) { task in
-                        taskView(for: task)
+                // Правая колонка с задачами, сгруппированными по категориям
+                VStack(spacing: 15) {
+                    // Группируем задачи по категориям
+                    ForEach(groupTasksByCategory(timeBlock.tasks), id: \.key) { category, tasksInCategory in
+                        categoryTasksView(category: category, tasks: tasksInCategory)
                     }
                 }
                 .padding(.leading, 15)
@@ -207,53 +208,27 @@ struct TaskTimeline: View {
         }
     }
     
-    // Вычисление высоты блока задачи в зависимости от длительности
-    private func getTaskHeight(for task: TaskOnRing) -> CGFloat {
-        // Базовая высота для коротких задач
-        let baseHeight: CGFloat = 60
-        
-        // Определяем высоту в зависимости от длительности
-        let minutes = Int(task.duration / 60)
-        if minutes <= 15 {
-            return baseHeight
-        } else if minutes <= 30 {
-            return baseHeight * 1.5
-        } else {
-            return baseHeight * 2
-        }
+    // Группировка задач по категориям
+    private func groupTasksByCategory(_ tasks: [TaskOnRing]) -> [(key: String, value: [TaskOnRing])] {
+        let grouped = Dictionary(grouping: tasks) { $0.category.rawValue }
+        return grouped.sorted { $0.key < $1.key }
     }
     
-    // Отображение задачи
-    private func taskView(for task: TaskOnRing) -> some View {
-        HStack(spacing: 0) {
-            // Основное содержимое задачи
-            VStack(alignment: .leading, spacing: 4) {
-                if task.isCompleted {
-                    // Зачеркнутый текст для выполненных задач
-                    Text(task.category.rawValue)
-                        .font(.headline)
-                        .strikethrough()
-                        .foregroundColor(.gray)
-                } else {
-                    Text(task.category.rawValue)
-                        .font(.headline)
-                        .foregroundColor(.white)
-                }
-                
-                Text("\(formatTime(task.startTime)) – \(formatTime(task.endTime))\n(\(formatDuration(task.duration)))")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                    .lineLimit(2)
+    // Отображение категории и ее задач
+    private func categoryTasksView(category: String, tasks: [TaskOnRing]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Заголовок категории
+            Text(category)
+                .font(.headline)
+                .foregroundColor(.white)
+                .padding(.bottom, 2)
+            
+            // Задачи в категории
+            ForEach(tasks, id: \.id) { task in
+                taskInCategoryView(for: task)
             }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 12)
-            
-            Spacer()
-            
-            // Индикатор завершения
-            checkboxView(isCompleted: task.isCompleted, color: getCategoryColor(for: task))
-                .padding(.trailing, 12)
         }
+        .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 10)
                 .fill(Color.black.opacity(0.2))
@@ -262,6 +237,50 @@ struct TaskTimeline: View {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(Color.gray.opacity(0.2), lineWidth: 1)
         )
+    }
+    
+    // Отображение задачи внутри категории
+    private func taskInCategoryView(for task: TaskOnRing) -> some View {
+        HStack {
+            // Время и продолжительность
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(formatTime(task.startTime)) – \(formatTime(task.endTime))")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                
+                Text("(\(formatDuration(task.duration)))")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            // Индикатор завершения
+            checkboxView(isCompleted: task.isCompleted, color: getCategoryColor(for: task))
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.black.opacity(0.1))
+        )
+    }
+    
+    // Вычисление высоты блока задачи в зависимости от длительности
+    private func getTaskHeight(for task: TaskOnRing) -> CGFloat {
+        // Базовая высота для задачи в 15 минут
+        let baseHeightFor15Min: CGFloat = 60
+        
+        // Рассчитываем высоту пропорционально длительности задачи
+        let minutes = Int(task.duration / 60)
+        
+        // Минимальная высота для очень коротких задач
+        let minHeight: CGFloat = 40
+        
+        // Коэффициент преобразования: каждые 15 минут = baseHeightFor15Min
+        let heightPerMinute = baseHeightFor15Min / 15
+        
+        return max(CGFloat(minutes) * heightPerMinute, minHeight)
     }
     
     // Чекбокс для отображения статуса завершения
@@ -314,22 +333,25 @@ struct TaskTimeline: View {
         let now = currentTime
         let currentHour = calendar.component(.hour, from: now)
         
-        // Группируем задачи по часам
+        // Группируем задачи по часам только по времени начала
         var tasksByHour: [Int: [TaskOnRing]] = [:]
+        
         for task in filteredTasks {
-            let hour = calendar.component(.hour, from: task.startTime)
-            if tasksByHour[hour] == nil {
-                tasksByHour[hour] = []
+            let startHour = calendar.component(.hour, from: task.startTime)
+            
+            // Добавляем задачу только в час её начала
+            if tasksByHour[startHour] == nil {
+                tasksByHour[startHour] = []
             }
-            tasksByHour[hour]?.append(task)
+            tasksByHour[startHour]?.append(task)
         }
         
         // Создаем блоки времени
         var blocks: [TimeBlock] = []
         
-        // Берем все часы с 7 до 21 (или другой диапазон по необходимости)
-        for hour in 7...21 {
-            let tasks = tasksByHour[hour] ?? []
+        // Берем все часы с 0 до 24 (полные сутки с завершающим часом)
+        for hour in 0...24 {
+            let tasks = tasksByHour[hour % 24] ?? [] // Используем модуль для обработки 24 часа как 0
             let showHourLabel = !tasks.isEmpty || hour % 3 == 0 // Показываем каждые 3 часа или где есть задачи
             let showCurrentTime = hour == currentHour
             
