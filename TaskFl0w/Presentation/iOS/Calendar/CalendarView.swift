@@ -48,11 +48,16 @@ struct CalendarView: View {
                         }
                         
                         // Секция обычных задач из ToDoList
-                        TasksFromToDoListView(
-                            listViewModel: listViewModel, 
-                            selectedDate: temporaryDate,
-                            categoryManager: viewModel.categoryManagement,
-                            clockTasks: filteredClockTasks
+                        // TasksFromToDoListView(
+                        //     listViewModel: listViewModel, 
+                        //     selectedDate: temporaryDate,
+                        //     categoryManager: viewModel.categoryManagement,
+                        //     clockTasks: filteredClockTasks
+                        // )
+                        // .padding(.horizontal)
+                        TaskTimeline(
+                            tasks: filteredClockTasks,
+                            selectedDate: temporaryDate
                         )
                         .padding(.horizontal)
                     }
