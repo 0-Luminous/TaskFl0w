@@ -58,8 +58,39 @@ struct TaskTimeline: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 0) {
-                    // Временная шкала
-                    timelineContent
+                    // Контейнер для временной шкалы и индикатора времени
+                    ZStack(alignment: .leading) {
+                        // Индикатор текущего времени (теперь ПЕРВЫЙ элемент, чтобы быть НИЖЕ в Z-порядке)
+                        GeometryReader { geometry in
+                            let totalHeight = geometry.size.height
+                            let calendar = Calendar.current
+                            let now = currentTime
+                            let startOfDay = calendar.startOfDay(for: now)
+                            let timePassedSeconds = now.timeIntervalSince(startOfDay)
+                            let dayTotalSeconds: TimeInterval = 24 * 60 * 60
+                            let positionRatio = timePassedSeconds / dayTotalSeconds
+                            let yPosition = totalHeight * CGFloat(positionRatio)
+                            
+                            // Только линия и текст слева
+                            HStack(alignment: .center, spacing: 2) {
+                                // Метка времени слева от линии
+                                Text(formatTime(currentTime))
+                                    .font(.caption)
+                                    .foregroundColor(.pink)
+                                
+                                // Горизонтальная линия
+                                Rectangle()
+                                    .fill(Color.pink)
+                                    .frame(height: 1)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .offset(y: yPosition - 10) // Вычитаем половину высоты текста для центрирования
+                            .padding(.leading, -15) // Отрицательный padding для максимального смещения влево
+                        }
+                        
+                        // Базовая временная шкала (теперь ВТОРОЙ элемент, чтобы быть ВЫШЕ в Z-порядке)
+                        timelineContent
+                    }
                     
                     // Информация о конце дня
                     Text("End of day: \(timeUntilEndOfDay.hours) hrs, \(timeUntilEndOfDay.minutes) min, \(timeUntilEndOfDay.seconds) secs")
@@ -88,7 +119,8 @@ struct TaskTimeline: View {
                     .foregroundColor(.white)
                     .padding(.bottom, 20)
                 }
-                .padding(.horizontal)
+                .padding(.leading, 20)
+                .padding(.trailing, 10)
             }
         }
         .onReceive(timer) { _ in
@@ -96,50 +128,78 @@ struct TaskTimeline: View {
         }
     }
     
-    // Основное содержимое временной шкалы
+    // Основное содержимое временной шкалы (без индикатора времени)
     private var timelineContent: some View {
         ZStack(alignment: .leading) {
-            // Вертикальная линия
-            Rectangle()
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 1)
-                .padding(.leading, 28)
-            
-            // Содержимое временной шкалы
+            // Вертикальная линия с иконками
             VStack(spacing: 0) {
-                // Иконка солнца вверху
+                // Иконка солнца на линии
                 ZStack {
+                    // Вертикальная линия сверху
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 1)
+                        .frame(height: 0) // Начинается от солнца
+                    
+                    // Солнце
                     Circle()
                         .fill(Color.gray.opacity(0.2))
                         .frame(width: 30, height: 30)
+                        .zIndex(1)
                     
                     Image(systemName: "sun.max")
                         .foregroundColor(.white)
                         .font(.system(size: 16))
-                }
-                .padding(.bottom, 5)
-                
-                // Блоки задач по часам
-                VStack(spacing: 0) {
-                    ForEach(createTimeBlocks(), id: \.hour) { timeBlock in
-                        timeBlockView(for: timeBlock)
-                    }
+                        .zIndex(2)
                 }
                 
-                // Иконка луны внизу
+                // Основная часть вертикальной линии
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 1)
+                    .frame(maxHeight: .infinity)
+                
+                // Иконка луны на линии
                 ZStack {
+                    // Луна
                     Circle()
                         .fill(Color.gray.opacity(0.2))
                         .frame(width: 30, height: 30)
+                        .zIndex(1)
                     
                     Image(systemName: "moon")
                         .foregroundColor(.white)
                         .font(.system(size: 16))
+                        .zIndex(2)
+                    
+                    // Вертикальная линия снизу
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 1)
+                        .frame(height: 0) // Заканчивается на луне
                 }
-                .padding(.top, 5)
             }
-            .padding(.leading, 14) // Центрируем на линии
+            .padding(.leading, 15)
+            
+            // Расположение всего содержимого
+            VStack(spacing: 0) {
+                // Блоки задач с отступами для иконок
+                VStack(spacing: 0) {
+                    // Отступ для иконки солнца
+                    Spacer().frame(height: 20)
+                    
+                    // Блоки задач
+                    ForEach(createTimeBlocks(), id: \.hour) { timeBlock in
+                        timeBlockView(for: timeBlock)
+                    }
+                    
+                    // Отступ для иконки луны
+                    Spacer().frame(height: 20)
+                }
+                .padding(.leading, 15)
+            }
         }
+        .padding(.leading, 10) 
     }
     
     // Отображение блока часа с задачами - переименованный метод для ясности
@@ -198,23 +258,6 @@ struct TaskTimeline: View {
                     }
                 }
                 .padding(.leading, 15)
-            }
-            
-            // Если есть индикатор текущего времени
-            if timeBlock.showCurrentTime {
-                HStack(alignment: .center, spacing: 5) {
-                    // Метка времени слева от линии
-                    Text(formatTime(currentTime))
-                        .font(.caption)
-                        .foregroundColor(.pink)
-                    
-                    // Горизонтальная линия, показывающая текущее время
-                    Rectangle()
-                        .fill(Color.pink)
-                        .frame(height: 1)
-                }
-                .padding(.leading, 7)
-                .padding(.top, 5)
             }
         }
     }
@@ -332,13 +375,10 @@ struct TaskTimeline: View {
                                endHours.contains(hourMod24) || 
                                (hour % 3 == 0 && !isInsideTask)
             
-            let showCurrentTime = hour == currentHour
-            
             blocks.append(TimeBlock(
                 hour: hour,
                 tasks: tasks,
-                showHourLabel: showHourLabel,
-                showCurrentTime: showCurrentTime
+                showHourLabel: showHourLabel
             ))
         }
         
@@ -368,7 +408,6 @@ struct TimeBlock {
     let hour: Int
     let tasks: [TaskOnRing]
     let showHourLabel: Bool
-    let showCurrentTime: Bool
 }
 
 struct TaskTimeline_Previews: PreviewProvider {

@@ -61,7 +61,6 @@ struct CalendarView: View {
                             listViewModel: listViewModel,
                             categoryManager: viewModel.categoryManagement
                         )
-                        .padding(.horizontal)
                     }
                     .padding(.bottom, 100) // Увеличиваем отступ для BottomBar
                 }
