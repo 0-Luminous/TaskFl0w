@@ -61,7 +61,7 @@ struct ClockViewIOS: View {
                     if showingWeekCalendar {
                         // Здесь непосредственно используем WeekCalendarView
                         WeekCalendarView(selectedDate: $viewModel.selectedDate)
-                            .padding(.horizontal)
+                            .padding(.horizontal, 8)
                             .padding(.vertical, 8)
                             .background(
                                 RoundedRectangle(cornerRadius: 24)

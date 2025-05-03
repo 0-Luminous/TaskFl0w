@@ -79,7 +79,7 @@ struct TaskTimeline: View {
             // Отдельный календарь
             if showWeekCalendar {
                 WeekCalendarView(selectedDate: $clockViewModel.selectedDate)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 8)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 24)
