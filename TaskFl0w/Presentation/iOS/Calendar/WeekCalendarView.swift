@@ -15,58 +15,91 @@ struct WeekCalendarView: View {
     @State private var currentWeekIndex = 0
     
     var body: some View {
-        VStack {
-            // Отображение месяца и года
-            Text(monthYearFormatter.string(from: selectedDate))
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-                .padding(.vertical, 5)
+        VStack(spacing: 10) {
+            // Отображение месяца и года отдельно от календаря
+            MonthYearHeader(date: selectedDate)
             
-            // Прокручиваемые ячейки с днями недели
-            ScrollViewReader { scrollProxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 10) {
-                        ForEach(-52...52, id: \.self) { weekIndex in
-                            HStack(spacing: 10) {
-                                ForEach(0..<7, id: \.self) { dayIndex in
-                                    let date = getDateForIndex(weekIndex: weekIndex, dayIndex: dayIndex)
-                                    
-                                    DayCell(
-                                        date: date,
-                                        isSelected: calendar.isDate(date, inSameDayAs: selectedDate),
-                                        dayName: dayNames[dayIndex]
-                                    )
-                                    .onTapGesture {
-                                        selectedDate = date
-                                    }
+            // Секция с календарем
+            CalendarSection
+                .cornerRadius(20)
+        }
+        .onChange(of: selectedDate) { _, _ in
+            updateWeekStartDate()
+        }
+    }
+    
+    // Секция календаря вынесена в отдельное свойство
+    private var CalendarSection: some View {
+        // Прокручиваемые ячейки с днями недели
+        ScrollViewReader { scrollProxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                // Добавляем отступы внутри контента ScrollView, а не снаружи
+                LazyHStack(spacing: 8) { // Уменьшаем отступы между неделями
+                    ForEach(-52...52, id: \.self) { weekIndex in
+                        HStack(spacing: 8) { // Уменьшаем отступы между днями
+                            ForEach(0..<7, id: \.self) { dayIndex in
+                                let date = getDateForIndex(weekIndex: weekIndex, dayIndex: dayIndex)
+                                
+                                DayCell(
+                                    date: date,
+                                    isSelected: calendar.isDate(date, inSameDayAs: selectedDate),
+                                    dayName: dayNames[dayIndex]
+                                )
+                                .onTapGesture {
+                                    selectedDate = date
                                 }
+                                // Используем саму дату как идентификатор ячейки
+                                .id("\(calendar.component(.year, from: date))-\(calendar.component(.month, from: date))-\(calendar.component(.day, from: date))")
                             }
-                            .id(weekIndex)
+                        }
+                        .id(weekIndex)
+                    }
+                }
+                .padding(.horizontal, 2) // Минимальный отступ от края экрана
+            }
+            // Расширяем ScrollView, чтобы она занимала всю доступную ширину
+            .frame(maxWidth: .infinity)
+            .frame(height: 65)
+            .clipShape(Rectangle())
+            .onAppear {
+                updateWeekStartDate()
+                // При первом появлении прокручиваем к текущей неделе
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation {
+                        scrollProxy.scrollTo(0, anchor: .center)
+                    }
+                }
+            }
+            .onChange(of: selectedDate) { oldValue, newValue in
+                let selectedWeekIndex = getWeekIndex(for: newValue)
+                
+                // Сначала всегда обновляем currentWeekIndex
+                currentWeekIndex = selectedWeekIndex
+                
+                // Создаем ID даты, который будем использовать для прокрутки
+                let dateId = "\(calendar.component(.year, from: newValue))-\(calendar.component(.month, from: newValue))-\(calendar.component(.day, from: newValue))"
+                
+                // Если изменился индекс недели, сначала прокручиваем к неделе
+                if selectedWeekIndex != getWeekIndex(for: oldValue) {
+                    withAnimation {
+                        scrollProxy.scrollTo(selectedWeekIndex, anchor: .center)
+                    }
+                    
+                    // После прокрутки к неделе используем небольшую задержку
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        withAnimation {
+                            scrollProxy.scrollTo(dateId, anchor: .center)
                         }
                     }
-                    .padding(.horizontal)
-                }
-                .frame(height: 60)
-                .onAppear {
-                    updateWeekStartDate()
-                    scrollProxy.scrollTo(0, anchor: .center)
-                }
-                .onChange(of: selectedDate) { oldValue, newValue in
-                    let selectedWeekIndex = getWeekIndex(for: newValue)
-                    if selectedWeekIndex != currentWeekIndex {
-                        currentWeekIndex = selectedWeekIndex
-                        withAnimation {
-                            scrollProxy.scrollTo(selectedWeekIndex, anchor: .center)
-                        }
+                } else {
+                    // Если мы в той же неделе, просто прокручиваем к дате
+                    withAnimation {
+                        scrollProxy.scrollTo(dateId, anchor: .center)
                     }
                 }
             }
         }
-        .cornerRadius(20)
-        .onChange(of: selectedDate) { _, _ in
-            updateWeekStartDate()
-        }
+        .padding(0)
     }
     
     // Получаем индекс недели для даты относительно текущей недели
@@ -113,6 +146,26 @@ struct WeekCalendarView: View {
     }
 }
 
+// Компонент для отображения заголовка с месяцем и годом
+struct MonthYearHeader: View {
+    let date: Date
+    
+    var body: some View {
+        Text(monthYearFormatter.string(from: date))
+            .font(.title2)
+            .fontWeight(.bold)
+            .foregroundColor(.white)
+            .padding(.vertical, 5)
+    }
+    
+    private var monthYearFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        formatter.locale = Locale(identifier: "ru_RU")
+        return formatter
+    }
+}
+
 // Компонент для отображения ячейки дня
 struct DayCell: View {
     let date: Date
@@ -124,7 +177,7 @@ struct DayCell: View {
             // День недели
             Text(dayName)
                 .font(.caption2)
-                .foregroundColor(.gray)
+                .foregroundColor(isSelected ? .black : .gray)
             
             // Число
             Text("\(Calendar.current.component(.day, from: date))")
@@ -132,8 +185,17 @@ struct DayCell: View {
                 .foregroundColor(.white)
         }
         .frame(width: 40, height: 60)
-        .background(isSelected ? Color.blue : Color(UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)))
+        .background(isSelected ? Color.blue : Color(red: 0.098, green: 0.098, blue: 0.098))
         .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(isToday && !isSelected ? Color.blue : Color.clear, lineWidth: 2)
+        )
+    }
+    
+    // Проверяем, является ли дата сегодняшней
+    private var isToday: Bool {
+        Calendar.current.isDateInToday(date)
     }
 }
 
