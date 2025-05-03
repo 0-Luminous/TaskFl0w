@@ -55,12 +55,12 @@ struct CalendarView: View {
                         //     clockTasks: filteredClockTasks
                         // )
                         // .padding(.horizontal)
-                        TaskTimeline(
-                            tasks: filteredClockTasks,
-                            selectedDate: temporaryDate,
-                            listViewModel: listViewModel,
-                            categoryManager: viewModel.categoryManagement
-                        )
+                        // TaskTimeline(
+                        //     tasks: filteredClockTasks,
+                        //     selectedDate: temporaryDate,
+                        //     listViewModel: listViewModel,
+                        //     categoryManager: viewModel.categoryManagement
+                        // )
                     }
                     .padding(.bottom, 100) // Увеличиваем отступ для BottomBar
                 }

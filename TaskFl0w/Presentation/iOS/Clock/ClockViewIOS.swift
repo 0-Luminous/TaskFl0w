@@ -25,6 +25,13 @@ struct ClockViewIOS: View {
     // 1. Новое состояние
     @State private var showingNewSettings = false
     
+    // Состояние для отображения TaskTimeline
+    @State private var showingTaskTimeline = false
+    
+    // Состояние для обработки свайпа
+    @State private var dragOffset: CGSize = .zero
+    @State private var isDragging = false
+    
     // MARK: - Body
     var body: some View {
         NavigationView {
@@ -104,10 +111,12 @@ struct ClockViewIOS: View {
                             }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .offset(y: -50) // Сдвигаем циферблат на 20 пикселей вверх
-                        
-                        Spacer()
+                        .offset(y: -50) // Сдвигаем циферблат на 50 пикселей вверх
+                        .offset(x: dragOffset.width < 0 ? dragOffset.width : 0) // Добавляем смещение при свайпе влево
+                        .animation(.spring(), value: isDragging) // Анимация при перетаскивании
                     }
+                    
+                    Spacer()
                 }
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -145,6 +154,30 @@ struct ClockViewIOS: View {
                     }
                 }
             }
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        // Обрабатываем только горизонтальное перемещение влево
+                        if value.translation.width < 0 {
+                            isDragging = true
+                            dragOffset = value.translation
+                        }
+                    }
+                    .onEnded { value in
+                        // Если свайп влево больше 100 пикселей (по модулю), показываем TaskTimeline
+                        if value.translation.width < -100 {
+                            withAnimation {
+                                showingTaskTimeline = true
+                            }
+                        }
+                        
+                        // В любом случае сбрасываем смещение
+                        withAnimation(.spring()) {
+                            isDragging = false
+                            dragOffset = .zero
+                        }
+                    }
+            )
             .fullScreenCover(isPresented: $viewModel.showingCalendar) {
                 CalendarView(viewModel: viewModel)
             }
@@ -159,6 +192,26 @@ struct ClockViewIOS: View {
                 NavigationStack {
                     PersonalizationViewIOS(viewModel: viewModel)
                 }
+            }
+            // Заменяем обычный fullScreenCover на кастомный с анимацией справа налево 
+            // .fullScreenCover(isPresented: $showingTaskTimeline) {
+            //     NavigationStack {
+            //         TaskTimeline(
+            //             tasks: viewModel.tasks,
+            //             selectedDate: viewModel.selectedDate,
+            //             listViewModel: listViewModel,
+            //             categoryManager: viewModel.categoryManagement
+            //         )
+            //         .transition(.move(edge: .trailing))
+            //     }
+            // }
+            .horizontalFullScreenCover(isPresented: $showingTaskTimeline) {
+                TaskTimeline(
+                    tasks: viewModel.tasks,
+                    selectedDate: viewModel.selectedDate,
+                    listViewModel: listViewModel,
+                    categoryManager: viewModel.categoryManagement
+                )
             }
             .background(Color(red: 0.098, green: 0.098, blue: 0.098))
         }
@@ -195,6 +248,17 @@ struct ClockViewIOS: View {
                     }
                 }
             }
+            
+            // Добавляем обработчик для закрытия TaskTimeline по свайпу
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("CloseTaskTimeline"),
+                object: nil,
+                queue: .main
+            ) { _ in
+                withAnimation {
+                    self.showingTaskTimeline = false
+                }
+            }
         }
         .onDisappear {
             // Удаляем обработчики уведомлений
@@ -206,6 +270,11 @@ struct ClockViewIOS: View {
             NotificationCenter.default.removeObserver(
                 self,
                 name: NSNotification.Name("DockBarVisibilityChanged"),
+                object: nil
+            )
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSNotification.Name("CloseTaskTimeline"),
                 object: nil
             )
         }

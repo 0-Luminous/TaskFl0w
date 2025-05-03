@@ -93,36 +93,36 @@ struct TaskTimeline: View {
                     }
                     
                     // Информация о конце дня
-                    Text("End of day: \(timeUntilEndOfDay.hours) hrs, \(timeUntilEndOfDay.minutes) min, \(timeUntilEndOfDay.seconds) secs")
+                    Text("End of day: \(timeUntilEndOfDay.hours) hrs, \(timeUntilEndOfDay.minutes) min")
                         .font(.caption)
                         .foregroundColor(.gray)
                         .padding(.top, 20)
                         .padding(.bottom, 10)
-                    
-                    // Кнопка создания события
-                    Button(action: {
-                        // Действие для создания нового события
-                    }) {
-                        HStack {
-                            Image(systemName: "plus")
-                                .font(.caption)
-                            Text("Create event")
-                                .font(.callout)
-                        }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.gray.opacity(0.3))
-                        )
-                    }
-                    .foregroundColor(.white)
-                    .padding(.bottom, 20)
                 }
                 .padding(.leading, 20)
                 .padding(.trailing, 10)
             }
         }
+        .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    // Обрабатываем только горизонтальное перемещение вправо
+                    if value.translation.width > 0 {
+                        // Здесь можно добавить анимацию при перетаскивании
+                    }
+                }
+                .onEnded { value in
+                    // Если свайп вправо больше 100 пикселей, закрываем TaskTimeline
+                    if value.translation.width > 100 {
+                        // Отправляем уведомление о необходимости закрыть экран
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("CloseTaskTimeline"),
+                            object: nil
+                        )
+                    }
+                }
+        )
         .onReceive(timer) { _ in
             self.currentTime = Date()
         }
