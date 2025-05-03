@@ -84,9 +84,9 @@ struct CalendarView: View {
                                 .padding(.horizontal, 12)
                                 .background(
                                     Capsule()
-                                        .fill(Color.white.opacity(0.15))
+                                        .fill(Color.gray)
                                 )
-                                .padding(.top, 10)
+                                .padding(.top, 5)
                                 
                             } else {
                                 // Полный календарь с месяцем
@@ -117,9 +117,9 @@ struct CalendarView: View {
                                     .padding(.horizontal, 12)
                                     .background(
                                         Capsule()
-                                            .fill(Color.white.opacity(0.15))
+                                            .fill(Color.gray)
                                     )
-                                    .padding(.top, 10)
+                                    .padding(.top, 5)
                                 }
                                 .offset(y: 0)
                             }

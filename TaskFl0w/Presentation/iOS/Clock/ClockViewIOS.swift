@@ -32,6 +32,10 @@ struct ClockViewIOS: View {
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging = false
     
+    // Состояние для отображения недельного календаря
+    @State private var showingWeekCalendar = false
+    @State private var weekCalendarOffset: CGFloat = -200 // Начальная позиция за пределами экрана
+    
     // MARK: - Body
     var body: some View {
         NavigationView {
@@ -52,7 +56,55 @@ struct ClockViewIOS: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.clear)
                 
-                VStack {
+                VStack(spacing: 0) {
+                    // Верхняя панель с кнопкой настроек и датой или WeekCalendarView
+                    if showingWeekCalendar {
+                        // Здесь непосредственно используем WeekCalendarView
+                        WeekCalendarView(selectedDate: $viewModel.selectedDate)
+                            .padding(.horizontal)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 24)
+                                    .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                                    .shadow(color: .black.opacity(0.3), radius: 5)
+                            )
+                            .padding(.horizontal)
+                            .gesture(
+                                DragGesture()
+                                    .onChanged { value in
+                                        // Только если календарь уже показан и свайп вверх
+                                        if value.translation.height < 0 {
+                                            weekCalendarOffset = value.translation.height
+                                        }
+                                    }
+                                    .onEnded { value in
+                                        // Если сделан свайп вверх, скрываем календарь
+                                        if value.translation.height < -20 {
+                                            hideWeekCalendar()
+                                        } else {
+                                            // Возвращаем в исходное положение
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                weekCalendarOffset = 0
+                                            }
+                                        }
+                                    }
+                            )
+                            .onChange(of: viewModel.selectedDate) { _, _ in
+                                // Автоматически скрываем календарь после выбора даты
+                                if showingWeekCalendar {
+                                    hideWeekCalendar()
+                                }
+                            }
+                    } else {
+                        // Стандартная верхняя панель
+                        TopBarView(
+                            viewModel: viewModel,
+                            showSettingsAction: { showingNewSettings = true },
+                            toggleCalendarAction: toggleWeekCalendar,
+                            isCalendarVisible: showingWeekCalendar
+                        )
+                    }
+                    
                     if viewModel.selectedCategory != nil {
                         // Показываем список задач для выбранной категории
                         VStack(spacing: 0) {
@@ -78,6 +130,32 @@ struct ClockViewIOS: View {
                                 .frame(height: 50)
                         }
                         .transition(.opacity)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    // Обрабатываем только вертикальное перемещение вниз
+                                    if value.translation.height > 0 && value.startLocation.y < 100 {
+                                        // Начало жеста в верхней части экрана
+                                        isDragging = true
+                                        dragOffset = value.translation
+                                    }
+                                }
+                                .onEnded { value in
+                                    // Если свайп вниз больше 80 пикселей и начался в верхней части экрана
+                                    if value.translation.height > 80 && value.startLocation.y < 100 {
+                                        withAnimation(.spring()) {
+                                            // Закрываем список задач и очищаем выбранную категорию
+                                            viewModel.selectedCategory = nil
+                                        }
+                                    }
+                                    
+                                    // В любом случае сбрасываем смещение
+                                    withAnimation(.spring()) {
+                                        isDragging = false
+                                        dragOffset = .zero
+                                    }
+                                }
+                        )
                     } else {
                         // Показываем циферблат - поднимаем на 20 пикселей выше центра
                         Spacer()
@@ -115,34 +193,6 @@ struct ClockViewIOS: View {
                         .offset(x: dragOffset.width < 0 ? dragOffset.width : 0) // Добавляем смещение при свайпе влево
                         .animation(.spring(), value: isDragging) // Анимация при перетаскивании
                     }
-                    
-                    Spacer()
-                }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        VStack {
-                            Text(viewModel.formattedDate)
-                                .font(.headline)
-                            Text(viewModel.formattedWeekday)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        HStack {
-                            Button(action: { showingNewSettings = true }) {
-                                Image(systemName: "gear")
-                            }
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        HStack {
-                            Button(action: { viewModel.showingCalendar = true }) {
-                                Image(systemName: "calendar")
-                            }
-                        }
-                    }
                 }
                 
                 // Набор категорий снизу - скрываем при активном поиске или при создании задачи
@@ -157,15 +207,15 @@ struct ClockViewIOS: View {
             .gesture(
                 DragGesture()
                     .onChanged { value in
-                        // Обрабатываем только горизонтальное перемещение влево
-                        if value.translation.width < 0 {
+                        // Обрабатываем только горизонтальное перемещение влево если календарь не показан
+                        if value.translation.width < 0 && !showingWeekCalendar {
                             isDragging = true
                             dragOffset = value.translation
                         }
                     }
                     .onEnded { value in
                         // Если свайп влево больше 100 пикселей (по модулю), показываем TaskTimeline
-                        if value.translation.width < -100 {
+                        if value.translation.width < -100 && !showingWeekCalendar {
                             withAnimation {
                                 showingTaskTimeline = true
                             }
@@ -187,24 +237,11 @@ struct ClockViewIOS: View {
                     isPresented: $viewModel.showingCategoryEditor
                 )
             }
-            // 3. Новый .fullScreenCover
             .fullScreenCover(isPresented: $showingNewSettings) {
                 NavigationStack {
                     PersonalizationViewIOS(viewModel: viewModel)
                 }
             }
-            // Заменяем обычный fullScreenCover на кастомный с анимацией справа налево 
-            // .fullScreenCover(isPresented: $showingTaskTimeline) {
-            //     NavigationStack {
-            //         TaskTimeline(
-            //             tasks: viewModel.tasks,
-            //             selectedDate: viewModel.selectedDate,
-            //             listViewModel: listViewModel,
-            //             categoryManager: viewModel.categoryManagement
-            //         )
-            //         .transition(.move(edge: .trailing))
-            //     }
-            // }
             .horizontalFullScreenCover(isPresented: $showingTaskTimeline) {
                 TaskTimeline(
                     tasks: viewModel.tasks,
@@ -215,7 +252,7 @@ struct ClockViewIOS: View {
             }
             .background(Color(red: 0.098, green: 0.098, blue: 0.098))
         }
-        // .preferredColorScheme(ThemeManager.shared.isDarkMode ? .dark : .light)
+        .navigationViewStyle(StackNavigationViewStyle())
         .onReceive(timer) { _ in
             viewModel.updateCurrentTimeIfNeeded()
         }
@@ -277,6 +314,26 @@ struct ClockViewIOS: View {
                 name: NSNotification.Name("CloseTaskTimeline"),
                 object: nil
             )
+        }
+    }
+    
+    // Функция для переключения отображения недельного календаря
+    private func toggleWeekCalendar() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            showingWeekCalendar.toggle()
+            if showingWeekCalendar {
+                weekCalendarOffset = 0
+            } else {
+                weekCalendarOffset = -200
+            }
+        }
+    }
+    
+    // Функция для скрытия недельного календаря
+    private func hideWeekCalendar() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            weekCalendarOffset = -200
+            showingWeekCalendar = false
         }
     }
     

@@ -21,7 +21,7 @@ struct WeekCalendarView: View {
             
             // Секция с календарем
             CalendarSection
-                .cornerRadius(20)
+                .cornerRadius(16)
         }
         .onChange(of: selectedDate) { _, _ in
             updateWeekStartDate()
