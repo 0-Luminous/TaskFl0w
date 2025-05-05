@@ -68,8 +68,8 @@ struct TopBarView: View {
                 .padding(.trailing, 16)
         }
         .padding(.top, 5)
-        .padding(.bottom, 2)
-        .frame(height: 24) // Явно задаем высоту панели, как в стандартном навбаре
+        // .padding(.bottom, 2)
+        .frame(height: 15) // Явно задаем высоту панели, как в стандартном навбаре
         // .background(
         //     Rectangle()
         //         .fill(Color(red: 0.098, green: 0.098, blue: 0.098))

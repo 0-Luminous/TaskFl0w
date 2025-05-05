@@ -21,8 +21,8 @@ struct PersonalizationViewIOS: View {
                     showingClockEditor = true
                 } label: {
                     CardView(
-                        icon: "nosign.app.fill",
-                        title: "Тест"
+                        icon: "bell.badge.fill",
+                        title: "Уведомления"
                     )
                 }
 

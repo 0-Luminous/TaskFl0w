@@ -101,7 +101,7 @@ struct TaskListView: View {
                                 .listRowBackground(
                                     ZStack {
                                         RoundedRectangle(cornerRadius: 10)
-                                            .fill(Color(.darkGray))
+                                            .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
                                         
                                         // Добавляем внешний бордер для задач с приоритетом
                                         if item.priority != .none {

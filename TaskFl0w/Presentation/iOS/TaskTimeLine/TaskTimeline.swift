@@ -382,8 +382,11 @@ struct TaskTimeline: View {
 
             // Общая высота всех задач
             let tasksHeight = CGFloat(todoTasks.count) * taskRowHeight
-
-            return baseHeight + tasksHeight
+            
+            // Добавляем отступы фона TasksFromToDoListView
+            let padding: CGFloat = 10 // Отступы сверху и снизу (10 + 10)
+            
+            return baseHeight + tasksHeight + padding
         }
     }
 

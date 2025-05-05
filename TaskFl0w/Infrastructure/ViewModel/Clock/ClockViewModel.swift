@@ -43,6 +43,12 @@ final class ClockViewModel: ObservableObject {
         didSet {
             // Обновляем selectedDate в TaskManagement при изменении
             (taskManagement as? TaskManagement)?.selectedDate = selectedDate
+            
+            // Обновляем задачи для выбранной даты
+            updateTasksForSelectedDate()
+            
+            // Обновляем состояние clockState
+            clockState.selectedDate = selectedDate
         }
     }
 
@@ -475,4 +481,29 @@ final class ClockViewModel: ObservableObject {
     
     // Добавляем коллекцию для хранения подписок
     private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - Методы управления задачами и обновления циферблата
+    
+    /// Обновляет задачи для выбранной даты
+    private func updateTasksForSelectedDate() {
+        // Получаем все задачи из SharedState
+        let allTasks = sharedState.tasks
+        
+        // Фильтруем задачи на выбранную дату
+        let tasksOnSelectedDate = allTasks.filter { task in
+            Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
+        }
+        
+        // Получаем незавершенные задачи с предыдущих дней
+        let incompleteTasksFromPreviousDays = allTasks.filter { task in
+            !task.isCompleted && 
+            Calendar.current.compare(task.startTime, to: selectedDate, toGranularity: .day) == .orderedAscending
+        }
+        
+        // Объединяем задачи текущего дня и невыполненные с предыдущих дней
+        tasks = tasksOnSelectedDate + incompleteTasksFromPreviousDays
+        
+        // Принудительно обновляем интерфейс
+        objectWillChange.send()
+    }
 }
