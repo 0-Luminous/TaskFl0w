@@ -13,6 +13,10 @@ struct WeekCalendarView: View {
     private let calendar = Calendar.current
     @State private var weekStartDate = Date()
     @State private var currentWeekIndex = 0
+    @State private var weekCalendarOffset: CGFloat = 0 // Добавлено из ClockViewIOS
+    
+    // Добавлена функция обратного вызова для сокрытия календаря
+    var onHideCalendar: (() -> Void)?
     
     var body: some View {
         VStack(spacing: 10) {
@@ -23,9 +27,40 @@ struct WeekCalendarView: View {
             CalendarSection
                 .cornerRadius(16)
         }
+        .padding(.horizontal, 14) // Добавлено из ClockViewIOS
+        .padding(.vertical, 8) // Добавлено из ClockViewIOS
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                .shadow(color: .black.opacity(0.3), radius: 5)
+        ) // Добавлено из ClockViewIOS
+        .padding(.horizontal, 10) // Добавлено из ClockViewIOS
+        .offset(y: weekCalendarOffset) // Добавлено из ClockViewIOS
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    // Только если календарь уже показан и свайп вверх
+                    if value.translation.height < 0 {
+                        weekCalendarOffset = value.translation.height
+                    }
+                }
+                .onEnded { value in
+                    // Если сделан свайп вверх, скрываем календарь
+                    if value.translation.height < -20 {
+                        hideCalendar()
+                    } else {
+                        // Возвращаем в исходное положение
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            weekCalendarOffset = 0
+                        }
+                    }
+                }
+        ) // Добавлено из ClockViewIOS
         .onChange(of: selectedDate) { _, _ in
+            // Автоматически скрываем календарь после выбора даты
+            hideCalendar()
             updateWeekStartDate()
-        }
+        } // Обновлено с учетом ClockViewIOS
     }
     
     // Секция календаря вынесена в отдельное свойство
@@ -143,6 +178,15 @@ struct WeekCalendarView: View {
         
         let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: selectedDate)
         weekStartDate = calendar.date(from: components) ?? Date()
+    }
+    
+    // Функция для скрытия календаря, добавленная из ClockViewIOS
+    private func hideCalendar() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            weekCalendarOffset = -200
+            // Вызываем колбэк для сообщения родительскому компоненту о необходимости скрыть календарь
+            onHideCalendar?()
+        }
     }
 }
 

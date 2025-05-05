@@ -34,7 +34,6 @@ struct ClockViewIOS: View {
     
     // Состояние для отображения недельного календаря
     @State private var showingWeekCalendar = false
-    @State private var weekCalendarOffset: CGFloat = -200 // Начальная позиция за пределами экрана
     
     // MARK: - Body
     var body: some View {
@@ -59,42 +58,13 @@ struct ClockViewIOS: View {
                 VStack(spacing: 0) {
                     // Верхняя панель с кнопкой настроек и датой или WeekCalendarView
                     if showingWeekCalendar {
-                        // Здесь непосредственно используем WeekCalendarView
-                        WeekCalendarView(selectedDate: $viewModel.selectedDate)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 24)
-                                    .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
-                                    .shadow(color: .black.opacity(0.3), radius: 5)
-                            )
-                            .padding(.horizontal, 10)
-                            .gesture(
-                                DragGesture()
-                                    .onChanged { value in
-                                        // Только если календарь уже показан и свайп вверх
-                                        if value.translation.height < 0 {
-                                            weekCalendarOffset = value.translation.height
-                                        }
-                                    }
-                                    .onEnded { value in
-                                        // Если сделан свайп вверх, скрываем календарь
-                                        if value.translation.height < -20 {
-                                            hideWeekCalendar()
-                                        } else {
-                                            // Возвращаем в исходное положение
-                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                                weekCalendarOffset = 0
-                                            }
-                                        }
-                                    }
-                            )
-                            .onChange(of: viewModel.selectedDate) { _, _ in
-                                // Автоматически скрываем календарь после выбора даты
-                                if showingWeekCalendar {
-                                    hideWeekCalendar()
-                                }
+                        // Используем обновленную WeekCalendarView с коллбэком
+                        WeekCalendarView(
+                            selectedDate: $viewModel.selectedDate,
+                            onHideCalendar: {
+                                showingWeekCalendar = false
                             }
+                        )
                     } else {
                         // Стандартная верхняя панель
                         TopBarView(
@@ -244,8 +214,8 @@ struct ClockViewIOS: View {
             }
             .horizontalFullScreenCover(isPresented: $showingTaskTimeline) {
                 TaskTimeline(
-                    tasks: viewModel.tasks,
                     selectedDate: viewModel.selectedDate,
+                    tasks: viewModel.tasks,
                     listViewModel: listViewModel,
                     categoryManager: viewModel.categoryManagement
                 )
@@ -321,19 +291,6 @@ struct ClockViewIOS: View {
     private func toggleWeekCalendar() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             showingWeekCalendar.toggle()
-            if showingWeekCalendar {
-                weekCalendarOffset = 0
-            } else {
-                weekCalendarOffset = -200
-            }
-        }
-    }
-    
-    // Функция для скрытия недельного календаря
-    private func hideWeekCalendar() {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            weekCalendarOffset = -200
-            showingWeekCalendar = false
         }
     }
     

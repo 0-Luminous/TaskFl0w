@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct TaskTimeline: View {
+    @State var selectedDate: Date
     let tasks: [TaskOnRing]
-    let selectedDate: Date
     @ObservedObject var listViewModel: ListViewModel
     let categoryManager: CategoryManagementProtocol
 
@@ -65,58 +65,14 @@ struct TaskTimeline: View {
     }
 
     var body: some View {
+        ZStack(alignment: .top) {
+            // Основное содержимое сначала (нижний слой)
         VStack(spacing: 0) {
-            // TopBarView отображается только когда календарь скрыт
-            if !showWeekCalendar {
-                TopBarView(
-                    viewModel: clockViewModel,
-                    showSettingsAction: { showSettings = true },
-                    toggleCalendarAction: toggleWeekCalendar,
-                    isCalendarVisible: false  // Всегда false, чтобы не дублировать календарь
-                )
-            }
-            
-            // Отдельный календарь
-            if showWeekCalendar {
-                WeekCalendarView(selectedDate: $clockViewModel.selectedDate)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 24)
-                            .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
-                            .shadow(color: .black.opacity(0.3), radius: 5)
-                    )
-                    .padding(.horizontal, 10)
-                    .gesture(
-                        DragGesture()
-                            .onChanged { value in
-                                // Только если календарь уже показан и свайп вверх
-                                if value.translation.height < 0 {
-                                    weekCalendarOffset = value.translation.height
-                                }
-                            }
-                            .onEnded { value in
-                                // Если сделан свайп вверх, скрываем календарь
-                                if value.translation.height < -20 {
-                                    hideWeekCalendar()
-                                } else {
-                                    // Возвращаем в исходное положение
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                        weekCalendarOffset = 0
-                                    }
-                                }
-                            }
-                    )
-                    .onChange(of: clockViewModel.selectedDate) { _, _ in
-                        // Автоматически скрываем календарь после выбора даты
-                        if showWeekCalendar {
-                            hideWeekCalendar()
-                        }
-                    }
-            }
-
             ScrollView {
                 VStack(spacing: 0) {
+                    Color.clear
+                        .frame(height: 40)
+                        .listRowBackground(Color.clear)
                     // Контейнер для временной шкалы и индикатора времени
                     ZStack(alignment: .leading) {
                         // Индикатор текущего времени (теперь ПЕРВЫЙ элемент, чтобы быть НИЖЕ в Z-порядке)
@@ -182,7 +138,36 @@ struct TaskTimeline: View {
             }
             .padding(.top, 30)
         }
+        // .padding(.top, 20)
         .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+            
+            // TopBarView поверх всего содержимого (верхний слой)
+            VStack {
+                // TopBarView отображается только когда календарь скрыт
+                if !showWeekCalendar {
+                    TopBarView(
+                        viewModel: clockViewModel,
+                        showSettingsAction: { showSettings = true },
+                        toggleCalendarAction: toggleWeekCalendar,
+                        isCalendarVisible: false  // Всегда false, чтобы не дублировать календарь
+                    )
+                    .zIndex(100) // Гарантируем, что TopBarView будет над всем
+                }
+                
+                // Используем обновленный WeekCalendarView с колбэком
+                if showWeekCalendar {
+                    WeekCalendarView(
+                        selectedDate: $clockViewModel.selectedDate,
+                        onHideCalendar: {
+                            showWeekCalendar = false
+                        }
+                    )
+                    .zIndex(90) // Ниже чем TopBarView, но выше остального содержимого
+                }
+                
+                Spacer() // Отодвигаем календарь и TopBar вверх
+            }
+        }
         .gesture(
             DragGesture()
                 .onChanged { value in
@@ -215,25 +200,17 @@ struct TaskTimeline: View {
             // Устанавливаем selectedDate в ClockViewModel
             clockViewModel.selectedDate = selectedDate
         }
+        // Добавляем наблюдатель за изменениями даты в ClockViewModel
+        .onChange(of: clockViewModel.selectedDate) { newValue in
+            // Обновляем основную selectedDate при изменении даты в календаре
+            selectedDate = newValue
+        }
     }
 
     // Функция для переключения отображения недельного календаря
     private func toggleWeekCalendar() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             showWeekCalendar.toggle()
-            if showWeekCalendar {
-                weekCalendarOffset = 0
-            } else {
-                weekCalendarOffset = -200
-            }
-        }
-    }
-
-    // Функция для скрытия недельного календаря
-    private func hideWeekCalendar() {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            weekCalendarOffset = -200
-            showWeekCalendar = false
         }
     }
 
