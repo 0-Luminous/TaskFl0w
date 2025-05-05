@@ -61,14 +61,14 @@ struct ClockViewIOS: View {
                     if showingWeekCalendar {
                         // Здесь непосредственно используем WeekCalendarView
                         WeekCalendarView(selectedDate: $viewModel.selectedDate)
-                            .padding(.horizontal, 8)
+                            .padding(.horizontal, 14)
                             .padding(.vertical, 8)
                             .background(
                                 RoundedRectangle(cornerRadius: 24)
                                     .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
                                     .shadow(color: .black.opacity(0.3), radius: 5)
                             )
-                            .padding(.horizontal)
+                            .padding(.horizontal, 10)
                             .gesture(
                                 DragGesture()
                                     .onChanged { value in

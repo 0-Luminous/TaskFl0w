@@ -79,14 +79,14 @@ struct TaskTimeline: View {
             // Отдельный календарь
             if showWeekCalendar {
                 WeekCalendarView(selectedDate: $clockViewModel.selectedDate)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, 14)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 24)
                             .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
                             .shadow(color: .black.opacity(0.3), radius: 5)
                     )
-                    .padding(.horizontal)
+                    .padding(.horizontal, 10)
                     .gesture(
                         DragGesture()
                             .onChanged { value in
@@ -529,67 +529,4 @@ struct TimeBlock {
     let hour: Int
     let tasks: [TaskOnRing]
     let showHourLabel: Bool
-}
-
-struct TaskTimeline_Previews: PreviewProvider {
-    static var previews: some View {
-        // Создаем примеры задач для предпросмотра
-        let calendar = Calendar.current
-        let now = Date()
-
-        // Создаем категории
-        let workoutCategory = TaskCategoryModel(
-            id: UUID(), rawValue: "Morning Workout", iconName: "figure.run", color: .pink)
-        let showerCategory = TaskCategoryModel(
-            id: UUID(), rawValue: "Shower", iconName: "drop", color: .blue)
-        let breakfastCategory = TaskCategoryModel(
-            id: UUID(), rawValue: "Breakfast", iconName: "cup.and.saucer", color: .orange)
-        let emailCategory = TaskCategoryModel(
-            id: UUID(), rawValue: "Check Email", iconName: "envelope", color: .purple)
-
-        // Создаем задачи на примерное время
-        let workoutStart = calendar.date(bySettingHour: 7, minute: 45, second: 0, of: now)!
-        let workoutEnd = calendar.date(bySettingHour: 8, minute: 15, second: 0, of: now)!
-        let workoutTask = TaskOnRing(
-            id: UUID(), startTime: workoutStart, endTime: workoutEnd,
-            color: .pink, icon: "figure.run", category: workoutCategory,
-            isCompleted: true)
-
-        let showerStart = calendar.date(bySettingHour: 8, minute: 15, second: 0, of: now)!
-        let showerEnd = calendar.date(bySettingHour: 8, minute: 30, second: 0, of: now)!
-        let showerTask = TaskOnRing(
-            id: UUID(), startTime: showerStart, endTime: showerEnd,
-            color: .blue, icon: "drop", category: showerCategory,
-            isCompleted: false)
-
-        let breakfastStart = calendar.date(bySettingHour: 8, minute: 30, second: 0, of: now)!
-        let breakfastEnd = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: now)!
-        let breakfastTask = TaskOnRing(
-            id: UUID(), startTime: breakfastStart, endTime: breakfastEnd,
-            color: .orange, icon: "cup.and.saucer", category: breakfastCategory,
-            isCompleted: false)
-
-        let emailStart = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: now)!
-        let emailEnd = calendar.date(bySettingHour: 9, minute: 15, second: 0, of: now)!
-        let emailTask = TaskOnRing(
-            id: UUID(), startTime: emailStart, endTime: emailEnd,
-            color: .purple, icon: "envelope", category: emailCategory,
-            isCompleted: false)
-
-        let exampleTasks = [workoutTask, showerTask, breakfastTask, emailTask]
-
-        // Создаем необходимый CategoryManagement для превью
-        let context = PersistenceController.shared.container.viewContext
-        let categoryManager = CategoryManagement(context: context)
-
-        ZStack {
-            Color.black.edgesIgnoringSafeArea(.all)
-            TaskTimeline(
-                tasks: exampleTasks,
-                selectedDate: now,
-                listViewModel: ListViewModel(),
-                categoryManager: categoryManager
-            )
-        }
-    }
 }
