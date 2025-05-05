@@ -67,8 +67,6 @@ struct WeekCalendarView: View {
                 }
         )
         .onChange(of: selectedDate) { _, newValue in
-            // Больше не скрываем календарь при выборе даты
-            updateWeekStartDate()
             // Обновляем visibleMonth при изменении selectedDate
             visibleMonth = newValue
         }
@@ -128,34 +126,6 @@ struct WeekCalendarView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     withAnimation {
                         scrollProxy.scrollTo(0, anchor: .center)
-                    }
-                }
-            }
-            .onChange(of: selectedDate) { oldValue, newValue in
-                let selectedWeekIndex = getWeekIndex(for: newValue)
-                
-                // Сначала всегда обновляем currentWeekIndex
-                currentWeekIndex = selectedWeekIndex
-                
-                // Создаем ID даты, который будем использовать для прокрутки
-                let dateId = "\(calendar.component(.year, from: newValue))-\(calendar.component(.month, from: newValue))-\(calendar.component(.day, from: newValue))"
-                
-                // Если изменился индекс недели, сначала прокручиваем к неделе
-                if selectedWeekIndex != getWeekIndex(for: oldValue) {
-                    withAnimation {
-                        scrollProxy.scrollTo(selectedWeekIndex, anchor: .center)
-                    }
-                    
-                    // После прокрутки к неделе используем небольшую задержку
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                        withAnimation {
-                            scrollProxy.scrollTo(dateId, anchor: .center)
-                        }
-                    }
-                } else {
-                    // Если мы в той же неделе, просто прокручиваем к дате
-                    withAnimation {
-                        scrollProxy.scrollTo(dateId, anchor: .center)
                     }
                 }
             }
@@ -262,7 +232,7 @@ struct DayCell: View {
             // Число
             Text("\(Calendar.current.component(.day, from: date))")
                 .font(.system(size: 16, weight: .medium))
-                .foregroundColor(isSelected ? .white : textColor)
+                .foregroundColor(textColor)
         }
         .frame(width: 40, height: 60)
         .background(isSelected ? Color.blue : Color(red: 0.098, green: 0.098, blue: 0.098))
@@ -294,8 +264,8 @@ struct DayCell: View {
         if isWeekend {
             return .red
         } else {
-            // Для будних дней используем белый цвет для чисел и серый для названия дня
-            return dayName.count > 0 ? .gray : .white
+            // Для будних дней используем белый цвет для названий дней и чисел
+            return .white
         }
     }
 }
