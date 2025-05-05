@@ -124,19 +124,36 @@ struct TaskTimeline: View {
                             let totalHeight = geometry.size.height
                             let calendar = Calendar.current
                             let now = currentTime
-                            let startOfDay = calendar.startOfDay(for: now)
-                            let timePassedSeconds = now.timeIntervalSince(startOfDay)
-                            let dayTotalSeconds: TimeInterval = 24 * 60 * 60
-                            let positionRatio = timePassedSeconds / dayTotalSeconds
-                            let yPosition = totalHeight * CGFloat(positionRatio)
-
+                            
+                            // Получаем общее количество блоков времени и их распределение
+                            let timeBlocks = createTimeBlocks()
+                            
+                            // Определяем высоту одного блока
+                            let blockHeight = totalHeight / CGFloat(timeBlocks.count)
+                            
+                            // Определяем текущий час и минуты
+                            let currentHour = calendar.component(.hour, from: now)
+                            let currentMinute = calendar.component(.minute, from: now)
+                            
+                            // Вычисляем, какая часть часа прошла (от 0 до 1)
+                            let minuteProgress = CGFloat(currentMinute) / 60.0
+                            
+                            // Вычисляем положение индикатора на шкале
+                            // Расчет позиции на основе самого часа, а не индекса блока
+                            // Это позволяет привязать индикатор к правильным значениям часов
+                            // Находим общий "прогресс дня" (от 0 до 24 часов с дробной частью)
+                            let dayProgress = CGFloat(currentHour) + minuteProgress
+                            
+                            // Вычисляем позицию как долю от общей высоты (24 часа + 1 для полночи следующего дня)
+                            let yPosition = (dayProgress / 25.0) * totalHeight
+                            
                             // Только линия и текст слева
                             HStack(alignment: .center, spacing: 2) {
                                 // Метка времени слева от линии
                                 Text(formatTime(currentTime))
                                     .font(.caption)
                                     .foregroundColor(.pink)
-
+                                
                                 // Горизонтальная линия
                                 Rectangle()
                                     .fill(Color.pink)
@@ -146,7 +163,7 @@ struct TaskTimeline: View {
                             .offset(y: yPosition - 10)  // Вычитаем половину высоты текста для центрирования
                             .padding(.leading, -15)  // Отрицательный padding для максимального смещения влево
                         }
-
+                        
                         // Базовая временная шкала (теперь ВТОРОЙ элемент, чтобы быть ВЫШЕ в Z-порядке)
                         timelineContent
                     }
@@ -339,7 +356,7 @@ struct TaskTimeline: View {
                     ForEach(groupTasksByCategory(timeBlock.tasks), id: \.key) {
                         category, tasksInCategory in
                         if let firstTask = tasksInCategory.first {
-                            TasksFromToDoListView(
+                            TasksFromView(
                                 listViewModel: listViewModel,
                                 selectedDate: selectedDate,
                                 categoryManager: categoryManager,
@@ -383,7 +400,7 @@ struct TaskTimeline: View {
             // Общая высота всех задач
             let tasksHeight = CGFloat(todoTasks.count) * taskRowHeight
             
-            // Добавляем отступы фона TasksFromToDoListView
+            // Добавляем отступы фона TasksFromView
             let padding: CGFloat = 10 // Отступы сверху и снизу (10 + 10)
             
             return baseHeight + tasksHeight + padding
@@ -419,7 +436,7 @@ struct TaskTimeline: View {
     private func createTimeBlocks() -> [TimeBlock] {
         let calendar = Calendar.current
         let now = Date()
-        let currentHour = calendar.component(.hour, from: now)
+        let _ = calendar.component(.hour, from: now)
 
         // Группируем задачи по часам
         var tasksByHour: [Int: [TaskOnRing]] = [:]
@@ -431,7 +448,14 @@ struct TaskTimeline: View {
 
         for task in filteredTasks {
             let startHour = calendar.component(.hour, from: task.startTime)
-            let endHour = calendar.component(.hour, from: task.endTime)
+            // Вместо endHour берем следующий час, если задача заканчивается не ровно в час
+            let endTime = task.endTime
+            let endMinute = calendar.component(.minute, from: endTime)
+            let endHour = calendar.component(.hour, from: endTime)
+            
+            // Если задача заканчивается не ровно в час (есть минуты),
+            // показываем следующий час вместо текущего
+            let adjustedEndHour = endMinute > 0 ? (endHour + 1) % 24 : endHour
 
             // Добавляем час начала в коллекцию задач
             if tasksByHour[startHour] == nil {
@@ -439,15 +463,15 @@ struct TaskTimeline: View {
             }
             tasksByHour[startHour]?.append(task)
 
-            // Добавляем час окончания в множество часов окончания
-            endHours.insert(endHour)
+            // Добавляем скорректированный час окончания в множество часов окончания
+            endHours.insert(adjustedEndHour)
 
-            // Добавляем диапазон в занятые часы
-            if endHour > startHour {
-                occupiedRanges.append((startHour, endHour))
-            } else if endHour < startHour {  // Задача через полночь
+            // Добавляем диапазон в занятые часы с скорректированным концом
+            if adjustedEndHour > startHour {
+                occupiedRanges.append((startHour, adjustedEndHour))
+            } else if adjustedEndHour < startHour {  // Задача через полночь
                 occupiedRanges.append((startHour, 24))
-                occupiedRanges.append((0, endHour))
+                occupiedRanges.append((0, adjustedEndHour))
             }
         }
 
@@ -524,29 +548,29 @@ struct TaskTimeline_Previews: PreviewProvider {
             id: UUID(), rawValue: "Check Email", iconName: "envelope", color: .purple)
 
         // Создаем задачи на примерное время
-        var workoutStart = calendar.date(bySettingHour: 7, minute: 45, second: 0, of: now)!
-        var workoutEnd = calendar.date(bySettingHour: 8, minute: 15, second: 0, of: now)!
+        let workoutStart = calendar.date(bySettingHour: 7, minute: 45, second: 0, of: now)!
+        let workoutEnd = calendar.date(bySettingHour: 8, minute: 15, second: 0, of: now)!
         let workoutTask = TaskOnRing(
             id: UUID(), startTime: workoutStart, endTime: workoutEnd,
             color: .pink, icon: "figure.run", category: workoutCategory,
             isCompleted: true)
 
-        var showerStart = calendar.date(bySettingHour: 8, minute: 15, second: 0, of: now)!
-        var showerEnd = calendar.date(bySettingHour: 8, minute: 30, second: 0, of: now)!
+        let showerStart = calendar.date(bySettingHour: 8, minute: 15, second: 0, of: now)!
+        let showerEnd = calendar.date(bySettingHour: 8, minute: 30, second: 0, of: now)!
         let showerTask = TaskOnRing(
             id: UUID(), startTime: showerStart, endTime: showerEnd,
             color: .blue, icon: "drop", category: showerCategory,
             isCompleted: false)
 
-        var breakfastStart = calendar.date(bySettingHour: 8, minute: 30, second: 0, of: now)!
-        var breakfastEnd = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: now)!
+        let breakfastStart = calendar.date(bySettingHour: 8, minute: 30, second: 0, of: now)!
+        let breakfastEnd = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: now)!
         let breakfastTask = TaskOnRing(
             id: UUID(), startTime: breakfastStart, endTime: breakfastEnd,
             color: .orange, icon: "cup.and.saucer", category: breakfastCategory,
             isCompleted: false)
 
-        var emailStart = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: now)!
-        var emailEnd = calendar.date(bySettingHour: 9, minute: 15, second: 0, of: now)!
+        let emailStart = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: now)!
+        let emailEnd = calendar.date(bySettingHour: 9, minute: 15, second: 0, of: now)!
         let emailTask = TaskOnRing(
             id: UUID(), startTime: emailStart, endTime: emailEnd,
             color: .purple, icon: "envelope", category: emailCategory,

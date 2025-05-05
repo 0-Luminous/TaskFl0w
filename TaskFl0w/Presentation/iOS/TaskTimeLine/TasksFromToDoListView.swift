@@ -1,5 +1,5 @@
 //
-//  TasksFromToDoListView.swift
+//  TasksFromView.swift
 //  TaskFl0w
 //
 //  Created by Yan on 30/4/25.
@@ -8,25 +8,24 @@
 import SwiftUI
 
 // Компонент для отображения задач из ToDoList
-struct TasksFromToDoListView: View {
+struct TasksFromView: View {
     @ObservedObject var listViewModel: ListViewModel
     let selectedDate: Date
     let categoryManager: CategoryManagementProtocol
     let selectedCategoryID: UUID
     var startTime: Date? = nil
     var endTime: Date? = nil
+    var isNearestCategory: Bool = true // Новый параметр: ближайшая ли это категория
+    var specificTasks: [ToDoItem]? = nil // Добавляем параметр для передачи конкретных задач
     
     var body: some View {
+        // Оборачиваем весь контент в VStack
         VStack(alignment: .leading, spacing: 12) {
-            // Получаем все задачи из списка на выбранную дату
-            let items = getFilteredItemsForDate(selectedDate)
+            // Используем specificTasks, если они переданы, иначе фильтруем из списка
+            let categoryTasks: [ToDoItem] = specificTasks ?? getFilteredItemsForDate(selectedDate).filter { $0.categoryID == selectedCategoryID }
             
-            // Отфильтровываем только задачи с нужной категорией
-            let categoryTasks = items.filter { $0.categoryID == selectedCategoryID }
-            
-            // Получаем информацию о категории
-            if let categoryItem = categoryTasks.first,
-               let categoryName = categoryItem.categoryName {
+            // Проверяем, можем ли извлечь информацию о категории из задач или из менеджера категорий
+            if let categoryItem = categoryTasks.first, let categoryName = categoryItem.categoryName {
                 let (color, icon) = getCategoryInfo(for: selectedCategoryID, categoryManager: categoryManager)
                 let category = TaskCategoryModel(id: selectedCategoryID, rawValue: categoryName, iconName: icon, color: color)
                 
@@ -40,10 +39,28 @@ struct TasksFromToDoListView: View {
                         category: category,
                         todoTasks: categoryTasks,
                         startTime: startTime,
-                        endTime: endTime
+                        endTime: endTime,
+                        showFullTasks: isNearestCategory
                     )
                 }
+            } else if let category = categoryManager.categories.first(where: { $0.id == selectedCategoryID }) {
+                // Если нет задач, пытаемся получить информацию о категории из categoryManager
+                let taskCategory = TaskCategoryModel(
+                    id: selectedCategoryID,
+                    rawValue: category.rawValue,
+                    iconName: category.iconName,
+                    color: category.color
+                )
+                
+                CategoryView(
+                    category: taskCategory,
+                    todoTasks: [],
+                    startTime: startTime,
+                    endTime: endTime,
+                    showFullTasks: false
+                )
             } else {
+                // Если категория вообще не найдена
                 Text("Категория не найдена")
                     .foregroundColor(.gray)
                     .padding(.horizontal, 10)
@@ -58,6 +75,7 @@ struct TasksFromToDoListView: View {
         let todoTasks: [ToDoItem]
         let startTime: Date?
         let endTime: Date?
+        let showFullTasks: Bool // Новый параметр
         
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
@@ -117,8 +135,8 @@ struct TasksFromToDoListView: View {
                 }
                 .padding(.horizontal, 10)
                 
-                // Отображаем все задачи из категории
-                if !todoTasks.isEmpty {                    
+                // Отображаем задачи только если showFullTasks = true
+                if showFullTasks && !todoTasks.isEmpty {                    
                     // Сортируем задачи: сначала по статусу завершения, затем по приоритету
                     let sortedTasks = todoTasks.sorted { (task1, task2) -> Bool in
                         // Сначала незавершенные задачи
@@ -134,6 +152,15 @@ struct TasksFromToDoListView: View {
                     ForEach(sortedTasks) { task in
                         ToDoTaskRow(task: task, categoryColor: category.color)
                     }
+                }
+                
+                // Для не ранних категорий показываем сообщение
+                if !showFullTasks && !todoTasks.isEmpty {
+                    Text("Незавершённые задачи перенесены в следующую категорию")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
                 }
                 
                 // Если нет задач в категории, показываем информационное сообщение
@@ -165,8 +192,15 @@ struct TasksFromToDoListView: View {
         
         // Форматирование продолжительности
         private func formatDuration(_ interval: TimeInterval) -> String {
-            let minutes = Int(interval / 60)
-            return "\(minutes) мин"
+            let totalMinutes = Int(interval / 60)
+            let hours = totalMinutes / 60
+            let minutes = totalMinutes % 60
+            
+            if hours > 0 {
+                return "\(hours) ч \(minutes) мин"
+            } else {
+                return "\(minutes) мин"
+            }
         }
     }
     
@@ -213,7 +247,7 @@ func getCategoryInfo(for categoryID: UUID, categoryManager: CategoryManagementPr
     let startTime = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate)
     let endTime = Calendar.current.date(bySettingHour: 10, minute: 30, second: 0, of: selectedDate)
     
-    return TasksFromToDoListView(
+    return TasksFromView(
         listViewModel: ListViewModel(),
         selectedDate: selectedDate,
         categoryManager: categoryManager,

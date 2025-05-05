@@ -42,7 +42,7 @@ struct ToDoTaskRow: View {
         .padding(.horizontal, 12)
         .background(
             RoundedRectangle(cornerRadius: 10)
-                .fill(Color(.darkGray))
+                .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
                         .strokeBorder(getPriorityBorderColor(for: task.priority), lineWidth: task.priority != .none ? 1.5 : 0)
