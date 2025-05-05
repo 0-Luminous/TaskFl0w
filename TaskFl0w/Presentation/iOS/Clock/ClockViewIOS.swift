@@ -56,7 +56,7 @@ struct ClockViewIOS: View {
                 .background(Color.clear)
                 
                 VStack(spacing: 0) {
-                    // Верхняя панель с кнопкой настроек и датой или WeekCalendarView
+                    // Удаляем верхнюю панель отсюда и оставляем только WeekCalendarView
                     if showingWeekCalendar {
                         // Используем обновленную WeekCalendarView с коллбэком
                         WeekCalendarView(
@@ -64,14 +64,6 @@ struct ClockViewIOS: View {
                             onHideCalendar: {
                                 showingWeekCalendar = false
                             }
-                        )
-                    } else {
-                        // Стандартная верхняя панель
-                        TopBarView(
-                            viewModel: viewModel,
-                            showSettingsAction: { showingNewSettings = true },
-                            toggleCalendarAction: toggleWeekCalendar,
-                            isCalendarVisible: showingWeekCalendar
                         )
                     }
                     
@@ -171,6 +163,19 @@ struct ClockViewIOS: View {
                         Spacer()
                         DockBarIOS(viewModel: viewModel.dockBarViewModel)
                             .transition(.move(edge: .bottom))
+                    }
+                }
+                
+                // Добавляем TopBarView поверх всех элементов, если не показан WeekCalendar
+                if !showingWeekCalendar {
+                    VStack {
+                        TopBarView(
+                            viewModel: viewModel,
+                            showSettingsAction: { showingNewSettings = true },
+                            toggleCalendarAction: toggleWeekCalendar,
+                            isCalendarVisible: showingWeekCalendar
+                        )
+                        Spacer()
                     }
                 }
             }

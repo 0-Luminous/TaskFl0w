@@ -161,9 +161,9 @@ struct TaskListView: View {
                 }
                 
                 // SearchBar сверху с эффектом размытия для фона
-                VStack {
-                    SearchBar(text: $viewModel.searchText, isActive: $isSearchActive)
-                }
+                // VStack {
+                //     SearchBar(text: $viewModel.searchText, isActive: $isSearchActive)
+                // }
 
                 // Перемещаем BottomBar на уровень ZStack для изменения порядка слоев
                 if !isSearchActive && !isKeyboardVisible {
