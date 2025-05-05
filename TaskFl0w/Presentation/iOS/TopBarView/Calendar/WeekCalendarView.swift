@@ -13,29 +13,39 @@ struct WeekCalendarView: View {
     private let calendar = Calendar.current
     @State private var weekStartDate = Date()
     @State private var currentWeekIndex = 0
-    @State private var weekCalendarOffset: CGFloat = 0 // Добавлено из ClockViewIOS
+    @State private var weekCalendarOffset: CGFloat = 0
+    // Добавляем состояние для отслеживания видимого месяца
+    @State private var visibleMonth: Date
     
     // Добавлена функция обратного вызова для сокрытия календаря
     var onHideCalendar: (() -> Void)?
     
+    // Добавляем инициализатор для установки начального значения visibleMonth
+    init(selectedDate: Binding<Date>, onHideCalendar: (() -> Void)? = nil) {
+        self._selectedDate = selectedDate
+        self.onHideCalendar = onHideCalendar
+        // Инициализируем visibleMonth значением selectedDate
+        self._visibleMonth = State(initialValue: selectedDate.wrappedValue)
+    }
+    
     var body: some View {
         VStack(spacing: 10) {
-            // Отображение месяца и года отдельно от календаря
-            MonthYearHeader(date: selectedDate)
+            // Теперь используем visibleMonth вместо selectedDate
+            MonthYearHeader(date: visibleMonth)
             
             // Секция с календарем
             CalendarSection
                 .cornerRadius(16)
         }
-        .padding(.horizontal, 14) // Добавлено из ClockViewIOS
-        .padding(.vertical, 8) // Добавлено из ClockViewIOS
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
-                .shadow(color: .black.opacity(0.3), radius: 5)
-        ) // Добавлено из ClockViewIOS
-        .padding(.horizontal, 10) // Добавлено из ClockViewIOS
-        .offset(y: weekCalendarOffset) // Добавлено из ClockViewIOS
+                .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
+        )
+        .padding(.horizontal, 10)
+        .offset(y: weekCalendarOffset)
         .gesture(
             DragGesture()
                 .onChanged { value in
@@ -55,12 +65,13 @@ struct WeekCalendarView: View {
                         }
                     }
                 }
-        ) // Добавлено из ClockViewIOS
-        .onChange(of: selectedDate) { _, _ in
-            // Автоматически скрываем календарь после выбора даты
-            hideCalendar()
+        )
+        .onChange(of: selectedDate) { _, newValue in
+            // Больше не скрываем календарь при выборе даты
             updateWeekStartDate()
-        } // Обновлено с учетом ClockViewIOS
+            // Обновляем visibleMonth при изменении selectedDate
+            visibleMonth = newValue
+        }
     }
     
     // Секция календаря вынесена в отдельное свойство
@@ -81,21 +92,36 @@ struct WeekCalendarView: View {
                                     dayName: dayNames[dayIndex]
                                 )
                                 .onTapGesture {
-                                    selectedDate = date
+                                    withAnimation(.spring(response: 0.3)) {
+                                        selectedDate = date
+                                    }
                                 }
                                 // Используем саму дату как идентификатор ячейки
                                 .id("\(calendar.component(.year, from: date))-\(calendar.component(.month, from: date))-\(calendar.component(.day, from: date))")
+                                // Обновляем visibleMonth, когда элемент становится видимым
+                                .onAppear {
+                                    // Обновляем только если месяц отличается от текущего visibleMonth
+                                    if !calendar.isDate(date, equalTo: visibleMonth, toGranularity: .month) {
+                                        // Обновляем только если это первый день недели
+                                        if dayIndex == 0 {
+                                            visibleMonth = date
+                                        }
+                                    }
+                                }
                             }
                         }
                         .id(weekIndex)
                     }
                 }
-                .padding(.horizontal, 2) // Минимальный отступ от края экрана
+                .padding(.horizontal, 2)
             }
-            // Расширяем ScrollView, чтобы она занимала всю доступную ширину
             .frame(maxWidth: .infinity)
             .frame(height: 65)
             .clipShape(Rectangle())
+            .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
+            // Добавляем модификатор декларативной пагинации
+            .scrollTargetBehavior(.viewAligned)
+            .scrollTargetLayout()
             .onAppear {
                 updateWeekStartDate()
                 // При первом появлении прокручиваем к текущей неделе
@@ -162,7 +188,7 @@ struct WeekCalendarView: View {
     
     private var monthYearFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.dateFormat = "LLLL yyyy"
         formatter.locale = Locale(identifier: "ru_RU")
         return formatter
     }
@@ -195,16 +221,26 @@ struct MonthYearHeader: View {
     let date: Date
     
     var body: some View {
-        Text(monthYearFormatter.string(from: date))
+        Text(formattedDate)
             .font(.title2)
             .fontWeight(.bold)
             .foregroundColor(.white)
             .padding(.vertical, 5)
+            .shadow(color: Color.black.opacity(0.3), radius: 1, x: 0, y: 1)
+    }
+    
+    private var formattedDate: String {
+        let rawString = monthYearFormatter.string(from: date)
+        // Преобразуем первую букву месяца в верхний регистр
+        if let firstChar = rawString.first {
+            return String(firstChar).uppercased() + rawString.dropFirst()
+        }
+        return rawString
     }
     
     private var monthYearFormatter: DateFormatter {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.dateFormat = "LLLL yyyy"
         formatter.locale = Locale(identifier: "ru_RU")
         return formatter
     }
@@ -221,16 +257,17 @@ struct DayCell: View {
             // День недели
             Text(dayName)
                 .font(.caption2)
-                .foregroundColor(isSelected ? .black : .gray)
+                .foregroundColor(textColor)
             
             // Число
             Text("\(Calendar.current.component(.day, from: date))")
                 .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white)
+                .foregroundColor(isSelected ? .white : textColor)
         }
         .frame(width: 40, height: 60)
         .background(isSelected ? Color.blue : Color(red: 0.098, green: 0.098, blue: 0.098))
         .cornerRadius(20)
+        .shadow(color: isSelected ? Color.blue.opacity(0.5) : Color.black.opacity(0.2), radius: 3, x: 0, y: 2)
         .overlay(
             RoundedRectangle(cornerRadius: 20)
                 .stroke(isToday && !isSelected ? Color.blue : Color.clear, lineWidth: 2)
@@ -240,6 +277,26 @@ struct DayCell: View {
     // Проверяем, является ли дата сегодняшней
     private var isToday: Bool {
         Calendar.current.isDateInToday(date)
+    }
+    
+    // Определяем цвет текста в зависимости от дня недели
+    private var textColor: Color {
+        // Выбранная ячейка имеет черный текст (для контраста с синим фоном)
+        if isSelected {
+            return .black
+        }
+        
+        // Проверяем, является ли день выходным
+        let weekday = Calendar.current.component(.weekday, from: date)
+        // В Calendar.current, 1 - воскресенье, 7 - суббота
+        let isWeekend = weekday == 1 || weekday == 7
+        
+        if isWeekend {
+            return .red
+        } else {
+            // Для будних дней используем белый цвет для чисел и серый для названия дня
+            return dayName.count > 0 ? .gray : .white
+        }
     }
 }
 
