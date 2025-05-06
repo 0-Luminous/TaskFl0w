@@ -186,12 +186,10 @@ struct WeekCalendarView: View {
             .scrollTargetLayout()
             .onAppear {
                 updateWeekStartDate()
-                // При первом появлении прокручиваем к текущей неделе
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation {
-                        scrollProxy.scrollTo(0, anchor: .center)
-                    }
-                }
+                // Вычисляем индекс недели для selectedDate относительно текущей недели
+                let weekIdx = getWeekIndex(for: selectedDate)
+                // Прокручиваем к неделе с выбранной датой без анимации и задержки
+                scrollProxy.scrollTo(weekIdx, anchor: .center)
             }
         }
         .padding(0)

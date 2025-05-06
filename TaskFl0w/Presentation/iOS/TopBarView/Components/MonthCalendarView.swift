@@ -131,11 +131,10 @@ struct MonthCalendarView: View {
             .scrollTargetLayout()
             .onAppear {
                 updateMonthStartDate()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation {
-                        scrollProxy.scrollTo(0, anchor: .center)
-                    }
-                }
+                // Вычисляем индекс месяца для selectedDate
+                let monthIdx = getMonthIndex(for: selectedDate)
+                // Прокручиваем к месяцу с выбранной датой без анимации и задержки
+                scrollProxy.scrollTo(monthIdx, anchor: .center)
             }
         }
         .padding(0)
@@ -144,6 +143,14 @@ struct MonthCalendarView: View {
     private func updateMonthStartDate() {
         let components = calendar.dateComponents([.year, .month], from: selectedDate)
         monthStartDate = calendar.date(from: components) ?? Date()
+    }
+    
+    private func getMonthIndex(for date: Date) -> Int {
+        let startOfBaseMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: monthStartDate))!
+        let startOfTargetMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: date))!
+        
+        let components = calendar.dateComponents([.month, .year], from: startOfBaseMonth, to: startOfTargetMonth)
+        return components.year! * 12 + components.month!
     }
     
     private var dayNames: [String] {
