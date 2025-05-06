@@ -17,6 +17,9 @@ struct WeekCalendarView: View {
     // Добавляем состояние для отслеживания видимого месяца
     @State private var visibleMonth: Date
     
+    // Добавляем состояние для переключения между недельным и месячным календарем
+    @State private var showMonthCalendar = false
+    
     // Добавлена функция обратного вызова для сокрытия календаря
     var onHideCalendar: (() -> Void)?
     
@@ -29,46 +32,72 @@ struct WeekCalendarView: View {
     }
     
     var body: some View {
-        VStack(spacing: 10) {
-            // Теперь используем visibleMonth вместо selectedDate
-            MonthYearHeader(date: visibleMonth)
-            
-            // Секция с календарем
-            CalendarSection
-                .cornerRadius(16)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
-                .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
-        )
-        .padding(.horizontal, 10)
-        .offset(y: weekCalendarOffset)
-        .gesture(
-            DragGesture()
-                .onChanged { value in
-                    // Только если календарь уже показан и свайп вверх
-                    if value.translation.height < 0 {
-                        weekCalendarOffset = value.translation.height
+        ZStack {
+            // Отображаем MonthCalendarView, если showMonthCalendar = true
+            if showMonthCalendar {
+                MonthCalendarView(
+                    selectedDate: $selectedDate,
+                    onHideCalendar: {
+                        // При скрытии месячного календаря, вызываем onHideCalendar
+                        onHideCalendar?()
                     }
+                )
+                .transition(.move(edge: .top))
+            } else {
+                // Недельный календарь
+                VStack(spacing: 10) {
+                    // Теперь используем visibleMonth вместо selectedDate
+                    MonthYearHeader(date: visibleMonth)
+                    
+                    // Секция с календарем
+                    CalendarSection
+                        .cornerRadius(16)
                 }
-                .onEnded { value in
-                    // Если сделан свайп вверх, скрываем календарь
-                    if value.translation.height < -20 {
-                        hideCalendar()
-                    } else {
-                        // Возвращаем в исходное положение
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            weekCalendarOffset = 0
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                        .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
+                )
+                .padding(.horizontal, 10)
+                .offset(y: weekCalendarOffset)
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            // Если свайп вверх - скрываем календарь
+                            if value.translation.height < 0 {
+                                weekCalendarOffset = value.translation.height
+                            } 
+                            // Если свайп вниз - показываем месячный календарь
+                            else if value.translation.height > 0 {
+                                weekCalendarOffset = value.translation.height / 3 // Делим на 3 для менее резкого эффекта
+                            }
                         }
-                    }
+                        .onEnded { value in
+                            // Скрываем календарь при свайпе вверх
+                            if value.translation.height < -20 {
+                                hideCalendar()
+                            } 
+                            // Показываем месячный календарь при свайпе вниз
+                            else if value.translation.height > 50 {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    showMonthCalendar = true
+                                }
+                            } 
+                            // Возвращаем в исходное положение
+                            else {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    weekCalendarOffset = 0
+                                }
+                            }
+                        }
+                )
+                .onChange(of: selectedDate) { _, newValue in
+                    // Обновляем visibleMonth при изменении selectedDate
+                    visibleMonth = newValue
                 }
-        )
-        .onChange(of: selectedDate) { _, newValue in
-            // Обновляем visibleMonth при изменении selectedDate
-            visibleMonth = newValue
+            }
         }
     }
     

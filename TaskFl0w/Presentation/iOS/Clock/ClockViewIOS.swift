@@ -207,9 +207,9 @@ struct ClockViewIOS: View {
                         }
                     }
             )
-            .fullScreenCover(isPresented: $viewModel.showingCalendar) {
-                CalendarView(viewModel: viewModel)
-            }
+//            .fullScreenCover(isPresented: $viewModel.showingCalendar) {
+//                CalendarView(viewModel: viewModel)
+//            }
             .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
                 CategoryEditorViewIOS(
                     viewModel: viewModel,
