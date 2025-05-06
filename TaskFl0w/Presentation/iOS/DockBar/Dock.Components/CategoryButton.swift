@@ -23,6 +23,20 @@ struct CategoryButton: View {
                 .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                 .overlay(
                     Circle()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.gray.opacity(0.7),
+                                    Color.gray.opacity(0.3)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.2
+                        )
+                )
+                .overlay(
+                    Circle()
                         .strokeBorder(
                             isSelected ? 
                                 LinearGradient(
