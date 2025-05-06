@@ -24,64 +24,103 @@ struct BottomBar: View {
     var body: some View {
         ZStack {
             // Основной контейнер с размытым фоном
-            HStack(spacing: 16) {
-                if !isSelectionMode {
-                    normalModeButtons
-                } else {
-                    selectionModeButtons
+            HStack(spacing: 0) {
+                Spacer()
+                
+                // Используем фиксированные фреймы для гарантии стабильного положения
+                HStack {
+                    // Левая кнопка
+                    ZStack {
+                        // Контейнер фиксированного размера
+                        Color.clear
+                            .frame(width: 38, height: 38)
+                        
+                        // Содержимое в зависимости от режима
+                        if !isSelectionMode {
+                            archiveButton
+                        } else if showCompletedTasksOnly {
+                            archiveActionButton
+                        } else {
+                            priorityButton
+                        }
+                    }
+                    .frame(width: 38, height: 38)
+                    
+                    Spacer()
+                        .frame(width: 25) // Уменьшенное расстояние между кнопками
+                    
+                    // Центральная кнопка
+                    ZStack {
+                        // Контейнер фиксированного размера
+                        Color.clear
+                            .frame(width: 38, height: 38)
+                        
+                        // Содержимое в зависимости от режима
+                        if !isSelectionMode {
+                            selectionModeToggleButton
+                        } else {
+                            exitSelectionModeButton
+                        }
+                    }
+                    .frame(width: 38, height: 38)
+                    
+                    Spacer()
+                        .frame(width: 25) // Уменьшенное расстояние между кнопками
+                    
+                    // Правая кнопка
+                    ZStack {
+                        // Контейнер фиксированного размера
+                        Color.clear
+                            .frame(width: 38, height: 38)
+                        
+                        // Содержимое в зависимости от режима
+                        if !isSelectionMode {
+                            addButton
+                        } else if showCompletedTasksOnly {
+                            unarchiveButton
+                        } else {
+                            deleteButton
+                        }
+                    }
+                    .frame(width: 38, height: 38)
                 }
+                .frame(width: 165) // Уменьшенная ширина для всей группы кнопок
+                
+                Spacer()
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 6) // Уменьшенный внутренний отступ для более короткого бара
             .padding(.vertical, 8)
-            .frame(height: 56)
+            .frame(height: 52) // Немного уменьшаем высоту
+            .frame(maxWidth: 220) // Еще больше ограничиваем максимальную ширину BottomBar
             .background {
-                // Размытый фон
-                Capsule()
-                    .fill(.ultraThinMaterial)
-                    .environment(\.colorScheme, .dark)
-                    .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
+                ZStack {
+                    // Размытый фон с уменьшенной шириной
+                    Capsule()
+                        .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                    
+                    // Добавляем градиентный бордер
+                    Capsule()
+                        .strokeBorder(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 0.5, green: 0.5, blue: 0.5, opacity: 0.5),
+                                    Color(red: 0.3, green: 0.3, blue: 0.3, opacity: 0.3),
+                                    Color(red: 0.1, green: 0.1, blue: 0.1, opacity: 0.1)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.5
+                        )
+                }
+                .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: 1)
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 75) // Еще больше увеличиваем боковые отступы для более короткого BottomBar
         .padding(.bottom, 8)
-        .animation(nil, value: isAddButtonPressed)
     }
     
     // MARK: - UI Components
-    
-    /// Кнопки в обычном режиме
-    private var normalModeButtons: some View {
-        HStack(spacing: 24) {
-            archiveButton
-            selectionModeToggleButton
-            addButton
-        }
-    }
-    
-    /// Кнопки в режиме выбора
-    private var selectionModeButtons: some View {
-        HStack(spacing: 24) {
-            // Показываем разные кнопки в зависимости от режима
-            if showCompletedTasksOnly {
-                // В режиме архива показываем кнопку архивации
-                archiveActionButton
-            } else {
-                // В обычном режиме показываем кнопку изменения приоритета
-                priorityButton
-            }
-            
-            exitSelectionModeButton
-            
-            // Разные кнопки в зависимости от режима
-            if showCompletedTasksOnly {
-                // В режиме архива показываем кнопку возврата из архива
-                unarchiveButton
-            } else {
-                // В обычном режиме показываем кнопку удаления
-                deleteButton
-            }
-        }
-    }
     
     private var archiveButton: some View {
         Button(action: onArchiveTapped) {
@@ -122,7 +161,7 @@ struct BottomBar: View {
     
     private var exitSelectionModeButton: some View {
         Button(action: toggleSelectionMode) {
-            toolbarIcon(systemName: "xmark", color: .blue)
+            toolbarIcon(systemName: "checkmark.circle", color: .blue)
         }
     }
     
@@ -169,9 +208,25 @@ struct BottomBar: View {
     
     private func toolbarIcon(systemName: String, color: Color) -> some View {
         Image(systemName: systemName)
-            .font(.system(size: 22))
+            .font(.system(size: 20))
             .foregroundColor(color)
-            .frame(width: 36, height: 36)
+            .padding(6)
+            .background(
+                Circle()
+                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+            )
+            .overlay(
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.0
+                    )
+            )
+            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
     }
 }
 

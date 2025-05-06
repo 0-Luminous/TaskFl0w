@@ -16,54 +16,140 @@ struct NewTaskPriorityBar: View {
     var body: some View {
         ZStack {
             // Основной контейнер с размытым фоном
-            HStack(spacing: 16) {
-                // Кнопка "без приоритета" вместо кнопки отмены
-                Button(action: {
-                    selectedPriority = .none
-                }) {
-                    // Пустая панель приоритета
-                    VStack {
-                        Image(systemName: "circle.dashed")
-                            .font(.system(size: 12))
-                            .foregroundColor(selectedPriority == .none ? .white : .gray)
-                    }
-                    .frame(width: 36, height: 36)
-                    .background(
-                        Circle()
-                            .stroke(selectedPriority == .none ? Color.gray : .clear, lineWidth: 1.5)
-                    )
-                }
+            HStack(spacing: 0) {
+                Spacer()
                 
-                // Кнопки приоритета
-                priorityButton(priority: .low)
-                priorityButton(priority: .medium)
-                priorityButton(priority: .high)
+                // Используем фиксированные фреймы для гарантии стабильного положения
+                HStack {
+                    // Левая кнопка - без приоритета
+                    ZStack {
+                        // Контейнер фиксированного размера
+                        Color.clear
+                            .frame(width: 38, height: 38)
+                        
+                        priorityButtonNone
+                    }
+                    .frame(width: 38, height: 38)
+                    
+                    Spacer()
+                        .frame(width: 25) // Уменьшенное расстояние между кнопками
+                    
+                    // Центральная кнопка - низкий приоритет
+                    ZStack {
+                        // Контейнер фиксированного размера
+                        Color.clear
+                            .frame(width: 38, height: 38)
+                        
+                        priorityButtonLow
+                    }
+                    .frame(width: 38, height: 38)
+                    
+                    Spacer()
+                        .frame(width: 25) // Уменьшенное расстояние между кнопками
+                    
+                    // Правая кнопка - средний приоритет
+                    ZStack {
+                        // Контейнер фиксированного размера
+                        Color.clear
+                            .frame(width: 38, height: 38)
+                        
+                        priorityButtonMedium
+                    }
+                    .frame(width: 38, height: 38)
+                    
+                    Spacer()
+                        .frame(width: 25) // Уменьшенное расстояние между кнопками
+                    
+                    // Крайняя правая кнопка - высокий приоритет
+                    ZStack {
+                        // Контейнер фиксированного размера
+                        Color.clear
+                            .frame(width: 38, height: 38)
+                        
+                        priorityButtonHigh
+                    }
+                    .frame(width: 38, height: 38)
+                }
+                .frame(width: 215) // Увеличиваем ширину для 4-х кнопок
+                
+                Spacer()
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 6) // Уменьшенный внутренний отступ для более короткого бара
             .padding(.vertical, 8)
-            .frame(height: 56)
+            .frame(height: 52) // Немного уменьшаем высоту
+            .frame(maxWidth: 270) // Увеличиваем ширину для 4-х кнопок
             .background {
-                // Размытый фон
-                Capsule()
-                    .fill(.ultraThinMaterial)
-                    .environment(\.colorScheme, .dark)
-                    .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
+                ZStack {
+                    // Размытый фон с уменьшенной шириной
+                    Capsule()
+                        .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                    
+                    // Добавляем градиентный бордер
+                    Capsule()
+                        .strokeBorder(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(red: 0.5, green: 0.5, blue: 0.5, opacity: 0.5),
+                                    Color(red: 0.3, green: 0.3, blue: 0.3, opacity: 0.3),
+                                    Color(red: 0.1, green: 0.1, blue: 0.1, opacity: 0.1)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.5
+                        )
+                }
+                .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: 1)
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 50) // Немного уменьшаем боковые отступы для бара с 4 кнопками
         .padding(.bottom, 8)
     }
     
     // MARK: - UI Components
     
-    private func priorityButton(priority: TaskPriority) -> some View {
-        let color: Color = getPriorityColor(for: priority)
-        
-        return Button(action: {
-            // Устанавливаем выбранный приоритет и сразу сохраняем задачу
-            selectedPriority = priority
+    private var priorityButtonNone: some View {
+        Button(action: {
+            selectedPriority = .none
+            onSave()
         }) {
-            // Используем тот же индикатор приоритета, что и в TaskRow
+            toolbarIcon(systemName: "circle.dashed", color: selectedPriority == .none ? .white : .gray)
+        }
+    }
+    
+    private var priorityButtonLow: some View {
+        Button(action: {
+            selectedPriority = .low
+            onSave()
+        }) {
+            priorityIconView(priority: .low)
+        }
+    }
+    
+    private var priorityButtonMedium: some View {
+        Button(action: {
+            selectedPriority = .medium
+            onSave()
+        }) {
+            priorityIconView(priority: .medium)
+        }
+    }
+    
+    private var priorityButtonHigh: some View {
+        Button(action: {
+            selectedPriority = .high
+            onSave()
+        }) {
+            priorityIconView(priority: .high)
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func priorityIconView(priority: TaskPriority) -> some View {
+        let color = getPriorityColor(for: priority)
+        
+        return toolbarIcon(content: {
             VStack(spacing: 2) {
                 ForEach(0..<priority.rawValue, id: \.self) { _ in
                     Rectangle()
@@ -71,15 +157,56 @@ struct NewTaskPriorityBar: View {
                         .frame(width: 12, height: 3)
                 }
             }
-            .frame(width: 36, height: 36)
-            .background(
-                Circle()
-                    .stroke(selectedPriority == priority ? color : .clear, lineWidth: 1.5)
-            )
-        }
+            .frame(width: 20, height: 20) // Фиксированный размер для содержимого
+        }, color: selectedPriority == priority ? color : .gray)
     }
     
-    // MARK: - Helper Methods
+    private func toolbarIcon(systemName: String, color: Color) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 20))
+            .foregroundColor(color)
+            .frame(width: 20, height: 20) // Фиксированный размер для иконки
+            .padding(6)
+            .background(
+                Circle()
+                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+            )
+            .overlay(
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.0
+                    )
+            )
+            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+    }
+    
+    private func toolbarIcon<Content: View>(content: @escaping () -> Content, color: Color) -> some View {
+        content()
+            .foregroundColor(color)
+            .frame(width: 20, height: 20) // Фиксированный размер для содержимого
+            .padding(6)
+            .background(
+                Circle()
+                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+            )
+            .overlay(
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.0
+                    )
+            )
+            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+    }
     
     private func getPriorityColor(for priority: TaskPriority) -> Color {
         switch priority {

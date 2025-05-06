@@ -66,26 +66,6 @@ struct TaskListView: View {
                                     .listRowSeparator(.hidden)
                             }
                             
-                            if isAddingNewTask {
-                                Spacer()
-                                    .frame(height: 40)
-                                    .listRowSeparator(.hidden)
-                                    .listRowBackground(Color.clear)
-                                
-                                NewTaskInput(
-                                    newTaskTitle: $newTaskTitle,
-                                    isNewTaskFocused: _isNewTaskFocused,
-                                    selectedPriority: $newTaskPriority,
-                                    onSave: {
-                                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
-                                        newTaskTitle = ""
-                                        newTaskPriority = .none
-                                        isAddingNewTask = false
-                                        isNewTaskFocused = false
-                                    }
-                                )
-                            }
-                            
                             let items = viewModel.showCompletedTasksOnly 
                                 ? viewModel.getAllArchivedItems()
                                 : viewModel.getFilteredItems()
@@ -157,6 +137,29 @@ struct TaskListView: View {
                                 }
                             }
                             
+                            // Перемещаем добавление новой задачи сюда, в конец списка
+                            if isAddingNewTask {
+                                // Spacer()
+                                //     .frame(height: 40)
+                                //     .listRowSeparator(.hidden)
+                                //     .listRowBackground(Color.clear)
+                                //     .id("new_task_spacer")
+                                
+                                NewTaskInput(
+                                    newTaskTitle: $newTaskTitle,
+                                    isNewTaskFocused: _isNewTaskFocused,
+                                    selectedPriority: $newTaskPriority,
+                                    onSave: {
+                                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                                        newTaskTitle = ""
+                                        newTaskPriority = .none
+                                        isAddingNewTask = false
+                                        isNewTaskFocused = false
+                                    }
+                                )
+                                .id("new_task_input")
+                            }
+                            
                             Color.clear
                                 .frame(height: 90)
                                 .listRowBackground(Color.clear)
@@ -169,13 +172,12 @@ struct TaskListView: View {
                                 viewModel.selectedCategory = selectedCategory
                             }
                             viewModel.refreshData()
-                            
-                            // Удаляем код с NotificationCenter, так как теперь используем @Published
                         }
                         .onChange(of: isAddingNewTask) { oldValue, newValue in
                             if newValue == true {
                                 withAnimation {
-                                    scrollProxy.scrollTo(topID, anchor: .top)
+                                    // Меняем скролл к новому элементу внизу списка
+                                    scrollProxy.scrollTo("new_task_input", anchor: .bottom)
                                 }
                             }
                         }
@@ -227,8 +229,8 @@ struct TaskListView: View {
 
                 if isAddingNewTask {
                     VStack {
-                        Spacer().frame(height: UIScreen.main.bounds.height * 0.28)
-                        
+                        Spacer().frame(height: UIScreen.main.bounds.height * 0.32)
+                        // Изменяем расположение панели приоритетов
                         NewTaskPriorityBar(
                             selectedPriority: $newTaskPriority,
                             onSave: {
@@ -248,8 +250,7 @@ struct TaskListView: View {
                             }
                         )
                         .transition(.scale)
-                        
-                        Spacer()
+                        .padding(.bottom, 20) // Добавляем небольшой отступ снизу
                     }
                     .padding(.horizontal, 20)
                 }
