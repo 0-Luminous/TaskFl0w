@@ -89,6 +89,8 @@ struct TaskListView: View {
                                         viewModel.presenter?.shareItem(id: taskId)
                                     }
                                 )
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                             } else {
                                 ForEach(items) { item in
                                     TaskRow(

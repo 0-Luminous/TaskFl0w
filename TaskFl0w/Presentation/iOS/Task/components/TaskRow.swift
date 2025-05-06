@@ -95,14 +95,14 @@ struct TaskRow: View {
         }
         .padding(.vertical, 2)
         .padding(.horizontal, 3)
-        .opacity(item.isCompleted && !isSelectionMode && !isInArchiveMode ? 0.5 : 1.0)
+        .opacity((item.isCompleted && !isSelectionMode && !isInArchiveMode) || isInArchiveMode ? 0.5 : 1.0)
     }
     
     // Настройка жирности шрифта в зависимости от приоритета
     private func getFontWeight(for priority: TaskPriority) -> Font.Weight {
         switch priority {
         case .high:
-            return .bold
+            return .semibold
         case .medium:
             return .semibold
         case .low, .none:

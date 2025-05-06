@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-// Новый компонент для отображения задач в архиве, сгруппированных по датам
+// Обновленная версия ArchivedTasksGroupView.swift
 struct ArchivedTasksGroupView: View {
     let items: [ToDoItem]
     let categoryColor: Color
@@ -42,57 +42,91 @@ struct ArchivedTasksGroupView: View {
     var body: some View {
         ForEach(sortedDates, id: \.self) { date in
             if let tasksForDate = groupedTasks[date] {
-                Section(header: 
-                    Text(dateFormatter.string(from: date))
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.white)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background(
-                            Capsule()
-                                .fill(Color(red: 0.15, green: 0.15, blue: 0.15))
-                        )
-                        .padding(.top, 12)
-                        .padding(.bottom, 4)
-                ) {
-                    ForEach(tasksForDate) { item in
-                        TaskRow(
-                            item: item,
-                            onToggle: { onToggle(item.id) },
-                            onEdit: { onEdit(item) },
-                            onDelete: { onDelete(item.id) },
-                            onShare: { onShare(item.id) },
-                            categoryColor: categoryColor,
-                            isSelectionMode: isSelectionMode,
-                            isInArchiveMode: true,
-                            selectedTasks: $selectedTasks
-                        )
-                        .padding(.trailing, 5)
-                        .listRowBackground(
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
-                                
-                                // Добавляем внешний бордер для задач с приоритетом
-                                if item.priority != .none {
+                VStack(spacing: 0) {
+                    // Заголовок группы с датой
+                    HStack {
+                        Text(dateFormatter.string(from: date))
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                        
+                        Spacer()
+                        
+                        // Количество задач
+                        Text("\(tasksForDate.count)")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    
+                    // Контейнер для задач группы
+                    VStack(spacing: 8) {
+                        ForEach(tasksForDate) { item in
+                            TaskRow(
+                                item: item,
+                                onToggle: { onToggle(item.id) },
+                                onEdit: { onEdit(item) },
+                                onDelete: { onDelete(item.id) },
+                                onShare: { onShare(item.id) },
+                                categoryColor: categoryColor,
+                                isSelectionMode: isSelectionMode,
+                                isInArchiveMode: true,
+                                selectedTasks: $selectedTasks
+                            )
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 3)
+                            .background(
+                                ZStack {
                                     RoundedRectangle(cornerRadius: 10)
-                                        .stroke(getPriorityColor(for: item.priority), lineWidth: 1.5)
+                                        .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
+                                    
+                                    // Добавляем внешний бордер для задач с приоритетом
+                                    if item.priority != .none {
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(getPriorityColor(for: item.priority), lineWidth: 1.5)
+                                            .opacity(0.3)
+                                    }
+                                }
+                            )
+                            .contentShape(Rectangle())
+                            // Явно добавляем обработчики нажатий
+                            .onTapGesture {
+                                if isSelectionMode {
+                                    if selectedTasks.contains(item.id) {
+                                        selectedTasks.remove(item.id)
+                                    } else {
+                                        selectedTasks.insert(item.id)
+                                    }
+                                } else {
+                                    onToggle(item.id)
                                 }
                             }
-                            .padding(.vertical, 5)
-                            .padding(.horizontal, 12)
-                        )
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if isSelectionMode {
-                                toggleTaskSelection(taskId: item.id)
-                            } else {
-                                onToggle(item.id)
-                            }
                         }
-                        .listRowSeparator(.hidden)
+                        .padding(.horizontal, 10)
                     }
+                    .padding(.vertical, 16)
+                    
                 }
+                .background(
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(red: 0.13, green: 0.13, blue: 0.13))
+                        
+                        // Градиентный бордер
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [categoryColor.opacity(0.7), Color.gray.opacity(0.6)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.5
+                            )
+                    }
+                )
+                .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+                .padding(.vertical, 8)
+                .simultaneousGesture(TapGesture().onEnded {}) // Перехватываем нажатия на группу, но ничего не делаем
             }
         }
     }
@@ -105,17 +139,9 @@ struct ArchivedTasksGroupView: View {
         case .medium:
             return .orange
         case .low:
-            return .blue
+            return .green
         case .none:
             return .clear
-        }
-    }
-    
-    private func toggleTaskSelection(taskId: UUID) {
-        if selectedTasks.contains(taskId) {
-            selectedTasks.remove(taskId)
-        } else {
-            selectedTasks.insert(taskId)
         }
     }
 }
