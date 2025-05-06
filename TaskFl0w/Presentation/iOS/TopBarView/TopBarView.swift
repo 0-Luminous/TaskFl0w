@@ -13,10 +13,10 @@ struct TopBarView: View {
     let toggleCalendarAction: () -> Void
     let isCalendarVisible: Bool
     let searchAction: () -> Void
-    
+
     @State private var dragOffset: CGFloat = 0
     @State private var expandedCalendar = false
-    
+
     var body: some View {
         ZStack(alignment: .top) {
             // Развернутый календарь
@@ -33,25 +33,41 @@ struct TopBarView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .zIndex(1)
             }
-            
+
             // Основная панель
             HStack {
                 // Кнопка поиска слева
                 Button(action: searchAction) {
                     Image(systemName: "magnifyingglass")
-                        .font(.system(size: 22))
+                        .font(.system(size: 20))
                         .foregroundColor(.blue)
-                        .padding(.leading, 16)
+                        .padding(4)
                 }
-                .padding(.bottom, 4)
-                    
+                .background(
+                    Circle()
+                        .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                )
+                .overlay(
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.0
+                        )
+                )
+                .padding(.leading, 16)
+                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+
                 Spacer()
-                
+
                 // Здесь отображаем либо кнопку с датой, либо мини-календарь
                 if !isCalendarVisible {
                     // Кнопка с датой и днем недели по центру
                     Button(action: toggleCalendarAction) {
-                        VStack(spacing: 0) { 
+                        VStack(spacing: 0) {
                             Text(viewModel.formattedDate)
                                 .font(.subheadline)
                                 .foregroundColor(.primary)
@@ -70,18 +86,34 @@ struct TopBarView: View {
                         .frame(height: 35)
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
-                
+
                 Spacer()
-                
+
                 // Кнопка настроек перенесена направо
                 if !isCalendarVisible {
                     Button(action: showSettingsAction) {
                         Image(systemName: "gear")
-                            .font(.system(size: 22))
+                            .font(.system(size: 20))
                             .foregroundColor(.blue)
-                            .padding(.trailing, 16)
+                            .padding(4)
                     }
-                    .padding(.bottom, 4)
+                    .background(
+                        Circle()
+                            .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.0
+                            )
+                    )
+                    .padding(.trailing, 16)
+                    .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
                 } else {
                     // Пустой элемент для сохранения структуры при скрытой кнопке
                     Color.clear
@@ -89,7 +121,6 @@ struct TopBarView: View {
                         .padding(.trailing, 16)
                 }
             }
-            .padding(.top, 5)
             .frame(height: 50)
             .background(
                 RoundedRectangle(cornerRadius: 20)
@@ -103,7 +134,7 @@ struct TopBarView: View {
                     .onChanged { value in
                         // Разрешаем свайп только вниз
                         if value.translation.height > 0 {
-                            dragOffset = value.translation.height / 3 // Уменьшаем скорость движения
+                            dragOffset = value.translation.height / 3  // Уменьшаем скорость движения
                         }
                     }
                     .onEnded { value in
@@ -127,6 +158,7 @@ struct TopBarView: View {
 }
 
 #Preview {
-    TopBarView(viewModel: ClockViewModel(), showSettingsAction: {}, toggleCalendarAction: {}, isCalendarVisible: false, searchAction: {})
+    TopBarView(
+        viewModel: ClockViewModel(), showSettingsAction: {}, toggleCalendarAction: {},
+        isCalendarVisible: false, searchAction: {})
 }
-
