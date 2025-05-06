@@ -69,7 +69,7 @@ struct DockBarIOS: View {
     private var longPressGesture: some Gesture {
         LongPressGesture(minimumDuration: 0.5)
             .onEnded { _ in
-                withAnimation {
+                withAnimation(.easeInOut(duration: 0.2)) {
                     viewModel.toggleEditMode()
                 }
             }
