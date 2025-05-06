@@ -20,6 +20,7 @@ struct TaskListView: View {
     @FocusState private var isNewTaskFocused: Bool
     @State private var showingPrioritySheet = false
     @State private var newTaskPriority: TaskPriority = .none
+    @Binding var selectedDate: Date
     
     // Добавляем ID для прокрутки к началу списка
     private let topID = "top_of_list"
@@ -295,10 +296,17 @@ struct TaskListView: View {
                 userInfo: ["isAddingTask": newValue]
             )
         }
+        // В body добавляем обработчик изменений даты
+        .onChange(of: selectedDate) { oldValue, newValue in
+            // Обновляем дату в viewModel
+            viewModel.selectedDate = newValue
+            // И принудительно обновляем данные
+            viewModel.refreshData()
+        }
     }
 }
 
 
 #Preview {
-    TaskListView(viewModel: ListViewModel(), selectedCategory: nil)
+    TaskListView(viewModel: ListViewModel(), selectedCategory: nil, selectedDate: .constant(Date()))
 }

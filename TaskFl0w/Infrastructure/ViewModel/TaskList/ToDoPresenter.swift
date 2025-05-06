@@ -85,11 +85,11 @@ class ToDoPresenter: ToDoPresenterProtocol {
         refreshItems()
     }
 
-    func addItem(title: String, priority: TaskPriority) {
-        interactor?.addItem(title: title)
+    func addItem(title: String, priority: TaskPriority, date: Date) {
+        interactor?.addItem(title: title, date: date)
     }
 
-    func addItemWithCategory(title: String, category: TaskCategoryModel, priority: TaskPriority) {
-        interactor?.addItemWithCategory(title: title, category: category)
+    func addItemWithCategory(title: String, category: TaskCategoryModel, priority: TaskPriority, date: Date) {
+        interactor?.addItemWithCategory(title: title, category: category, date: date)
     }
 }

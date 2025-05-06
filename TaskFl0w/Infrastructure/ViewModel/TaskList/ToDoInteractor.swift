@@ -46,7 +46,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         }
     }
 
-    func addItem(title: String) {
+    func addItem(title: String, date: Date = Date()) {
         print("📝 Попытка добавить новый элемент: \(title)")
 
         // Проверка наличия сущности
@@ -62,18 +62,18 @@ class ToDoInteractor: ToDoInteractorProtocol {
         let newID = UUID()
         newItem.setValue(newID, forKey: "id")
         newItem.setValue(title, forKey: "title")
-        newItem.setValue(Date(), forKey: "date")
+        newItem.setValue(date, forKey: "date")
         newItem.setValue(false, forKey: "isCompleted")
         newItem.setValue(0, forKey: "priority")
 
-        print("📝 Созданный элемент: ID=\(newID), title=\(title)")
+        print("📝 Созданный элемент: ID=\(newID), title=\(title), date=\(date)")
 
         saveContext()
         print("🔄 Уведомляем презентер о добавлении элемента")
         presenter?.didAddItem()
     }
 
-    func addItemWithCategory(title: String, category: TaskCategoryModel) {
+    func addItemWithCategory(title: String, category: TaskCategoryModel, date: Date = Date()) {
         print("📝 Добавление новой задачи: \"\(title)\" в категорию: \"\(category.rawValue)\"")
 
         // Проверка наличия сущности
@@ -88,7 +88,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         let newID = UUID()
         newItem.setValue(newID, forKey: "id")
         newItem.setValue(title, forKey: "title")
-        newItem.setValue(Date(), forKey: "date")
+        newItem.setValue(date, forKey: "date")
         newItem.setValue(false, forKey: "isCompleted")
         newItem.setValue(0, forKey: "priority")
         

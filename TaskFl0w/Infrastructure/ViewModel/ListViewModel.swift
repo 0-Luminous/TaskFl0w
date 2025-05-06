@@ -22,6 +22,11 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
     @Published var showCompletedTasksOnly: Bool = false
     @Published var selectedTasks: Set<UUID> = []
     @Published var isSelectionMode: Bool = false
+    @Published var selectedDate: Date = Date() {
+        didSet {
+            refreshData()
+        }
+    }
     
     var presenter: ToDoPresenterProtocol?
 
@@ -66,7 +71,8 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
                 presenter?.addItemWithCategory(
                     title: title,
                     category: category,
-                    priority: priority
+                    priority: priority,
+                    date: selectedDate
                 )
                 // Находим только что созданную задачу и обновляем приоритет
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -79,7 +85,8 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
             } else {
                 presenter?.addItem(
                     title: title,
-                    priority: priority
+                    priority: priority,
+                    date: selectedDate
                 )
                 // Находим только что созданную задачу и обновляем приоритет
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
@@ -104,6 +111,11 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
             }
         } else {
             filteredItems = items
+        }
+        
+        // Фильтруем по дате, показывая задачи на выбранную дату
+        filteredItems = filteredItems.filter { item in
+            Calendar.current.isDate(item.date, inSameDayAs: selectedDate)
         }
         
         // Если включен режим просмотра выполненных задач, отфильтровываем только их

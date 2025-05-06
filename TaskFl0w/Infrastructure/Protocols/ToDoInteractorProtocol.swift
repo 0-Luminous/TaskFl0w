@@ -9,8 +9,8 @@ import SwiftUI
 
 protocol ToDoInteractorProtocol: AnyObject {
     func fetchItems()
-    func addItem(title: String)
-    func addItemWithCategory(title: String, category: TaskCategoryModel)
+    func addItem(title: String, date: Date)
+    func addItemWithCategory(title: String, category: TaskCategoryModel, date: Date)
     func deleteItem(id: UUID)
     func toggleItem(id: UUID)
     func searchItems(query: String)

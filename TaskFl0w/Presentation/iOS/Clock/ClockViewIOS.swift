@@ -76,7 +76,8 @@ struct ClockViewIOS: View {
                             
                             TaskListView(
                                 viewModel: listViewModel,
-                                selectedCategory: viewModel.selectedCategory
+                                selectedCategory: viewModel.selectedCategory,
+                                selectedDate: $viewModel.selectedDate
                             )
                             .onAppear {
                                 // Обновляем выбранную категорию при появлении
