@@ -19,30 +19,52 @@ struct TopBarView: View {
     @State private var isBarVisible = true
     @State private var allowMonthCalendarExpansion = false
     @State private var reloadCounter = 0
+    @State private var calendarSelectedDate: Date
+
+    init(viewModel: ClockViewModel, showSettingsAction: @escaping () -> Void, toggleCalendarAction: @escaping () -> Void, isCalendarVisible: Bool, searchAction: @escaping () -> Void) {
+        self.viewModel = viewModel
+        self.showSettingsAction = showSettingsAction
+        self.toggleCalendarAction = toggleCalendarAction
+        self.isCalendarVisible = isCalendarVisible
+        self.searchAction = searchAction
+        _calendarSelectedDate = State(initialValue: viewModel.selectedDate)
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
             // Развернутый календарь
             if expandedCalendar {
                 WeekCalendarView(
-                    selectedDate: .constant(viewModel.selectedDate),
+                    selectedDate: $calendarSelectedDate,
                     disableMonthExpansion: !allowMonthCalendarExpansion,
                     initialShowMonthCalendar: false,
                     onHideCalendar: {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                        // Полностью отделяем анимации
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            // Сначала скрываем календарь без анимации
                             expandedCalendar = false
-                            isBarVisible = true
+                            
+                            // Затем с задержкой показываем TopBar
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    isBarVisible = true
+                                }
+                            }
                         }
                     }
                 )
                 .padding(.top, isBarVisible ? 50 : 0)
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .transition(.opacity)
                 .zIndex(1)
                 .id(reloadCounter)
                 .onAppear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         allowMonthCalendarExpansion = true
                     }
+                }
+                .onChange(of: calendarSelectedDate) { _, newValue in
+                    viewModel.selectedDate = newValue
+                    // Возможно, потребуется вызвать другие методы для обновления данных
                 }
             }
 
@@ -91,7 +113,7 @@ struct TopBarView: View {
                     } else {
                         // Мини-версия WeekCalendarView прямо в TopBar
                         WeekCalendarView(
-                            selectedDate: .constant(viewModel.selectedDate),
+                            selectedDate: $calendarSelectedDate,
                             disableMonthExpansion: true
                         )
                             .scaleEffect(0.5)
@@ -155,24 +177,28 @@ struct TopBarView: View {
                                 // Увеличиваем счетчик для пересоздания WeekCalendarView
                                 reloadCounter += 1
                                 
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                                    isBarVisible = false
-                                    expandedCalendar = true
-                                    dragOffset = 0
+                                // Сначала скрываем TopBar без анимации
+                                isBarVisible = false
+                                
+                                // Затем с задержкой показываем календарь
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        expandedCalendar = true
+                                        dragOffset = 0
+                                    }
                                 }
                             } else {
-                                // Возвращаем в исходное положение
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                // Возвращаем в исходное положение с простой анимацией
+                                withAnimation(.easeInOut(duration: 0.3)) {
                                     dragOffset = 0
                                 }
                             }
                         }
                 )
                 .zIndex(2)
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .transition(.opacity)
             }
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isBarVisible)
     }
 }
 

@@ -14,28 +14,21 @@ struct WeekCalendarView: View {
     @State private var weekStartDate = Date()
     @State private var currentWeekIndex = 0
     @State private var weekCalendarOffset: CGFloat = 0
-    // Добавляем состояние для отслеживания видимого месяца
     @State private var visibleMonth: Date
-    
-    // Добавляем состояние для переключения между недельным и месячным календарем
     @State private var showMonthCalendar = false
-    
-    // Добавим состояние для отображения выбора месяца/года
     @State private var showMonthYearPicker = false
     
-    // Добавлена функция обратного вызова для сокрытия календаря
-    var onHideCalendar: (() -> Void)?
+    // Добавляем ссылку на общее состояние календаря
+    @ObservedObject private var calendarState = CalendarState.shared
     
-    // Добавляем параметр для отключения показа месячного календаря при свайпе вниз
+    var onHideCalendar: (() -> Void)?
     var disableMonthExpansion: Bool = false
     
-    // Добавляем инициализатор для установки начального значения visibleMonth
     init(selectedDate: Binding<Date>, disableMonthExpansion: Bool = false, initialShowMonthCalendar: Bool = false, onHideCalendar: (() -> Void)? = nil) {
         self._selectedDate = selectedDate
         self.onHideCalendar = onHideCalendar
         self.disableMonthExpansion = disableMonthExpansion
         self._showMonthCalendar = State(initialValue: initialShowMonthCalendar)
-        // Инициализируем visibleMonth значением selectedDate
         self._visibleMonth = State(initialValue: selectedDate.wrappedValue)
     }
     
@@ -138,6 +131,13 @@ struct WeekCalendarView: View {
                     visibleMonth = newValue
                 }
             }
+        }
+        .onAppear {
+            // Используем метод вместо прямого присваивания
+            calendarState.setWeekCalendarVisible(true)
+        }
+        .onDisappear {
+            calendarState.setWeekCalendarVisible(false)
         }
     }
     
@@ -249,8 +249,9 @@ struct WeekCalendarView: View {
             weekCalendarOffset = -200
         }
         
-        // Добавляем задержку для колбэка
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        // Вызываем после завершения анимации
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            calendarState.setWeekCalendarVisible(false)
             onHideCalendar?()
         }
     }

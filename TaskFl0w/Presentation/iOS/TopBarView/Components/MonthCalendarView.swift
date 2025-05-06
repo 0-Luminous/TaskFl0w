@@ -19,8 +19,14 @@ struct MonthCalendarView: View {
     // Добавляем состояние для отображения выбора месяца/года
     @State private var showMonthYearPicker = false
     
+    // Добавляем ссылку на общее состояние календаря
+    @ObservedObject private var calendarState = CalendarState.shared
+    
     // Добавлена функция обратного вызова для сокрытия календаря
     var onHideCalendar: (() -> Void)?
+    
+    // Добавьте переменную состояния для управления прозрачностью
+    @State private var opacity: Double = 1.0
     
     // Инициализатор для установки начального значения visibleMonth
     init(selectedDate: Binding<Date>, onHideCalendar: (() -> Void)? = nil) {
@@ -76,18 +82,25 @@ struct MonthCalendarView: View {
         )
         .padding(.horizontal, 10)
         .offset(y: monthCalendarOffset)
+        .opacity(opacity)
         .gesture(
             DragGesture()
                 .onChanged { value in
                     if value.translation.height < 0 {
+                        // Позволяем перемещать календарь вверх при свайпе
                         monthCalendarOffset = value.translation.height
                     }
                 }
                 .onEnded { value in
-                    if value.translation.height < -20 {
+                    // Если свайп вверх достаточно сильный или достигает половины высоты - скрываем календарь
+                    // Добавляем проверку на "половину пути"
+                    let halfwayPoint: CGFloat = -100 // Примерная половина высоты календаря
+                    
+                    if value.translation.height < -20 || (value.translation.height < 0 && value.predictedEndTranslation.height < halfwayPoint) {
                         hideCalendar()
                     } else {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        // Возвращаем в исходное положение
+                        withAnimation(.easeInOut(duration: 0.3)) {
                             monthCalendarOffset = 0
                         }
                     }
@@ -95,6 +108,13 @@ struct MonthCalendarView: View {
         )
         .onChange(of: selectedDate) { _, newValue in
             visibleMonth = newValue
+        }
+        .onAppear {
+            // Используем метод вместо прямого присваивания
+            calendarState.setMonthCalendarVisible(true)
+        }
+        .onDisappear {
+            calendarState.setMonthCalendarVisible(false)
         }
     }
     
@@ -158,9 +178,21 @@ struct MonthCalendarView: View {
     }
     
     private func hideCalendar() {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            monthCalendarOffset = -200
+        // Комбинируем смещение и уменьшение прозрачности
+        withAnimation(.easeInOut(duration: 0.3)) {
+            monthCalendarOffset = -150 // Меньшее смещение, так как будет еще прозрачность
+            opacity = 0 // Полностью прозрачный
+        }
+        
+        // Вызываем после анимации
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            // Сначала вызываем onHideCalendar
             onHideCalendar?()
+            
+            // Затем обновляем состояние календаря
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                calendarState.setMonthCalendarVisible(false)
+            }
         }
     }
 }

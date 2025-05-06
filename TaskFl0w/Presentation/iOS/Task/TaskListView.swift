@@ -22,22 +22,21 @@ struct TaskListView: View {
     @State private var newTaskPriority: TaskPriority = .none
     @Binding var selectedDate: Date
     
-    // Добавляем ID для прокрутки к началу списка
+    // Заменяем локальные состояния на ObservedObject
+    @ObservedObject private var calendarState = CalendarState.shared
+   
+    
     private let topID = "top_of_list"
 
     var body: some View {
         NavigationView {
             ZStack(alignment: .top) {
-                // Основное содержимое списка
                 VStack(spacing: 0) {
-                    // Добавляем отступ сверху, чтобы всё содержимое было ниже на 10
                     Spacer()
                         .frame(height: 10)
                     
-                    // Добавляем ScrollViewReader для управления прокруткой
                     ScrollViewReader { scrollProxy in
                         List {
-                            // Вставляем специальный элемент с ID в начало списка
                             EmptyView()
                                 .id(topID)
                                 .frame(width: 0, height: 0)
@@ -45,15 +44,28 @@ struct TaskListView: View {
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)
                             
-                            // Добавляем отступ сверху 60 когда отображается архив
                             if viewModel.showCompletedTasksOnly {
                                 Color.clear
-                                .frame(height: 40)
+                                .frame(height: 20)
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)
                             }
+
+                             // Заменяем локальные состояния на свойства CalendarState
+                            if calendarState.isWeekCalendarVisible {
+                                Color.clear
+                                    .frame(height: 50)
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                            }
+
+                            if calendarState.isMonthCalendarVisible {
+                                Color.clear
+                                    .frame(height: 300)
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                            }
                             
-                            // Показываем поле для новой задачи, если isAddingNewTask = true
                             if isAddingNewTask {
                                 Spacer()
                                     .frame(height: 40)
@@ -74,14 +86,11 @@ struct TaskListView: View {
                                 )
                             }
                             
-                            // Используем разные методы в зависимости от режима
                             let items = viewModel.showCompletedTasksOnly 
-                                ? viewModel.getAllArchivedItems() // Для архива берем все архивные задачи
-                                : viewModel.getFilteredItems() // Для обычного режима - только задачи на выбранную дату
+                                ? viewModel.getAllArchivedItems()
+                                : viewModel.getFilteredItems()
                             
-                            // Отображаем задачи в зависимости от режима
                             if viewModel.showCompletedTasksOnly {
-                                // Используем новый компонент для отображения задач, сгруппированных по датам
                                 ArchivedTasksGroupView(
                                     items: items,
                                     categoryColor: viewModel.selectedCategory?.color ?? .blue,
@@ -101,7 +110,6 @@ struct TaskListView: View {
                                     }
                                 )
                             } else {
-                                // Стандартное отображение задач (без группировки)
                                 ForEach(items) { item in
                                     TaskRow(
                                         item: item,
@@ -128,7 +136,6 @@ struct TaskListView: View {
                                             RoundedRectangle(cornerRadius: 10)
                                                 .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
                                             
-                                            // Добавляем внешний бордер для задач с приоритетом
                                             if item.priority != .none {
                                                 RoundedRectangle(cornerRadius: 10)
                                                     .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
@@ -138,13 +145,11 @@ struct TaskListView: View {
                                         .padding(.vertical, 5)
                                         .padding(.horizontal, 12)
                                     )
-                                    .contentShape(Rectangle())  // Добавляем форму для регистрации нажатий
+                                    .contentShape(Rectangle())
                                     .onTapGesture {
                                         if viewModel.isSelectionMode {
-                                            // В режиме выбора используем метод ViewModel
                                             viewModel.toggleTaskSelection(taskId: item.id)
                                         } else {
-                                            // В обычном режиме, нажатие делает задачу завершенной
                                             viewModel.presenter?.toggleItem(id: item.id)
                                         }
                                     }
@@ -152,24 +157,23 @@ struct TaskListView: View {
                                 }
                             }
                             
-                            // Добавляем пустой элемент для отступа снизу
                             Color.clear
                                 .frame(height: 90)
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)
+                            
                         }
                         .listStyle(GroupedListStyle())
                         .onAppear {
-                            // При появлении обновляем выбранную категорию из пропса и обновляем данные
                             if let selectedCategory = selectedCategory {
                                 viewModel.selectedCategory = selectedCategory
                             }
                             viewModel.refreshData()
+                            
+                            // Удаляем код с NotificationCenter, так как теперь используем @Published
                         }
-                        // Отслеживаем изменение isAddingNewTask для прокрутки к началу списка
                         .onChange(of: isAddingNewTask) { oldValue, newValue in
                             if newValue == true {
-                                // Прокручиваем к началу списка с анимацией
                                 withAnimation {
                                     scrollProxy.scrollTo(topID, anchor: .top)
                                 }
@@ -178,7 +182,6 @@ struct TaskListView: View {
                     }
                 }
                 
-                // Добавляем индикатор режима архива на уровне ZStack перед SearchBar
                 if viewModel.showCompletedTasksOnly {
                     VStack {
                         ArchiveView()
@@ -186,26 +189,16 @@ struct TaskListView: View {
                     }
                 }
                 
-                // SearchBar сверху с эффектом размытия для фона
-                // VStack {
-                //     SearchBar(text: $viewModel.searchText, isActive: $isSearchActive)
-                // }
-
-                // Перемещаем BottomBar на уровень ZStack для изменения порядка слоев
                 if !isSearchActive && !isKeyboardVisible {
-                    // Для стандартной панели используем существующую реализацию
                     if !isAddingNewTask {
                         VStack {
                             Spacer()
                             BottomBar(
                                 onAddTap: {
-                                    // Убедимся, что выбранная категория установлена перед открытием формы
                                     if let selectedCategory = selectedCategory {
                                         viewModel.selectedCategory = selectedCategory
                                     }
-                                    // Вместо открытия формы, показываем строку для новой задачи
                                     isAddingNewTask = true
-                                    // Устанавливаем фокус с небольшой задержкой
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                         isNewTaskFocused = true
                                     }
@@ -216,11 +209,9 @@ struct TaskListView: View {
                                     viewModel.deleteSelectedTasks()
                                 },
                                 onChangePriorityForSelectedTasks: {
-                                    // Отображаем меню выбора приоритета
                                     showingPrioritySheet = true
                                 },
                                 onArchiveTapped: {
-                                    // Переключаем режим отображения выполненных задач
                                     viewModel.showCompletedTasksOnly.toggle()
                                 },
                                 onUnarchiveSelectedTasks: {
@@ -234,11 +225,8 @@ struct TaskListView: View {
                     }
                 }
 
-                // Панель выбора приоритета при создании новой задачи
-                // Размещаем её в отдельном ZStack слое для лучшего позиционирования
                 if isAddingNewTask {
                     VStack {
-                        // Размещаем панель примерно на середине экрана
                         Spacer().frame(height: UIScreen.main.bounds.height * 0.28)
                         
                         NewTaskPriorityBar(
@@ -293,40 +281,41 @@ struct TaskListView: View {
             }
         }
         
-        // Отслеживаем появление клавиатуры
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             isKeyboardVisible = true
         }
-        // Отслеживаем скрытие клавиатуры
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             isKeyboardVisible = false
         }
         
-        // Обновленный синтаксис onChange для iOS 17
         .onChange(of: isSearchActive) { oldValue, newValue in
-            // Здесь можно выполнить дополнительные действия при изменении состояния поиска
             NotificationCenter.default.post(
                 name: NSNotification.Name("SearchActiveStateChanged"),
                 object: nil,
                 userInfo: ["isActive": newValue]
             )
         }
-        // Добавляем обработчик изменения состояния создания новой задачи
         .onChange(of: isAddingNewTask) { oldValue, newValue in
-            // Если режим создания новой задачи активирован,
-            // то отправляем уведомление для скрытия докбара
             NotificationCenter.default.post(
                 name: NSNotification.Name("AddingTaskStateChanged"),
                 object: nil,
                 userInfo: ["isAddingTask": newValue]
             )
         }
-        // В body добавляем обработчик изменений даты
         .onChange(of: selectedDate) { oldValue, newValue in
-            // Обновляем дату в viewModel
             viewModel.selectedDate = newValue
-            // И принудительно обновляем данные
             viewModel.refreshData()
+        }
+        .onChange(of: calendarState.isWeekCalendarVisible) { oldValue, newValue in
+            print("isWeekCalendarVisible изменилось: \(oldValue) -> \(newValue)")
+            withAnimation {
+                // Можно добавить принудительное обновление
+            }
+        }
+        .onChange(of: calendarState.isMonthCalendarVisible) { oldValue, newValue in
+            withAnimation {
+                // Дополнительная логика обновления при необходимости
+            }
         }
     }
 }
