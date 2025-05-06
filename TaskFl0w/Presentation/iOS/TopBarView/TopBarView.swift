@@ -75,8 +75,6 @@ struct TopBarView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
-                        .padding(.bottom, 5)
-                        .padding(.leading, 15)
                         .frame(maxWidth: .infinity, alignment: .center)
                     }
                 } else {
