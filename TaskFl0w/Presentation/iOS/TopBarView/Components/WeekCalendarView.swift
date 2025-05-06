@@ -26,10 +26,15 @@ struct WeekCalendarView: View {
     // Добавлена функция обратного вызова для сокрытия календаря
     var onHideCalendar: (() -> Void)?
     
+    // Добавляем параметр для отключения показа месячного календаря при свайпе вниз
+    var disableMonthExpansion: Bool = false
+    
     // Добавляем инициализатор для установки начального значения visibleMonth
-    init(selectedDate: Binding<Date>, onHideCalendar: (() -> Void)? = nil) {
+    init(selectedDate: Binding<Date>, disableMonthExpansion: Bool = false, initialShowMonthCalendar: Bool = false, onHideCalendar: (() -> Void)? = nil) {
         self._selectedDate = selectedDate
         self.onHideCalendar = onHideCalendar
+        self.disableMonthExpansion = disableMonthExpansion
+        self._showMonthCalendar = State(initialValue: initialShowMonthCalendar)
         // Инициализируем visibleMonth значением selectedDate
         self._visibleMonth = State(initialValue: selectedDate.wrappedValue)
     }
@@ -102,9 +107,9 @@ struct WeekCalendarView: View {
                             if value.translation.height < 0 {
                                 weekCalendarOffset = value.translation.height
                             } 
-                            // Если свайп вниз - показываем месячный календарь
-                            else if value.translation.height > 0 {
-                                weekCalendarOffset = value.translation.height / 3 // Делим на 3 для менее резкого эффекта
+                            // Если свайп вниз - показываем месячный календарь (только если не отключено)
+                            else if value.translation.height > 0 && !disableMonthExpansion {
+                                weekCalendarOffset = value.translation.height / 3
                             }
                         }
                         .onEnded { value in
@@ -112,8 +117,8 @@ struct WeekCalendarView: View {
                             if value.translation.height < -20 {
                                 hideCalendar()
                             } 
-                            // Показываем месячный календарь при свайпе вниз
-                            else if value.translation.height > 50 {
+                            // Показываем месячный календарь при свайпе вниз (только если не отключено)
+                            else if value.translation.height > 50 && !disableMonthExpansion {
                                 DispatchQueue.main.async {
                                     withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                                         showMonthCalendar = true
