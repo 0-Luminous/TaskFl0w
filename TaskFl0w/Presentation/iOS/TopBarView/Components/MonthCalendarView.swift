@@ -16,6 +16,9 @@ struct MonthCalendarView: View {
     @State private var monthCalendarOffset: CGFloat = 0
     @State private var visibleMonth: Date
     
+    // Добавляем состояние для отображения выбора месяца/года
+    @State private var showMonthYearPicker = false
+    
     // Добавлена функция обратного вызова для сокрытия календаря
     var onHideCalendar: (() -> Void)?
     
@@ -28,12 +31,41 @@ struct MonthCalendarView: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            // Заголовок с текущим месяцем и годом
-            MonthYearHeader(date: visibleMonth)
+            // Заголовок с текущим месяцем и годом как кнопка
+            MonthYearHeaderButton(
+                date: visibleMonth,
+                onTap: {
+                    withAnimation(.spring(response: 0.3)) {
+                        showMonthYearPicker.toggle()
+                    }
+                }
+            )
             
-            // Секция с календарем
-            CalendarSection
-                .cornerRadius(16)
+            if showMonthYearPicker {
+                // Компонент для выбора месяца и года
+                MonthYearPickerView(
+                    selectedDate: $visibleMonth,
+                    onDateSelected: { newDate in
+                        // Прокручиваем к выбранному месяцу
+                        let components = calendar.dateComponents([.day], from: selectedDate)
+                        var newComponents = calendar.dateComponents([.year, .month], from: newDate)
+                        newComponents.day = components.day
+                        
+                        if let date = calendar.date(from: newComponents) {
+                            selectedDate = date
+                        }
+                        
+                        withAnimation(.spring(response: 0.3)) {
+                            showMonthYearPicker = false
+                        }
+                    }
+                )
+                .transition(.scale.combined(with: .opacity))
+            } else {
+                // Секция с календарем - показываем только если не открыт выбор месяца и года
+                CalendarSection
+                    .cornerRadius(16)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -276,5 +308,196 @@ struct MonthDay: Hashable {
     
     static func == (lhs: MonthDay, rhs: MonthDay) -> Bool {
         return lhs.date == rhs.date && lhs.belongsToMonth == rhs.belongsToMonth
+    }
+}
+
+// Компонент для отображения заголовка с месяцем и годом в виде кнопки
+struct MonthYearHeaderButton: View {
+    let date: Date
+    var onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                Text(formattedDate)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+            }
+            .padding(.vertical, 5)
+            .shadow(color: Color.black.opacity(0.3), radius: 1, x: 0, y: 1)
+        }
+    }
+    
+    private var formattedDate: String {
+        let rawString = monthYearFormatter.string(from: date)
+        // Преобразуем первую букву месяца в верхний регистр
+        if let firstChar = rawString.first {
+            return String(firstChar).uppercased() + rawString.dropFirst()
+        }
+        return rawString
+    }
+    
+    private var monthYearFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "LLLL yyyy"
+        formatter.locale = Locale(identifier: "ru_RU")
+        return formatter
+    }
+}
+
+// Компонент для выбора месяца и года
+struct MonthYearPickerView: View {
+    @Binding var selectedDate: Date
+    let onDateSelected: (Date) -> Void
+    
+    private let calendar = Calendar.current
+    @State private var selectedYear: Int
+    @State private var selectedMonth: Int
+    
+    // Месяцы на русском
+    private let months = [
+        "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+    ]
+    
+    // Диапазон лет (10 лет до и 10 лет после текущего)
+    private var years: [Int] {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        return Array((currentYear - 10)...(currentYear + 10))
+    }
+    
+    init(selectedDate: Binding<Date>, onDateSelected: @escaping (Date) -> Void) {
+        self._selectedDate = selectedDate
+        self.onDateSelected = onDateSelected
+        
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month], from: selectedDate.wrappedValue)
+        
+        // Swift month is 1-based, array is 0-based
+        self._selectedMonth = State(initialValue: (components.month ?? 1) - 1)
+        self._selectedYear = State(initialValue: components.year ?? Calendar.current.component(.year, from: Date()))
+    }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Выберите месяц и год")
+                .font(.headline)
+                .foregroundColor(.white)
+                .padding(.top, 8)
+            
+            HStack {
+                // Месяц
+                VStack {
+                    Text("Месяц")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                        .padding(.bottom, 4)
+                    
+                    Picker("Месяц", selection: $selectedMonth) {
+                        ForEach(0..<months.count, id: \.self) { index in
+                            Text(months[index]).tag(index)
+                        }
+                    }
+                    .pickerStyle(WheelPickerStyle())
+                    .frame(height: 120)
+                    .clipped()
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(red: 0.12, green: 0.12, blue: 0.12))
+                    )
+                }
+                
+                // Год
+                VStack {
+                    Text("Год")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+                        .padding(.bottom, 4)
+                    
+                    Picker("Год", selection: $selectedYear) {
+                        ForEach(years, id: \.self) { year in
+                            Text("\(year)").tag(year)
+                        }
+                    }
+                    .pickerStyle(WheelPickerStyle())
+                    .frame(height: 120)
+                    .clipped()
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(red: 0.12, green: 0.12, blue: 0.12))
+                    )
+                }
+            }
+            .padding(.horizontal)
+            
+            // Кнопки
+            HStack(spacing: 20) {
+                // Кнопка отмены
+                Button(action: {
+                    withAnimation(.spring(response: 0.3)) {
+                        // Просто закрываем пикер без изменений
+                        onDateSelected(selectedDate)
+                    }
+                }) {
+                    Text("Отмена")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 20)
+                        .background(Color(red: 0.3, green: 0.3, blue: 0.3))
+                        .cornerRadius(10)
+                }
+                
+                // Кнопка подтверждения
+                Button(action: {
+                    var components = DateComponents()
+                    components.year = selectedYear
+                    components.month = selectedMonth + 1 // +1 потому что месяцы в Calendar начинаются с 1
+                    components.day = 1
+                    
+                    if let date = calendar.date(from: components) {
+                        onDateSelected(date)
+                    }
+                }) {
+                    Text("Выбрать")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 20)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                }
+            }
+            .padding(.top, 10)
+        }
+        .padding(.vertical, 20)
+        .padding(.horizontal, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(red: 0.15, green: 0.15, blue: 0.15))
+                .shadow(color: .black.opacity(0.5), radius: 8, x: 0, y: 4)
+        )
+        .onChange(of: selectedYear) { _, _ in
+            updateSelectedDate()
+        }
+        .onChange(of: selectedMonth) { _, _ in
+            updateSelectedDate()
+        }
+    }
+    
+    private func updateSelectedDate() {
+        var components = DateComponents()
+        components.year = selectedYear
+        components.month = selectedMonth + 1
+        components.day = 1
+        
+        if let date = calendar.date(from: components) {
+            selectedDate = date
+        }
     }
 }

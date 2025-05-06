@@ -20,6 +20,9 @@ struct WeekCalendarView: View {
     // Добавляем состояние для переключения между недельным и месячным календарем
     @State private var showMonthCalendar = false
     
+    // Добавим состояние для отображения выбора месяца/года
+    @State private var showMonthYearPicker = false
+    
     // Добавлена функция обратного вызова для сокрытия календаря
     var onHideCalendar: (() -> Void)?
     
@@ -46,12 +49,42 @@ struct WeekCalendarView: View {
             } else {
                 // Недельный календарь
                 VStack(spacing: 10) {
-                    // Теперь используем visibleMonth вместо selectedDate
-                    MonthYearHeader(date: visibleMonth)
+                    // Заменяем MonthYearHeader на MonthYearHeaderButton
+                    MonthYearHeaderButton(
+                        date: visibleMonth,
+                        onTap: {
+                            withAnimation(.spring(response: 0.3)) {
+                                showMonthYearPicker.toggle()
+                            }
+                        }
+                    )
                     
-                    // Секция с календарем
-                    CalendarSection
-                        .cornerRadius(16)
+                    if showMonthYearPicker {
+                        // Компонент для выбора месяца и года
+                        MonthYearPickerView(
+                            selectedDate: $visibleMonth,
+                            onDateSelected: { newDate in
+                                // Прокручиваем к выбранному месяцу
+                                let components = calendar.dateComponents([.day], from: selectedDate)
+                                var newComponents = calendar.dateComponents([.year, .month], from: newDate)
+                                newComponents.day = components.day
+                                
+                                if let date = calendar.date(from: newComponents) {
+                                    selectedDate = date
+                                    updateWeekStartDate()
+                                }
+                                
+                                withAnimation(.spring(response: 0.3)) {
+                                    showMonthYearPicker = false
+                                }
+                            }
+                        )
+                        .transition(.scale.combined(with: .opacity))
+                    } else {
+                        // Секция с календарем - показываем только если не открыт выбор месяца и года
+                        CalendarSection
+                            .cornerRadius(16)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
@@ -81,8 +114,10 @@ struct WeekCalendarView: View {
                             } 
                             // Показываем месячный календарь при свайпе вниз
                             else if value.translation.height > 50 {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    showMonthCalendar = true
+                                DispatchQueue.main.async {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                        showMonthCalendar = true
+                                    }
                                 }
                             } 
                             // Возвращаем в исходное положение
@@ -207,41 +242,14 @@ struct WeekCalendarView: View {
     
     // Функция для скрытия календаря, добавленная из ClockViewIOS
     private func hideCalendar() {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             weekCalendarOffset = -200
-            // Вызываем колбэк для сообщения родительскому компоненту о необходимости скрыть календарь
+        }
+        
+        // Добавляем задержку для колбэка
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             onHideCalendar?()
         }
-    }
-}
-
-// Компонент для отображения заголовка с месяцем и годом
-struct MonthYearHeader: View {
-    let date: Date
-    
-    var body: some View {
-        Text(formattedDate)
-            .font(.title2)
-            .fontWeight(.bold)
-            .foregroundColor(.white)
-            .padding(.vertical, 5)
-            .shadow(color: Color.black.opacity(0.3), radius: 1, x: 0, y: 1)
-    }
-    
-    private var formattedDate: String {
-        let rawString = monthYearFormatter.string(from: date)
-        // Преобразуем первую букву месяца в верхний регистр
-        if let firstChar = rawString.first {
-            return String(firstChar).uppercased() + rawString.dropFirst()
-        }
-        return rawString
-    }
-    
-    private var monthYearFormatter: DateFormatter {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "LLLL yyyy"
-        formatter.locale = Locale(identifier: "ru_RU")
-        return formatter
     }
 }
 
