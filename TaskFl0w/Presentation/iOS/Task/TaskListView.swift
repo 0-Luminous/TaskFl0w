@@ -74,57 +74,82 @@ struct TaskListView: View {
                                 )
                             }
                             
-                            // Используем метод из ViewModel для фильтрации
-                            let items = viewModel.getFilteredItems()
+                            // Используем разные методы в зависимости от режима
+                            let items = viewModel.showCompletedTasksOnly 
+                                ? viewModel.getAllArchivedItems() // Для архива берем все архивные задачи
+                                : viewModel.getFilteredItems() // Для обычного режима - только задачи на выбранную дату
                             
-                            // Отображаем все задачи в одном списке без группировки по приоритету
-                            ForEach(items) { item in
-                                TaskRow(
-                                    item: item,
-                                    onToggle: {
-                                        viewModel.presenter?.toggleItem(id: item.id)
-                                    },
-                                    onEdit: {
-                                        viewModel.editingItem = item
-                                    },
-                                    onDelete: {
-                                        viewModel.presenter?.deleteItem(id: item.id)
-                                    },
-                                    onShare: {
-                                        viewModel.presenter?.shareItem(id: item.id)
-                                    },
+                            // Отображаем задачи в зависимости от режима
+                            if viewModel.showCompletedTasksOnly {
+                                // Используем новый компонент для отображения задач, сгруппированных по датам
+                                ArchivedTasksGroupView(
+                                    items: items,
                                     categoryColor: viewModel.selectedCategory?.color ?? .blue,
                                     isSelectionMode: viewModel.isSelectionMode,
-                                    isInArchiveMode: viewModel.showCompletedTasksOnly,
-                                    selectedTasks: $viewModel.selectedTasks
+                                    selectedTasks: $viewModel.selectedTasks,
+                                    onToggle: { taskId in
+                                        viewModel.presenter?.toggleItem(id: taskId)
+                                    },
+                                    onEdit: { item in
+                                        viewModel.editingItem = item
+                                    },
+                                    onDelete: { taskId in
+                                        viewModel.presenter?.deleteItem(id: taskId)
+                                    },
+                                    onShare: { taskId in
+                                        viewModel.presenter?.shareItem(id: taskId)
+                                    }
                                 )
-                                .padding(.trailing, 5)
-                                .listRowBackground(
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
-                                        
-                                        // Добавляем внешний бордер для задач с приоритетом
-                                        if item.priority != .none {
+                            } else {
+                                // Стандартное отображение задач (без группировки)
+                                ForEach(items) { item in
+                                    TaskRow(
+                                        item: item,
+                                        onToggle: {
+                                            viewModel.presenter?.toggleItem(id: item.id)
+                                        },
+                                        onEdit: {
+                                            viewModel.editingItem = item
+                                        },
+                                        onDelete: {
+                                            viewModel.presenter?.deleteItem(id: item.id)
+                                        },
+                                        onShare: {
+                                            viewModel.presenter?.shareItem(id: item.id)
+                                        },
+                                        categoryColor: viewModel.selectedCategory?.color ?? .blue,
+                                        isSelectionMode: viewModel.isSelectionMode,
+                                        isInArchiveMode: viewModel.showCompletedTasksOnly,
+                                        selectedTasks: $viewModel.selectedTasks
+                                    )
+                                    .padding(.trailing, 5)
+                                    .listRowBackground(
+                                        ZStack {
                                             RoundedRectangle(cornerRadius: 10)
-                                                .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
-                                                .opacity(item.isCompleted && !viewModel.isSelectionMode && !viewModel.showCompletedTasksOnly ? 0.5 : 1.0)
+                                                .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
+                                            
+                                            // Добавляем внешний бордер для задач с приоритетом
+                                            if item.priority != .none {
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
+                                                    .opacity(item.isCompleted && !viewModel.isSelectionMode && !viewModel.showCompletedTasksOnly ? 0.5 : 1.0)
+                                            }
+                                        }
+                                        .padding(.vertical, 5)
+                                        .padding(.horizontal, 12)
+                                    )
+                                    .contentShape(Rectangle())  // Добавляем форму для регистрации нажатий
+                                    .onTapGesture {
+                                        if viewModel.isSelectionMode {
+                                            // В режиме выбора используем метод ViewModel
+                                            viewModel.toggleTaskSelection(taskId: item.id)
+                                        } else {
+                                            // В обычном режиме, нажатие делает задачу завершенной
+                                            viewModel.presenter?.toggleItem(id: item.id)
                                         }
                                     }
-                                    .padding(.vertical, 5)
-                                    .padding(.horizontal, 12)
-                                )
-                                .contentShape(Rectangle())  // Добавляем форму для регистрации нажатий
-                                .onTapGesture {
-                                    if viewModel.isSelectionMode {
-                                        // В режиме выбора используем метод ViewModel
-                                        viewModel.toggleTaskSelection(taskId: item.id)
-                                    } else {
-                                        // В обычном режиме, нажатие делает задачу завершенной
-                                        viewModel.presenter?.toggleItem(id: item.id)
-                                    }
+                                    .listRowSeparator(.hidden)
                                 }
-                                .listRowSeparator(.hidden)
                             }
                             
                             // Добавляем пустой элемент для отступа снизу
