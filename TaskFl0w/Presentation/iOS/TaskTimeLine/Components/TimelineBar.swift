@@ -100,13 +100,13 @@ struct TimelineBar: View {
     
     private var todayButton: some View {
         Button(action: onTodayTap) {
-            toolbarIcon(systemName: "calendar.day.timeline.left", color: .blue)
+            toolbarIcon(systemName: "calendar.day.timeline.left", color: .gray)
         }
     }
     
     private var addTaskButton: some View {
         Button(action: onAddTaskTap) {
-            toolbarIcon(systemName: "plus.circle", color: .blue)
+            toolbarIcon(systemName: "checkmark.circle", color: .gray)
         }
     }
     

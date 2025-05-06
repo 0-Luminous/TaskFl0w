@@ -40,7 +40,11 @@ struct TasksFromView: View {
                         todoTasks: categoryTasks,
                         startTime: startTime,
                         endTime: endTime,
-                        showFullTasks: isNearestCategory
+                        showFullTasks: isNearestCategory,
+                        onToggleTask: { taskId in
+                            // Используем presenter из ListViewModel для переключения статуса задачи
+                            listViewModel.presenter?.toggleItem(id: taskId)
+                        }
                     )
                 }
             } else if let category = categoryManager.categories.first(where: { $0.id == selectedCategoryID }) {
@@ -57,7 +61,11 @@ struct TasksFromView: View {
                     todoTasks: [],
                     startTime: startTime,
                     endTime: endTime,
-                    showFullTasks: false
+                    showFullTasks: false,
+                    onToggleTask: { taskId in
+                        // Используем presenter из ListViewModel для переключения статуса задачи
+                        listViewModel.presenter?.toggleItem(id: taskId)
+                    }
                 )
             } else {
                 // Если категория вообще не найдена
@@ -76,6 +84,7 @@ struct TasksFromView: View {
         let startTime: Date?
         let endTime: Date?
         let showFullTasks: Bool // Новый параметр
+        var onToggleTask: ((UUID) -> Void)? = nil
         
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
@@ -148,9 +157,16 @@ struct TasksFromView: View {
                         return task1.priority.rawValue > task2.priority.rawValue
                     }
                     
-                    // Отображаем отсортированные задачи
+                    // Отображаем отсортированные задачи с обработчиком нажатия
                     ForEach(sortedTasks) { task in
-                        ToDoTaskRow(task: task, categoryColor: category.color)
+                        ToDoTaskRow(
+                            task: task, 
+                            categoryColor: category.color,
+                            onToggle: {
+                                // Вызываем обработчик переключения задачи
+                                onToggleTask?(task.id)
+                            }
+                        )
                     }
                 }
                 

@@ -183,7 +183,7 @@ struct ClockEditorView: View {
                     }
                 }
             }) {
-                Image(systemName: "circle")
+                Image(systemName: "slowmo")
                     .font(.system(size: 20))
                     .foregroundColor(showMarkersControls ? .yellow : .white)
                     .padding(6)

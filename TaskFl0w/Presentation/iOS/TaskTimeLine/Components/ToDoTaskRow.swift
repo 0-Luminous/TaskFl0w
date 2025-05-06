@@ -11,43 +11,54 @@ import SwiftUI
 struct ToDoTaskRow: View {
     let task: ToDoItem
     let categoryColor: Color
+    var onToggle: (() -> Void)? = nil
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Индикатор выполнения
-            Circle()
-                .fill(task.isCompleted ? Color.green : Color.clear)
-                .frame(width: 12, height: 12)
-                .overlay(
-                    Circle()
-                        .stroke(task.isCompleted ? Color.green : categoryColor.opacity(0.7), lineWidth: 1)
-                )
+        Button(action: {
+            // Добавляем тактильную обратную связь
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(task.title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                    .strikethrough(task.isCompleted)
+            // Вызываем обработчик, если он предоставлен
+            onToggle?()
+        }) {
+            HStack(spacing: 12) {
+                // Индикатор выполнения
+                Circle()
+                    .fill(task.isCompleted ? Color.green : Color.clear)
+                    .frame(width: 12, height: 12)
+                    .overlay(
+                        Circle()
+                            .stroke(task.isCompleted ? Color.green : categoryColor.opacity(0.7), lineWidth: 1)
+                    )
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(task.title)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                        .strikethrough(task.isCompleted)
+                }
+                
+                Spacer()
+                
+                // Индикатор приоритета
+                if task.priority != .none {
+                    priorityIndicator(for: task.priority)
+                }
             }
-            
-            Spacer()
-            
-            // Индикатор приоритета
-            if task.priority != .none {
-                priorityIndicator(for: task.priority)
-            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(getPriorityBorderColor(for: task.priority), lineWidth: task.priority != .none ? 1.5 : 0)
+                    )
+            )
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(getPriorityBorderColor(for: task.priority), lineWidth: task.priority != .none ? 1.5 : 0)
-                )
-        )
+        .buttonStyle(PlainButtonStyle()) // Используем PlainButtonStyle чтобы не менять внешний вид
     }
     
     // Индикатор приоритета
