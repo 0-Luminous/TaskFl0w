@@ -221,4 +221,34 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
             return "Без приоритета"
         }
     }
+
+    // Функция для получения всех архивных задач, независимо от даты
+    func getAllArchivedItems() -> [ToDoItem] {
+        var filteredItems: [ToDoItem]
+        
+        // Сначала фильтруем по категории, если она выбрана
+        if let selectedCategory = selectedCategory {
+            filteredItems = items.filter { item in
+                item.categoryID == selectedCategory.id
+            }
+        } else {
+            filteredItems = items
+        }
+        
+        // Фильтруем только выполненные задачи
+        filteredItems = filteredItems.filter { item in
+            item.isCompleted
+        }
+        
+        // Сортируем задачи по дате (от новых к старым)
+        return filteredItems.sorted { (item1, item2) -> Bool in
+            // Сначала сортируем по приоритету
+            if item1.priority != item2.priority {
+                return item1.priority.rawValue > item2.priority.rawValue
+            }
+            
+            // Если приоритеты одинаковые, сортируем по дате
+            return item1.date > item2.date
+        }
+    }
 }

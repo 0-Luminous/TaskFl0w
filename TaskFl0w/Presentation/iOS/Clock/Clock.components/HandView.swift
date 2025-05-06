@@ -56,6 +56,7 @@ struct ClockHandViewIOS: View {
                 path.addLine(to: endpoint)
             }
             .stroke(Color.blue, lineWidth: 3)
+            .shadow(color: .black.opacity(0.5), radius: 2, x: 1, y: 1)
         }
     }
 }
