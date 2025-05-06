@@ -140,34 +140,59 @@ struct TaskTimeline: View {
             }
             .background(Color(red: 0.098, green: 0.098, blue: 0.098))
             
-            // TopBarView поверх всего содержимого (верхний слой) - БЕЗ АНИМАЦИИ
+            // Нижний и верхний слои интерфейса
             VStack {
-                // TopBarView отображается только когда календарь скрыт
-                if !showWeekCalendar {
-                    TopBarView(
-                        viewModel: clockViewModel,
-                        showSettingsAction: { showSettings = true },
-                        toggleCalendarAction: toggleWeekCalendar,
-                        isCalendarVisible: false,
-                        searchAction: { 
-                            // Здесь добавляем логику поиска
+                // TopBarView поверх всего содержимого (верхний слой) - БЕЗ АНИМАЦИИ
+                VStack {
+                    // TopBarView отображается только когда календарь скрыт
+                    if !showWeekCalendar {
+                        TopBarView(
+                            viewModel: clockViewModel,
+                            showSettingsAction: { showSettings = true },
+                            toggleCalendarAction: toggleWeekCalendar,
+                            isCalendarVisible: false,
+                            searchAction: { 
+                                // Здесь добавляем логику поиска
+                            }
+                        )
+                        .zIndex(100)
+                    }
+                    
+                    // Используем обновленный WeekCalendarView с колбэком
+                    if showWeekCalendar {
+                        WeekCalendarView(
+                            selectedDate: $clockViewModel.selectedDate,
+                            onHideCalendar: {
+                                showWeekCalendar = false
+                            }
+                        )
+                        .zIndex(90) // Ниже чем TopBarView, но выше остального содержимого
+                    }
+                    
+                    Spacer() // Отодвигаем календарь и TopBar вверх
+                    
+                    // Добавляем TimelineBar внизу экрана
+                    TimelineBar(
+                        onTodayTap: { 
+                            // Переход к сегодняшней дате
+                            let today = Date()
+                            clockViewModel.selectedDate = today
+                            selectedDate = today
+                        },
+                        onAddTaskTap: {
+                            // Добавление новой задачи
+                            // Можно использовать NotificationCenter для вызова формы создания задачи
+                            NotificationCenter.default.post(
+                                name: NSNotification.Name("ShowAddTaskForm"),
+                                object: nil
+                            )
+                        },
+                        onInfoTap: {
+                            // Показать дополнительную информацию или настройки таймлайна
+                            showSettings = true
                         }
                     )
-                    .zIndex(100)
                 }
-                
-                // Используем обновленный WeekCalendarView с колбэком
-                if showWeekCalendar {
-                    WeekCalendarView(
-                        selectedDate: $clockViewModel.selectedDate,
-                        onHideCalendar: {
-                            showWeekCalendar = false
-                        }
-                    )
-                    .zIndex(90) // Ниже чем TopBarView, но выше остального содержимого
-                }
-                
-                Spacer() // Отодвигаем календарь и TopBar вверх
             }
         }
         .animation(.easeInOut(duration: 0.3), value: showWeekCalendar) // Анимация только для календаря
