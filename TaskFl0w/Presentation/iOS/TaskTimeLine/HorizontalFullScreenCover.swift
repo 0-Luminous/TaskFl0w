@@ -18,23 +18,19 @@ struct HorizontalFullScreenCover<ContentView: View>: ViewModifier {
             
             // Показываем полноэкранное покрытие только когда isPresented == true
             if isPresented {
-                // Полупрозрачный фон
-                // Color.black.opacity(0.4)
+                // Фоновый цвет без анимации
                 Color(red: 0.098, green: 0.098, blue: 0.098)
                     .ignoresSafeArea()
-                    // .transition(.opacity)
                 
-                // Содержимое, которое выезжает справа налево
+                // Извлекаем только основное содержимое, не включая TopBarView
                 GeometryReader { geo in
-                    NavigationStack {
-                        contentBuilder()
-                    }
-                    .frame(width: geo.size.width, height: geo.size.height)
+                    contentBuilder()
+                        .frame(width: geo.size.width, height: geo.size.height)
                 }
-                .transition(.move(edge: .trailing)) // Справа налево
+                .transition(.move(edge: .trailing)) // Анимация только для содержимого
+                .animation(.easeInOut(duration: 0.3), value: isPresented) // Анимация только для содержимого
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: isPresented) // Более быстрая анимация
     }
 }
 

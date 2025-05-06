@@ -12,13 +12,18 @@ struct TopBarView: View {
     let showSettingsAction: () -> Void
     let toggleCalendarAction: () -> Void
     let isCalendarVisible: Bool
+    let searchAction: () -> Void
     
     var body: some View {
         HStack {
-            // Пустой элемент для баланса с кнопкой настроек (теперь слева)
-            Color.clear
-                .frame(width: 20)
-                .padding(.leading, 16)
+            // Кнопка поиска слева
+            Button(action: searchAction) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 22))
+                    .foregroundColor(.blue)
+                    .padding(.leading, 16)
+            }
+            .padding(.bottom, 4)
                 
             Spacer()
             
@@ -78,6 +83,6 @@ struct TopBarView: View {
 }
 
 #Preview {
-    TopBarView(viewModel: ClockViewModel(), showSettingsAction: {}, toggleCalendarAction: {}, isCalendarVisible: false)
+    TopBarView(viewModel: ClockViewModel(), showSettingsAction: {}, toggleCalendarAction: {}, isCalendarVisible: false, searchAction: {})
 }
 

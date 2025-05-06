@@ -173,7 +173,10 @@ struct ClockViewIOS: View {
                             viewModel: viewModel,
                             showSettingsAction: { showingNewSettings = true },
                             toggleCalendarAction: toggleWeekCalendar,
-                            isCalendarVisible: showingWeekCalendar
+                            isCalendarVisible: showingWeekCalendar,
+                            searchAction: { 
+                            // Здесь добавляем логику поиска
+                        }
                         )
                         Spacer()
                     }

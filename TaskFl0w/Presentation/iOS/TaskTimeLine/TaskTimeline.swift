@@ -67,81 +67,80 @@ struct TaskTimeline: View {
     var body: some View {
         ZStack(alignment: .top) {
             // Основное содержимое сначала (нижний слой)
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: 0) {
-                    Color.clear
-                        .frame(height: 40)
-                        .listRowBackground(Color.clear)
-                    // Контейнер для временной шкалы и индикатора времени
-                    ZStack(alignment: .leading) {
-                        // Индикатор текущего времени (теперь ПЕРВЫЙ элемент, чтобы быть НИЖЕ в Z-порядке)
-                        GeometryReader { geometry in
-                            let totalHeight = geometry.size.height
-                            let calendar = Calendar.current
-                            let now = currentTime
-                            
-                            // Получаем общее количество блоков времени и их распределение
-                            let timeBlocks = createTimeBlocks()
-                            
-                            // Определяем высоту одного блока
-                            let blockHeight = totalHeight / CGFloat(timeBlocks.count)
-                            
-                            // Определяем текущий час и минуты
-                            let currentHour = calendar.component(.hour, from: now)
-                            let currentMinute = calendar.component(.minute, from: now)
-                            
-                            // Вычисляем, какая часть часа прошла (от 0 до 1)
-                            let minuteProgress = CGFloat(currentMinute) / 60.0
-                            
-                            // Вычисляем положение индикатора на шкале
-                            // Расчет позиции на основе самого часа, а не индекса блока
-                            // Это позволяет привязать индикатор к правильным значениям часов
-                            // Находим общий "прогресс дня" (от 0 до 24 часов с дробной частью)
-                            let dayProgress = CGFloat(currentHour) + minuteProgress
-                            
-                            // Вычисляем позицию как долю от общей высоты (24 часа + 1 для полночи следующего дня)
-                            let yPosition = (dayProgress / 25.0) * totalHeight
-                            
-                            // Только линия и текст слева
-                            HStack(alignment: .center, spacing: 2) {
-                                // Метка времени слева от линии
-                                Text(formatTime(currentTime))
-                                    .font(.caption)
-                                    .foregroundColor(.pink)
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        Color.clear
+                            .frame(height: 40)
+                            .listRowBackground(Color.clear)
+                        // Контейнер для временной шкалы и индикатора времени
+                        ZStack(alignment: .leading) {
+                            // Индикатор текущего времени (теперь ПЕРВЫЙ элемент, чтобы быть НИЖЕ в Z-порядке)
+                            GeometryReader { geometry in
+                                let totalHeight = geometry.size.height
+                                let calendar = Calendar.current
+                                let now = currentTime
                                 
-                                // Горизонтальная линия
-                                Rectangle()
-                                    .fill(Color.pink)
-                                    .frame(height: 1)
+                                // Получаем общее количество блоков времени и их распределение
+                                let timeBlocks = createTimeBlocks()
+                                
+                                // Определяем высоту одного блока
+                                let blockHeight = totalHeight / CGFloat(timeBlocks.count)
+                                
+                                // Определяем текущий час и минуты
+                                let currentHour = calendar.component(.hour, from: now)
+                                let currentMinute = calendar.component(.minute, from: now)
+                                
+                                // Вычисляем, какая часть часа прошла (от 0 до 1)
+                                let minuteProgress = CGFloat(currentMinute) / 60.0
+                                
+                                // Вычисляем положение индикатора на шкале
+                                // Расчет позиции на основе самого часа, а не индекса блока
+                                // Это позволяет привязать индикатор к правильным значениям часов
+                                // Находим общий "прогресс дня" (от 0 до 24 часов с дробной частью)
+                                let dayProgress = CGFloat(currentHour) + minuteProgress
+                                
+                                // Вычисляем позицию как долю от общей высоты (24 часа + 1 для полночи следующего дня)
+                                let yPosition = (dayProgress / 25.0) * totalHeight
+                                
+                                // Только линия и текст слева
+                                HStack(alignment: .center, spacing: 2) {
+                                    // Метка времени слева от линии
+                                    Text(formatTime(currentTime))
+                                        .font(.caption)
+                                        .foregroundColor(.pink)
+                                    
+                                    // Горизонтальная линия
+                                    Rectangle()
+                                        .fill(Color.pink)
+                                        .frame(height: 1)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .offset(y: yPosition - 10)  // Вычитаем половину высоты текста для центрирования
+                                .padding(.leading, -15)  // Отрицательный padding для максимального смещения влево
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .offset(y: yPosition - 10)  // Вычитаем половину высоты текста для центрирования
-                            .padding(.leading, -15)  // Отрицательный padding для максимального смещения влево
+                            
+                            // Базовая временная шкала (теперь ВТОРОЙ элемент, чтобы быть ВЫШЕ в Z-порядке)
+                            timelineContent
                         }
-                        
-                        // Базовая временная шкала (теперь ВТОРОЙ элемент, чтобы быть ВЫШЕ в Z-порядке)
-                        timelineContent
-                    }
 
-                    // Информация о конце дня
-                    Text(
-                        "End of day: \(timeUntilEndOfDay.hours) hrs, \(timeUntilEndOfDay.minutes) min"
-                    )
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .padding(.top, 20)
-                    .padding(.bottom, 10)
+                        // Информация о конце дня
+                        Text(
+                            "End of day: \(timeUntilEndOfDay.hours) hrs, \(timeUntilEndOfDay.minutes) min"
+                        )
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .padding(.top, 20)
+                        .padding(.bottom, 10)
+                    }
+                    .padding(.leading, 20)
+                    .padding(.trailing, 10)
                 }
-                .padding(.leading, 20)
-                .padding(.trailing, 10)
+                .padding(.top, 30)
             }
-            .padding(.top, 30)
-        }
-        // .padding(.top, 20)
-        .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
             
-            // TopBarView поверх всего содержимого (верхний слой)
+            // TopBarView поверх всего содержимого (верхний слой) - БЕЗ АНИМАЦИИ
             VStack {
                 // TopBarView отображается только когда календарь скрыт
                 if !showWeekCalendar {
@@ -149,9 +148,12 @@ struct TaskTimeline: View {
                         viewModel: clockViewModel,
                         showSettingsAction: { showSettings = true },
                         toggleCalendarAction: toggleWeekCalendar,
-                        isCalendarVisible: false  // Всегда false, чтобы не дублировать календарь
+                        isCalendarVisible: false,
+                        searchAction: { 
+                            // Здесь добавляем логику поиска
+                        }
                     )
-                    .zIndex(100) // Гарантируем, что TopBarView будет над всем
+                    .zIndex(100)
                 }
                 
                 // Используем обновленный WeekCalendarView с колбэком
@@ -168,6 +170,7 @@ struct TaskTimeline: View {
                 Spacer() // Отодвигаем календарь и TopBar вверх
             }
         }
+        .animation(.easeInOut(duration: 0.3), value: showWeekCalendar) // Анимация только для календаря
         .gesture(
             DragGesture()
                 .onChanged { value in
