@@ -423,6 +423,27 @@ struct ClockEditorView: View {
                     )
                     .foregroundColor(.white)
                     
+                    // Добавляем выбор интервала отображения цифр
+                    Text("Интервал цифр")
+                                .foregroundColor(.white)
+                    Picker(
+                        "Интервал цифр:",
+                        selection: Binding(
+                            get: { viewModel.numberInterval },
+                            set: {
+                                viewModel.numberInterval = $0
+                                markersViewModel.numberInterval = $0
+                            }
+                        )
+                    ) {
+                        Text("2 часа").tag(2)
+                        Text("3 часа").tag(3)
+                        Text("6 часов").tag(6)
+                    }
+                    .pickerStyle(.segmented)
+                    .foregroundColor(.white)
+                    .padding(.vertical, 8)
+                    
                     // Добавляем кнопку "Изменить шрифт цифр" для стиля "Минимализм"
                     Button(action: {
                         withAnimation {
@@ -479,6 +500,13 @@ struct ClockEditorView: View {
                     HStack(spacing: 10) {
                         Button(action: {
                             clockStyle = "Классический"
+                            if viewModel.numberInterval > 1 {
+                                viewModel.numberInterval = 1
+                                markersViewModel.numberInterval = 1
+                            }
+                            // При выходе из "Минимализм" включаем отображение цифр
+                            viewModel.showHourNumbers = true
+                            markersViewModel.showHourNumbers = true
                         }) {
                             Text("Классический")
                                 .font(.caption)
@@ -510,6 +538,15 @@ struct ClockEditorView: View {
 
                         Button(action: {
                             clockStyle = "Контур"
+                            if viewModel.numberInterval > 1 {
+                                viewModel.numberInterval = 1
+                                markersViewModel.numberInterval = 1
+                            }
+                            // При выходе из "Минимализм" включаем отображение цифр
+                            viewModel.showHourNumbers = true
+                            markersViewModel.showHourNumbers = true
+                            
+                       
                         }) {
                             Text("Контур")
                                 .font(.caption)
@@ -543,6 +580,13 @@ struct ClockEditorView: View {
                     HStack(spacing: 10) {
                         Button(action: {
                             clockStyle = "Цифровой"
+                            if viewModel.numberInterval > 1 {
+                                viewModel.numberInterval = 1
+                                markersViewModel.numberInterval = 1
+                            }
+                            // При переходе на "Цифровой" стиль отключаем отображение цифр
+                            viewModel.showHourNumbers = false
+                            markersViewModel.showHourNumbers = false
                         }) {
                             Text("Цифровой")
                                 .font(.caption)
@@ -574,6 +618,9 @@ struct ClockEditorView: View {
 
                         Button(action: {
                             clockStyle = "Минимализм"
+                            // При переходе в "Минимализм" устанавливаем интервал 2 часа
+                            viewModel.numberInterval = 2
+                            markersViewModel.numberInterval = 2
                         }) {
                             Text("Минимализм")
                                 .font(.caption)
