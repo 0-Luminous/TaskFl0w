@@ -6,6 +6,7 @@ struct PersonalizationViewIOS: View {
     @State private var showingClockFaceEditor = false
     @State private var showingCategoryEditor = false
     @State private var showingClockEditor = false
+    @State private var showingWatchFaceLibrary = false
 
     var body: some View {
         ZStack {
@@ -63,13 +64,60 @@ struct PersonalizationViewIOS: View {
                     .padding(.horizontal, 16)
                 }
 
+                // Библиотека циферблатов (новая кнопка)
+                Button {
+                    showingWatchFaceLibrary = true
+                } label: {
+                    HStack {
+                        Image(systemName: "tray.full.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.blue)
+                            .padding(8)
+                            .background(
+                                Circle()
+                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                            .padding(.leading, 16)
+
+                        Text("Библиотека циферблатов")
+                            .font(.system(size: 18))
+                            .foregroundColor(.primary)
+                            .padding(.leading, 12)
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray)
+                            .padding(.trailing, 16)
+                    }
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 15)
+                            .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                            .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
+                    )
+                    .padding(.horizontal, 16)
+                }
+
                 // Циферблат
                 Button {
                     showingClockFaceEditor = true
                 } label: {
                     HStack {
                         Image(systemName: "clock.circle")
-                            .font(.system(size: 22))
+                            .font(.system(size: 20))
                             .foregroundColor(.blue)
                             .padding(8)
                             .background(
@@ -116,7 +164,7 @@ struct PersonalizationViewIOS: View {
                 } label: {
                     HStack {
                         Image(systemName: "folder.fill.badge.gearshape")
-                            .font(.system(size: 18))
+                            .font(.system(size: 20))
                             .foregroundColor(.blue)
                             .padding(8)
                             .background(
@@ -187,6 +235,9 @@ struct PersonalizationViewIOS: View {
                 viewModel: viewModel,
                 isPresented: $showingCategoryEditor
             )
+        }
+        .fullScreenCover(isPresented: $showingWatchFaceLibrary) {
+            LibraryOfWatchFaces()
         }
     }
 }

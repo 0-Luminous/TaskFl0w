@@ -24,7 +24,7 @@ struct ClockTaskArcIOS: View {
                 let radius = min(geometry.size.width, geometry.size.height) / 2
                 let (startAngle, endAngle) = RingTimeCalculator.calculateAngles(for: task)
                 let midAngle = RingTimeCalculator.calculateMidAngle(start: startAngle, end: endAngle)
-                let iconSize: CGFloat = 20
+                let iconSize: CGFloat = 22
                 let isAnalog = viewModel.isAnalogArcStyle
                 let minOuterRingWidth: CGFloat = 20
                 let maxOuterRingWidth: CGFloat = 38
@@ -54,7 +54,7 @@ struct ClockTaskArcIOS: View {
                     ? arcRadius
                     : arcRadius + iconSize / 2 + iconOffset
 
-                let minIconFontSize: CGFloat = 12
+                let minIconFontSize: CGFloat = 11
                 let maxIconFontSize: CGFloat = 19
                 let t = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
                 let iconFontSize: CGFloat = isAnalog
