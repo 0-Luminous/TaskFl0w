@@ -199,7 +199,7 @@ struct GlobleClockFaceViewIOS: View {
         
         var body: some View {
             VStack(spacing: 0) {
-                Text("\(hour)")
+                Text("\(hour, specifier: "%02d")")
                     .font(.system(size: 42, weight: .bold, design: .monospaced))
                     .foregroundColor(color)
                 

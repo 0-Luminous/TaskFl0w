@@ -9,19 +9,17 @@ import SwiftUI
 
 // Добавляем перечисление для категорий циферблатов
 enum WatchFaceCategory: String, CaseIterable, Identifiable {
-    case classic = "Классические"
-    case minimal = "Минималистичные"
-    case creative = "Креативные"
-    case custom = "Мои циферблаты"
+    case classic = "Классический"
+    case digital = "Цифровой"
+    case minimal = "Минимализм"
     
     var id: String { rawValue }
     
     var systemImage: String {
         switch self {
         case .classic: return "clock"
+        case .digital: return "123.rectangle"
         case .minimal: return "circle.slash"
-        case .creative: return "paintpalette"
-        case .custom: return "person"
         }
     }
 }
@@ -103,12 +101,12 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeMarkersColor: Color.gray.toHex(),
                 showHourNumbers: false
             ),
-            // Креативный циферблат
+            // Цифровой циферблат
             WatchFaceModel(
                 name: "Неоновый",
                 style: "classic",
                 isCustom: false,
-                category: WatchFaceCategory.creative.rawValue,
+                category: WatchFaceCategory.digital.rawValue,
                 lightModeClockFaceColor: Color.black.toHex(),
                 darkModeClockFaceColor: Color.black.toHex(),
                 lightModeOuterRingColor: Color.green.opacity(0.8).toHex(),
@@ -192,22 +190,31 @@ class WatchFaceLibraryManager: ObservableObject {
     
     // Получить циферблаты по категории
     func watchFaces(for category: WatchFaceCategory) -> [WatchFaceModel] {
-        if category == .custom {
-            return watchFaces.filter { $0.isCustom }
-        } else {
-            return watchFaces.filter { $0.category == category.rawValue && !$0.isCustom }
-        }
+        return watchFaces.filter { $0.category == category.rawValue }
     }
     
     // Создание пользовательского циферблата из текущих настроек
     func createCustomWatchFace(name: String) {
         let themeManager = ThemeManager.shared
         
+        // Определяем стиль часов
+        let style = UserDefaults.standard.string(forKey: "clockStyle") ?? "classic"
+        
+        // Определяем категорию на основе стиля
+        let category: String
+        if style.contains("minimal") {
+            category = WatchFaceCategory.minimal.rawValue
+        } else if style.contains("digital") {
+            category = WatchFaceCategory.digital.rawValue
+        } else {
+            category = WatchFaceCategory.classic.rawValue
+        }
+        
         let newFace = WatchFaceModel(
             name: name,
-            style: UserDefaults.standard.string(forKey: "clockStyle") ?? "classic",
+            style: style,
             isCustom: true,
-            category: WatchFaceCategory.custom.rawValue,
+            category: category,
             lightModeClockFaceColor: UserDefaults.standard.string(forKey: ThemeManager.Constants.lightModeClockFaceColorKey) ?? Color.white.toHex(),
             darkModeClockFaceColor: UserDefaults.standard.string(forKey: ThemeManager.Constants.darkModeClockFaceColorKey) ?? Color.black.toHex(),
             lightModeOuterRingColor: UserDefaults.standard.string(forKey: ThemeManager.Constants.lightModeOuterRingColorKey) ?? Color.gray.opacity(0.3).toHex(),

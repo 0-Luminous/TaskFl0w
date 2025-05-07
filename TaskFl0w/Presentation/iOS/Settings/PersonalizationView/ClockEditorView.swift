@@ -36,6 +36,8 @@ struct ClockEditorView: View {
     @State private var showArcAnalogToggle = false
     @State private var showMarkersControls = false
     @State private var showFontPicker = false
+    @State private var showSizeSettings = false
+    @State private var showIntervalSettings = false
 
     var body: some View {
         NavigationStack {
@@ -134,10 +136,123 @@ struct ClockEditorView: View {
         return Color(hex: hexColor) ?? .gray.opacity(0.3)
     }
 
+    // Создаем расширение для модификатора кнопок
+    private struct ButtonModifier: ViewModifier {
+        let isSelected: Bool
+        let isDisabled: Bool
+        
+        init(isSelected: Bool = false, isDisabled: Bool = false) {
+            self.isSelected = isSelected
+            self.isDisabled = isDisabled
+        }
+        
+        func body(content: Content) -> some View {
+            content
+                .font(.caption)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 10)
+                .foregroundColor(isSelected ? .yellow : (isDisabled ? .gray : .white))
+                .frame(maxWidth: .infinity)
+                .background(
+                    Capsule()
+                        .fill(Color(red: 0.184, green: 0.184, blue: 0.184)
+                            .opacity(isDisabled ? 0.5 : 1))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.gray.opacity(isDisabled ? 0.3 : 0.7),
+                                    Color.gray.opacity(isDisabled ? 0.1 : 0.3),
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isDisabled ? 0.5 : 1.0
+                        )
+                )
+                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                .opacity(isDisabled ? 0.6 : 1)
+        }
+    }
+    
+    // Модификатор для декоративных кнопок панели инструментов
+    private struct DockButtonModifier: ViewModifier {
+        let isSelected: Bool
+        
+        func body(content: Content) -> some View {
+            content
+                .font(.system(size: 20))
+                .foregroundColor(isSelected ? .yellow : .white)
+                .padding(6)
+                .background(
+                    Circle()
+                        .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                )
+                .overlay(
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.gray.opacity(0.7), Color.gray.opacity(0.3),
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.0
+                        )
+                )
+                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+        }
+    }
+    
+    // Модификатор для кнопок навигации
+    private struct NavigationButtonModifier: ViewModifier {
+        func body(content: Content) -> some View {
+            content
+                .font(.caption)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
+                .foregroundColor(.white)
+                .background(
+                    Capsule()
+                        .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.gray.opacity(0.7),
+                                    Color.gray.opacity(0.3),
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.0
+                        )
+                )
+                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+        }
+    }
+    
+    // Применяем модификаторы к View
+    private func styleButton(_ content: some View, isSelected: Bool = false, isDisabled: Bool = false) -> some View {
+        content.modifier(ButtonModifier(isSelected: isSelected, isDisabled: isDisabled))
+    }
+    
+    private func styleDockButton(_ content: some View, isSelected: Bool = false) -> some View {
+        content.modifier(DockButtonModifier(isSelected: isSelected))
+    }
+    
+    private func styleNavigationButton(_ content: some View) -> some View {
+        content.modifier(NavigationButtonModifier())
+    }
+
     private var dockBar: some View {
         HStack(spacing: 20) {
             Button(action: {
-                // Открыть clockControls, закрыть остальные
                 withAnimation {
                     showClockControls.toggle()
                     if showClockControls {
@@ -149,28 +264,8 @@ struct ClockEditorView: View {
                 }
             }) {
                 Image(systemName: "clock")
-                    .font(.system(size: 20))
-                    .foregroundColor(showClockControls ? .yellow : .white)
-                    .padding(6)
+                    .modifier(DockButtonModifier(isSelected: showClockControls))
             }
-            .background(
-                Circle()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
-            )
-            .overlay(
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.gray.opacity(0.7), Color.gray.opacity(0.3),
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.0
-                    )
-            )
-            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
 
             Button(action: {
                 withAnimation {
@@ -184,31 +279,10 @@ struct ClockEditorView: View {
                 }
             }) {
                 Image(systemName: "slowmo")
-                    .font(.system(size: 20))
-                    .foregroundColor(showMarkersControls ? .yellow : .white)
-                    .padding(6)
+                    .modifier(DockButtonModifier(isSelected: showMarkersControls))
             }
-            .background(
-                Circle()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
-            )
-            .overlay(
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.gray.opacity(0.7), Color.gray.opacity(0.3),
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.0
-                    )
-            )
-            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
 
             Button(action: {
-                // Открыть colorControls, закрыть остальные
                 withAnimation {
                     showColorControls.toggle()
                     if showColorControls {
@@ -220,28 +294,8 @@ struct ClockEditorView: View {
                 }
             }) {
                 Image(systemName: "paintpalette")
-                    .font(.system(size: 20))
-                    .foregroundColor(showColorControls ? .yellow : .white)
-                    .padding(6)
+                    .modifier(DockButtonModifier(isSelected: showColorControls))
             }
-            .background(
-                Circle()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
-            )
-            .overlay(
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.gray.opacity(0.7), Color.gray.opacity(0.3),
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.0
-                    )
-            )
-            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
 
             Button(action: {
                 withAnimation {
@@ -255,55 +309,15 @@ struct ClockEditorView: View {
                 }
             }) {
                 Image(systemName: "clock.circle")
-                    .font(.system(size: 20))
-                    .foregroundColor(showOuterRingWidthControls ? .yellow : .white)
-                    .padding(6)
+                    .modifier(DockButtonModifier(isSelected: showOuterRingWidthControls))
             }
-            .background(
-                Circle()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
-            )
-            .overlay(
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.gray.opacity(0.7), Color.gray.opacity(0.3),
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.0
-                    )
-            )
-            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
 
             Button(action: {
                 // Действие 4
             }) {
                 Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
-                    .font(.system(size: 20))
-                    .foregroundColor(.white)
-                    .padding(6)
+                    .modifier(DockButtonModifier(isSelected: false))
             }
-            .background(
-                Circle()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
-            )
-            .overlay(
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.gray.opacity(0.7), Color.gray.opacity(0.3),
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.0
-                    )
-            )
-            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
 
             Button(action: {
                 withAnimation {
@@ -315,31 +329,10 @@ struct ClockEditorView: View {
                         showMarkersControls = false
                     }
                 }
-
             }) {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 20))
-                    .foregroundColor(showArcAnalogToggle ? .yellow : .white)
-                    .padding(6)
+                    .modifier(DockButtonModifier(isSelected: showArcAnalogToggle))
             }
-            .background(
-                Circle()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
-            )
-            .overlay(
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.gray.opacity(0.7), Color.gray.opacity(0.3),
-                            ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.0
-                    )
-            )
-            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
         }
         .padding(.horizontal, 15)
         .padding(.vertical, 16)
@@ -363,6 +356,7 @@ struct ClockEditorView: View {
                     Text("Выберите шрифт")
                         .font(.headline)
                         .foregroundColor(.white)
+                        
 
                     Spacer()
 
@@ -394,100 +388,356 @@ struct ClockEditorView: View {
                 }
                 .pickerStyle(.wheel)
                 .foregroundColor(.white)
-            } else {
-                // Показываем переключатель "Показывать цифры" только для стиля "Минимализм"
-                if viewModel.clockStyle == "Минимализм" {
-                    Toggle(
-                        "Показывать цифры",
-                        isOn: Binding(
-                            get: { markersViewModel.showHourNumbers },
-                            set: {
-                                markersViewModel.showHourNumbers = $0
-                                viewModel.showHourNumbers = $0
-                            }
-                        )
-                    )
-                    .toggleStyle(SwitchToggleStyle(tint: .yellow))
-                    .foregroundColor(.white)
-                    
-                    Stepper(
-                        "Размер цифр: \(markersViewModel.numbersSize, specifier: "%.0f")",
-                        value: Binding(
-                            get: { markersViewModel.numbersSize },
-                            set: {
-                                markersViewModel.numbersSize = $0
-                                viewModel.numbersSize = $0
-                            }
-                        ), in: 14...21, step: 1
-                    )
-                    .foregroundColor(.white)
-                    
-                    // Добавляем выбор интервала отображения цифр
-                    Text("Интервал цифр")
-                                .foregroundColor(.white)
-                    Picker(
-                        "Интервал цифр:",
-                        selection: Binding(
-                            get: { viewModel.numberInterval },
-                            set: {
-                                viewModel.numberInterval = $0
-                                markersViewModel.numberInterval = $0
-                            }
-                        )
-                    ) {
-                        Text("2 часа").tag(2)
-                        Text("3 часа").tag(3)
-                        Text("6 часов").tag(6)
-                    }
-                    .pickerStyle(.segmented)
-                    .foregroundColor(.white)
-                    .padding(.vertical, 8)
-                    
-                    // Добавляем кнопку "Изменить шрифт цифр" для стиля "Минимализм"
+            } else if showSizeSettings {
+                // Настройки размера цифр
+                HStack {
+                    Text("Размер цифр")
+                        .font(.headline)
+                        .foregroundColor(.white)
+
+                    Spacer()
+
                     Button(action: {
                         withAnimation {
-                            showFontPicker = true
+                            showSizeSettings = false
                         }
                     }) {
-                        HStack {
-                            Text("Изменить шрифт цифр")
-                                .foregroundColor(.white)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.vertical, 8)
+                        Text("Готово")
+                            .foregroundColor(.yellow)
+                            .fontWeight(.medium)
                     }
                 }
+                .padding(.bottom, 8)
                 
-                // Отображаем кнопку "Изменить шрифт цифр" только для стиля "Классический"
-                if viewModel.clockStyle == "Классический" {
-                    Stepper(
-                        "Размер цифр: \(markersViewModel.numbersSize, specifier: "%.0f")",
-                        value: Binding(
-                            get: { markersViewModel.numbersSize },
-                            set: {
-                                markersViewModel.numbersSize = $0
-                                viewModel.numbersSize = $0
-                            }
-                        ), in: 14...21, step: 1
-                    )
-                    .foregroundColor(.white)
-                    
+                HStack(spacing: 10) {
                     Button(action: {
-                        withAnimation {
-                            showFontPicker = true
+                        if markersViewModel.numbersSize > 14 {
+                            markersViewModel.numbersSize -= 1
+                            viewModel.numbersSize = markersViewModel.numbersSize
                         }
                     }) {
-                        HStack {
-                            Text("Изменить шрифт цифр")
-                                .foregroundColor(.white)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.vertical, 8)
+                        Text("Меньше")
+                            .modifier(ButtonModifier())
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Text("\(Int(markersViewModel.numbersSize))")
+                        .font(.system(size: 23))
+                        .foregroundColor(.yellow)
+                        .frame(width: 30)
+                    
+                    Button(action: {
+                        if markersViewModel.numbersSize < 21 {
+                            markersViewModel.numbersSize += 1
+                            viewModel.numbersSize = markersViewModel.numbersSize
+                        }
+                    }) {
+                        Text("Больше")
+                            .modifier(ButtonModifier())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            } else if showIntervalSettings {
+                // Настройки интервала цифр
+                HStack {
+                    Text("Интервал цифр")
+                        .font(.headline)
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    Button(action: {
+                        withAnimation {
+                            showIntervalSettings = false
+                        }
+                    }) {
+                        Text("Готово")
+                            .foregroundColor(.yellow)
+                            .fontWeight(.medium)
+                    }
+                }
+                .padding(.bottom, 8)
+                
+                HStack(spacing: 10) {
+                    Button(action: {
+                        viewModel.numberInterval = 2
+                        markersViewModel.numberInterval = 2
+                    }) {
+                        Text("2 часа")
+                            .modifier(ButtonModifier(isSelected: viewModel.numberInterval == 2))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Button(action: {
+                        viewModel.numberInterval = 3
+                        markersViewModel.numberInterval = 3
+                    }) {
+                        Text("3 часа")
+                            .modifier(ButtonModifier(isSelected: viewModel.numberInterval == 3))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Button(action: {
+                        viewModel.numberInterval = 6
+                        markersViewModel.numberInterval = 6
+                    }) {
+                        Text("6 часов")
+                            .modifier(ButtonModifier(isSelected: viewModel.numberInterval == 6))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            } else {
+                // Показываем настройки цифр только для стиля "Минимализм"
+                if viewModel.clockStyle == "Минимализм" {
+                    // Первая строка: показать/скрыть и интервал
+                    HStack(spacing: 10) {
+                        // Кнопка показать/скрыть цифры
+                        Button(action: {
+                            markersViewModel.showHourNumbers.toggle()
+                            viewModel.showHourNumbers = markersViewModel.showHourNumbers
+                        }) {
+                            HStack {
+                                Text(markersViewModel.showHourNumbers ? "Скрыть" : "Показать")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                Image(systemName: markersViewModel.showHourNumbers ? "eye.slash" : "eye")
+                                    .font(.caption)
+                                    .foregroundColor(.yellow)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.gray.opacity(0.7),
+                                                Color.gray.opacity(0.3),
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Для стиля "Минимализм" сохраняем настройки интервала
+                        Button(action: {
+                            withAnimation {
+                                showIntervalSettings = true
+                            }
+                        }) {
+                            HStack {
+                                Text("Интервал")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                Text("\(viewModel.numberInterval) ч")
+                                    .font(.caption)
+                                    .foregroundColor(.yellow)
+                                    .padding(.leading, 2)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.gray.opacity(0.7),
+                                                Color.gray.opacity(0.3),
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.bottom, 6)
+                    
+                    // Вторая строка: шрифт и размер для Минимализма
+                    HStack(spacing: 10) {
+                        // Кнопка изменения шрифта
+                        Button(action: {
+                            withAnimation {
+                                showFontPicker = true
+                            }
+                        }) {
+                            HStack {
+                                Text("Шрифт")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                Image(systemName: "textformat")
+                                    .font(.caption)
+                                    .foregroundColor(.yellow)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.gray.opacity(0.7),
+                                                Color.gray.opacity(0.3),
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Кнопка размера цифр
+                        Button(action: {
+                            withAnimation {
+                                showSizeSettings = true
+                            }
+                        }) {
+                            HStack {
+                                Text("Размер")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                Text("\(Int(markersViewModel.numbersSize))")
+                                    .font(.caption)
+                                    .foregroundColor(.yellow)
+                                    .padding(.leading, 2)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.gray.opacity(0.7),
+                                                Color.gray.opacity(0.3),
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.bottom, 6)
+                }
+
+                // Кнопки шрифта и размера для классического стиля
+                if viewModel.clockStyle == "Классический" {
+                    HStack(spacing: 10) {
+                        // Кнопка изменения шрифта
+                        Button(action: {
+                            withAnimation {
+                                showFontPicker = true
+                            }
+                        }) {
+                            HStack {
+                                Text("Шрифт")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                Image(systemName: "textformat")
+                                    .font(.caption)
+                                    .foregroundColor(.yellow)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.gray.opacity(0.7),
+                                                Color.gray.opacity(0.3),
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Кнопка размера цифр
+                        Button(action: {
+                            withAnimation {
+                                showSizeSettings = true
+                            }
+                        }) {
+                            HStack {
+                                Text("Размер")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                Text("\(Int(markersViewModel.numbersSize))")
+                                    .font(.caption)
+                                    .foregroundColor(.yellow)
+                                    .padding(.leading, 2)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.gray.opacity(0.7),
+                                                Color.gray.opacity(0.3),
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.bottom, 6)
                 }
 
                 Text("Стиль")
@@ -508,72 +758,30 @@ struct ClockEditorView: View {
                             markersViewModel.showHourNumbers = true
                         }) {
                             Text("Классический")
-                                .font(.caption)
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 8)
-                                .foregroundColor(viewModel.clockStyle == "Классический" ? .yellow : .white)
-                                .frame(maxWidth: .infinity)
-                                .background(
-                                    Capsule()
-                                        .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
-                                )
-                                .overlay(
-                                    Capsule()
-                                        .stroke(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: [
-                                                    Color.gray.opacity(0.7),
-                                                    Color.gray.opacity(0.3),
-                                                ]),
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1.0
-                                        )
-                                )
-                                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                                .modifier(ButtonModifier(isSelected: viewModel.clockStyle == "Классический"))
                         }
                         .buttonStyle(PlainButtonStyle())
 
                         Button(action: {
-                            viewModel.clockStyle = "Контур"
-                            if viewModel.numberInterval > 1 {
-                                viewModel.numberInterval = 1
-                                markersViewModel.numberInterval = 1
-                            }
-                            // При выходе из "Минимализм" включаем отображение цифр
-                            viewModel.showHourNumbers = true
-                            markersViewModel.showHourNumbers = true
-                            
-                       
+                            // Отключаем действие кнопки - оставляем пустой блок
                         }) {
                             Text("Контур")
-                                .font(.caption)
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 8)
-                                .foregroundColor(viewModel.clockStyle == "Контур" ? .yellow : .white)
-                                .frame(maxWidth: .infinity)
-                                .background(
-                                    Capsule()
-                                        .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
-                                )
-                                .overlay(
-                                    Capsule()
-                                        .stroke(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: [
-                                                    Color.gray.opacity(0.7),
-                                                    Color.gray.opacity(0.3),
-                                                ]),
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1.0
-                                        )
-                                )
-                                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                                .modifier(ButtonModifier(isDisabled: true))
                         }
                         .buttonStyle(PlainButtonStyle())
+                        .disabled(true) 
+                        .overlay(
+                            // Добавляем индикатор "скоро будет доступно"
+                            Text("скоро")
+                                .font(.system(size: 8, weight: .semibold))
+                                .foregroundColor(.yellow.opacity(0.8))
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Color.black.opacity(0.5))
+                                .cornerRadius(4)
+                                .offset(x: 0, y: -12), 
+                            alignment: .top
+                        )
                     }
 
                     HStack(spacing: 10) {
@@ -588,30 +796,7 @@ struct ClockEditorView: View {
                             markersViewModel.showHourNumbers = false
                         }) {
                             Text("Цифровой")
-                                .font(.caption)
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 8)
-                                .foregroundColor(viewModel.clockStyle == "Цифровой" ? .yellow : .white)
-                                .frame(maxWidth: .infinity)
-                                .background(
-                                    Capsule()
-                                        .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
-                                )
-                                .overlay(
-                                    Capsule()
-                                        .stroke(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: [
-                                                    Color.gray.opacity(0.7),
-                                                    Color.gray.opacity(0.3),
-                                                ]),
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1.0
-                                        )
-                                )
-                                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                                .modifier(ButtonModifier(isSelected: viewModel.clockStyle == "Цифровой"))
                         }
                         .buttonStyle(PlainButtonStyle())
 
@@ -620,32 +805,12 @@ struct ClockEditorView: View {
                             // При переходе в "Минимализм" устанавливаем интервал 2 часа
                             viewModel.numberInterval = 2
                             markersViewModel.numberInterval = 2
+                            // При переходе в "Минимализм" включаем отображение цифр
+                            viewModel.showHourNumbers = true
+                            markersViewModel.showHourNumbers = true
                         }) {
                             Text("Минимализм")
-                                .font(.caption)
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 8)
-                                .foregroundColor(viewModel.clockStyle == "Минимализм" ? .yellow : .white)
-                                .frame(maxWidth: .infinity)
-                                .background(
-                                    Capsule()
-                                        .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
-                                )
-                                .overlay(
-                                    Capsule()
-                                        .stroke(
-                                            LinearGradient(
-                                                gradient: Gradient(colors: [
-                                                    Color.gray.opacity(0.7),
-                                                    Color.gray.opacity(0.3),
-                                                ]),
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            ),
-                                            lineWidth: 1.0
-                                        )
-                                )
-                                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                                .modifier(ButtonModifier(isSelected: viewModel.clockStyle == "Минимализм"))
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -865,3 +1030,4 @@ struct ClockEditorView: View {
         darkModeMarkersColor = markersViewModel.darkModeMarkersColor
     }
 }
+
