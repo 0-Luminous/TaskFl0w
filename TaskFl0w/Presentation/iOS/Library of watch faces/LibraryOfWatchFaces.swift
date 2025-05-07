@@ -7,12 +7,32 @@
 
 import SwiftUI
 
+// Добавляем перечисление для категорий циферблатов
+enum WatchFaceCategory: String, CaseIterable, Identifiable {
+    case classic = "Классические"
+    case minimal = "Минималистичные"
+    case creative = "Креативные"
+    case custom = "Мои циферблаты"
+    
+    var id: String { rawValue }
+    
+    var systemImage: String {
+        switch self {
+        case .classic: return "clock"
+        case .minimal: return "circle.slash"
+        case .creative: return "paintpalette"
+        case .custom: return "person"
+        }
+    }
+}
+
 // MARK: - Модель циферблата
 struct WatchFaceModel: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var name: String
     var style: String // Используем String, чтобы легко хранить в UserDefaults
     var isCustom: Bool = false
+    var category: String = WatchFaceCategory.classic.rawValue
     
     // Цвета в формате HEX для сохранения
     var lightModeClockFaceColor: String
@@ -47,12 +67,56 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             WatchFaceModel(
                 name: "Классический",
                 style: "classic",
+                isCustom: false,
+                category: WatchFaceCategory.classic.rawValue,
                 lightModeClockFaceColor: Color.white.toHex(),
                 darkModeClockFaceColor: Color.black.toHex(),
                 lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
                 darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
                 lightModeMarkersColor: Color.black.toHex(),
                 darkModeMarkersColor: Color.white.toHex()
+            ),
+            // Добавляем еще один классический циферблат
+            WatchFaceModel(
+                name: "Капучино",
+                style: "classic",
+                isCustom: false,
+                category: WatchFaceCategory.classic.rawValue,
+                lightModeClockFaceColor: Color(red: 0.95, green: 0.95, blue: 0.87).toHex(),
+                darkModeClockFaceColor: Color(red: 0.15, green: 0.15, blue: 0.12).toHex(),
+                lightModeOuterRingColor: Color.brown.opacity(0.3).toHex(),
+                darkModeOuterRingColor: Color.brown.opacity(0.5).toHex(),
+                lightModeMarkersColor: Color.brown.toHex(),
+                darkModeMarkersColor: Color.brown.opacity(0.7).toHex()
+            ),
+            // Минималистичный циферблат
+            WatchFaceModel(
+                name: "Чистый",
+                style: "minimal",
+                isCustom: false,
+                category: WatchFaceCategory.minimal.rawValue,
+                lightModeClockFaceColor: Color.white.toHex(),
+                darkModeClockFaceColor: Color.black.toHex(),
+                lightModeOuterRingColor: Color.gray.opacity(0.2).toHex(),
+                darkModeOuterRingColor: Color.gray.opacity(0.2).toHex(),
+                lightModeMarkersColor: Color.gray.toHex(),
+                darkModeMarkersColor: Color.gray.toHex(),
+                showHourNumbers: false
+            ),
+            // Креативный циферблат
+            WatchFaceModel(
+                name: "Неоновый",
+                style: "classic",
+                isCustom: false,
+                category: WatchFaceCategory.creative.rawValue,
+                lightModeClockFaceColor: Color.black.toHex(),
+                darkModeClockFaceColor: Color.black.toHex(),
+                lightModeOuterRingColor: Color.green.opacity(0.8).toHex(),
+                darkModeOuterRingColor: Color.green.opacity(0.8).toHex(),
+                lightModeMarkersColor: Color.green.toHex(),
+                darkModeMarkersColor: Color.green.toHex(),
+                showHourNumbers: true, 
+                numberInterval: 2
             )
         ]
     }
@@ -126,6 +190,15 @@ class WatchFaceLibraryManager: ObservableObject {
         return watchFaces.first(where: { $0.id == selectedID })
     }
     
+    // Получить циферблаты по категории
+    func watchFaces(for category: WatchFaceCategory) -> [WatchFaceModel] {
+        if category == .custom {
+            return watchFaces.filter { $0.isCustom }
+        } else {
+            return watchFaces.filter { $0.category == category.rawValue && !$0.isCustom }
+        }
+    }
+    
     // Создание пользовательского циферблата из текущих настроек
     func createCustomWatchFace(name: String) {
         let themeManager = ThemeManager.shared
@@ -134,6 +207,7 @@ class WatchFaceLibraryManager: ObservableObject {
             name: name,
             style: UserDefaults.standard.string(forKey: "clockStyle") ?? "classic",
             isCustom: true,
+            category: WatchFaceCategory.custom.rawValue,
             lightModeClockFaceColor: UserDefaults.standard.string(forKey: ThemeManager.Constants.lightModeClockFaceColorKey) ?? Color.white.toHex(),
             darkModeClockFaceColor: UserDefaults.standard.string(forKey: ThemeManager.Constants.darkModeClockFaceColorKey) ?? Color.black.toHex(),
             lightModeOuterRingColor: UserDefaults.standard.string(forKey: ThemeManager.Constants.lightModeOuterRingColorKey) ?? Color.gray.opacity(0.3).toHex(),
@@ -246,49 +320,35 @@ struct LibraryOfWatchFaces: View {
     @State private var selectedWatchFace: WatchFaceModel?
     @State private var showDeleteAllAlert = false
     
-    private let columns = [
-        GridItem(.adaptive(minimum: 150), spacing: 20)
-    ]
-    
     var body: some View {
         NavigationView {
-            VStack {
-                ScrollView {
-                    LazyVGrid(columns: columns, spacing: 20) {
-                        ForEach(libraryManager.watchFaces) { face in
-                            WatchFacePreviewCard(watchFace: face)
-                                .onTapGesture {
-                                    libraryManager.selectWatchFace(face.id)
-                                    dismiss()
-                                }
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(
-                                            libraryManager.selectedFaceID == face.id ? Color.blue : Color.clear,
-                                            lineWidth: 3
-                                        )
-                                )
-                                .contextMenu {
-                                    if face.isCustom {
-                                        Button(role: .destructive) {
-                                            libraryManager.deleteWatchFace(face.id)
-                                        } label: {
-                                            Label("Удалить", systemImage: "trash")
-                                        }
-                                        
-                                        Button {
-                                            selectedWatchFace = face
-                                            showingEditSheet = true
-                                        } label: {
-                                            Label("Редактировать", systemImage: "pencil")
-                                        }
-                                    }
-                                }
-                        }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Отображаем каждую категорию с её циферблатами
+                    ForEach(WatchFaceCategory.allCases) { category in
+                        CategorySection(
+                            category: category,
+                            watchFaces: libraryManager.watchFaces(for: category),
+                            libraryManager: libraryManager,
+                            onWatchFaceSelected: { face in
+                                libraryManager.selectWatchFace(face.id)
+                                dismiss()
+                            },
+                            onEdit: { face in
+                                selectedWatchFace = face
+                                showingEditSheet = true
+                            },
+                            onDelete: { face in
+                                libraryManager.deleteWatchFace(face.id)
+                            }
+                        )
                     }
-                    .padding()
+                    
+                    Spacer().frame(height: 80) // Дополнительное пространство внизу
                 }
-                
+                .padding(.top)
+            }
+            .overlay(alignment: .bottom) {
                 HStack {
                     Button {
                         showingAddSheet = true
@@ -320,6 +380,11 @@ struct LibraryOfWatchFaces: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom)
+                .background(
+                    Rectangle()
+                        .fill(Color(UIColor.systemBackground))
+                        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: -5)
+                )
             }
             .navigationTitle("Библиотека циферблатов")
             .navigationBarTitleDisplayMode(.inline)
@@ -348,6 +413,76 @@ struct LibraryOfWatchFaces: View {
             } message: {
                 Text("Будут удалены все пользовательские циферблаты и восстановлены предустановленные. Это действие нельзя отменить.")
             }
+        }
+    }
+}
+
+// Секция для категории циферблатов
+struct CategorySection: View {
+    let category: WatchFaceCategory
+    let watchFaces: [WatchFaceModel]
+    let libraryManager: WatchFaceLibraryManager
+    let onWatchFaceSelected: (WatchFaceModel) -> Void
+    let onEdit: (WatchFaceModel) -> Void
+    let onDelete: (WatchFaceModel) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            // Заголовок категории
+            HStack {
+                Image(systemName: category.systemImage)
+                    .font(.headline)
+                Text(category.rawValue)
+                    .font(.headline)
+            }
+            .padding(.horizontal)
+            
+            if watchFaces.isEmpty {
+                Text("Нет циферблатов в этой категории")
+                    .foregroundColor(.gray)
+                    .italic()
+                    .padding(.horizontal)
+                    .padding(.vertical, 10)
+            } else {
+                // Горизонтальный скролл циферблатов
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 15) {
+                        ForEach(watchFaces) { face in
+                            WatchFacePreviewCard(watchFace: face)
+                                .onTapGesture {
+                                    onWatchFaceSelected(face)
+                                }
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(
+                                            libraryManager.selectedFaceID == face.id ? Color.blue : Color.clear,
+                                            lineWidth: 3
+                                        )
+                                )
+                                .contextMenu {
+                                    if face.isCustom {
+                                        Button(role: .destructive) {
+                                            onDelete(face)
+                                        } label: {
+                                            Label("Удалить", systemImage: "trash")
+                                        }
+                                        
+                                        Button {
+                                            onEdit(face)
+                                        } label: {
+                                            Label("Редактировать", systemImage: "pencil")
+                                        }
+                                    }
+                                }
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 5)
+                }
+            }
+            
+            Divider()
+                .padding(.horizontal)
         }
     }
 }
