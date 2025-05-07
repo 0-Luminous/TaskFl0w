@@ -207,6 +207,15 @@ final class ClockViewModel: ObservableObject {
     // Флаг для проверки, разрешены ли уведомления
     @AppStorage("notificationsEnabled") private var notificationsEnabled = true
 
+    // Добавляем свойство для хранения стиля часов
+    @Published var clockStyle: String = UserDefaults.standard.string(forKey: "clockStyle") ?? "Классический" {
+        didSet {
+            // Сохраняем значение в UserDefaults при изменении
+            UserDefaults.standard.set(clockStyle, forKey: "clockStyle")
+            objectWillChange.send()
+        }
+    }
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState

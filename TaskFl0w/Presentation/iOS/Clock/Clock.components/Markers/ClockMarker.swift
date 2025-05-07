@@ -34,7 +34,7 @@ struct ClockMarker: View {
         if viewModel.showHourNumbers {
             // Если этот час должен иметь цифру, делаем маркер выше
             if shouldShowNumber && viewModel.numberInterval > 1 {
-                return viewModel.markerHeight(for: hour) * 1.5
+                return viewModel.markerHeight(for: hour) * 1.0
             }
         }
         return viewModel.markerHeight(for: hour)
@@ -61,14 +61,14 @@ struct ClockMarker: View {
                     .frame(width: viewModel.markersWidth, height: shouldShowNumber && viewModel.numberInterval > 1 ? 16 : 12)
                     
             case .lines:
-                Rectangle()
+            Rectangle()
                     .fill(MarkersColor)
                     .frame(width: viewModel.markersWidth, height: dynamicMarkerHeight)
                     
             case .dots:
                 Circle()
-                    .fill(MarkersColor)
-                    .frame(
+                .fill(MarkersColor)
+                .frame(
                         width: shouldShowNumber && viewModel.numberInterval > 1 ? viewModel.markerWidth(for: hour) * 1.5 : viewModel.markerWidth(for: hour),
                         height: shouldShowNumber && viewModel.numberInterval > 1 ? viewModel.markerWidth(for: hour) * 1.5 : viewModel.markerWidth(for: hour))
             }

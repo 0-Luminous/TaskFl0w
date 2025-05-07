@@ -28,7 +28,6 @@ struct ClockEditorView: View {
 
     @AppStorage("showMarkers") private var showMarkers: Bool = true
     @AppStorage("fontName") private var fontName: String = "SF Pro"
-    @AppStorage("clockStyle") private var clockStyle: String = "Классический"
 
     @Environment(\.presentationMode) var presentationMode
     @State private var showClockControls = false
@@ -397,7 +396,7 @@ struct ClockEditorView: View {
                 .foregroundColor(.white)
             } else {
                 // Показываем переключатель "Показывать цифры" только для стиля "Минимализм"
-                if clockStyle == "Минимализм" {
+                if viewModel.clockStyle == "Минимализм" {
                     Toggle(
                         "Показывать цифры",
                         isOn: Binding(
@@ -462,7 +461,7 @@ struct ClockEditorView: View {
                 }
                 
                 // Отображаем кнопку "Изменить шрифт цифр" только для стиля "Классический"
-                if clockStyle == "Классический" {
+                if viewModel.clockStyle == "Классический" {
                     Stepper(
                         "Размер цифр: \(markersViewModel.numbersSize, specifier: "%.0f")",
                         value: Binding(
@@ -499,7 +498,7 @@ struct ClockEditorView: View {
                 VStack(spacing: 10) {
                     HStack(spacing: 10) {
                         Button(action: {
-                            clockStyle = "Классический"
+                            viewModel.clockStyle = "Классический"
                             if viewModel.numberInterval > 1 {
                                 viewModel.numberInterval = 1
                                 markersViewModel.numberInterval = 1
@@ -512,7 +511,7 @@ struct ClockEditorView: View {
                                 .font(.caption)
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 8)
-                                .foregroundColor(clockStyle == "Классический" ? .yellow : .white)
+                                .foregroundColor(viewModel.clockStyle == "Классический" ? .yellow : .white)
                                 .frame(maxWidth: .infinity)
                                 .background(
                                     Capsule()
@@ -537,7 +536,7 @@ struct ClockEditorView: View {
                         .buttonStyle(PlainButtonStyle())
 
                         Button(action: {
-                            clockStyle = "Контур"
+                            viewModel.clockStyle = "Контур"
                             if viewModel.numberInterval > 1 {
                                 viewModel.numberInterval = 1
                                 markersViewModel.numberInterval = 1
@@ -552,7 +551,7 @@ struct ClockEditorView: View {
                                 .font(.caption)
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 8)
-                                .foregroundColor(clockStyle == "Контур" ? .yellow : .white)
+                                .foregroundColor(viewModel.clockStyle == "Контур" ? .yellow : .white)
                                 .frame(maxWidth: .infinity)
                                 .background(
                                     Capsule()
@@ -579,7 +578,7 @@ struct ClockEditorView: View {
 
                     HStack(spacing: 10) {
                         Button(action: {
-                            clockStyle = "Цифровой"
+                            viewModel.clockStyle = "Цифровой"
                             if viewModel.numberInterval > 1 {
                                 viewModel.numberInterval = 1
                                 markersViewModel.numberInterval = 1
@@ -592,7 +591,7 @@ struct ClockEditorView: View {
                                 .font(.caption)
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 8)
-                                .foregroundColor(clockStyle == "Цифровой" ? .yellow : .white)
+                                .foregroundColor(viewModel.clockStyle == "Цифровой" ? .yellow : .white)
                                 .frame(maxWidth: .infinity)
                                 .background(
                                     Capsule()
@@ -617,7 +616,7 @@ struct ClockEditorView: View {
                         .buttonStyle(PlainButtonStyle())
 
                         Button(action: {
-                            clockStyle = "Минимализм"
+                            viewModel.clockStyle = "Минимализм"
                             // При переходе в "Минимализм" устанавливаем интервал 2 часа
                             viewModel.numberInterval = 2
                             markersViewModel.numberInterval = 2
@@ -626,7 +625,7 @@ struct ClockEditorView: View {
                                 .font(.caption)
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 8)
-                                .foregroundColor(clockStyle == "Минимализм" ? .yellow : .white)
+                                .foregroundColor(viewModel.clockStyle == "Минимализм" ? .yellow : .white)
                                 .frame(maxWidth: .infinity)
                                 .background(
                                     Capsule()
