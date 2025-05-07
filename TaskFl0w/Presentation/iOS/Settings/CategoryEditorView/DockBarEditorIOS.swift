@@ -12,7 +12,7 @@ struct DockBarEditorIOS: View {
     var editingCategory: TaskCategoryModel? = nil
 
     @State private var currentPage = 0
-    let categoriesPerPage = 16
+    let categoriesPerPage = 8
     let categoryWidth: CGFloat = 70
 
     @Environment(\.colorScheme) var colorScheme
@@ -80,7 +80,7 @@ struct DockBarEditorIOS: View {
                         content(page)
                     }
                 }
-                .frame(height: 380)
+                .frame(height: 200)
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
             .background(backgroundColorForTheme)
@@ -99,10 +99,10 @@ struct DockBarEditorIOS: View {
 
         var body: some View {
             VStack {
-                // Создаем сетку с фиксированным числом столбцов для горизонтального расположения
+                // Создаем сетку с 4 колонками и 2 строками (4x2)
                 LazyVGrid(
                     columns: Array(repeating: GridItem(.fixed(categoryWidth), spacing: 10), count: 4),
-                    spacing: 20
+                    spacing: 15
                 ) {
                     // Отображаем все существующие категории в их обычном порядке
                     ForEach(categories) { category in
@@ -176,7 +176,7 @@ struct DockBarEditorIOS: View {
                         .frame(width: categoryWidth, height: 70)
                     }
                 }
-                .padding(.top, 20)
+                .padding(.top, 15)
             }
             .frame(maxHeight: .infinity, alignment: .top)
         }

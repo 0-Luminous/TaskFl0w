@@ -103,16 +103,16 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),
             // Цифровой циферблат
             WatchFaceModel(
-                name: "Неоновый",
-                style: "classic",
+                name: "Мегаполис",
+                style: "digital",
                 isCustom: false,
                 category: WatchFaceCategory.digital.rawValue,
                 lightModeClockFaceColor: Color.black.toHex(),
                 darkModeClockFaceColor: Color.black.toHex(),
-                lightModeOuterRingColor: Color.green.opacity(0.8).toHex(),
-                darkModeOuterRingColor: Color.green.opacity(0.8).toHex(),
-                lightModeMarkersColor: Color.green.toHex(),
-                darkModeMarkersColor: Color.green.toHex(),
+                lightModeOuterRingColor: Color.gray.opacity(0.8).toHex(),
+                darkModeOuterRingColor: Color.gray.opacity(0.8).toHex(),
+                lightModeMarkersColor: Color.gray.toHex(),
+                darkModeMarkersColor: Color.gray.toHex(),
                 showHourNumbers: true, 
                 numberInterval: 2
             )
@@ -327,89 +327,163 @@ struct LibraryOfWatchFaces: View {
     @State private var selectedWatchFace: WatchFaceModel?
     @State private var showDeleteAllAlert = false
     
-    var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Отображаем каждую категорию с её циферблатами
-                    ForEach(WatchFaceCategory.allCases) { category in
-                        CategorySection(
-                            category: category,
-                            watchFaces: libraryManager.watchFaces(for: category),
-                            libraryManager: libraryManager,
-                            onWatchFaceSelected: { face in
-                                libraryManager.selectWatchFace(face.id)
-                                dismiss()
-                            },
-                            onEdit: { face in
-                                selectedWatchFace = face
-                                showingEditSheet = true
-                            },
-                            onDelete: { face in
-                                libraryManager.deleteWatchFace(face.id)
-                            }
-                        )
-                    }
-                    
-                    Spacer().frame(height: 80) // Дополнительное пространство внизу
-                }
-                .padding(.top)
-            }
-            .overlay(alignment: .bottom) {
-                HStack {
-                    Button {
-                        showingAddSheet = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Создать циферблат")
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                    }
-                    
-                    Button {
-                        showDeleteAllAlert = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "trash.fill")
-                            Text("Сбросить всё")
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.bottom)
+    // Модификатор для стилизации кнопок
+    private struct ButtonModifier: ViewModifier {
+        let isSelected: Bool
+        let isDisabled: Bool
+        
+        init(isSelected: Bool = false, isDisabled: Bool = false) {
+            self.isSelected = isSelected
+            self.isDisabled = isDisabled
+        }
+        
+        func body(content: Content) -> some View {
+            content
+                .font(.caption)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 10)
+                .foregroundColor(isSelected ? .yellow : (isDisabled ? .gray : .white))
+                .frame(maxWidth: .infinity)
                 .background(
-                    Rectangle()
-                        .fill(Color(UIColor.systemBackground))
-                        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: -5)
+                    Capsule()
+                        .fill(Color(red: 0.184, green: 0.184, blue: 0.184)
+                              .opacity(isDisabled ? 0.5 : 1))
                 )
+                .overlay(
+                    Capsule()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.gray.opacity(isDisabled ? 0.3 : 0.7),
+                                    Color.gray.opacity(isDisabled ? 0.1 : 0.3),
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isDisabled ? 0.5 : 1.0
+                        )
+                )
+                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                .opacity(isDisabled ? 0.6 : 1)
+        }
+    }
+    
+    // Модификатор для кнопок действий
+    private struct ActionButtonModifier: ViewModifier {
+        let color: Color
+        
+        func body(content: Content) -> some View {
+            content
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(color)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .shadow(color: color.opacity(0.4), radius: 4, x: 0, y: 2)
+        }
+    }
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                // Фон
+                Color(red: 0.098, green: 0.098, blue: 0.098)
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Заголовок
+                    Text("Библиотека циферблатов")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .padding(.top)
+                        .padding(.bottom, 12)
+                    
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            // Отображаем каждую категорию с её циферблатами
+                            ForEach(WatchFaceCategory.allCases) { category in
+                                EnhancedCategorySection(
+                                    category: category,
+                                    watchFaces: libraryManager.watchFaces(for: category),
+                                    libraryManager: libraryManager,
+                                    onWatchFaceSelected: { face in
+                                        libraryManager.selectWatchFace(face.id)
+                                        dismiss()
+                                    },
+                                    onEdit: { face in
+                                        selectedWatchFace = face
+                                        showingEditSheet = true
+                                    },
+                                    onDelete: { face in
+                                        libraryManager.deleteWatchFace(face.id)
+                                    }
+                                )
+                            }
+                            
+                            Spacer().frame(height: 100)
+                        }
+                        .padding(.top)
+                    }
+                    
+                    Spacer()
+                }
+                
+                // Нижняя панель с кнопками
+                VStack {
+                    Spacer()
+                    
+                    HStack(spacing: 15) {
+                        Button {
+                            showingAddSheet = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "plus.circle.fill")
+                                Text("Создать")
+                            }
+                            .modifier(ActionButtonModifier(color: Color.blue))
+                        }
+                        
+                        Button {
+                            showDeleteAllAlert = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "trash.fill")
+                                Text("Сбросить")
+                            }
+                            .modifier(ActionButtonModifier(color: Color.red))
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
+                    .background(
+                        Rectangle()
+                            .fill(Color(red: 0.15, green: 0.15, blue: 0.15).opacity(0.95))
+                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: -4)
+                    )
+                }
             }
-            .navigationTitle("Библиотека циферблатов")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Закрыть") {
+                    Button(action: {
                         dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                            Text("Назад")
+                        }
+                        .foregroundColor(.white)
                     }
                 }
             }
             .sheet(isPresented: $showingAddSheet) {
-                AddWatchFaceView()
+                EnhancedAddWatchFaceView()
             }
             .sheet(isPresented: $showingEditSheet, onDismiss: {
                 selectedWatchFace = nil
             }) {
                 if let face = selectedWatchFace {
-                    EditWatchFaceView(watchFace: face)
+                    EnhancedEditWatchFaceView(watchFace: face)
                 }
             }
             .alert("Сбросить библиотеку?", isPresented: $showDeleteAllAlert) {
@@ -424,8 +498,8 @@ struct LibraryOfWatchFaces: View {
     }
 }
 
-// Секция для категории циферблатов
-struct CategorySection: View {
+// Улучшенная секция для категории циферблатов
+struct EnhancedCategorySection: View {
     let category: WatchFaceCategory
     let watchFaces: [WatchFaceModel]
     let libraryManager: WatchFaceLibraryManager
@@ -434,13 +508,15 @@ struct CategorySection: View {
     let onDelete: (WatchFaceModel) -> Void
     
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 12) {
             // Заголовок категории
             HStack {
                 Image(systemName: category.systemImage)
                     .font(.headline)
+                    .foregroundColor(.yellow)
                 Text(category.rawValue)
                     .font(.headline)
+                    .foregroundColor(.white)
             }
             .padding(.horizontal)
             
@@ -455,32 +531,28 @@ struct CategorySection: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 15) {
                         ForEach(watchFaces) { face in
-                            WatchFacePreviewCard(watchFace: face)
-                                .onTapGesture {
-                                    onWatchFaceSelected(face)
-                                }
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(
-                                            libraryManager.selectedFaceID == face.id ? Color.blue : Color.clear,
-                                            lineWidth: 3
-                                        )
-                                )
-                                .contextMenu {
-                                    if face.isCustom {
-                                        Button(role: .destructive) {
-                                            onDelete(face)
-                                        } label: {
-                                            Label("Удалить", systemImage: "trash")
-                                        }
-                                        
-                                        Button {
-                                            onEdit(face)
-                                        } label: {
-                                            Label("Редактировать", systemImage: "pencil")
-                                        }
+                            EnhancedWatchFacePreviewCard(
+                                watchFace: face, 
+                                isSelected: libraryManager.selectedFaceID == face.id
+                            )
+                            .onTapGesture {
+                                onWatchFaceSelected(face)
+                            }
+                            .contextMenu {
+                                if face.isCustom {
+                                    Button {
+                                        onEdit(face)
+                                    } label: {
+                                        Label("Редактировать", systemImage: "pencil")
+                                    }
+                                    
+                                    Button(role: .destructive) {
+                                        onDelete(face)
+                                    } label: {
+                                        Label("Удалить", systemImage: "trash")
                                     }
                                 }
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -489,14 +561,17 @@ struct CategorySection: View {
             }
             
             Divider()
+                .background(Color.gray.opacity(0.3))
                 .padding(.horizontal)
         }
     }
 }
 
-// MARK: - Карточка для предпросмотра циферблата
-struct WatchFacePreviewCard: View {
+// Улучшенная карточка для предпросмотра циферблата
+struct EnhancedWatchFacePreviewCard: View {
     let watchFace: WatchFaceModel
+    let isSelected: Bool
+    
     @Environment(\.colorScheme) var colorScheme
     @StateObject private var viewModel = ClockViewModel()
     @StateObject private var markersViewModel = ClockMarkersViewModel()
@@ -506,186 +581,227 @@ struct WatchFacePreviewCard: View {
         VStack {
             // Миниатюра циферблата
             ZStack {
-                // Добавляем RingPlanner для отображения внешнего кольца
-                RingPlanner(
-                    color: colorScheme == .dark ? Color(hex: watchFace.darkModeOuterRingColor) ?? .gray : Color(hex: watchFace.lightModeOuterRingColor) ?? .gray,
-                    viewModel: viewModel,
-                    zeroPosition: watchFace.zeroPosition,
-                    shouldDeleteTask: false,
-                    outerRingLineWidth: watchFace.outerRingLineWidth
-                )
-                .scaleEffect(0.35)
-                .frame(width: 120, height: 120)
+                // Фон карточки
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
+                    .shadow(color: isSelected ? .yellow.opacity(0.4) : .black.opacity(0.5), radius: 5)
                 
-                // Используем GlobleClockFaceViewIOS для отображения циферблата
-                GlobleClockFaceViewIOS(
-                    currentDate: Date(),
-                    tasks: [],  // Пустой массив задач для предпросмотра
-                    viewModel: viewModel,
-                    markersViewModel: markersViewModel,
-                    draggedCategory: $draggedCategory,
-                    zeroPosition: watchFace.zeroPosition,
-                    taskArcLineWidth: watchFace.taskArcLineWidth,
-                    outerRingLineWidth: watchFace.outerRingLineWidth
-                )
-                .scaleEffect(0.35)  // Масштабируем для миниатюры
-                .frame(width: 120, height: 120)
-            }
-            
-            Text(watchFace.name)
-                .font(.headline)
-                .lineLimit(1)
-            
-            if watchFace.isCustom {
-                Text("Пользовательский")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                VStack {
+                    // Предпросмотр циферблата
+                    ZStack {
+                        // Внешнее кольцо
+                        Circle()
+                            .stroke(
+                                colorScheme == .dark 
+                                    ? Color(hex: watchFace.darkModeOuterRingColor) ?? .gray 
+                                    : Color(hex: watchFace.lightModeOuterRingColor) ?? .gray,
+                                lineWidth: watchFace.outerRingLineWidth * 0.35
+                            )
+                            .frame(width: 110, height: 110)
+                        
+                        // Используем GlobleClockFaceViewIOS для отображения циферблата
+                        GlobleClockFaceViewIOS(
+                            currentDate: Date(),
+                            tasks: [],
+                            viewModel: viewModel,
+                            markersViewModel: markersViewModel,
+                            draggedCategory: $draggedCategory,
+                            zeroPosition: watchFace.zeroPosition,
+                            taskArcLineWidth: watchFace.taskArcLineWidth,
+                            outerRingLineWidth: watchFace.outerRingLineWidth
+                        )
+                        .scaleEffect(0.35)
+                        .frame(width: 120, height: 120)
+                    }
+                    .padding(.top, 12)
+                    
+                    // Название и статус
+                    VStack(spacing: 2) {
+                        Text(watchFace.name)
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                        
+                        if watchFace.isCustom {
+                            Text("Пользовательский")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
             }
         }
-        .padding()
-        .background(Color(UIColor.secondarySystemBackground))
-        .cornerRadius(16)
         .frame(width: 160, height: 180)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(
+                    isSelected 
+                        ? LinearGradient(
+                            colors: [.yellow, .yellow.opacity(0.6)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                          )
+                        : LinearGradient(
+                            colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.2)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                          ),
+                    lineWidth: isSelected ? 2 : 1
+                )
+        )
         .onAppear {
-            // Настраиваем ViewModel и MarkersViewModel на основе параметров циферблата
             setupViewModels()
         }
     }
     
     private func setupViewModels() {
-        // Настройка цветов
-        let lightModeClockFaceColor = Color(hex: watchFace.lightModeClockFaceColor) ?? .white
-        let darkModeClockFaceColor = Color(hex: watchFace.darkModeClockFaceColor) ?? .black
-        let lightModeMarkersColor = Color(hex: watchFace.lightModeMarkersColor) ?? .black
-        let darkModeMarkersColor = Color(hex: watchFace.darkModeMarkersColor) ?? .white
-        
-        // Обновляем цвета в ThemeManager для правильного отображения
-        ThemeManager.shared.updateColor(lightModeClockFaceColor, for: ThemeManager.Constants.lightModeClockFaceColorKey)
-        ThemeManager.shared.updateColor(darkModeClockFaceColor, for: ThemeManager.Constants.darkModeClockFaceColorKey)
-        ThemeManager.shared.updateColor(lightModeMarkersColor, for: ThemeManager.Constants.lightModeMarkersColorKey)
-        ThemeManager.shared.updateColor(darkModeMarkersColor, for: ThemeManager.Constants.darkModeMarkersColorKey)
-        
-        // Настройка MarkersViewModel
+        // Настройка цветов и параметров для предпросмотра
         markersViewModel.showMarkers = watchFace.showMarkers
         markersViewModel.showHourNumbers = watchFace.showHourNumbers
         markersViewModel.numberInterval = watchFace.numberInterval
         markersViewModel.markersOffset = watchFace.markersOffset
         markersViewModel.markersWidth = watchFace.markersWidth
         markersViewModel.numbersSize = watchFace.numbersSize
-        markersViewModel.zeroPosition = watchFace.zeroPosition
+        markersViewModel.lightModeMarkersColor = watchFace.lightModeMarkersColor
+        markersViewModel.darkModeMarkersColor = watchFace.darkModeMarkersColor
         markersViewModel.isDarkMode = colorScheme == .dark
+        markersViewModel.updateCurrentThemeColors()
         
-        // Настройка ClockViewModel
+        // Настройка ClockViewModel без присваивания markersViewModel
+        viewModel.clockStyle = watchFace.style
         viewModel.zeroPosition = watchFace.zeroPosition
         viewModel.outerRingLineWidth = watchFace.outerRingLineWidth
         viewModel.taskArcLineWidth = watchFace.taskArcLineWidth
         viewModel.isAnalogArcStyle = watchFace.isAnalogArcStyle
+        
+        // Вместо прямого присваивания markersViewModel
+        // Синхронизируем настройки маркеров напрямую
+        viewModel.showHourNumbers = markersViewModel.showHourNumbers
+        viewModel.markersWidth = markersViewModel.markersWidth
+        viewModel.markersOffset = markersViewModel.markersOffset
+        viewModel.numbersSize = markersViewModel.numbersSize
+        viewModel.numberInterval = markersViewModel.numberInterval
+        viewModel.lightModeMarkersColor = markersViewModel.lightModeMarkersColor
+        viewModel.darkModeMarkersColor = markersViewModel.darkModeMarkersColor
     }
 }
 
-// Упрощенная компонента стрелок часов для предпросмотра
-struct ClockHandPreview: View {
-    let date = Date()
-    
-    var body: some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            let height = geometry.size.height
-            let centerX = width / 2
-            let centerY = height / 2
-            
-            ZStack {
-                // Часовая стрелка
-                Rectangle()
-                    .fill(Color.primary)
-                    .frame(width: 2, height: width * 0.25)
-                    .offset(y: -(width * 0.25) / 2)
-                    .position(x: centerX, y: centerY)
-                    .rotationEffect(hourAngle)
-                
-                // Минутная стрелка
-                Rectangle()
-                    .fill(Color.primary)
-                    .frame(width: 1.5, height: width * 0.35)
-                    .offset(y: -(width * 0.35) / 2)
-                    .position(x: centerX, y: centerY)
-                    .rotationEffect(minuteAngle)
-                
-                // Центральная точка
-                Circle()
-                    .fill(Color.primary)
-                    .frame(width: 5, height: 5)
-                    .position(x: centerX, y: centerY)
-            }
-        }
-    }
-    
-    // Угол для часовой стрелки
-    private var hourAngle: Angle {
-        let calendar = Calendar.current
-        let hour = Double(calendar.component(.hour, from: date) % 12)
-        let minute = Double(calendar.component(.minute, from: date))
-        let hourAngle = (hour + minute / 60.0) / 12.0 * 360.0
-        return .degrees(hourAngle)
-    }
-    
-    // Угол для минутной стрелки
-    private var minuteAngle: Angle {
-        let calendar = Calendar.current
-        let minute = Double(calendar.component(.minute, from: date))
-        return .degrees(minute / 60.0 * 360.0)
-    }
-}
-
-// MARK: - Экран добавления нового циферблата
-struct AddWatchFaceView: View {
+// Улучшенный экран добавления циферблата
+struct EnhancedAddWatchFaceView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var libraryManager = WatchFaceLibraryManager.shared
     @State private var watchFaceName = ""
     
+    // Модификатор для текстового поля
+    private struct TextFieldModifier: ViewModifier {
+        func body(content: Content) -> some View {
+            content
+                .padding()
+                .background(Color(red: 0.18, green: 0.18, blue: 0.18))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .foregroundColor(.white)
+                .padding(.horizontal)
+        }
+    }
+    
     var body: some View {
-        NavigationView {
-            VStack {
-                TextField("Название циферблата", text: $watchFaceName)
-                    .padding()
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .cornerRadius(10)
-                    .padding(.horizontal)
+        NavigationStack {
+            ZStack {
+                Color(red: 0.098, green: 0.098, blue: 0.098)
+                    .ignoresSafeArea()
                 
-                Text("Сохраните текущие настройки циферблата как новый пользовательский циферблат")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-                
-                Spacer()
+                VStack(spacing: 24) {
+                    TextField("Название циферблата", text: $watchFaceName)
+                        .modifier(TextFieldModifier())
+                    
+                    // Предпросмотр текущего циферблата
+                    Text("Предпросмотр")
+                        .font(.headline)
+                        .foregroundColor(.yellow)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                    
+                    Circle()
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 2)
+                        .frame(width: 200, height: 200)
+                        .overlay(
+                            Text("Текущий циферблат")
+                                .foregroundColor(.white)
+                        )
+                        .padding(.bottom, 20)
+                    
+                    Text("Сохраните текущие настройки как новый пользовательский циферблат")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                    
+                    Spacer()
+                    
+                    Button {
+                        if !watchFaceName.isEmpty {
+                            libraryManager.createCustomWatchFace(name: watchFaceName)
+                            dismiss()
+                        }
+                    } label: {
+                        Text("Сохранить")
+                            .fontWeight(.semibold)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                !watchFaceName.isEmpty
+                                    ? LinearGradient(
+                                        colors: [.blue, .blue.opacity(0.8)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                      )
+                                    : LinearGradient(
+                                        colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.3)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                      )
+                            )
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                            .padding(.horizontal)
+                    }
+                    .disabled(watchFaceName.isEmpty)
+                }
+                .padding(.vertical)
             }
             .navigationTitle("Новый циферблат")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Отмена") {
+                    Button(action: {
                         dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Сохранить") {
-                        if !watchFaceName.isEmpty {
-                            libraryManager.createCustomWatchFace(name: watchFaceName)
-                            dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                            Text("Отмена")
                         }
+                        .foregroundColor(.white)
                     }
-                    .disabled(watchFaceName.isEmpty)
                 }
             }
-            .padding(.top)
         }
     }
 }
 
-// MARK: - Экран редактирования циферблата
-struct EditWatchFaceView: View {
+// Улучшенный экран редактирования циферблата
+struct EnhancedEditWatchFaceView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var libraryManager = WatchFaceLibraryManager.shared
     
@@ -698,52 +814,121 @@ struct EditWatchFaceView: View {
         _editedName = State(initialValue: watchFace.name)
     }
     
+    // Модификатор для текстового поля
+    private struct TextFieldModifier: ViewModifier {
+        func body(content: Content) -> some View {
+            content
+                .padding()
+                .background(Color(red: 0.18, green: 0.18, blue: 0.18))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .foregroundColor(.white)
+                .padding(.horizontal)
+        }
+    }
+    
     var body: some View {
-        NavigationView {
-            VStack {
-                TextField("Название циферблата", text: $editedName)
-                    .padding()
-                    .background(Color(UIColor.secondarySystemBackground))
-                    .cornerRadius(10)
-                    .padding(.horizontal)
+        NavigationStack {
+            ZStack {
+                Color(red: 0.098, green: 0.098, blue: 0.098)
+                    .ignoresSafeArea()
                 
-                Spacer()
-                
-                Button {
-                    showingDeleteAlert = true
-                } label: {
-                    HStack {
-                        Image(systemName: "trash")
-                        Text("Удалить циферблат")
+                VStack(spacing: 24) {
+                    TextField("Название циферблата", text: $editedName)
+                        .modifier(TextFieldModifier())
+                    
+                    // Предпросмотр циферблата
+                    Text("Предпросмотр")
+                        .font(.headline)
+                        .foregroundColor(.yellow)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                    
+                    EnhancedWatchFacePreviewCard(watchFace: watchFace, isSelected: true)
+                        .scaleEffect(1.2)
+                        .padding(.bottom, 20)
+                    
+                    Spacer()
+                    
+                    // Кнопка удаления
+                    Button {
+                        showingDeleteAlert = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "trash")
+                            Text("Удалить циферблат")
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            LinearGradient(
+                                colors: [.red, .red.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .padding(.horizontal)
                     }
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-                    .padding(.bottom)
-                }
-            }
-            .navigationTitle("Редактирование")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Отмена") {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Сохранить") {
+                    
+                    // Кнопка сохранения
+                    Button {
                         if !editedName.isEmpty {
                             var updatedFace = watchFace
                             updatedFace.name = editedName
                             libraryManager.updateWatchFace(updatedFace)
                             dismiss()
                         }
+                    } label: {
+                        Text("Сохранить")
+                            .fontWeight(.semibold)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                !editedName.isEmpty
+                                    ? LinearGradient(
+                                        colors: [.blue, .blue.opacity(0.8)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                      )
+                                    : LinearGradient(
+                                        colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.3)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                      )
+                            )
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                            .padding(.horizontal)
                     }
                     .disabled(editedName.isEmpty)
+                }
+                .padding(.vertical)
+            }
+            .navigationTitle("Редактирование")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                            Text("Отмена")
+                        }
+                        .foregroundColor(.white)
+                    }
                 }
             }
             .alert("Удалить циферблат?", isPresented: $showingDeleteAlert) {
@@ -755,7 +940,6 @@ struct EditWatchFaceView: View {
             } message: {
                 Text("Действие нельзя отменить")
             }
-            .padding(.top)
         }
     }
 }
