@@ -8,6 +8,7 @@ import CoreData
 //
 import SwiftUI
 import Foundation
+import WidgetKit
 
 final class ClockViewModel: ObservableObject {
     // MARK: - Services
@@ -430,10 +431,16 @@ final class ClockViewModel: ObservableObject {
             
             // Отправляем уведомление о начале новой категории
             notificationService.sendCategoryStartNotification(category: newCategory)
+            
+            // Обновляем данные для виджета
+            updateWidgetData()
         } else if newActiveCategory == nil && currentActiveCategory != nil {
             print("Больше нет активной категории")
             // Если больше нет активной категории, сбрасываем текущую
             currentActiveCategory = nil
+            
+            // Обновляем данные для виджета
+            updateWidgetData()
         }
     }
 
@@ -505,5 +512,71 @@ final class ClockViewModel: ObservableObject {
         
         // Принудительно обновляем интерфейс
         objectWillChange.send()
+        
+        // Обновляем данные для виджета
+        updateWidgetData()
+    }
+
+    // Метод для обновления данных виджета
+    private func updateWidgetData() {
+        guard let defaults = UserDefaults(suiteName: "group.AbstractSoft.TaskFl0w") else {
+            print("Не удалось получить доступ к группе UserDefaults")
+            return
+        }
+        
+        // Получаем текущие задачи на сегодня
+        let todayTasks = tasksForSelectedDate(tasks)
+        
+        // Ищем задачу, которая активна в данный момент времени
+        let now = Date()
+        guard let activeTask = todayTasks.first(where: { $0.startTime <= now && $0.endTime > now }),
+              let category = activeTask.category as? TaskCategoryModel else {
+            // Если нет активной задачи, отправляем пустые данные
+            defaults.set("Отдых", forKey: "widget_current_category")
+            defaults.set(0, forKey: "widget_time_remaining")
+            defaults.set(0, forKey: "widget_total_time")
+            
+            // Запрашиваем обновление виджета
+            WidgetCenter.shared.reloadAllTimelines()
+            return
+        }
+        
+        // Сохраняем данные текущей категории для виджета
+        defaults.set(category.rawValue, forKey: "widget_current_category")
+        defaults.set(activeTask.endTime.timeIntervalSince(now), forKey: "widget_time_remaining")
+        defaults.set(activeTask.endTime.timeIntervalSince(activeTask.startTime), forKey: "widget_total_time")
+        
+        // Сохраняем категории
+        let categoryNames = categories.map { $0.rawValue }
+        if let categoriesData = try? JSONEncoder().encode(categoryNames) {
+            defaults.set(categoriesData, forKey: "widget_categories")
+        }
+        
+        // Сохраняем задачи для виджета
+        // Создаем словари вместо объектов WidgetTodoTask
+        let widgetTasks = todayTasks.map { task -> [String: Any] in
+            return [
+                "id": task.id.uuidString,
+                "title": task.category.rawValue + " (" + formatTimeForTask(task.startTime) + "-" + formatTimeForTask(task.endTime) + ")",
+                "isCompleted": task.isCompleted,
+                "category": category.rawValue
+            ]
+        }
+        
+        // Используем JSONSerialization вместо JSONEncoder
+        if let tasksData = try? JSONSerialization.data(withJSONObject: widgetTasks) {
+            defaults.set(tasksData, forKey: "widget_tasks")
+        }
+        
+        // Запрашиваем обновление виджета
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    // Вспомогательный метод для форматирования времени
+    private func formatTimeForTask(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        return formatter.string(from: date)
     }
 }

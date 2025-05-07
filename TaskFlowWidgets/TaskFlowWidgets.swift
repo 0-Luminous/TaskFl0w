@@ -22,11 +22,87 @@ struct SimpleEntry: TimelineEntry {
     var tasks: [WidgetTodoTask] = []
     var categories: [String] = ["Работа", "Перерыв", "Учеба", "Хобби"]
     var currentCategory: String = "Работа"
+    var timeRemaining: TimeInterval = 1500 // По умолчанию 25 минут (1500 секунд)
+    var totalTime: TimeInterval = 3600 // По умолчанию 1 час (3600 секунд)
 }
 
-struct Provider: AppIntentTimelineProvider {
+// Добавляем механизм получения данных из основного приложения
+class WidgetDataProvider {
+    // Получить UserDefaults из app group для обмена данными с основным приложением
+    static let sharedUserDefaults = UserDefaults(suiteName: "group.AbstractSoft.TaskFl0w")
+    
+    // Ключи для сохранения данных в UserDefaults
+    private struct UserDefaultsKeys {
+        static let currentCategory = "widget_current_category"
+        static let timeRemaining = "widget_time_remaining"
+        static let totalTime = "widget_total_time"
+        static let categories = "widget_categories"
+        static let tasks = "widget_tasks"
+    }
+    
+    // Получение текущей категории и оставшегося времени из общего UserDefaults
+    static func getCurrentCategoryInfo() -> (category: String, timeRemaining: TimeInterval, totalTime: TimeInterval) {
+        let defaults = sharedUserDefaults ?? UserDefaults.standard
+        
+        let category = defaults.string(forKey: UserDefaultsKeys.currentCategory) ?? "Отдых"
+        let timeRemaining = defaults.double(forKey: UserDefaultsKeys.timeRemaining)
+        let totalTime = defaults.double(forKey: UserDefaultsKeys.totalTime)
+        
+        // Если не удалось получить данные из UserDefaults или основное приложение не сохранило их,
+        // возвращаем фиктивные данные из генератора расписания
+        if timeRemaining <= 0 {
+            return generateScheduleBasedCategoryInfo()
+        }
+        
+        return (category, timeRemaining, totalTime)
+    }
+    
+    // Получение категорий из основного приложения
+    static func getCategories() -> [String] {
+        let defaults = sharedUserDefaults ?? UserDefaults.standard
+        
+        if let categoriesData = defaults.data(forKey: UserDefaultsKeys.categories),
+           let categories = try? JSONDecoder().decode([String].self, from: categoriesData) {
+            return categories
+        }
+        
+        // Возвращаем значения по умолчанию, если не удалось получить из UserDefaults
+        return ["Работа", "Перерыв", "Учеба", "Хобби"]
+    }
+    
+    // Получение задач из основного приложения
+    static func getTasks() -> [WidgetTodoTask] {
+        let defaults = sharedUserDefaults ?? UserDefaults.standard
+        
+        if let tasksData = defaults.data(forKey: UserDefaultsKeys.tasks) {
+            // Пробуем декодировать как массив словарей
+            if let jsonArray = try? JSONSerialization.jsonObject(with: tasksData) as? [[String: Any]] {
+                return jsonArray.compactMap { dict -> WidgetTodoTask? in
+                    guard 
+                        let id = dict["id"] as? String,
+                        let title = dict["title"] as? String,
+                        let isCompleted = dict["isCompleted"] as? Bool,
+                        let category = dict["category"] as? String
+                    else {
+                        return nil
+                    }
+                    
+                    return WidgetTodoTask(
+                        id: id,
+                        title: title,
+                        isCompleted: isCompleted,
+                        category: category
+                    )
+                }
+            }
+        }
+        
+        // Возвращаем тестовые данные, если не удалось получить из UserDefaults
+        return getSampleTasks()
+    }
+    
     // Получение тестовых данных для предпросмотра
-    func getSampleTasks() -> [WidgetTodoTask] {
+    static func getSampleTasks() -> [WidgetTodoTask] {
         return [
             WidgetTodoTask(id: "1", title: "Ответить на письма", isCompleted: false, category: "Работа"),
             WidgetTodoTask(id: "2", title: "Подготовить отчет", isCompleted: false, category: "Работа"),
@@ -37,32 +113,124 @@ struct Provider: AppIntentTimelineProvider {
         ]
     }
     
+    // Генерация расписания на текущий день (если нет данных от основного приложения)
+    private static func generateScheduleBasedCategoryInfo() -> (category: String, timeRemaining: TimeInterval, totalTime: TimeInterval) {
+        let now = Date()
+        let calendar = Calendar.current
+        var startComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        startComponents.hour = 9
+        startComponents.minute = 0
+        
+        var categoryTimes: [(category: String, start: Date, end: Date)] = []
+        
+        // Рабочий день с 9:00 до 18:00 с перерывами
+        if let startTime = calendar.date(from: startComponents) {
+            // Работа с 9:00 до 12:00
+            let endWork1 = calendar.date(byAdding: .hour, value: 3, to: startTime)!
+            categoryTimes.append(("Работа", startTime, endWork1))
+            
+            // Перерыв с 12:00 до 13:00
+            let startBreak = endWork1
+            let endBreak = calendar.date(byAdding: .hour, value: 1, to: startBreak)!
+            categoryTimes.append(("Перерыв", startBreak, endBreak))
+            
+            // Работа с 13:00 до 16:00
+            let startWork2 = endBreak
+            let endWork2 = calendar.date(byAdding: .hour, value: 3, to: startWork2)!
+            categoryTimes.append(("Работа", startWork2, endWork2))
+            
+            // Учеба с 16:00 до 18:00
+            let startStudy = endWork2
+            let endStudy = calendar.date(byAdding: .hour, value: 2, to: startStudy)!
+            categoryTimes.append(("Учеба", startStudy, endStudy))
+        }
+        
+        // Находим текущую активную категорию
+        for (category, start, end) in categoryTimes {
+            if now >= start && now < end {
+                // Нашли текущую категорию, вычисляем оставшееся время
+                let timeRemaining = end.timeIntervalSince(now)
+                let totalTime = end.timeIntervalSince(start)
+                return (category, timeRemaining, totalTime)
+            }
+        }
+        
+        // Если активной категории не найдено, возвращаем "Отдых" и 0 секунд
+        return ("Отдых", 0, 0)
+    }
+}
+
+struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
         var entry = SimpleEntry(date: Date(), configuration: ConfigurationAppIntent())
-        entry.tasks = getSampleTasks()
+        
+        // Получаем данные для виджета
+        entry.tasks = WidgetDataProvider.getTasks()
+        entry.categories = WidgetDataProvider.getCategories()
+        
+        // Получаем текущую категорию и оставшееся время
+        let (category, timeRemaining, totalTime) = WidgetDataProvider.getCurrentCategoryInfo()
+        entry.currentCategory = category
+        entry.timeRemaining = timeRemaining
+        entry.totalTime = totalTime
+        
         return entry
     }
 
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
         var entry = SimpleEntry(date: Date(), configuration: configuration)
-        entry.tasks = getSampleTasks()
+        
+        // Получаем данные для виджета
+        entry.tasks = WidgetDataProvider.getTasks()
+        entry.categories = WidgetDataProvider.getCategories()
+        
+        // Получаем текущую категорию и оставшееся время
+        let (category, timeRemaining, totalTime) = WidgetDataProvider.getCurrentCategoryInfo()
+        entry.currentCategory = category
+        entry.timeRemaining = timeRemaining
+        entry.totalTime = totalTime
+        
         return entry
     }
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
         var entries: [SimpleEntry] = []
-        let sampleTasks = getSampleTasks()
-
-        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
+        
+        // Текущая дата и время
         let currentDate = Date()
-        for hourOffset in 0 ..< 5 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
+        
+        // Получаем начальные данные
+        let tasks = WidgetDataProvider.getTasks()
+        let categories = WidgetDataProvider.getCategories()
+        let (initialCategory, initialTimeRemaining, initialTotalTime) = WidgetDataProvider.getCurrentCategoryInfo()
+        
+        // Определяем интервал обновления (минимум 5 минут для экономии ресурсов)
+        let updateInterval: TimeInterval = min(initialTimeRemaining, 300)
+        
+        // Если нет активной категории или времени слишком мало, обновляем каждые 15 минут
+        let effectiveUpdateInterval = (updateInterval <= 0) ? 900 : updateInterval
+        
+        // Создаем записи для обновления виджета
+        for minuteOffset in stride(from: 0, to: 60, by: 5) {
+            let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate)!
             var entry = SimpleEntry(date: entryDate, configuration: configuration)
-            entry.tasks = sampleTasks
+            
+            // Устанавливаем задачи и категории
+            entry.tasks = tasks
+            entry.categories = categories
+            
+            // Расчет оставшегося времени с учетом смещения
+            let adjustedRemaining = max(0, initialTimeRemaining - Double(minuteOffset * 60))
+            
+            entry.currentCategory = initialCategory
+            entry.timeRemaining = adjustedRemaining
+            entry.totalTime = initialTotalTime
+            
             entries.append(entry)
         }
 
-        return Timeline(entries: entries, policy: .atEnd)
+        // Обновляем виджет каждые 15 минут или перед окончанием текущей категории
+        return Timeline(entries: entries, policy: .after(Date().addingTimeInterval(effectiveUpdateInterval)))
     }
 }
 
@@ -80,9 +248,16 @@ struct WidgetClockView: View {
             let radius = size/2 - 4
             
             ZStack {
-                // Фоновый круг
+                // Фоновый круг (серый)
                 Circle()
                     .stroke(Color.gray.opacity(0.3), lineWidth: 4)
+                    .frame(width: size, height: size)
+                
+                // Прогресс-индикатор (заполняющийся круг)
+                Circle()
+                    .trim(from: 0, to: CGFloat(1 - (timeRemaining / totalTime)))
+                    .stroke(Color.blue, lineWidth: 4)
+                    .rotationEffect(.degrees(-90))
                     .frame(width: size, height: size)
                 
                 // Секторы категорий
@@ -102,7 +277,7 @@ struct WidgetClockView: View {
                         )
                         path.closeSubpath()
                     }
-                    .fill(isActive ? Color.blue : Color.gray.opacity(0.5))
+                    .fill(isActive ? Color.blue.opacity(0.3) : Color.gray.opacity(0.1))
                 }
                 
                 // Внутренний круг для текста
@@ -127,9 +302,9 @@ struct WidgetClockView: View {
     }
     
     private func formatTime(_ timeInterval: TimeInterval) -> String {
-        let minutes = Int(timeInterval) / 60
-        let seconds = Int(timeInterval) % 60
-        return String(format: "%02d:%02d", minutes, seconds)
+        let hours = Int(timeInterval) / 3600
+        let minutes = (Int(timeInterval) % 3600) / 60
+        return String(format: "%02d:%02d", hours, minutes)
     }
 }
 
@@ -183,12 +358,12 @@ struct TaskFlowWidgetsEntryView: View {
     var body: some View {
         switch family {
         case .systemSmall:
-            // Существующий циферблат для маленького виджета
+            // Обновленный циферблат для маленького виджета
             WidgetClockView(
                 categories: entry.categories,
                 currentCategory: entry.currentCategory,
-                timeRemaining: 1500, 
-                totalTime: 3600
+                timeRemaining: entry.timeRemaining, 
+                totalTime: entry.totalTime
             )
             
         case .systemMedium:
@@ -197,8 +372,8 @@ struct TaskFlowWidgetsEntryView: View {
                 WidgetClockView(
                     categories: entry.categories,
                     currentCategory: entry.currentCategory,
-                    timeRemaining: 1500,
-                    totalTime: 3600
+                    timeRemaining: entry.timeRemaining,
+                    totalTime: entry.totalTime
                 )
                 .frame(width: 100, height: 100)
                 
@@ -240,8 +415,8 @@ struct TaskFlowWidgetsEntryView: View {
                 WidgetClockView(
                     categories: entry.categories,
                     currentCategory: entry.currentCategory,
-                    timeRemaining: 1500,
-                    totalTime: 3600
+                    timeRemaining: entry.timeRemaining,
+                    totalTime: entry.totalTime
                 )
                 .frame(height: 120)
                 .padding(.bottom, 8)
@@ -293,7 +468,7 @@ extension ConfigurationAppIntent {
 extension SimpleEntry {
     static func withSampleTasks(date: Date, configuration: ConfigurationAppIntent) -> SimpleEntry {
         var entry = SimpleEntry(date: date, configuration: configuration)
-        entry.tasks = Provider().getSampleTasks()
+        entry.tasks = WidgetDataProvider.getSampleTasks()
         return entry
     }
 }
