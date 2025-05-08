@@ -216,6 +216,9 @@ final class ClockViewModel: ObservableObject {
         }
     }
 
+    // В ClockViewModel добавить:
+    @AppStorage("showTimeOnlyForActiveTask") var showTimeOnlyForActiveTask: Bool = false
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState

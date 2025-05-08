@@ -28,6 +28,7 @@ struct ClockEditorView: View {
 
     @AppStorage("showMarkers") private var showMarkers: Bool = true
     @AppStorage("fontName") private var fontName: String = "SF Pro"
+    @AppStorage("showTimeOnlyForActiveTask") private var showTimeOnlyForActiveTask: Bool = false
 
     @Environment(\.presentationMode) var presentationMode
     @State private var showClockControls = false
@@ -949,6 +950,54 @@ struct ClockEditorView: View {
             Toggle("Аналоговый вид дуги", isOn: $viewModel.isAnalogArcStyle)
                 .toggleStyle(SwitchToggleStyle(tint: .yellow))
                 .foregroundColor(.white)
+                
+            Divider().background(Color.white.opacity(0.2))
+            
+            // Первая опция для показа времени вообще
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Показывать время")
+                        .foregroundColor(.white)
+                    Text("Отображение времени начала и конца задач")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: Binding(
+                    get: { !viewModel.showTimeOnlyForActiveTask },
+                    set: { 
+                        viewModel.showTimeOnlyForActiveTask = !$0
+                        showTimeOnlyForActiveTask = !$0
+                    }
+                ))
+                .toggleStyle(SwitchToggleStyle(tint: .yellow))
+                .labelsHidden()
+            }
+            
+            // Вторая опция для показа времени только активной задачи
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Только у активной задачи")
+                        .foregroundColor(.white)
+                    Text("Время будет отображаться только у выбранной задачи")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: Binding(
+                    get: { viewModel.showTimeOnlyForActiveTask },
+                    set: { 
+                        viewModel.showTimeOnlyForActiveTask = $0
+                        showTimeOnlyForActiveTask = $0
+                    }
+                ))
+                .toggleStyle(SwitchToggleStyle(tint: .yellow))
+                .labelsHidden()
+            }
         }
         .padding()
         .background(
@@ -1137,6 +1186,9 @@ struct ClockEditorView: View {
         markersViewModel.numberInterval = viewModel.numberInterval
         markersViewModel.showMarkers = showMarkers
         markersViewModel.fontName = fontName
+        
+        // Добавляем синхронизацию новой настройки
+        viewModel.showTimeOnlyForActiveTask = showTimeOnlyForActiveTask
 
         // Добавляем синхронизацию цветов маркеров с локальными переменными
         markersViewModel.lightModeMarkersColor = lightModeMarkersColor
@@ -1156,6 +1208,9 @@ struct ClockEditorView: View {
         viewModel.darkModeMarkersColor = markersViewModel.darkModeMarkersColor
         showMarkers = markersViewModel.showMarkers
         fontName = markersViewModel.fontName
+        
+        // Сохраняем настройку отображения времени только для активной задачи
+        showTimeOnlyForActiveTask = viewModel.showTimeOnlyForActiveTask
 
         // Сохраняем цвета в локальные AppStorage переменные
         lightModeMarkersColor = markersViewModel.lightModeMarkersColor

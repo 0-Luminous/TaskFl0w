@@ -180,51 +180,61 @@ struct ClockTaskArcIOS: View {
                     
                     // Добавляем отображение времени начала задачи только для цифрового стиля
                     // Скрываем цифры, когда активны маркеры редактирования
-                    if !isAnalog && !(viewModel.isEditingMode && task.id == viewModel.editingTask?.id) {
-                        // Проверяем, находится ли текст в левой части циферблата
-                        let isStartInLeftHalf = isAngleInLeftHalf(startAngle)
-                        let isEndInLeftHalf = isAngleInLeftHalf(endAngle)
+                    // или когда задача не активна и включена опция "Время только у активной задачи"
+                    if !isAnalog && 
+                       !(viewModel.isEditingMode && task.id == viewModel.editingTask?.id) {
+                        // Проверяем, является ли задача текущей по времени или выбранной пользователем
+                        let now = Date()
+                        let isActiveTask = (task.startTime <= now && task.endTime > now) || viewModel.editingTask?.id == task.id
                         
-                        // Текст времени начала задачи с корректной капсулой
-                        let startTimeText = timeFormatter.string(from: task.startTime)
-                        let endTimeText = timeFormatter.string(from: task.endTime)
+                        // Показываем время, если мы не в режиме "только для активной задачи" 
+                        // или если мы в этом режиме и задача активна
+                        if !viewModel.showTimeOnlyForActiveTask || (viewModel.showTimeOnlyForActiveTask && isActiveTask) {
+                            // Проверяем, находится ли текст в левой части циферблата
+                            let isStartInLeftHalf = isAngleInLeftHalf(startAngle)
+                            let isEndInLeftHalf = isAngleInLeftHalf(endAngle)
+                            
+                            // Текст времени начала задачи с корректной капсулой
+                            let startTimeText = timeFormatter.string(from: task.startTime)
+                            let endTimeText = timeFormatter.string(from: task.endTime)
 
-                        ZStack {
-                            // Фон в виде капсулы с фиксированной шириной
-                            Capsule()
-                                .fill(task.category.color)
-                                .frame(width: CGFloat(startTimeText.count) * 6 + 6, height: 16)
+                            ZStack {
+                                // Фон в виде капсулы с фиксированной шириной
+                                Capsule()
+                                    .fill(task.category.color)
+                                    .frame(width: CGFloat(startTimeText.count) * 6 + 6, height: 16)
+                                
+                                // Текст времени
+                                Text(startTimeText)
+                                    .font(.system(size: timeFontSize))
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.3), radius: 1)
+                            }
+                            .rotationEffect(isStartInLeftHalf ? startAngle + .degrees(180) : startAngle)
+                            .position(
+                                x: center.x + (arcRadius + timeTextOffset) * cos(startAngle.radians),
+                                y: center.y + (arcRadius + timeTextOffset) * sin(startAngle.radians)
+                            )
                             
-                            // Текст времени
-                            Text(startTimeText)
-                                .font(.system(size: timeFontSize))
-                                .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 1)
+                            // Текст времени окончания задачи с корректной капсулой
+                            ZStack {
+                                // Фон в виде капсулы с фиксированной шириной
+                                Capsule()
+                                    .fill(task.category.color)
+                                    .frame(width: CGFloat(endTimeText.count) * 6 + 6, height: 16)
+                                
+                                // Текст времени
+                                Text(endTimeText)
+                                    .font(.system(size: timeFontSize))
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.3), radius: 1)
+                            }
+                            .rotationEffect(isEndInLeftHalf ? endAngle + .degrees(180) : endAngle)
+                            .position(
+                                x: center.x + (arcRadius + timeTextOffset) * cos(endAngle.radians),
+                                y: center.y + (arcRadius + timeTextOffset) * sin(endAngle.radians)
+                            )
                         }
-                        .rotationEffect(isStartInLeftHalf ? startAngle + .degrees(180) : startAngle)
-                        .position(
-                            x: center.x + (arcRadius + timeTextOffset) * cos(startAngle.radians),
-                            y: center.y + (arcRadius + timeTextOffset) * sin(startAngle.radians)
-                        )
-                        
-                        // Текст времени окончания задачи с корректной капсулой
-                        ZStack {
-                            // Фон в виде капсулы с фиксированной шириной
-                            Capsule()
-                                .fill(task.category.color)
-                                .frame(width: CGFloat(endTimeText.count) * 6 + 6, height: 16)
-                            
-                            // Текст времени
-                            Text(endTimeText)
-                                .font(.system(size: timeFontSize))
-                                .foregroundColor(.white)
-                                .shadow(color: .black.opacity(0.3), radius: 1)
-                        }
-                        .rotationEffect(isEndInLeftHalf ? endAngle + .degrees(180) : endAngle)
-                        .position(
-                            x: center.x + (arcRadius + timeTextOffset) * cos(endAngle.radians),
-                            y: center.y + (arcRadius + timeTextOffset) * sin(endAngle.radians)
-                        )
                     }
                 }
             }
