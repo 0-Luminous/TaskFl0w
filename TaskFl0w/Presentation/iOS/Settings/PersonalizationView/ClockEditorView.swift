@@ -45,6 +45,7 @@ struct ClockEditorView: View {
     @State private var currentBaseColor: Color = .white
     @State private var selectedColorType: String = ""
     @State private var selectedColorHex: String = ""
+    @State private var selectedColorIndex: Int? = nil
 
     var body: some View {
         NavigationStack {
@@ -915,13 +916,9 @@ struct ClockEditorView: View {
                                         // Вычисляем процент от 0 до 1
                                         sliderBrightnessPosition = (xPosition - minX) / width
                                         
-                                        // Применяем новый цвет с соответствующей яркостью
+                                        // Применяем новый цвет
                                         let newColor = getColorAt(position: sliderBrightnessPosition, baseColor: currentBaseColor)
                                         let newColorHex = newColor.toHex()
-                                        
-                                        // Обновляем выбранный цвет и тип
-                                        selectedColorType = "clockFace"
-                                        selectedColorHex = newColorHex
                                         
                                         if themeManager.isDarkMode {
                                             darkModeClockFaceColor = newColorHex
@@ -944,9 +941,9 @@ struct ClockEditorView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 16) {
                         // Добавляем базовые нейтральные цвета в начало
-                        colorButton(color: Color(red: 0.1, green: 0.1, blue: 0.1), forType: "clockFace")
-                        colorButton(color: Color(red: 0.2, green: 0.2, blue: 0.2), forType: "clockFace")
-                        colorButton(color: Color(red: 0.85, green: 0.85, blue: 0.85), forType: "clockFace")
+                        colorButton(color: Color(red: 0.1, green: 0.1, blue: 0.1), forType: "clockFace", index: -3)
+                        colorButton(color: Color(red: 0.2, green: 0.2, blue: 0.2), forType: "clockFace", index: -2)
+                        colorButton(color: Color(red: 0.85, green: 0.85, blue: 0.85), forType: "clockFace", index: -1)
                         
                         // Стандартные цвета из приложения
                         let standardColors: [Color] = [
@@ -956,7 +953,7 @@ struct ClockEditorView: View {
                         ]
                         
                         ForEach(0..<standardColors.count, id: \.self) { index in
-                            colorButton(color: standardColors[index], forType: "clockFace")
+                            colorButton(color: standardColors[index], forType: "clockFace", index: index)
                         }
                     }
                     .padding(.vertical, 8)
@@ -1067,14 +1064,14 @@ struct ClockEditorView: View {
         }
     }
 
-    private func colorButton(color: Color, forType type: String) -> some View {
-        // Вместо сравнения цветов напрямую, используем сохраненные значения выбранного цвета
+    private func colorButton(color: Color, forType type: String, index: Int? = nil) -> some View {
+        // Определяем, выбрана ли эта кнопка, на основе либо индекса, либо цвета
         let isSelected: Bool
-        let colorHex = color.toHex()
         
-        if selectedColorType == type && selectedColorHex == colorHex {
+        if let selectedIndex = selectedColorIndex, selectedIndex == index, selectedColorType == type {
             isSelected = true
         } else {
+            let colorHex = color.toHex()
             switch type {
             case "clockFace":
                 isSelected = themeManager.isDarkMode ? 
@@ -1094,39 +1091,40 @@ struct ClockEditorView: View {
         }
         
         return Button(action: {
-            // Сохраняем выбранный цвет и тип
+            // Сохраняем как индекс, так и цвет
+            selectedColorIndex = index
             selectedColorType = type
-            selectedColorHex = colorHex
+            selectedColorHex = color.toHex()
             
             switch type {
             case "clockFace":
                 if themeManager.isDarkMode {
-                    darkModeClockFaceColor = colorHex
+                    darkModeClockFaceColor = color.toHex()
                     // После выбора нового цвета обновляем положение слайдера
-                    initializeSliderPosition()
+                    initializeSliderPositionWithoutUpdatingSelection()
                 } else {
-                    lightModeClockFaceColor = colorHex
+                    lightModeClockFaceColor = color.toHex()
                     // После выбора нового цвета обновляем положение слайдера
-                    initializeSliderPosition()
+                    initializeSliderPositionWithoutUpdatingSelection()
                 }
             case "markers":
                 if themeManager.isDarkMode {
-                    darkModeMarkersColor = colorHex
-                    viewModel.darkModeMarkersColor = colorHex
-                    markersViewModel.darkModeMarkersColor = colorHex
+                    darkModeMarkersColor = color.toHex()
+                    viewModel.darkModeMarkersColor = color.toHex()
+                    markersViewModel.darkModeMarkersColor = color.toHex()
                 } else {
-                    lightModeMarkersColor = colorHex
-                    viewModel.lightModeMarkersColor = colorHex
-                    markersViewModel.lightModeMarkersColor = colorHex
+                    lightModeMarkersColor = color.toHex()
+                    viewModel.lightModeMarkersColor = color.toHex()
+                    markersViewModel.lightModeMarkersColor = color.toHex()
                 }
                 markersViewModel.updateCurrentThemeColors()
             case "outerRing":
                 if themeManager.isDarkMode {
-                    darkModeOuterRingColor = colorHex
-                    viewModel.darkModeOuterRingColor = colorHex
+                    darkModeOuterRingColor = color.toHex()
+                    viewModel.darkModeOuterRingColor = color.toHex()
                 } else {
-                    lightModeOuterRingColor = colorHex
-                    viewModel.lightModeOuterRingColor = colorHex
+                    lightModeOuterRingColor = color.toHex()
+                    viewModel.lightModeOuterRingColor = color.toHex()
                 }
             default:
                 break
@@ -1666,7 +1664,7 @@ struct ClockEditorView: View {
             hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
         ) ?? .red
         
-        // Обновляем выбранный цвет
+        // Обновляем цвет, но оставляем индекс как есть
         selectedColorType = "clockFace"
         selectedColorHex = themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
         
@@ -1742,6 +1740,30 @@ struct ClockEditorView: View {
         blue = max(min(blue * factor, 1), 0)
         
         return Color(red: red, green: green, blue: blue, opacity: alpha)
+    }
+
+    // Добавляем новую функцию, которая не перезаписывает выбранный индекс
+    private func initializeSliderPositionWithoutUpdatingSelection() {
+        let currentColor = Color(
+            hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
+        ) ?? .red
+        
+        // Сохраняем базовый цвет, но НЕ обновляем selectedColorIndex
+        currentBaseColor = getBaseColor(forColor: currentColor)
+        
+        let brightness = getBrightness(of: currentColor) / getBrightness(of: currentBaseColor)
+        
+        // Преобразуем яркость в позицию слайдера (от 0 до 1)
+        // Где 0.7 - это минимальная яркость (правый край)
+        // 1.3 - максимальная яркость (левый край)
+        if brightness <= 0.7 {
+            sliderBrightnessPosition = 1.0 // правый край (умеренно темный)
+        } else if brightness >= 1.3 {
+            sliderBrightnessPosition = 0.0 // левый край (умеренно светлый)
+        } else {
+            // Мапим яркость от 0.7-1.3 на позицию 1.0-0.0
+            sliderBrightnessPosition = 1.0 - ((brightness - 0.7) / 0.6)
+        }
     }
 }
 
