@@ -307,43 +307,31 @@ struct ColorControlsView: View {
         // Определяем, выбрана ли эта кнопка
         let isSelected: Bool
         
-        if let selectedIndex = selectedColorIndex, selectedIndex == index, selectedColorType == type {
-            isSelected = true
-        } else {
-            let colorHex = color.toHex()
-            switch type {
-            case "clockFace":
-                isSelected = themeManager.isDarkMode ? 
-                    (darkModeClockFaceColor == colorHex) : 
-                    (lightModeClockFaceColor == colorHex)
-            case "markers":
-                isSelected = themeManager.isDarkMode ? 
-                    (darkModeMarkersColor == colorHex) : 
-                    (lightModeMarkersColor == colorHex)
-            case "outerRing":
-                isSelected = themeManager.isDarkMode ? 
-                    (darkModeOuterRingColor == colorHex) : 
-                    (lightModeOuterRingColor == colorHex)
-            default:
-                isSelected = false
-            }
+        // Получаем текущий цвет для данного типа
+        let currentHex: String
+        switch type {
+        case "clockFace":
+            currentHex = themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
+        case "markers":
+            currentHex = themeManager.isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
+        case "outerRing":
+            currentHex = themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
+        default:
+            currentHex = ""
         }
         
+        // Проверяем, выбран ли цвет
+        let colorHex = color.toHex()
+        isSelected = currentHex == colorHex
+        
         return Button(action: {
-            selectedColorIndex = index
-            selectedColorType = type
-            selectedColorHex = color.toHex()
-            
+            // Устанавливаем индекс для текущего типа
+            // Важно! Сохраняем разные индексы для разных типов элементов
             switch type {
             case "clockFace":
-                if themeManager.isDarkMode {
-                    darkModeClockFaceColor = color.toHex()
-                    initializeSliderPositionWithoutUpdatingSelection()
-                } else {
-                    lightModeClockFaceColor = color.toHex()
-                    initializeSliderPositionWithoutUpdatingSelection()
-                }
+                selectedColorIndex = index
             case "markers":
+                // Сохраняем отдельный индекс для маркеров - не используем общий selectedColorIndex
                 if themeManager.isDarkMode {
                     darkModeMarkersColor = color.toHex()
                     viewModel.darkModeMarkersColor = color.toHex()
@@ -353,8 +341,14 @@ struct ColorControlsView: View {
                     viewModel.lightModeMarkersColor = color.toHex()
                     markersViewModel.lightModeMarkersColor = color.toHex()
                 }
+                // Не трогаем selectedColorIndex
+                selectedColorType = type
+                selectedColorHex = color.toHex()
+                initializeSliderPositionWithoutUpdatingSelection()
                 markersViewModel.updateCurrentThemeColors()
+                return
             case "outerRing":
+                // Аналогично для внешнего кольца
                 if themeManager.isDarkMode {
                     darkModeOuterRingColor = color.toHex()
                     viewModel.darkModeOuterRingColor = color.toHex()
@@ -362,8 +356,25 @@ struct ColorControlsView: View {
                     lightModeOuterRingColor = color.toHex()
                     viewModel.lightModeOuterRingColor = color.toHex()
                 }
+                // Не трогаем selectedColorIndex
+                selectedColorType = type
+                selectedColorHex = color.toHex()
+                return
             default:
                 break
+            }
+            
+            // Стандартный код для циферблата
+            selectedColorHex = color.toHex()
+            
+            if type == "clockFace" {
+                if themeManager.isDarkMode {
+                    darkModeClockFaceColor = color.toHex()
+                } else {
+                    lightModeClockFaceColor = color.toHex()
+                }
+                selectedColorType = type
+                initializeSliderPositionWithoutUpdatingSelection()
             }
         }) {
             ZStack {
@@ -416,9 +427,26 @@ struct ColorControlsView: View {
     
     // Инициализирует положение слайдера без обновления выбранного индекса
     func initializeSliderPositionWithoutUpdatingSelection() {
-        let currentColor = Color(
-            hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
-        ) ?? .red
+        let currentColor: Color
+        
+        switch selectedColorType {
+        case "clockFace":
+            currentColor = Color(
+                hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
+            ) ?? .red
+        case "markers":
+            currentColor = Color(
+                hex: themeManager.isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
+            ) ?? .gray
+        case "outerRing":
+            currentColor = Color(
+                hex: themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
+            ) ?? .gray.opacity(0.3)
+        default:
+            currentColor = Color(
+                hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
+            ) ?? .red
+        }
         
         currentBaseColor = ColorUtils.getBaseColor(forColor: currentColor)
         
