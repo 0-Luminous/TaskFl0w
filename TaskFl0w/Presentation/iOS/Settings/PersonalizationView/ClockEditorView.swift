@@ -938,16 +938,15 @@ struct ClockEditorView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 16) {
                         // Добавляем базовые нейтральные цвета в начало
-                        colorButton(color: .white, forType: "clockFace")
                         colorButton(color: Color(red: 0.1, green: 0.1, blue: 0.1), forType: "clockFace")
-                        colorButton(color: Color(red: 0.85, green: 0.85, blue: 0.85), forType: "clockFace")
                         colorButton(color: Color(red: 0.2, green: 0.2, blue: 0.2), forType: "clockFace")
+                        colorButton(color: Color(red: 0.85, green: 0.85, blue: 0.85), forType: "clockFace")
                         
                         // Стандартные цвета из приложения
                         let standardColors: [Color] = [
-                            .coral1, .red1, .Orange1, .Apricot1, .yellow1, .green0, .green1,
+                            .Lilac1, .Pink1, .red1, .Peony1, .Rose1, .coral1, .Orange1, .yellow1, .green0, .green1,
                             .Clover1, .Mint1, .Teal1, .Blue1, .LightBlue1, .BlueJay1, .OceanBlue1,
-                            .StormBlue1, .Indigo1, .Purple1, .Lilac1, .Pink1, .Peony1, .Rose1
+                            .StormBlue1, .Indigo1, .Purple1 
                         ]
                         
                         ForEach(0..<standardColors.count, id: \.self) { index in
