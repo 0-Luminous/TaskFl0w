@@ -39,6 +39,8 @@ struct ClockEditorView: View {
     @State private var showFontPicker = false
     @State private var showSizeSettings = false
     @State private var showIntervalSettings = false
+    @State private var showColorPickerSheet = false
+    @State private var colorPickerType = ""
 
     var body: some View {
         NavigationStack {
@@ -837,29 +839,8 @@ struct ClockEditorView: View {
             Text("Цвета циферблата")
                 .font(.headline)
                 .foregroundColor(.white)
-            // Внешнее кольцо
-            ColorPicker(
-                "Внешнее кольцо",
-                selection: Binding(
-                    get: {
-                        Color(
-                            hex: themeManager.isDarkMode
-                                ? darkModeOuterRingColor : lightModeOuterRingColor)
-                            ?? .gray.opacity(0.3)
-                    },
-                    set: { newColor in
-                        if themeManager.isDarkMode {
-                            darkModeOuterRingColor = newColor.toHex()
-                            viewModel.darkModeOuterRingColor = newColor.toHex()
-                        } else {
-                            lightModeOuterRingColor = newColor.toHex()
-                            viewModel.lightModeOuterRingColor = newColor.toHex()
-                        }
-                    }
-                )
-            )
-            .foregroundColor(.white)
-            // Цвет циферблата
+            
+            // Циферблат (основная настройка)
             ColorPicker(
                 "Циферблат",
                 selection: Binding(
@@ -879,31 +860,98 @@ struct ClockEditorView: View {
                 )
             )
             .foregroundColor(.white)
-            // Цвет маркеров
-            ColorPicker(
-                "Маркеры",
-                selection: Binding(
-                    get: {
-                        Color(
-                            hex: themeManager.isDarkMode
-                                ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray
-                    },
-                    set: { newColor in
-                        if themeManager.isDarkMode {
-                            darkModeMarkersColor = newColor.toHex()
-                            viewModel.darkModeMarkersColor = newColor.toHex()
-                            markersViewModel.darkModeMarkersColor = newColor.toHex()
-                        } else {
-                            lightModeMarkersColor = newColor.toHex()
-                            viewModel.lightModeMarkersColor = newColor.toHex()
-                            markersViewModel.lightModeMarkersColor = newColor.toHex()
-                        }
-                        // Принудительно обновляем цвета
-                        markersViewModel.updateCurrentThemeColors()
+            
+            // Кнопки для маркеров и внешнего кольца
+            HStack(spacing: 10) {
+                // Кнопка цвета маркеров
+                Button(action: {
+                    // Показываем цветовой пикер для маркеров
+                    showColorPickerSheet(for: "markers")
+                }) {
+                    HStack {
+                        Text("Маркеры")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                        Circle()
+                            .fill(Color(
+                                hex: themeManager.isDarkMode
+                                    ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray)
+                            .frame(width: 16, height: 16)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                            )
                     }
-                )
-            )
-            .foregroundColor(.white)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        Capsule()
+                            .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.gray.opacity(0.7),
+                                        Color.gray.opacity(0.3),
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.0
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                // Кнопка цвета внешнего кольца
+                Button(action: {
+                    // Показываем цветовой пикер для внешнего кольца
+                    showColorPickerSheet(for: "outerRing")
+                }) {
+                    HStack {
+                        Text("Внешнее кольцо")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                        Circle()
+                            .fill(Color(
+                                hex: themeManager.isDarkMode
+                                    ? darkModeOuterRingColor : lightModeOuterRingColor) ?? .gray.opacity(0.3))
+                            .frame(width: 16, height: 16)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                            )
+                    }
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        Capsule()
+                            .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.gray.opacity(0.7),
+                                        Color.gray.opacity(0.3),
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.0
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.top, 4)
         }
         .padding()
         .background(
@@ -912,6 +960,88 @@ struct ClockEditorView: View {
                 .shadow(radius: 8)
         )
         .padding(.horizontal, 24)
+        .sheet(isPresented: $showColorPickerSheet) {
+            colorPickerSheetContent
+        }
+    }
+
+    private func showColorPickerSheet(for type: String) {
+        colorPickerType = type
+        showColorPickerSheet = true
+    }
+
+    private var colorPickerSheetContent: some View {
+        NavigationView {
+            VStack {
+                if colorPickerType == "markers" {
+                    ColorPicker(
+                        "Выберите цвет маркеров",
+                        selection: Binding(
+                            get: {
+                                Color(
+                                    hex: themeManager.isDarkMode
+                                        ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray
+                            },
+                            set: { newColor in
+                                if themeManager.isDarkMode {
+                                    darkModeMarkersColor = newColor.toHex()
+                                    viewModel.darkModeMarkersColor = newColor.toHex()
+                                    markersViewModel.darkModeMarkersColor = newColor.toHex()
+                                } else {
+                                    lightModeMarkersColor = newColor.toHex()
+                                    viewModel.lightModeMarkersColor = newColor.toHex()
+                                    markersViewModel.lightModeMarkersColor = newColor.toHex()
+                                }
+                                // Принудительно обновляем цвета
+                                markersViewModel.updateCurrentThemeColors()
+                            }
+                        )
+                    )
+                    .foregroundColor(.white)
+                    .padding()
+                } else if colorPickerType == "outerRing" {
+                    ColorPicker(
+                        "Выберите цвет кольца",
+                        selection: Binding(
+                            get: {
+                                Color(
+                                    hex: themeManager.isDarkMode
+                                        ? darkModeOuterRingColor : lightModeOuterRingColor)
+                                    ?? .gray.opacity(0.3)
+                            },
+                            set: { newColor in
+                                if themeManager.isDarkMode {
+                                    darkModeOuterRingColor = newColor.toHex()
+                                    viewModel.darkModeOuterRingColor = newColor.toHex()
+                                } else {
+                                    lightModeOuterRingColor = newColor.toHex()
+                                    viewModel.lightModeOuterRingColor = newColor.toHex()
+                                }
+                            }
+                        )
+                    )
+                    .foregroundColor(.white)
+                    .padding()
+                }
+                
+                Spacer()
+            }
+            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+            .navigationTitle(colorPickerType == "markers" ? "Цвет маркеров" : "Цвет внешнего кольца")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        showColorPickerSheet = false
+                    }) {
+                        Text("Готово")
+                            .foregroundColor(.yellow)
+                            .fontWeight(.medium)
+                    }
+                }
+            }
+        }
+        .accentColor(.yellow)
     }
 
     private var outerRingWidthControls: some View {
