@@ -947,57 +947,86 @@ struct ClockEditorView: View {
 
     private var arcAnalogTogglePanel: some View {
         VStack(spacing: 16) {
-            Toggle("Аналоговый вид дуги", isOn: $viewModel.isAnalogArcStyle)
-                .toggleStyle(SwitchToggleStyle(tint: .yellow))
+            Text("Отображения дуги")
+                .font(.headline)
                 .foregroundColor(.white)
-                
-            Divider().background(Color.white.opacity(0.2))
+                .frame(maxWidth: .infinity, alignment: .leading)
             
-            // Первая опция для показа времени вообще
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Показывать время")
-                        .foregroundColor(.white)
-                    Text("Отображение времени начала и конца задач")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-                
-                Spacer()
-                
-                Toggle("", isOn: Binding(
-                    get: { !viewModel.showTimeOnlyForActiveTask },
-                    set: { 
-                        viewModel.showTimeOnlyForActiveTask = !$0
-                        showTimeOnlyForActiveTask = !$0
+            // Первая строка: Аналоговый вид дуги
+            HStack(spacing: 10) {
+                Button(action: {
+                    withAnimation {
+                        viewModel.isAnalogArcStyle = false
                     }
-                ))
-                .toggleStyle(SwitchToggleStyle(tint: .yellow))
-                .labelsHidden()
+                }) {
+                    Text("Стандартный")
+                        .modifier(ButtonModifier(isSelected: !viewModel.isAnalogArcStyle))
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: {
+                    withAnimation {
+                        viewModel.isAnalogArcStyle = true
+                    }
+                }) {
+                    Text("Аналоговый")
+                        .modifier(ButtonModifier(isSelected: viewModel.isAnalogArcStyle))
+                }
+                .buttonStyle(PlainButtonStyle())
             }
+            .padding(.bottom, 8)
             
-            // Вторая опция для показа времени только активной задачи
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Только у активной задачи")
-                        .foregroundColor(.white)
-                    Text("Время будет отображаться только у выбранной задачи")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-                
-                Spacer()
-                
-                Toggle("", isOn: Binding(
-                    get: { viewModel.showTimeOnlyForActiveTask },
-                    set: { 
-                        viewModel.showTimeOnlyForActiveTask = $0
-                        showTimeOnlyForActiveTask = $0
+            Text("Отображение времени")
+                .font(.subheadline)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            // Вторая строка: Отображение времени
+            HStack(spacing: 10) {
+                Button(action: {
+                    withAnimation {
+                        viewModel.showTimeOnlyForActiveTask = false
+                        showTimeOnlyForActiveTask = false
                     }
-                ))
-                .toggleStyle(SwitchToggleStyle(tint: .yellow))
-                .labelsHidden()
+                }) {
+                    HStack {
+                        Text("Всегда")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                        Image(systemName: "clock")
+                            .font(.caption)
+                            .foregroundColor(.yellow)
+                    }
+                    .modifier(ButtonModifier(isSelected: !viewModel.showTimeOnlyForActiveTask))
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: {
+                    withAnimation {
+                        viewModel.showTimeOnlyForActiveTask = true
+                        showTimeOnlyForActiveTask = true
+                    }
+                }) {
+                    HStack {
+                        Text("Активная задача")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                        Image(systemName: "clock.badge")
+                            .font(.caption)
+                            .foregroundColor(.yellow)
+                    }
+                    .modifier(ButtonModifier(isSelected: viewModel.showTimeOnlyForActiveTask))
+                }
+                .buttonStyle(PlainButtonStyle())
             }
+            .padding(.bottom, 8)
+            
+            // Дополнительная информация
+            Text("Аналоговый стиль дуги гармонирует с внешним кольцом. Выбор времени влияет на отображение времени начала и конца задач.")
+                .font(.caption)
+                .foregroundColor(.gray)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 4)
         }
         .padding()
         .background(
