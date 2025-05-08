@@ -856,11 +856,12 @@ struct ClockEditorView: View {
                             ? darkModeClockFaceColor : lightModeClockFaceColor
                     ) ?? .red
                     
-//                    // Инициализируем базовый цвет, если он не был установлен
+                    // Раскомментируем и исправим инициализацию базового цвета
+                    // Инициализируем базовый цвет, если он не был установлен
 //                    if currentBaseColor == .white {
 //                        currentBaseColor = getBaseColor(forColor: currentColor)
 //                    }
-                    
+//                    
                     // Градиент от светлого к темному для выбранного цвета с уменьшенным диапазоном
                     LinearGradient(
                         gradient: Gradient(colors: [
@@ -879,22 +880,7 @@ struct ClockEditorView: View {
                     )
                     .padding(.horizontal, 20)
                     
-                    // Текстовые метки
-                    HStack {
-                        Text("Светлее")
-                            .font(.system(size: 10))
-                            .foregroundColor(.white.opacity(0.7))
-                        
-                        Spacer()
-                        
-                        Text("Темнее")
-                            .font(.system(size: 10))
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                    .padding(.horizontal, 30)
-                    .padding(.top, 32)
-                    
-                    // Ползунок слайдера
+                    // Ползунок слайдера - исправляем позиционирование
                     GeometryReader { geometry in
                         let paddingHorizontal: CGFloat = 30
                         let width = geometry.size.width - paddingHorizontal*2
@@ -914,7 +900,7 @@ struct ClockEditorView: View {
                                     .frame(width: 24, height: 24)
                                     .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
                             )
-                            .position(x: currentX, y: 13)
+                            .position(x: currentX, y: geometry.size.height / 2) // Изменяем здесь, чтобы ползунок был по центру слайдера
                             .gesture(
                                 DragGesture(minimumDistance: 0)
                                     .onChanged { value in
@@ -959,9 +945,9 @@ struct ClockEditorView: View {
                         
                         // Стандартные цвета из приложения
                         let standardColors: [Color] = [
-                            .coral1, .red1, .Orange1, .Apricot1, .yellow1, .green0, .green1, 
-                            .Mint1, .Teal1, .Blue1, .LightBlue1, .BlueJay1, .OceanBlue1, 
-                            .StormBlue1, .Indigo1, .Purple1, .Lilac1, .Pink1, .Peony1, .Rose1, .Clover1
+                            .coral1, .red1, .Orange1, .Apricot1, .yellow1, .green0, .green1,
+                            .Clover1, .Mint1, .Teal1, .Blue1, .LightBlue1, .BlueJay1, .OceanBlue1,
+                            .StormBlue1, .Indigo1, .Purple1, .Lilac1, .Pink1, .Peony1, .Rose1
                         ]
                         
                         ForEach(0..<standardColors.count, id: \.self) { index in
