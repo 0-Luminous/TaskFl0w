@@ -43,6 +43,8 @@ struct ClockEditorView: View {
     @State private var colorPickerType = ""
     @State private var sliderBrightnessPosition: CGFloat = 0.5
     @State private var currentBaseColor: Color = .white
+    @State private var selectedColorType: String = ""
+    @State private var selectedColorHex: String = ""
 
     var body: some View {
         NavigationStack {
@@ -913,14 +915,18 @@ struct ClockEditorView: View {
                                         // Вычисляем процент от 0 до 1
                                         sliderBrightnessPosition = (xPosition - minX) / width
                                         
-                                        // Применяем новый цвет с соответствующей яркостью, 
-                                        // используя сохраненный базовый цвет (без учета текущей яркости)
+                                        // Применяем новый цвет с соответствующей яркостью
                                         let newColor = getColorAt(position: sliderBrightnessPosition, baseColor: currentBaseColor)
+                                        let newColorHex = newColor.toHex()
+                                        
+                                        // Обновляем выбранный цвет и тип
+                                        selectedColorType = "clockFace"
+                                        selectedColorHex = newColorHex
                                         
                                         if themeManager.isDarkMode {
-                                            darkModeClockFaceColor = newColor.toHex()
+                                            darkModeClockFaceColor = newColorHex
                                         } else {
-                                            lightModeClockFaceColor = newColor.toHex()
+                                            lightModeClockFaceColor = newColorHex
                                         }
                                     }
                             )
@@ -1062,55 +1068,65 @@ struct ClockEditorView: View {
     }
 
     private func colorButton(color: Color, forType type: String) -> some View {
+        // Вместо сравнения цветов напрямую, используем сохраненные значения выбранного цвета
         let isSelected: Bool
+        let colorHex = color.toHex()
         
-        switch type {
-        case "clockFace":
-            isSelected = themeManager.isDarkMode ? 
-                (Color(hex: darkModeClockFaceColor) == color) : 
-                (Color(hex: lightModeClockFaceColor) == color)
-        case "markers":
-            isSelected = themeManager.isDarkMode ? 
-                (Color(hex: darkModeMarkersColor) == color) : 
-                (Color(hex: lightModeMarkersColor) == color)
-        case "outerRing":
-            isSelected = themeManager.isDarkMode ? 
-                (Color(hex: darkModeOuterRingColor) == color) : 
-                (Color(hex: lightModeOuterRingColor) == color)
-        default:
-            isSelected = false
+        if selectedColorType == type && selectedColorHex == colorHex {
+            isSelected = true
+        } else {
+            switch type {
+            case "clockFace":
+                isSelected = themeManager.isDarkMode ? 
+                    (darkModeClockFaceColor == colorHex) : 
+                    (lightModeClockFaceColor == colorHex)
+            case "markers":
+                isSelected = themeManager.isDarkMode ? 
+                    (darkModeMarkersColor == colorHex) : 
+                    (lightModeMarkersColor == colorHex)
+            case "outerRing":
+                isSelected = themeManager.isDarkMode ? 
+                    (darkModeOuterRingColor == colorHex) : 
+                    (lightModeOuterRingColor == colorHex)
+            default:
+                isSelected = false
+            }
         }
         
         return Button(action: {
+            // Сохраняем выбранный цвет и тип
+            selectedColorType = type
+            selectedColorHex = colorHex
+            
             switch type {
             case "clockFace":
                 if themeManager.isDarkMode {
-                    darkModeClockFaceColor = color.toHex()
+                    darkModeClockFaceColor = colorHex
                     // После выбора нового цвета обновляем положение слайдера
                     initializeSliderPosition()
                 } else {
-                    lightModeClockFaceColor = color.toHex()
+                    lightModeClockFaceColor = colorHex
                     // После выбора нового цвета обновляем положение слайдера
                     initializeSliderPosition()
                 }
             case "markers":
                 if themeManager.isDarkMode {
-                    darkModeMarkersColor = color.toHex()
-                    viewModel.darkModeMarkersColor = color.toHex()
-                    markersViewModel.darkModeMarkersColor = color.toHex()
+                    darkModeMarkersColor = colorHex
+                    viewModel.darkModeMarkersColor = colorHex
+                    markersViewModel.darkModeMarkersColor = colorHex
                 } else {
-                    lightModeMarkersColor = color.toHex()
-                    viewModel.lightModeMarkersColor = color.toHex()
-                    markersViewModel.lightModeMarkersColor = color.toHex()
+                    lightModeMarkersColor = colorHex
+                    viewModel.lightModeMarkersColor = colorHex
+                    markersViewModel.lightModeMarkersColor = colorHex
                 }
                 markersViewModel.updateCurrentThemeColors()
             case "outerRing":
                 if themeManager.isDarkMode {
-                    darkModeOuterRingColor = color.toHex()
-                    viewModel.darkModeOuterRingColor = color.toHex()
+                    darkModeOuterRingColor = colorHex
+                    viewModel.darkModeOuterRingColor = colorHex
                 } else {
-                    lightModeOuterRingColor = color.toHex()
-                    viewModel.lightModeOuterRingColor = color.toHex()
+                    lightModeOuterRingColor = colorHex
+                    viewModel.lightModeOuterRingColor = colorHex
                 }
             default:
                 break
@@ -1649,6 +1665,10 @@ struct ClockEditorView: View {
         let currentColor = Color(
             hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
         ) ?? .red
+        
+        // Обновляем выбранный цвет
+        selectedColorType = "clockFace"
+        selectedColorHex = themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
         
         // Сохраняем базовый цвет
         currentBaseColor = getBaseColor(forColor: currentColor)
