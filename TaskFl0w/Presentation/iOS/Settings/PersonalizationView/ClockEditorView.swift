@@ -859,12 +859,6 @@ struct ClockEditorView: View {
                             ? darkModeClockFaceColor : lightModeClockFaceColor
                     ) ?? .red
                     
-                    // Раскомментируем и исправим инициализацию базового цвета
-                    // Инициализируем базовый цвет, если он не был установлен
-//                    if currentBaseColor == .white {
-//                        currentBaseColor = getBaseColor(forColor: currentColor)
-//                    }
-//                    
                     // Градиент от светлого к темному для выбранного цвета с уменьшенным диапазоном
                     LinearGradient(
                         gradient: Gradient(colors: [
@@ -1264,24 +1258,249 @@ struct ClockEditorView: View {
 
     private var outerRingWidthControls: some View {
         VStack(spacing: 16) {
-            Text("Толщина внешнего кольца: \(Int(viewModel.outerRingLineWidth)) pt")
+            Text("Толщина кольца")
                 .font(.headline)
                 .foregroundColor(.white)
-            Slider(
-                value: Binding(
-                    get: { viewModel.outerRingLineWidth },
-                    set: { viewModel.outerRingLineWidth = $0 }
-                ),
-                in: 20...38,
-                step: 1
-            )
-
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            // Управление толщиной внешнего кольца
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text("Внешнее кольцо")
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Text("\(Int(viewModel.outerRingLineWidth)) pt")
+                        .font(.system(size: 16))
+                        .foregroundColor(.yellow)
+                }
+                
+                HStack(spacing: 10) {
+                    // Кнопка уменьшения толщины
+                    Button(action: {
+                        if viewModel.outerRingLineWidth > 20 {
+                            viewModel.outerRingLineWidth -= 1
+                        }
+                    }) {
+                        HStack {
+                            Text("Тоньше")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                            Image(systemName: "minus")
+                                .font(.caption)
+                                .foregroundColor(.yellow)
+                        }
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            Capsule()
+                                .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color.gray.opacity(0.7),
+                                            Color.gray.opacity(0.3),
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.0
+                                )
+                        )
+                        .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .disabled(viewModel.outerRingLineWidth <= 20)
+                    .opacity(viewModel.outerRingLineWidth <= 20 ? 0.5 : 1)
+                    
+                    // Слайдер для более точной настройки
+                    Slider(
+                        value: Binding(
+                            get: { viewModel.outerRingLineWidth },
+                            set: { viewModel.outerRingLineWidth = $0 }
+                        ),
+                        in: 20...38,
+                        step: 1
+                    )
+                    .frame(maxWidth: .infinity)
+                    .accentColor(.yellow)
+                    
+                    // Кнопка увеличения толщины
+                    Button(action: {
+                        if viewModel.outerRingLineWidth < 38 {
+                            viewModel.outerRingLineWidth += 1
+                        }
+                    }) {
+                        HStack {
+                            Text("Толще")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                            Image(systemName: "plus")
+                                .font(.caption)
+                                .foregroundColor(.yellow)
+                        }
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            Capsule()
+                                .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color.gray.opacity(0.7),
+                                            Color.gray.opacity(0.3),
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.0
+                                )
+                        )
+                        .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .disabled(viewModel.outerRingLineWidth >= 38)
+                    .opacity(viewModel.outerRingLineWidth >= 38 ? 0.5 : 1)
+                }
+            }
+            .padding(.bottom, 8)
+            
+            // Секция для толщины дуги задачи
             if !viewModel.isAnalogArcStyle {
-                Divider().background(Color.white.opacity(0.2))
-                Text("Толщина дуги задачи: \(Int(viewModel.taskArcLineWidth)) pt")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                Slider(value: $viewModel.taskArcLineWidth, in: 20...26, step: 1)
+                Divider()
+                    .background(Color.white.opacity(0.2))
+                    .padding(.vertical, 8)
+                
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("Дуга задачи")
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                        
+                        Spacer()
+                        
+                        Text("\(Int(viewModel.taskArcLineWidth)) pt")
+                            .font(.system(size: 16))
+                            .foregroundColor(.yellow)
+                    }
+                    
+                    HStack(spacing: 10) {
+                        // Кнопка уменьшения толщины дуги
+                        Button(action: {
+                            if viewModel.taskArcLineWidth > 20 {
+                                viewModel.taskArcLineWidth -= 1
+                            }
+                        }) {
+                            HStack {
+                                Text("Тоньше")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                Image(systemName: "minus")
+                                    .font(.caption)
+                                    .foregroundColor(.yellow)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.gray.opacity(0.7),
+                                                Color.gray.opacity(0.3),
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .disabled(viewModel.taskArcLineWidth <= 20)
+                        .opacity(viewModel.taskArcLineWidth <= 20 ? 0.5 : 1)
+                        
+                        // Слайдер для дуги
+                        Slider(
+                            value: $viewModel.taskArcLineWidth,
+                            in: 20...26,
+                            step: 1
+                        )
+                        .frame(maxWidth: .infinity)
+                        .accentColor(.yellow)
+                        
+                        // Кнопка увеличения толщины дуги
+                        Button(action: {
+                            if viewModel.taskArcLineWidth < 26 {
+                                viewModel.taskArcLineWidth += 1
+                            }
+                        }) {
+                            HStack {
+                                Text("Толще")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                Image(systemName: "plus")
+                                    .font(.caption)
+                                    .foregroundColor(.yellow)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Capsule()
+                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.gray.opacity(0.7),
+                                                Color.gray.opacity(0.3),
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .disabled(viewModel.taskArcLineWidth >= 26)
+                        .opacity(viewModel.taskArcLineWidth >= 26 ? 0.5 : 1)
+                    }
+                }
+                
+                // Дополнительная информация
+                Text("Толщина кольца и дуги влияет на визуальное восприятие циферблата. При аналоговом стиле толщина дуги совпадает с толщиной кольца.")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
+            } else {
+                // Информация при аналоговом стиле
+                Text("В аналоговом стиле толщина дуги задачи соответствует толщине внешнего кольца для более гармоничного вида.")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
             }
         }
         .padding()
