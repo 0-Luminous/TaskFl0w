@@ -41,6 +41,7 @@ struct ClockEditorView: View {
     @State private var showIntervalSettings = false
     @State private var showColorPickerSheet = false
     @State private var colorPickerType = ""
+    @State private var sliderBrightnessPosition: CGFloat = 0.5
 
     var body: some View {
         NavigationStack {
@@ -846,6 +847,104 @@ struct ClockEditorView: View {
                     .font(.subheadline)
                     .foregroundColor(.white)
                 
+                // Градиентный слайдер для выбора яркости цвета
+                ZStack(alignment: .center) {
+                    // Получаем текущий цвет
+                    let currentColor = Color(
+                            hex: themeManager.isDarkMode
+                            ? darkModeClockFaceColor : lightModeClockFaceColor
+                    ) ?? .red
+                    
+                    // Получаем чистый оттенок для слайдера (без учета текущей яркости)
+                    let baseColor = getBaseColor(forColor: currentColor)
+                    
+                    // Градиент от светлого к темному для выбранного цвета с уменьшенным диапазоном
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            brightenColor(baseColor, factor: 1.3),  // Умеренно светлый
+                            baseColor,                              // Оригинальный цвет
+                            darkenColor(baseColor, factor: 0.7)     // Умеренно темный
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(height: 26)
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.black.opacity(0.3), lineWidth: 1)
+                    )
+                    .padding(.horizontal, 20)
+                    
+                    // Текстовые метки
+                    HStack {
+                        Text("Светлее")
+                            .font(.system(size: 10))
+                            .foregroundColor(.white.opacity(0.7))
+                        
+                        Spacer()
+                        
+                        Text("Темнее")
+                            .font(.system(size: 10))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding(.horizontal, 30)
+                    .padding(.top, 32)
+                    
+                    // Ползунок слайдера
+                    GeometryReader { geometry in
+                        let paddingHorizontal: CGFloat = 30
+                        let width = geometry.size.width - paddingHorizontal*2
+                        let minX = paddingHorizontal
+                        
+                        // Вычисляем текущую X-позицию на основе значения sliderBrightnessPosition
+                        let currentX = minX + (width * sliderBrightnessPosition)
+                        
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 36, height: 36)
+                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 2)
+                            .overlay(
+                                // Внутреннее кольцо показывает цвет на текущей позиции слайдера
+                                Circle()
+                                    .fill(getColorAt(position: sliderBrightnessPosition, baseColor: baseColor))
+                                    .frame(width: 24, height: 24)
+                                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                            )
+                            .position(x: currentX, y: 13)
+                            .gesture(
+                                DragGesture(minimumDistance: 0)
+                                    .onChanged { value in
+                                        // Определяем границы перемещения
+                                        let maxX = minX + width
+                                        
+                                        // Ограничиваем X в пределах слайдера
+                                        let xPosition = min(max(value.location.x, minX), maxX)
+                                        
+                                        // Вычисляем процент от 0 до 1
+                                        sliderBrightnessPosition = (xPosition - minX) / width
+                                        
+                                        // Применяем новый цвет с соответствующей яркостью, 
+                                        // используя базовый цвет (без учета текущей яркости)
+                                        let newColor = getColorAt(position: sliderBrightnessPosition, baseColor: baseColor)
+                                        
+                                        if themeManager.isDarkMode {
+                                            darkModeClockFaceColor = newColor.toHex()
+                                        } else {
+                                            lightModeClockFaceColor = newColor.toHex()
+                                        }
+                                    }
+                            )
+                    }
+                }
+                .frame(height: 50)
+                .padding(.bottom, 10)
+                .onAppear {
+                    // При появлении определяем текущее положение ползунка
+                    // на основе яркости сохраненного цвета
+                    initializeSliderPosition()
+                }
+                
                 // Скролл с готовыми цветами циферблата
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 16) {
@@ -871,7 +970,7 @@ struct ClockEditorView: View {
                 }
                 .frame(height: 50)
             }
-        
+            
             // Кнопки для маркеров и внешнего кольца
             HStack(spacing: 10) {
                 // Кнопка цвета маркеров
@@ -1487,6 +1586,148 @@ struct ClockEditorView: View {
         // Сохраняем цвета в локальные AppStorage переменные
         lightModeMarkersColor = markersViewModel.lightModeMarkersColor
         darkModeMarkersColor = markersViewModel.darkModeMarkersColor
+    }
+
+    // Вспомогательная функция для получения цвета из градиента по позиции
+    private func colorFromGradient(at percentage: Double) -> Color {
+        let colors: [Color] = [.red1, .orange, .yellow, .green0, .Mint1, .Blue1, .Indigo1, .Purple1, .pink]
+        let count = Double(colors.count - 1)
+        let adjustedPercentage = min(max(percentage, 0), 1) // Обеспечиваем, что процент в пределах 0-1
+        
+        let index = min(Int(adjustedPercentage * count), colors.count - 2)
+        let remainder = (adjustedPercentage * count) - Double(index)
+        
+        return interpolateColor(from: colors[index], to: colors[index + 1], with: remainder)
+    }
+
+    // Интерполяция между двумя цветами
+    private func interpolateColor(from: Color, to: Color, with percentage: Double) -> Color {
+        let fromComponents = UIColor(from).cgColor.components ?? [0, 0, 0, 1]
+        let toComponents = UIColor(to).cgColor.components ?? [0, 0, 0, 1]
+        
+        let r = fromComponents[0] + (toComponents[0] - fromComponents[0]) * CGFloat(percentage)
+        let g = fromComponents[1] + (toComponents[1] - fromComponents[1]) * CGFloat(percentage)
+        let b = fromComponents[2] + (toComponents[2] - fromComponents[2]) * CGFloat(percentage)
+        let a = fromComponents[3] + (toComponents[3] - fromComponents[3]) * CGFloat(percentage)
+        
+        return Color(red: Double(r), green: Double(g), blue: Double(b), opacity: Double(a))
+    }
+
+    // Функция для изменения яркости цвета
+    private func adjustColorBrightness(_ color: Color, byPercentage percentage: Double) -> Color {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        
+        UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        // Коэффициент, чтобы яркость менялась от 0.5 до 1.5 от текущей
+        let brightnessAdjustment = 0.5 + percentage
+        
+        // Ограничиваем компоненты цвета, чтобы они были в диапазоне 0...1
+        red = min(max(red * CGFloat(brightnessAdjustment), 0), 1)
+        green = min(max(green * CGFloat(brightnessAdjustment), 0), 1)
+        blue = min(max(blue * CGFloat(brightnessAdjustment), 0), 1)
+        
+        return Color(red: Double(red), green: Double(green), blue: Double(blue), opacity: Double(alpha))
+    }
+
+    // Получает цвет на определенной позиции слайдера с уменьшенным диапазоном
+    private func getColorAt(position: CGFloat, baseColor: Color) -> Color {
+        // Уменьшаем диапазон изменения яркости (1.3-0.7)
+        // Где 0 на слайдере = яркость 1.3 (умеренно светлый)
+        // А 1 на слайдере = яркость 0.7 (умеренно темный)
+        let brightnessFactor = 1.3 - (position * 0.6)
+        
+        if position < 0.5 {
+            // Левая сторона, светлее базового цвета
+            return brightenColor(baseColor, factor: brightnessFactor)
+        } else if position > 0.5 {
+            // Правая сторона, темнее базового цвета
+            return darkenColor(baseColor, factor: brightnessFactor)
+        } else {
+            // Центр, базовый цвет
+            return baseColor
+        }
+    }
+
+    // Инициализирует положение слайдера на основе текущей яркости цвета
+    private func initializeSliderPosition() {
+        let currentColor = Color(
+            hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
+        ) ?? .red
+        
+        let baseColor = getBaseColor(forColor: currentColor)
+        let brightness = getBrightness(of: currentColor) / getBrightness(of: baseColor)
+        
+        // Преобразуем яркость в позицию слайдера (от 0 до 1)
+        // Где 0.7 - это минимальная яркость (правый край)
+        // 1.3 - максимальная яркость (левый край)
+        if brightness <= 0.7 {
+            sliderBrightnessPosition = 1.0 // правый край (умеренно темный)
+        } else if brightness >= 1.3 {
+            sliderBrightnessPosition = 0.0 // левый край (умеренно светлый)
+        } else {
+            // Мапим яркость от 0.7-1.3 на позицию 1.0-0.0
+            sliderBrightnessPosition = 1.0 - ((brightness - 0.7) / 0.6)
+        }
+    }
+
+    // Получает базовый цвет для цвета
+    private func getBaseColor(forColor color: Color) -> Color {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        
+        UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        return Color(red: red, green: green, blue: blue, opacity: alpha)
+    }
+
+    // Получает яркость цвета
+    private func getBrightness(of color: Color) -> CGFloat {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        
+        UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        return (red * 0.299 + green * 0.587 + blue * 0.114)
+    }
+
+    // Увеличивает яркость цвета
+    private func brightenColor(_ color: Color, factor: CGFloat) -> Color {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        
+        UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        red = min(max(red * factor, 0), 1)
+        green = min(max(green * factor, 0), 1)
+        blue = min(max(blue * factor, 0), 1)
+        
+        return Color(red: red, green: green, blue: blue, opacity: alpha)
+    }
+
+    // Уменьшает яркость цвета
+    private func darkenColor(_ color: Color, factor: CGFloat) -> Color {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        
+        UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        red = max(min(red * factor, 1), 0)
+        green = max(min(green * factor, 1), 0)
+        blue = max(min(blue * factor, 1), 0)
+        
+        return Color(red: red, green: green, blue: blue, opacity: alpha)
     }
 }
 
