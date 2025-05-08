@@ -42,6 +42,7 @@ struct ClockEditorView: View {
     @State private var showColorPickerSheet = false
     @State private var colorPickerType = ""
     @State private var sliderBrightnessPosition: CGFloat = 0.5
+    @State private var currentBaseColor: Color = .white
 
     var body: some View {
         NavigationStack {
@@ -855,15 +856,17 @@ struct ClockEditorView: View {
                             ? darkModeClockFaceColor : lightModeClockFaceColor
                     ) ?? .red
                     
-                    // Получаем чистый оттенок для слайдера (без учета текущей яркости)
-                    let baseColor = getBaseColor(forColor: currentColor)
+//                    // Инициализируем базовый цвет, если он не был установлен
+//                    if currentBaseColor == .white {
+//                        currentBaseColor = getBaseColor(forColor: currentColor)
+//                    }
                     
                     // Градиент от светлого к темному для выбранного цвета с уменьшенным диапазоном
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            brightenColor(baseColor, factor: 1.3),  // Умеренно светлый
-                            baseColor,                              // Оригинальный цвет
-                            darkenColor(baseColor, factor: 0.7)     // Умеренно темный
+                            brightenColor(currentBaseColor, factor: 1.3),  // Умеренно светлый
+                            currentBaseColor,                             // Оригинальный цвет
+                            darkenColor(currentBaseColor, factor: 0.7)     // Умеренно темный
                         ]),
                         startPoint: .leading,
                         endPoint: .trailing
@@ -907,7 +910,7 @@ struct ClockEditorView: View {
                             .overlay(
                                 // Внутреннее кольцо показывает цвет на текущей позиции слайдера
                                 Circle()
-                                    .fill(getColorAt(position: sliderBrightnessPosition, baseColor: baseColor))
+                                    .fill(getColorAt(position: sliderBrightnessPosition, baseColor: currentBaseColor))
                                     .frame(width: 24, height: 24)
                                     .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
                             )
@@ -925,8 +928,8 @@ struct ClockEditorView: View {
                                         sliderBrightnessPosition = (xPosition - minX) / width
                                         
                                         // Применяем новый цвет с соответствующей яркостью, 
-                                        // используя базовый цвет (без учета текущей яркости)
-                                        let newColor = getColorAt(position: sliderBrightnessPosition, baseColor: baseColor)
+                                        // используя сохраненный базовый цвет (без учета текущей яркости)
+                                        let newColor = getColorAt(position: sliderBrightnessPosition, baseColor: currentBaseColor)
                                         
                                         if themeManager.isDarkMode {
                                             darkModeClockFaceColor = newColor.toHex()
@@ -1096,10 +1099,14 @@ struct ClockEditorView: View {
         return Button(action: {
             switch type {
             case "clockFace":
-                        if themeManager.isDarkMode {
+                if themeManager.isDarkMode {
                     darkModeClockFaceColor = color.toHex()
-                        } else {
+                    // После выбора нового цвета обновляем положение слайдера
+                    initializeSliderPosition()
+                } else {
                     lightModeClockFaceColor = color.toHex()
+                    // После выбора нового цвета обновляем положение слайдера
+                    initializeSliderPosition()
                 }
             case "markers":
                 if themeManager.isDarkMode {
@@ -1113,10 +1120,10 @@ struct ClockEditorView: View {
                 }
                 markersViewModel.updateCurrentThemeColors()
             case "outerRing":
-                        if themeManager.isDarkMode {
+                if themeManager.isDarkMode {
                     darkModeOuterRingColor = color.toHex()
                     viewModel.darkModeOuterRingColor = color.toHex()
-                        } else {
+                } else {
                     lightModeOuterRingColor = color.toHex()
                     viewModel.lightModeOuterRingColor = color.toHex()
                 }
@@ -1186,31 +1193,31 @@ struct ClockEditorView: View {
         NavigationView {
             VStack {
                 if colorPickerType == "markers" {
-            ColorPicker(
+                    ColorPicker(
                         "Выберите цвет маркеров",
-                selection: Binding(
-                    get: {
-                        Color(
-                            hex: themeManager.isDarkMode
-                                ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray
-                    },
-                    set: { newColor in
-                        if themeManager.isDarkMode {
-                            darkModeMarkersColor = newColor.toHex()
-                            viewModel.darkModeMarkersColor = newColor.toHex()
-                            markersViewModel.darkModeMarkersColor = newColor.toHex()
-                        } else {
-                            lightModeMarkersColor = newColor.toHex()
-                            viewModel.lightModeMarkersColor = newColor.toHex()
-                            markersViewModel.lightModeMarkersColor = newColor.toHex()
-                        }
-                        // Принудительно обновляем цвета
-                        markersViewModel.updateCurrentThemeColors()
-                    }
-                )
-            )
-            .foregroundColor(.white)
-        .padding()
+                        selection: Binding(
+                            get: {
+                                Color(
+                                    hex: themeManager.isDarkMode
+                                        ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray
+                            },
+                            set: { newColor in
+                                if themeManager.isDarkMode {
+                                    darkModeMarkersColor = newColor.toHex()
+                                    viewModel.darkModeMarkersColor = newColor.toHex()
+                                    markersViewModel.darkModeMarkersColor = newColor.toHex()
+                                } else {
+                                    lightModeMarkersColor = newColor.toHex()
+                                    viewModel.lightModeMarkersColor = newColor.toHex()
+                                    markersViewModel.lightModeMarkersColor = newColor.toHex()
+                                }
+                                // Принудительно обновляем цвета
+                                markersViewModel.updateCurrentThemeColors()
+                            }
+                        )
+                    )
+                    .foregroundColor(.white)
+                    .padding()
                 } else if colorPickerType == "outerRing" {
                     ColorPicker(
                         "Выберите цвет кольца",
@@ -1658,8 +1665,10 @@ struct ClockEditorView: View {
             hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
         ) ?? .red
         
-        let baseColor = getBaseColor(forColor: currentColor)
-        let brightness = getBrightness(of: currentColor) / getBrightness(of: baseColor)
+        // Сохраняем базовый цвет
+        currentBaseColor = getBaseColor(forColor: currentColor)
+        
+        let brightness = getBrightness(of: currentColor) / getBrightness(of: currentBaseColor)
         
         // Преобразуем яркость в позицию слайдера (от 0 до 1)
         // Где 0.7 - это минимальная яркость (правый край)
