@@ -14,6 +14,14 @@ struct ClockTaskArcIOS: View {
 
     @State private var isDragging: Bool = false
     @State private var isVisible: Bool = true
+    
+    // Форматтер для отображения времени
+    private let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        return formatter
+    }()
 
     var body: some View {
         if !isVisible {
@@ -60,6 +68,11 @@ struct ClockTaskArcIOS: View {
                 let iconFontSize: CGFloat = isAnalog
                     ? minIconFontSize + (maxIconFontSize - minIconFontSize) * t
                     : minIconFontSize
+                
+                // Определение размера и отступа для текста времени
+                let timeFontSize: CGFloat = 10
+                // Смещение текста внутрь циферблата (было -6, делаем -9)
+                let timeTextOffset: CGFloat = -8
 
                 ZStack {
                     // Дуга задачи
@@ -164,6 +177,55 @@ struct ClockTaskArcIOS: View {
                             y: center.y + iconRadius * sin(midAngle.radians)
                         )
                         .id("task-icon-\(task.id)-\(viewModel.zeroPosition)")
+                    
+                    // Добавляем отображение времени начала задачи только для цифрового стиля
+                    // Скрываем цифры, когда активны маркеры редактирования
+                    if !isAnalog && !(viewModel.isEditingMode && task.id == viewModel.editingTask?.id) {
+                        // Проверяем, находится ли текст в левой части циферблата
+                        let isStartInLeftHalf = isAngleInLeftHalf(startAngle)
+                        let isEndInLeftHalf = isAngleInLeftHalf(endAngle)
+                        
+                        // Текст времени начала задачи с корректной капсулой
+                        let startTimeText = timeFormatter.string(from: task.startTime)
+                        let endTimeText = timeFormatter.string(from: task.endTime)
+
+                        ZStack {
+                            // Фон в виде капсулы с фиксированной шириной
+                            Capsule()
+                                .fill(task.category.color)
+                                .frame(width: CGFloat(startTimeText.count) * 6 + 6, height: 16)
+                            
+                            // Текст времени
+                            Text(startTimeText)
+                                .font(.system(size: timeFontSize))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.3), radius: 1)
+                        }
+                        .rotationEffect(isStartInLeftHalf ? startAngle + .degrees(180) : startAngle)
+                        .position(
+                            x: center.x + (arcRadius + timeTextOffset) * cos(startAngle.radians),
+                            y: center.y + (arcRadius + timeTextOffset) * sin(startAngle.radians)
+                        )
+                        
+                        // Текст времени окончания задачи с корректной капсулой
+                        ZStack {
+                            // Фон в виде капсулы с фиксированной шириной
+                            Capsule()
+                                .fill(task.category.color)
+                                .frame(width: CGFloat(endTimeText.count) * 6 + 6, height: 16)
+                            
+                            // Текст времени
+                            Text(endTimeText)
+                                .font(.system(size: timeFontSize))
+                                .foregroundColor(.white)
+                                .shadow(color: .black.opacity(0.3), radius: 1)
+                        }
+                        .rotationEffect(isEndInLeftHalf ? endAngle + .degrees(180) : endAngle)
+                        .position(
+                            x: center.x + (arcRadius + timeTextOffset) * cos(endAngle.radians),
+                            y: center.y + (arcRadius + timeTextOffset) * sin(endAngle.radians)
+                        )
+                    }
                 }
             }
             .onChange(of: isDragging) { oldValue, newValue in
@@ -291,4 +353,11 @@ struct ClockTaskArcIOS: View {
         }
     }
 
+    // Проверяет, находится ли угол в левой половине циферблата
+    private func isAngleInLeftHalf(_ angle: Angle) -> Bool {
+        // Преобразуем угол в градусы в диапазоне 0-360
+        let degrees = (angle.degrees.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
+        // Левая половина циферблата: 90-270 градусов
+        return degrees > 90 && degrees < 270
+    }
 }

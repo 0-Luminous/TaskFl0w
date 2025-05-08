@@ -172,7 +172,11 @@ struct ClockEditorView: View {
                             lineWidth: isDisabled ? 0.5 : 1.0
                         )
                 )
-                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                .shadow(
+                    color: isSelected ? Color.yellow.opacity(0.2) : .black.opacity(0.5), radius: 3,
+                    x: 0,
+                    y: isSelected ? 0 : 2
+                )
                 .opacity(isDisabled ? 0.6 : 1)
         }
     }
@@ -203,7 +207,7 @@ struct ClockEditorView: View {
                             lineWidth: 1.0
                         )
                 )
-                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
         }
     }
     
@@ -233,7 +237,7 @@ struct ClockEditorView: View {
                             lineWidth: 1.0
                         )
                 )
-                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
         }
     }
     
@@ -525,7 +529,7 @@ struct ClockEditorView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
@@ -565,7 +569,7 @@ struct ClockEditorView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -608,7 +612,7 @@ struct ClockEditorView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
@@ -648,7 +652,7 @@ struct ClockEditorView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -693,7 +697,7 @@ struct ClockEditorView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
@@ -733,7 +737,7 @@ struct ClockEditorView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
