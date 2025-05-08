@@ -840,32 +840,42 @@ struct ClockEditorView: View {
                 .font(.headline)
                 .foregroundColor(.white)
             
-            // Циферблат (основная настройка)
-            ColorPicker(
-                "Циферблат",
-                selection: Binding(
-                    get: {
-                        Color(
-                            hex: themeManager.isDarkMode
-                                ? darkModeClockFaceColor : lightModeClockFaceColor)
-                            ?? (themeManager.isDarkMode ? .black : .white)
-                    },
-                    set: { newColor in
-                        if themeManager.isDarkMode {
-                            darkModeClockFaceColor = newColor.toHex()
-                        } else {
-                            lightModeClockFaceColor = newColor.toHex()
+            // Основная секция выбора цвета для циферблата
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Циферблат")
+                    .font(.subheadline)
+                    .foregroundColor(.white)
+                
+                // Скролл с готовыми цветами циферблата
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 16) {
+                        // Добавляем базовые нейтральные цвета в начало
+                        colorButton(color: .white, forType: "clockFace")
+                        colorButton(color: Color(red: 0.1, green: 0.1, blue: 0.1), forType: "clockFace")
+                        colorButton(color: Color(red: 0.85, green: 0.85, blue: 0.85), forType: "clockFace")
+                        colorButton(color: Color(red: 0.2, green: 0.2, blue: 0.2), forType: "clockFace")
+                        
+                        // Стандартные цвета из приложения
+                        let standardColors: [Color] = [
+                            .coral1, .red1, .Orange1, .Apricot1, .yellow1, .green0, .green1, 
+                            .Mint1, .Teal1, .Blue1, .LightBlue1, .BlueJay1, .OceanBlue1, 
+                            .StormBlue1, .Indigo1, .Purple1, .Lilac1, .Pink1, .Peony1, .Rose1, .Clover1
+                        ]
+                        
+                        ForEach(0..<standardColors.count, id: \.self) { index in
+                            colorButton(color: standardColors[index], forType: "clockFace")
                         }
                     }
-                )
-            )
-            .foregroundColor(.white)
-            
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 4)
+                }
+                .frame(height: 50)
+            }
+        
             // Кнопки для маркеров и внешнего кольца
             HStack(spacing: 10) {
                 // Кнопка цвета маркеров
                 Button(action: {
-                    // Показываем цветовой пикер для маркеров
                     showColorPickerSheet(for: "markers")
                 }) {
                     HStack {
@@ -909,7 +919,6 @@ struct ClockEditorView: View {
                 
                 // Кнопка цвета внешнего кольца
                 Button(action: {
-                    // Показываем цветовой пикер для внешнего кольца
                     showColorPickerSheet(for: "outerRing")
                 }) {
                     HStack {
@@ -965,6 +974,110 @@ struct ClockEditorView: View {
         }
     }
 
+    private func colorButton(color: Color, forType type: String) -> some View {
+        let isSelected: Bool
+        
+        switch type {
+        case "clockFace":
+            isSelected = themeManager.isDarkMode ? 
+                (Color(hex: darkModeClockFaceColor) == color) : 
+                (Color(hex: lightModeClockFaceColor) == color)
+        case "markers":
+            isSelected = themeManager.isDarkMode ? 
+                (Color(hex: darkModeMarkersColor) == color) : 
+                (Color(hex: lightModeMarkersColor) == color)
+        case "outerRing":
+            isSelected = themeManager.isDarkMode ? 
+                (Color(hex: darkModeOuterRingColor) == color) : 
+                (Color(hex: lightModeOuterRingColor) == color)
+        default:
+            isSelected = false
+        }
+        
+        return Button(action: {
+            switch type {
+            case "clockFace":
+                        if themeManager.isDarkMode {
+                    darkModeClockFaceColor = color.toHex()
+                        } else {
+                    lightModeClockFaceColor = color.toHex()
+                }
+            case "markers":
+                if themeManager.isDarkMode {
+                    darkModeMarkersColor = color.toHex()
+                    viewModel.darkModeMarkersColor = color.toHex()
+                    markersViewModel.darkModeMarkersColor = color.toHex()
+                } else {
+                    lightModeMarkersColor = color.toHex()
+                    viewModel.lightModeMarkersColor = color.toHex()
+                    markersViewModel.lightModeMarkersColor = color.toHex()
+                }
+                markersViewModel.updateCurrentThemeColors()
+            case "outerRing":
+                        if themeManager.isDarkMode {
+                    darkModeOuterRingColor = color.toHex()
+                    viewModel.darkModeOuterRingColor = color.toHex()
+                        } else {
+                    lightModeOuterRingColor = color.toHex()
+                    viewModel.lightModeOuterRingColor = color.toHex()
+                }
+            default:
+                break
+            }
+        }) {
+            ZStack {
+                // Внешний слой для выделения
+                if isSelected {
+                    Circle()
+                        .fill(Color.clear)
+                        .frame(width: 42, height: 42)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.yellow, lineWidth: 2)
+                        )
+                        .shadow(color: Color.yellow.opacity(0.6), radius: 4, x: 0, y: 0)
+                }
+                
+                // Основной круг с цветом
+                Circle()
+                    .fill(color)
+                    .frame(width: 30, height: 30)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.7), lineWidth: isSelected ? 1.5 : 0)
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(Color.black.opacity(0.2), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                    
+                // Маленькая точка или галочка в центре для выбранного цвета
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(isLightColor(color) ? .black : .white)
+                }
+            }
+            .frame(width: 44, height: 44)
+            .contentShape(Circle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    private func isLightColor(_ color: Color) -> Bool {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        
+        UIColor(color).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        // Формула для определения яркости
+        let brightness = (red * 0.299 + green * 0.587 + blue * 0.114)
+        return brightness > 0.7
+    }
+
     private func showColorPickerSheet(for type: String) {
         colorPickerType = type
         showColorPickerSheet = true
@@ -974,31 +1087,31 @@ struct ClockEditorView: View {
         NavigationView {
             VStack {
                 if colorPickerType == "markers" {
-                    ColorPicker(
+            ColorPicker(
                         "Выберите цвет маркеров",
-                        selection: Binding(
-                            get: {
-                                Color(
-                                    hex: themeManager.isDarkMode
-                                        ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray
-                            },
-                            set: { newColor in
-                                if themeManager.isDarkMode {
-                                    darkModeMarkersColor = newColor.toHex()
-                                    viewModel.darkModeMarkersColor = newColor.toHex()
-                                    markersViewModel.darkModeMarkersColor = newColor.toHex()
-                                } else {
-                                    lightModeMarkersColor = newColor.toHex()
-                                    viewModel.lightModeMarkersColor = newColor.toHex()
-                                    markersViewModel.lightModeMarkersColor = newColor.toHex()
-                                }
-                                // Принудительно обновляем цвета
-                                markersViewModel.updateCurrentThemeColors()
-                            }
-                        )
-                    )
-                    .foregroundColor(.white)
-                    .padding()
+                selection: Binding(
+                    get: {
+                        Color(
+                            hex: themeManager.isDarkMode
+                                ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray
+                    },
+                    set: { newColor in
+                        if themeManager.isDarkMode {
+                            darkModeMarkersColor = newColor.toHex()
+                            viewModel.darkModeMarkersColor = newColor.toHex()
+                            markersViewModel.darkModeMarkersColor = newColor.toHex()
+                        } else {
+                            lightModeMarkersColor = newColor.toHex()
+                            viewModel.lightModeMarkersColor = newColor.toHex()
+                            markersViewModel.lightModeMarkersColor = newColor.toHex()
+                        }
+                        // Принудительно обновляем цвета
+                        markersViewModel.updateCurrentThemeColors()
+                    }
+                )
+            )
+            .foregroundColor(.white)
+        .padding()
                 } else if colorPickerType == "outerRing" {
                     ColorPicker(
                         "Выберите цвет кольца",
