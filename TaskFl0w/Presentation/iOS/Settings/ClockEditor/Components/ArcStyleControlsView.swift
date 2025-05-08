@@ -1,0 +1,98 @@
+import SwiftUI
+
+struct ArcStyleControlsView: View {
+    @ObservedObject var viewModel: ClockViewModel
+    @Binding var showTimeOnlyForActiveTask: Bool
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Отображения дуги")
+                .font(.headline)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            // Первая строка: Аналоговый вид дуги
+            HStack(spacing: 10) {
+                Button(action: {
+                    withAnimation {
+                        viewModel.isAnalogArcStyle = false
+                    }
+                }) {
+                    Text("Стандартный")
+                        .buttonStyle(isSelected: !viewModel.isAnalogArcStyle)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: {
+                    withAnimation {
+                        viewModel.isAnalogArcStyle = true
+                    }
+                }) {
+                    Text("Аналоговый")
+                        .buttonStyle(isSelected: viewModel.isAnalogArcStyle)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.bottom, 8)
+            
+            Text("Отображение времени")
+                .font(.subheadline)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            // Вторая строка: Отображение времени
+            HStack(spacing: 10) {
+                Button(action: {
+                    withAnimation {
+                        viewModel.showTimeOnlyForActiveTask = false
+                        showTimeOnlyForActiveTask = false
+                    }
+                }) {
+                    HStack {
+                        Text("Всегда")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                        Image(systemName: "clock")
+                            .font(.caption)
+                            .foregroundColor(.yellow)
+                    }
+                    .buttonStyle(isSelected: !viewModel.showTimeOnlyForActiveTask)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: {
+                    withAnimation {
+                        viewModel.showTimeOnlyForActiveTask = true
+                        showTimeOnlyForActiveTask = true
+                    }
+                }) {
+                    HStack {
+                        Text("Активная задача")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                        Image(systemName: "clock.badge")
+                            .font(.caption)
+                            .foregroundColor(.yellow)
+                    }
+                    .buttonStyle(isSelected: viewModel.showTimeOnlyForActiveTask)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.bottom, 8)
+            
+            // Дополнительная информация
+            Text("Аналоговый стиль дуги гармонирует с внешним кольцом. Выбор времени влияет на отображение времени начала и конца задач.")
+                .font(.caption)
+                .foregroundColor(.gray)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 4)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98))
+                .shadow(radius: 8)
+        )
+        .padding(.horizontal, 24)
+    }
+} 
