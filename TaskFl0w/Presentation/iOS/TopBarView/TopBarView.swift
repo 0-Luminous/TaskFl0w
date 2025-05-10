@@ -14,6 +14,8 @@ struct TopBarView: View {
     let isCalendarVisible: Bool
     let searchAction: () -> Void
 
+    @ObservedObject private var themeManager = ThemeManager.shared
+
     @State private var dragOffset: CGFloat = 0
     @State private var expandedCalendar = false
     @State private var isBarVisible = true

@@ -27,7 +27,7 @@ struct PersonalizationViewIOS: View {
                     HStack {
                         Image(systemName: "bell.badge.fill")
                             .font(.system(size: 20))
-                            .foregroundColor(.coral1)
+                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                             .padding(8)
                             .background(
                                 Circle()
@@ -86,7 +86,7 @@ struct PersonalizationViewIOS: View {
                     HStack {
                         Image(systemName: "tray.full.fill")
                             .font(.system(size: 20))
-                            .foregroundColor(.coral1)
+                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                             .padding(8)
                             .background(
                                 Circle()
@@ -145,7 +145,7 @@ struct PersonalizationViewIOS: View {
                     HStack {
                         Image(systemName: "clock.circle")
                             .font(.system(size: 22))
-                            .foregroundColor(.coral1)
+                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                             .padding(8)
                             .background(
                                 Circle()
@@ -204,7 +204,7 @@ struct PersonalizationViewIOS: View {
                     HStack {
                         Image(systemName: "folder.fill.badge.gearshape")
                             .font(.system(size: 18))
-                            .foregroundColor(.coral1)
+                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                             .padding(8)
                             .background(
                                 Circle()

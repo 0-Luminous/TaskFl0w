@@ -71,7 +71,14 @@ struct EnhancedWatchFacePreviewCard: View {
                 .stroke(
                     isSelected 
                         ? LinearGradient(
-                            colors: [.yellow, .yellow.opacity(0.6)],
+                            colors: [
+                                themeManager.isDarkMode ? 
+                                    .yellow : 
+                                    .red1,
+                                themeManager.isDarkMode ? 
+                                    .yellow.opacity(0.6) : 
+                                    .red1.opacity(0.6)
+                            ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                           )

@@ -24,7 +24,7 @@ struct EnhancedCategorySection: View {
             HStack {
                 Image(systemName: category.systemImage)
                     .font(.headline)
-                    .foregroundColor(.yellow)
+                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                 Text(category.rawValue)
                     .font(.headline)
                     .foregroundColor(themeManager.isDarkMode ? .white : .black)

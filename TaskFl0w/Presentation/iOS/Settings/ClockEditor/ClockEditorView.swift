@@ -73,8 +73,26 @@ struct ClockEditorView: View {
                     clockPreviewSection
                         .padding(
                             .bottom,
-                            (showClockControls || showColorControls || showOuterRingWidthControls
-                                || showArcAnalogToggle || showMarkersControls) ? 180 : 0)
+                            {
+                                if showClockControls {
+                                    return 300  // Больше места для настроек циферблата
+                                } else if showColorControls {
+                                    return 300  // Еще больше места для палитры цветов
+                                } else if showOuterRingWidthControls {
+                                    return 400  // Меньше места для настроек ширины кольца
+                                } else if showArcAnalogToggle {
+                                    return 300  // Минимальное поднятие для переключения стиля
+                                } else if showMarkersControls {
+                                    return 300  // Среднее поднятие для настроек маркеров
+                                }
+                                return 0
+                            }()
+                        )
+                        .animation(.spring(), value: showClockControls)
+                        .animation(.spring(), value: showColorControls)
+                        .animation(.spring(), value: showOuterRingWidthControls)
+                        .animation(.spring(), value: showArcAnalogToggle)
+                        .animation(.spring(), value: showMarkersControls)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.98, green: 0.98, blue: 0.98))

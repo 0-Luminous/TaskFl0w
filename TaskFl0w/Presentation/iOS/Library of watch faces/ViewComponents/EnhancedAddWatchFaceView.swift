@@ -14,6 +14,7 @@ struct EnhancedAddWatchFaceView: View {
     @ObservedObject private var libraryManager = WatchFaceLibraryManager.shared
     @ObservedObject private var clockViewModel = ClockViewModel()
     @ObservedObject private var markersViewModel = ClockMarkersViewModel()
+    @ObservedObject private var themeManager = ThemeManager.shared
     @State private var watchFaceName = ""
     @State private var currentDate = Date()
     @State private var tasks: [TaskOnRing] = []
@@ -22,22 +23,28 @@ struct EnhancedAddWatchFaceView: View {
     @State private var zeroPosition: Double = 0
     @State private var taskArcLineWidth: CGFloat = 2
     @State private var outerRingLineWidth: CGFloat = 20
+
     
         
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.098, green: 0.098, blue: 0.092)
+                (themeManager.isDarkMode ? 
+                    Color(red: 0.098, green: 0.098, blue: 0.092) :
+                    Color(red: 0.95, green: 0.95, blue: 0.95))
                     .ignoresSafeArea()
                 
                 VStack(spacing: 24) {
                     TextField("Название циферблата", text: $watchFaceName)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         .padding()
                         .background(
                             LinearGradient(
-                                colors: [Color.gray.opacity(0.3), Color.gray.opacity(0.1)],
+                                colors: [
+                                    themeManager.isDarkMode ? Color.gray.opacity(0.3) : Color.gray.opacity(0.1),
+                                    themeManager.isDarkMode ? Color.gray.opacity(0.1) : Color.gray.opacity(0.05)
+                                ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -47,7 +54,7 @@ struct EnhancedAddWatchFaceView: View {
                     
                     Text("Предпросмотр")
                         .font(.headline)
-                        .foregroundColor(.yellow)
+                        .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal)
                     

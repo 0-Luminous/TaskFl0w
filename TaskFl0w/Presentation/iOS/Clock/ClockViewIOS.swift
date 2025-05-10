@@ -35,6 +35,8 @@ struct ClockViewIOS: View {
     // Состояние для отображения недельного календаря
     @State private var showingWeekCalendar = false
     
+    @ObservedObject private var themeManager = ThemeManager.shared
+    
     // MARK: - Body
     var body: some View {
         NavigationView {
@@ -229,7 +231,7 @@ struct ClockViewIOS: View {
                     categoryManager: viewModel.categoryManagement
                 )
             }
-            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+            .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95))
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .onReceive(timer) { _ in
