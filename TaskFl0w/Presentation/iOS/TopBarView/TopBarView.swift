@@ -75,7 +75,7 @@ struct TopBarView: View {
                     Button(action: searchAction) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 20))
-                            .foregroundColor(.blue)
+                            .foregroundColor(.coral1)
                             .padding(4)
                     }
                     .background(
@@ -128,7 +128,7 @@ struct TopBarView: View {
                         Button(action: showSettingsAction) {
                             Image(systemName: "gear")
                                 .font(.system(size: 20))
-                                .foregroundColor(.blue)
+                                .foregroundColor(.coral1)
                                 .padding(4)
                         }
                         .background(

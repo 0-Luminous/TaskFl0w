@@ -85,7 +85,9 @@ struct ClockEditorView: View {
                             presentationMode.wrappedValue.dismiss()
                         }) {
                             Image(systemName: "chevron.left")
+                                .foregroundColor(.red1)
                             Text("Назад")
+                                .foregroundColor(.red1)
                         }
                     }
                 }

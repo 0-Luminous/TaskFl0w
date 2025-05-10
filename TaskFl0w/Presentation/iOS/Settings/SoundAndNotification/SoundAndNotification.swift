@@ -66,7 +66,9 @@ struct SoundAndNotification: View {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.backward")
+                        .foregroundColor(.red1)
                     Text("Назад")
+                    .foregroundColor(.red1)
                 }
             }
         }

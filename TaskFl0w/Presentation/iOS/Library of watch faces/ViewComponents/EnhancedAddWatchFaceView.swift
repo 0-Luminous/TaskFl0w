@@ -35,7 +35,13 @@ struct EnhancedAddWatchFaceView: View {
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .foregroundColor(.white)
                         .padding()
-                        .background(Color.gray.opacity(0.2))
+                        .background(
+                            LinearGradient(
+                                colors: [Color.gray.opacity(0.3), Color.gray.opacity(0.1)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                         .cornerRadius(10)
                         .padding(.horizontal)
                     

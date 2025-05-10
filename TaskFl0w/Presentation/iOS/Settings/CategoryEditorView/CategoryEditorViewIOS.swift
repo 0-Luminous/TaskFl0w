@@ -427,6 +427,7 @@ struct CategoryEditorViewIOS: View {
                             feedbackGenerator.impactOccurred()
                             isPresented = false
                         }
+                        .foregroundColor(.red1)
                     }
 
                     ToolbarItem(placement: .confirmationAction) {
@@ -434,6 +435,7 @@ struct CategoryEditorViewIOS: View {
                             feedbackGenerator.impactOccurred()
                             saveCategory(autoClose: true)
                         }
+                        .foregroundColor(.coral1)
                         .disabled(categoryName.isEmpty)
                     }
                     
@@ -442,6 +444,7 @@ struct CategoryEditorViewIOS: View {
                         Button("Готово") {
                             isTextFieldFocused = false
                         }
+                        .foregroundColor(.coral1)
                     }
                 }
                 .animation(.easeInOut(duration: 0.2), value: isTextFieldFocused) // Анимация изменения состояния фокуса
@@ -499,6 +502,7 @@ struct CategoryEditorViewIOS: View {
                             feedbackGenerator.impactOccurred()
                             showingColorPicker = false
                         }
+                        .foregroundColor(.coral1)
                     }
                 }
             }

@@ -135,7 +135,7 @@ struct LibraryOfWatchFaces: View {
                 }
             }
             .sheet(isPresented: $showingAddSheet) {
-//                EnhancedAddWatchFaceView()
+               EnhancedAddWatchFaceView()
             }
             .sheet(isPresented: $showingEditSheet, onDismiss: {
                 selectedWatchFace = nil

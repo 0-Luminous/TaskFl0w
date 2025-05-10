@@ -24,12 +24,13 @@ struct PersonalizationViewIOS: View {
                     HStack {
                         Image(systemName: "bell.badge.fill")
                             .font(.system(size: 20))
-                            .foregroundColor(.blue)
+                            .foregroundColor(.coral1)
                             .padding(8)
                             .background(
                                 Circle()
                                     .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
                             )
+                            .frame(width: 40, height: 40)
                             .overlay(
                                 Circle()
                                     .stroke(
@@ -41,6 +42,7 @@ struct PersonalizationViewIOS: View {
                                         lineWidth: 1.0
                                     )
                             )
+                            .frame(width: 40, height: 40)
                             .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
@@ -71,12 +73,13 @@ struct PersonalizationViewIOS: View {
                     HStack {
                         Image(systemName: "tray.full.fill")
                             .font(.system(size: 20))
-                            .foregroundColor(.blue)
+                            .foregroundColor(.coral1)
                             .padding(8)
                             .background(
                                 Circle()
                                     .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
                             )
+                            .frame(width: 40, height: 40)
                             .overlay(
                                 Circle()
                                     .stroke(
@@ -88,6 +91,7 @@ struct PersonalizationViewIOS: View {
                                         lineWidth: 1.0
                                     )
                             )
+                            .frame(width: 40, height: 40)
                             .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
@@ -117,13 +121,14 @@ struct PersonalizationViewIOS: View {
                 } label: {
                     HStack {
                         Image(systemName: "clock.circle")
-                            .font(.system(size: 20))
-                            .foregroundColor(.blue)
+                            .font(.system(size: 22))
+                            .foregroundColor(.coral1)
                             .padding(8)
                             .background(
                                 Circle()
                                     .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
                             )
+                            .frame(width: 40, height: 40)
                             .overlay(
                                 Circle()
                                     .stroke(
@@ -135,6 +140,7 @@ struct PersonalizationViewIOS: View {
                                         lineWidth: 1.0
                                     )
                             )
+                            .frame(width: 40, height: 40)
                             .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
@@ -164,13 +170,14 @@ struct PersonalizationViewIOS: View {
                 } label: {
                     HStack {
                         Image(systemName: "folder.fill.badge.gearshape")
-                            .font(.system(size: 20))
-                            .foregroundColor(.blue)
+                            .font(.system(size: 18))
+                            .foregroundColor(.coral1)
                             .padding(8)
                             .background(
                                 Circle()
                                     .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
                             )
+                            .frame(width: 40, height: 40)
                             .overlay(
                                 Circle()
                                     .stroke(
@@ -182,6 +189,7 @@ struct PersonalizationViewIOS: View {
                                         lineWidth: 1.0
                                     )
                             )
+                            .frame(width: 40, height: 40)
                             .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
@@ -206,6 +214,13 @@ struct PersonalizationViewIOS: View {
                 }
 
                 Spacer()
+
+                // Переключатель темы
+                ThemeModeToggle()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.bottom, 10)
+
+
             }
         }
         .navigationTitle("Настройки")
@@ -214,7 +229,9 @@ struct PersonalizationViewIOS: View {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.backward")
+                        .foregroundColor(.red1)
                     Text("Назад")
+                        .foregroundColor(.red1)
                 }
             }
         }
