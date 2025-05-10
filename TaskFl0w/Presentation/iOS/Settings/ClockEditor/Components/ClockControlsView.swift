@@ -51,7 +51,7 @@ struct ClockControlsView: View {
                     }
                 }
                 .pickerStyle(.wheel)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
             } else if showSizeSettings {
                 // Настройки размера цифр
                 HStack {
@@ -67,7 +67,7 @@ struct ClockControlsView: View {
                         }
                     }) {
                         Text("Готово")
-                            .foregroundColor(.yellow)
+                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                             .fontWeight(.medium)
                     }
                 }
@@ -87,7 +87,7 @@ struct ClockControlsView: View {
                     
                     Text("\(Int(markersViewModel.numbersSize))")
                         .font(.system(size: 23))
-                        .foregroundColor(.yellow)
+                        .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                         .frame(width: 30)
                     
                     Button(action: {
@@ -166,7 +166,7 @@ struct ClockControlsView: View {
                                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Image(systemName: markersViewModel.showHourNumbers ? "eye.slash" : "eye")
                                     .font(.caption)
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                             }
                             .padding(.vertical, 6)
                             .padding(.horizontal, 10)
@@ -176,6 +176,7 @@ struct ClockControlsView: View {
                                     .fill(themeManager.isDarkMode ? 
                                         Color(red: 0.184, green: 0.184, blue: 0.184) : 
                                         Color(red: 0.95, green: 0.95, blue: 0.95))
+                                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                             )
                             .overlay(
                                 Capsule()
@@ -191,7 +192,6 @@ struct ClockControlsView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
@@ -207,7 +207,7 @@ struct ClockControlsView: View {
                                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Text("\(viewModel.numberInterval) ч")
                                     .font(.caption)
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                                     .padding(.leading, 2)
                             }
                             .padding(.vertical, 6)
@@ -218,6 +218,7 @@ struct ClockControlsView: View {
                                     .fill(themeManager.isDarkMode ? 
                                         Color(red: 0.184, green: 0.184, blue: 0.184) : 
                                         Color(red: 0.95, green: 0.95, blue: 0.95))
+                                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                             )
                             .overlay(
                                 Capsule()
@@ -233,7 +234,6 @@ struct ClockControlsView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -253,7 +253,7 @@ struct ClockControlsView: View {
                                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Image(systemName: "textformat")
                                     .font(.caption)
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                             }
                             .padding(.vertical, 6)
                             .padding(.horizontal, 10)
@@ -263,6 +263,7 @@ struct ClockControlsView: View {
                                     .fill(themeManager.isDarkMode ? 
                                         Color(red: 0.184, green: 0.184, blue: 0.184) : 
                                         Color(red: 0.95, green: 0.95, blue: 0.95))
+                                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                             )
                             .overlay(
                                 Capsule()
@@ -278,7 +279,6 @@ struct ClockControlsView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
@@ -294,7 +294,7 @@ struct ClockControlsView: View {
                                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Text("\(Int(markersViewModel.numbersSize))")
                                     .font(.caption)
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                                     .padding(.leading, 2)
                             }
                             .padding(.vertical, 6)
@@ -305,6 +305,7 @@ struct ClockControlsView: View {
                                     .fill(themeManager.isDarkMode ? 
                                         Color(red: 0.184, green: 0.184, blue: 0.184) : 
                                         Color(red: 0.95, green: 0.95, blue: 0.95))
+                                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                             )
                             .overlay(
                                 Capsule()
@@ -320,7 +321,6 @@ struct ClockControlsView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -342,7 +342,7 @@ struct ClockControlsView: View {
                                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Image(systemName: "textformat")
                                     .font(.caption)
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                             }
                             .padding(.vertical, 6)
                             .padding(.horizontal, 10)
@@ -352,6 +352,7 @@ struct ClockControlsView: View {
                                     .fill(themeManager.isDarkMode ? 
                                         Color(red: 0.184, green: 0.184, blue: 0.184) : 
                                         Color(red: 0.95, green: 0.95, blue: 0.95))
+                                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                             )
                             .overlay(
                                 Capsule()
@@ -367,7 +368,6 @@ struct ClockControlsView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                         
@@ -383,7 +383,7 @@ struct ClockControlsView: View {
                                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Text("\(Int(markersViewModel.numbersSize))")
                                     .font(.caption)
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                                     .padding(.leading, 2)
                             }
                             .padding(.vertical, 6)
@@ -394,6 +394,7 @@ struct ClockControlsView: View {
                                     .fill(themeManager.isDarkMode ? 
                                         Color(red: 0.184, green: 0.184, blue: 0.184) : 
                                         Color(red: 0.95, green: 0.95, blue: 0.95))
+                                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                             )
                             .overlay(
                                 Capsule()
@@ -409,7 +410,6 @@ struct ClockControlsView: View {
                                         lineWidth: 1.0
                                     )
                             )
-                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         }
                         .buttonStyle(PlainButtonStyle())
                     }

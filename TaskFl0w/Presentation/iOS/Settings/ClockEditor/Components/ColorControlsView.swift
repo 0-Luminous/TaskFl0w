@@ -297,7 +297,7 @@ struct ColorControlsView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98))
+                .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98) : Color(red: 0.95, green: 0.95, blue: 0.95).opacity(0.98))
                 .shadow(radius: 8)
         )
         .padding(.horizontal, 24)

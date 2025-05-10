@@ -4,23 +4,40 @@ import SwiftUI
 struct ButtonModifier: ViewModifier {
     let isSelected: Bool
     let isDisabled: Bool
-    
+    @ObservedObject private var themeManager = ThemeManager.shared
     init(isSelected: Bool = false, isDisabled: Bool = false) {
         self.isSelected = isSelected
         self.isDisabled = isDisabled
     }
-    
+
     func body(content: Content) -> some View {
         content
             .font(.caption)
             .padding(.vertical, 6)
             .padding(.horizontal, 10)
-            .foregroundColor(isSelected ? .yellow : (isDisabled ? .gray : .white))
+            .foregroundColor(
+                isSelected
+                    ? (themeManager.isDarkMode ? .yellow : .red1)
+                    : (themeManager.isDarkMode ? .white : .black)
+            )
             .frame(maxWidth: .infinity)
             .background(
                 Capsule()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184)
-                        .opacity(isDisabled ? 0.5 : 1))
+                    .fill(
+                        themeManager.isDarkMode
+                            ? Color(red: 0.184, green: 0.184, blue: 0.184)
+                            : Color(red: 0.95, green: 0.95, blue: 0.95)
+                                .opacity(isDisabled ? 0.5 : 1)
+                    )
+                    .shadow(
+                        color: isSelected
+                            ? (themeManager.isDarkMode
+                                ? Color.yellow.opacity(0.2) : Color.red1.opacity(0.2))
+                            : .black.opacity(0.5),
+                        radius: 3,
+                        x: 0,
+                        y: isSelected ? 0 : 2
+                    )
             )
             .overlay(
                 Capsule()
@@ -36,11 +53,7 @@ struct ButtonModifier: ViewModifier {
                         lineWidth: isDisabled ? 0.5 : 1.0
                     )
             )
-            .shadow(
-                color: isSelected ? Color.yellow.opacity(0.2) : .black.opacity(0.5), radius: 3,
-                x: 0,
-                y: isSelected ? 0 : 2
-            )
+
             .opacity(isDisabled ? 0.6 : 1)
     }
 }
@@ -48,15 +61,27 @@ struct ButtonModifier: ViewModifier {
 // Модификатор для декоративных кнопок панели инструментов
 struct DockButtonModifier: ViewModifier {
     let isSelected: Bool
-    
+    @ObservedObject private var themeManager = ThemeManager.shared
+
     func body(content: Content) -> some View {
         content
             .font(.system(size: 20))
-            .foregroundColor(isSelected ? .yellow : .white)
+            .foregroundColor(
+                isSelected
+                    ? (themeManager.isDarkMode ? .yellow : .red1)
+                    : (themeManager.isDarkMode ? .white : .black)
+            )
             .padding(6)
             .background(
                 Circle()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                    .fill(
+                        themeManager.isDarkMode
+                            ? Color(red: 0.184, green: 0.184, blue: 0.184)
+                            : Color(red: 0.95, green: 0.95, blue: 0.95)
+                    )
+                    .shadow(
+                        color: themeManager.isDarkMode ? .black.opacity(0.5) : .black.opacity(0.5),
+                        radius: 3, x: 0, y: 2)
             )
             .overlay(
                 Circle()
@@ -71,7 +96,6 @@ struct DockButtonModifier: ViewModifier {
                         lineWidth: 1.0
                     )
             )
-            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
     }
 }
 
@@ -110,12 +134,12 @@ extension View {
     func buttonStyle(isSelected: Bool = false, isDisabled: Bool = false) -> some View {
         self.modifier(ButtonModifier(isSelected: isSelected, isDisabled: isDisabled))
     }
-    
+
     func dockButtonStyle(isSelected: Bool = false) -> some View {
         self.modifier(DockButtonModifier(isSelected: isSelected))
     }
-    
+
     func navigationButtonStyle() -> some View {
         self.modifier(NavigationButtonModifier())
     }
-} 
+}
