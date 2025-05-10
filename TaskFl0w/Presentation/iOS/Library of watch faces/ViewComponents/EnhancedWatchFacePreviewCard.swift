@@ -12,7 +12,7 @@ struct EnhancedWatchFacePreviewCard: View {
     let watchFace: WatchFaceModel
     let isSelected: Bool
     
-    @Environment(\.colorScheme) var colorScheme
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         VStack {
@@ -20,8 +20,13 @@ struct EnhancedWatchFacePreviewCard: View {
             ZStack {
                 // Фон карточки
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
-                    .shadow(color: isSelected ? .yellow.opacity(0.4) : .black.opacity(0.5), radius: 5)
+                    .fill(themeManager.isDarkMode ? 
+                        Color(red: 0.18, green: 0.18, blue: 0.18) :
+                        Color(red: 0.95, green: 0.95, blue: 0.95))
+                    .shadow(color: isSelected ? 
+                        (themeManager.isDarkMode ? .yellow.opacity(0.4) : .yellow.opacity(0.3)) : 
+                        (themeManager.isDarkMode ? .black.opacity(0.5) : .gray.opacity(0.3)), 
+                        radius: 5)
                 
                 VStack {
                     // Предпросмотр циферблата
@@ -29,7 +34,7 @@ struct EnhancedWatchFacePreviewCard: View {
                         // Внешнее кольцо
                         Circle()
                             .stroke(
-                                colorScheme == .dark 
+                                themeManager.isDarkMode 
                                     ? Color(hex: watchFace.darkModeOuterRingColor) ?? .gray 
                                     : Color(hex: watchFace.lightModeOuterRingColor) ?? .gray,
                                 lineWidth: watchFace.outerRingLineWidth * 0.35
@@ -47,13 +52,13 @@ struct EnhancedWatchFacePreviewCard: View {
                     VStack(spacing: 2) {
                         Text(watchFace.name)
                             .font(.headline)
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
                             .lineLimit(1)
                         
                         if watchFace.isCustom {
                             Text("Пользовательский")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(themeManager.isDarkMode ? .gray : .gray.opacity(0.7))
                         }
                     }
                     .padding(.vertical, 8)
@@ -71,7 +76,14 @@ struct EnhancedWatchFacePreviewCard: View {
                             endPoint: .bottomTrailing
                           )
                         : LinearGradient(
-                            colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.2)],
+                            colors: [
+                                themeManager.isDarkMode ? 
+                                    Color.gray.opacity(0.5) : 
+                                    Color.gray.opacity(0.3),
+                                themeManager.isDarkMode ? 
+                                    Color.gray.opacity(0.2) : 
+                                    Color.gray.opacity(0.1)
+                            ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                           ),

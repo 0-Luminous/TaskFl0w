@@ -10,6 +10,7 @@ import SwiftUI
 struct LibraryDockBar: View {
     // MARK: - Properties
     @State private var selectedTab: Int = 0
+    @ObservedObject private var themeManager = ThemeManager.shared
     let tabs: [(icon: String, title: String)]
     let onTabSelected: (Int) -> Void
     
@@ -22,8 +23,104 @@ struct LibraryDockBar: View {
                 
                 // Используем фиксированные фреймы для гарантии стабильного положения
                 HStack(spacing: 20) {
-                    ForEach(0..<tabs.count, id: \.self) { index in
-                        dockBarButton(for: index)
+                    // Кнопка сброса слева
+                    Button(action: {
+                        withAnimation {
+                            selectedTab = 0
+                            onTabSelected(0)
+                        }
+                    }) {
+                        HStack(spacing: 8) {
+                            // Image(systemName: "arrow.counterclockwise")
+                            //     .font(.system(size: 20))
+                            //     .foregroundColor(themeManager.isDarkMode ? .gray : .gray.opacity(0.7))
+                            
+                            Text("Сбросить")
+                                .font(.caption)
+                                .foregroundColor(themeManager.isDarkMode ? .gray : .black)
+                        }
+                        .frame(width: 90)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule()
+                                .fill(themeManager.isDarkMode ? 
+                                    Color(red: 0.184, green: 0.184, blue: 0.184) :
+                                    Color(red: 0.9, green: 0.9, blue: 0.9))
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            themeManager.isDarkMode ? 
+                                                Color.gray.opacity(0.7) : 
+                                                Color.gray.opacity(0.5),
+                                            themeManager.isDarkMode ? 
+                                                Color.gray.opacity(0.3) : 
+                                                Color.gray.opacity(0.2)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.0
+                                )
+                        )
+                        .shadow(color: themeManager.isDarkMode ? 
+                            .black.opacity(0.3) : 
+                            .gray.opacity(0.2), 
+                            radius: 3, x: 0, y: 1)
+                    }
+                    
+                    // Центральный переключатель темы
+                    ThemeModeToggle()
+                        .frame(width: 90)
+                    
+                    // Кнопка создания справа
+                    Button(action: {
+                        withAnimation {
+                            selectedTab = 1
+                            onTabSelected(1)
+                        }
+                    }) {
+                        HStack(spacing: 8) {
+                            // Image(systemName: "plus")
+                            //     .font(.system(size: 20))
+                            //     .foregroundColor(themeManager.isDarkMode ? .gray : .gray.opacity(0.7))
+                            
+                            Text("Добавить")
+                                .font(.caption)
+                                .foregroundColor(themeManager.isDarkMode ? .gray : .black)
+                        }
+                        .frame(width: 90)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule()
+                                .fill(themeManager.isDarkMode ? 
+                                    Color(red: 0.184, green: 0.184, blue: 0.184) :
+                                    Color(red: 0.9, green: 0.9, blue: 0.9))
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            themeManager.isDarkMode ? 
+                                                Color.gray.opacity(0.7) : 
+                                                Color.gray.opacity(0.5),
+                                            themeManager.isDarkMode ? 
+                                                Color.gray.opacity(0.3) : 
+                                                Color.gray.opacity(0.2)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.0
+                                )
+                        )
+                        .shadow(color: themeManager.isDarkMode ? 
+                            .black.opacity(0.3) : 
+                            .gray.opacity(0.2), 
+                            radius: 3, x: 0, y: 1)
                     }
                 }
                 .frame(width: 300)
@@ -37,16 +134,24 @@ struct LibraryDockBar: View {
                 ZStack {
                     // Размытый фон с уменьшенной шириной
                     Capsule()
-                        .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                        .fill(themeManager.isDarkMode ? 
+                            Color(red: 0.2, green: 0.2, blue: 0.2) :
+                            Color(red: 0.95, green: 0.95, blue: 0.95))
                     
                     // Добавляем градиентный бордер
                     Capsule()
                         .strokeBorder(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color(red: 0.5, green: 0.5, blue: 0.5, opacity: 0.5),
-                                    Color(red: 0.3, green: 0.3, blue: 0.3, opacity: 0.3),
-                                    Color(red: 0.1, green: 0.1, blue: 0.1, opacity: 0.1)
+                                    themeManager.isDarkMode ?
+                                        Color(red: 0.5, green: 0.5, blue: 0.5, opacity: 0.5) :
+                                        Color(red: 0.7, green: 0.7, blue: 0.7, opacity: 0.5),
+                                    themeManager.isDarkMode ?
+                                        Color(red: 0.3, green: 0.3, blue: 0.3, opacity: 0.3) :
+                                        Color(red: 0.5, green: 0.5, blue: 0.5, opacity: 0.3),
+                                    themeManager.isDarkMode ?
+                                        Color(red: 0.1, green: 0.1, blue: 0.1, opacity: 0.1) :
+                                        Color(red: 0.3, green: 0.3, blue: 0.3, opacity: 0.1)
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -54,7 +159,10 @@ struct LibraryDockBar: View {
                             lineWidth: 1.5
                         )
                 }
-                .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: 1)
+                .shadow(color: themeManager.isDarkMode ? 
+                    Color.black.opacity(0.25) : 
+                    Color.gray.opacity(0.15), 
+                    radius: 3, x: 0, y: 1)
             }
         }
         .padding(.horizontal, 50)
@@ -71,32 +179,46 @@ struct LibraryDockBar: View {
             }
         }) {
             HStack(spacing: 8) {
-                Image(systemName: tabs[index].icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(selectedTab == index ? .blue : .gray)
+                // Image(systemName: tabs[index].icon)
+                //     .font(.system(size: 20))
+                //     .foregroundColor(selectedTab == index ? .blue : 
+                //         (themeManager.isDarkMode ? .gray : .gray.opacity(0.7)))
                 
                 Text(tabs[index].title)
                     .font(.caption)
-                    .foregroundColor(selectedTab == index ? .blue : .gray)
+                    .foregroundColor(selectedTab == index ? .blue : 
+                        (themeManager.isDarkMode ? .gray : .gray.opacity(0.7)))
             }
-            .frame(width: 130)
+            .frame(width: 90)
             .padding(.vertical, 8)
             .background(
                 Capsule()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                    .fill(themeManager.isDarkMode ? 
+                        Color(red: 0.184, green: 0.184, blue: 0.184) :
+                        Color(red: 0.9, green: 0.9, blue: 0.9))
             )
             .overlay(
                 Capsule()
                     .stroke(
                         LinearGradient(
-                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
+                            gradient: Gradient(colors: [
+                                themeManager.isDarkMode ? 
+                                    Color.gray.opacity(0.7) : 
+                                    Color.gray.opacity(0.5),
+                                themeManager.isDarkMode ? 
+                                    Color.gray.opacity(0.3) : 
+                                    Color.gray.opacity(0.2)
+                            ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
                         lineWidth: 1.0
                     )
             )
-            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+            .shadow(color: themeManager.isDarkMode ? 
+                .black.opacity(0.3) : 
+                .gray.opacity(0.2), 
+                radius: 3, x: 0, y: 1)
         }
     }
 }

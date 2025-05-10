@@ -81,7 +81,10 @@ struct CustomToggleStyle: ToggleStyle {
                             lineWidth: 1.5
                         )
                 )
-                .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: 1)
+                .shadow(color: configuration.isOn ? 
+                    Color.black.opacity(0.25) : 
+                    Color.gray.opacity(0.15), 
+                    radius: 3, x: 0, y: 1)
                 .onTapGesture {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                         configuration.$isOn.wrappedValue.toggle()

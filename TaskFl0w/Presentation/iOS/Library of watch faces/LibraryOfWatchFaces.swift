@@ -23,6 +23,7 @@ struct LibraryOfWatchFaces: View {
     private struct ButtonModifier: ViewModifier {
         let isSelected: Bool
         let isDisabled: Bool
+        @ObservedObject private var themeManager = ThemeManager.shared
         
         init(isSelected: Bool = false, isDisabled: Bool = false) {
             self.isSelected = isSelected
@@ -34,12 +35,13 @@ struct LibraryOfWatchFaces: View {
                 .font(.caption)
                 .padding(.vertical, 6)
                 .padding(.horizontal, 10)
-                .foregroundColor(isSelected ? .yellow : (isDisabled ? .gray : .white))
+                .foregroundColor(isSelected ? .yellow : (isDisabled ? .gray : (themeManager.isDarkMode ? .white : .black)))
                 .frame(maxWidth: .infinity)
                 .background(
                     Capsule()
-                        .fill(Color(red: 0.184, green: 0.184, blue: 0.184)
-                              .opacity(isDisabled ? 0.5 : 1))
+                        .fill(themeManager.isDarkMode ? 
+                            Color(red: 0.184, green: 0.184, blue: 0.184).opacity(isDisabled ? 0.5 : 1) :
+                            Color(red: 0.95, green: 0.95, blue: 0.95).opacity(isDisabled ? 0.5 : 1))
                 )
                 .overlay(
                     Capsule()
@@ -55,7 +57,7 @@ struct LibraryOfWatchFaces: View {
                             lineWidth: isDisabled ? 0.5 : 1.0
                         )
                 )
-                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                .shadow(color: themeManager.isDarkMode ? .black.opacity(0.3) : .gray.opacity(0.2), radius: 3, x: 0, y: 1)
                 .opacity(isDisabled ? 0.6 : 1)
         }
     }
@@ -64,7 +66,9 @@ struct LibraryOfWatchFaces: View {
         NavigationStack {
             ZStack {
                 // Фон
-                Color(red: 0.098, green: 0.098, blue: 0.098)
+                Color(themeManager.isDarkMode ? 
+                    Color(red: 0.098, green: 0.098, blue: 0.098) :
+                    Color(red: 0.98, green: 0.98, blue: 0.98))
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
@@ -95,8 +99,6 @@ struct LibraryOfWatchFaces: View {
                         }
                         .padding(.top)
                     }
-                    
-                    Spacer()
                 }
                 
                 // Добавляем докбар
@@ -104,7 +106,7 @@ struct LibraryOfWatchFaces: View {
                     Spacer()
                     LibraryDockBar(
                         tabs: [
-                            ("plus.circle.fill", "Создать"),
+                            ("plus.circle.fill", "Добавить"),
                             ("trash.fill", "Сбросить")
                         ],
                         onTabSelected: { index in
@@ -118,10 +120,13 @@ struct LibraryOfWatchFaces: View {
                             }
                         }
                     )
+                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                 }
             }
             .navigationTitle("Библиотека циферблатов")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(themeManager.isDarkMode ? .dark : .light, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {

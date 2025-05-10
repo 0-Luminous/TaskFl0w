@@ -16,6 +16,8 @@ struct EnhancedCategorySection: View {
     let onEdit: (WatchFaceModel) -> Void
     let onDelete: (WatchFaceModel) -> Void
     
+    @ObservedObject private var themeManager = ThemeManager.shared
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Заголовок категории
@@ -25,13 +27,13 @@ struct EnhancedCategorySection: View {
                     .foregroundColor(.yellow)
                 Text(category.rawValue)
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
             }
             .padding(.horizontal)
             
             if watchFaces.isEmpty {
                 Text("Нет циферблатов в этой категории")
-                    .foregroundColor(.gray)
+                    .foregroundColor(themeManager.isDarkMode ? .gray : .gray.opacity(0.7))
                     .italic()
                     .padding(.horizontal)
                     .padding(.vertical, 10)
@@ -70,7 +72,9 @@ struct EnhancedCategorySection: View {
             }
             
             Divider()
-                .background(Color.gray.opacity(0.3))
+                .background(themeManager.isDarkMode ? 
+                    Color.gray.opacity(0.3) : 
+                    Color.gray.opacity(0.2))
                 .padding(.horizontal)
         }
     }
