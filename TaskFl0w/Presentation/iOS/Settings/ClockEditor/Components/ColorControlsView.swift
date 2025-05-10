@@ -44,13 +44,13 @@ struct ColorControlsView: View {
                         }) {
                             Text("Готово")
                                 .font(.caption)
-                                .foregroundColor(.yellow)
+                                .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                                 .fontWeight(.medium)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 4)
                                 .background(
                                     RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.yellow, lineWidth: 1)
+                                        .stroke(themeManager.isDarkMode ? Color.yellow : Color.red1, lineWidth: 1)
                                 )
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -213,7 +213,7 @@ struct ColorControlsView: View {
                         HStack {
                             Text("Маркеры")
                                 .font(.caption)
-                                .foregroundColor(.white)
+                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                             Circle()
                                 .fill(Color(
                                     hex: themeManager.isDarkMode
@@ -229,7 +229,8 @@ struct ColorControlsView: View {
                         .frame(maxWidth: .infinity)
                         .background(
                             Capsule()
-                                .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
+                                .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         )
                         .overlay(
                             Capsule()
@@ -245,7 +246,6 @@ struct ColorControlsView: View {
                                     lineWidth: 1.0
                                 )
                         )
-                        .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                     }
                     .buttonStyle(PlainButtonStyle())
                     
@@ -255,7 +255,7 @@ struct ColorControlsView: View {
                         HStack {
                             Text("Внешнее кольцо")
                                 .font(.caption)
-                                .foregroundColor(.white)
+                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                             Circle()
                                 .fill(Color(
                                     hex: themeManager.isDarkMode
@@ -271,7 +271,8 @@ struct ColorControlsView: View {
                         .frame(maxWidth: .infinity)
                         .background(
                             Capsule()
-                                .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
+                                .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                         )
                         .overlay(
                             Capsule()
@@ -287,7 +288,6 @@ struct ColorControlsView: View {
                                     lineWidth: 1.0
                                 )
                         )
-                        .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                     }
                     .buttonStyle(PlainButtonStyle())
                 }

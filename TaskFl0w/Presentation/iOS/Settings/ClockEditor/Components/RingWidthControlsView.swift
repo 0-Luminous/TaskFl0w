@@ -22,7 +22,7 @@ struct RingWidthControlsView: View {
                     
                     Text("\(Int(viewModel.outerRingLineWidth)) pt")
                         .font(.system(size: 16))
-                        .foregroundColor(.yellow)
+                        .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                 }
                 
                 HStack(spacing: 10) {
@@ -38,7 +38,7 @@ struct RingWidthControlsView: View {
                                 .foregroundColor(themeManager.isDarkMode ? .white : .black)
                             Image(systemName: "minus")
                                 .font(.caption)
-                                .foregroundColor(.yellow)
+                                .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                         }
                         .buttonStyle()
                     }
@@ -56,7 +56,7 @@ struct RingWidthControlsView: View {
                         step: 1
                     )
                     .frame(maxWidth: .infinity)
-                    .accentColor(.yellow)
+                    .accentColor(themeManager.isDarkMode ? .yellow : .red1)
                     
                     // Кнопка увеличения толщины
                     Button(action: {
@@ -70,7 +70,7 @@ struct RingWidthControlsView: View {
                                 .foregroundColor(themeManager.isDarkMode ? .white : .black)
                             Image(systemName: "plus")
                                 .font(.caption)
-                                .foregroundColor(.yellow)
+                                .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                         }
                         .buttonStyle()
                     }
@@ -97,7 +97,7 @@ struct RingWidthControlsView: View {
                         
                         Text("\(Int(viewModel.taskArcLineWidth)) pt")
                             .font(.system(size: 16))
-                            .foregroundColor(.yellow)
+                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                     }
                     
                     HStack(spacing: 10) {
@@ -113,7 +113,7 @@ struct RingWidthControlsView: View {
                                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Image(systemName: "minus")
                                     .font(.caption)
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                             }
                             .buttonStyle()
                         }
@@ -128,7 +128,7 @@ struct RingWidthControlsView: View {
                             step: 1
                         )
                         .frame(maxWidth: .infinity)
-                        .accentColor(.yellow)
+                        .accentColor(themeManager.isDarkMode ? .yellow : .red1)
                         
                         // Кнопка увеличения толщины дуги
                         Button(action: {
@@ -142,7 +142,7 @@ struct RingWidthControlsView: View {
                                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Image(systemName: "plus")
                                     .font(.caption)
-                                    .foregroundColor(.yellow)
+                                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                             }
                             .buttonStyle()
                         }

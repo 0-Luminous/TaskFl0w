@@ -30,7 +30,7 @@ struct ClockControlsView: View {
                         }
                     }) {
                         Text("Готово")
-                            .foregroundColor(.yellow)
+                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                             .fontWeight(.medium)
                     }
                 }
@@ -116,7 +116,7 @@ struct ClockControlsView: View {
                         }
                     }) {
                         Text("Готово")
-                            .foregroundColor(.yellow)
+                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                             .fontWeight(.medium)
                     }
                 }

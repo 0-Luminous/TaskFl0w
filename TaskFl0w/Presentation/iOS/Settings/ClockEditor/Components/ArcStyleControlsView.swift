@@ -55,7 +55,7 @@ struct ArcStyleControlsView: View {
                             .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         Image(systemName: "clock")
                             .font(.caption)
-                            .foregroundColor(.yellow)
+                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                     }
                     .buttonStyle(isSelected: !viewModel.showTimeOnlyForActiveTask)
                 }
@@ -73,7 +73,7 @@ struct ArcStyleControlsView: View {
                             .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         Image(systemName: "clock.badge")
                             .font(.caption)
-                            .foregroundColor(.yellow)
+                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                     }
                     .buttonStyle(isSelected: viewModel.showTimeOnlyForActiveTask)
                 }
