@@ -11,11 +11,11 @@ enum ClockStyle: String, CaseIterable {
         case .classic:
             return .numbers
         case .minimal:
-            return .lines
+            return .numbers
         case .modern:
             return .dots
         case .digital:
-            return .numbers
+            return .lines
         }
     }
 }

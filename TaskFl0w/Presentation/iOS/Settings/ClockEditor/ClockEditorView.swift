@@ -47,6 +47,25 @@ struct ClockEditorView: View {
     @State private var selectedColorHex: String = ""
     @State private var selectedColorIndex: Int? = nil
 
+    @State private var watchFace: WatchFaceModel
+
+    init(viewModel: ClockViewModel, markersViewModel: ClockMarkersViewModel, taskArcLineWidth: CGFloat) {
+        self.viewModel = viewModel
+        self.markersViewModel = markersViewModel
+        self.taskArcLineWidth = taskArcLineWidth
+        
+        _watchFace = State(initialValue: WatchFaceModel(
+            name: "Текущий",
+            style: "classic",
+            lightModeClockFaceColor: Color.white.toHex(),
+            darkModeClockFaceColor: Color.black.toHex(),
+            lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
+            darkModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
+            lightModeMarkersColor: Color.black.toHex(),
+            darkModeMarkersColor: Color.white.toHex()
+        ))
+    }
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
@@ -165,7 +184,7 @@ struct ClockEditorView: View {
                 tasks: viewModel.tasks,
                 viewModel: viewModel,
                 markersViewModel: viewModel.markersViewModel,
-                draggedCategory: .constant(nil),
+                draggedCategory: Binding.constant(nil as TaskCategoryModel?),
                 zeroPosition: viewModel.zeroPosition,
                 taskArcLineWidth: viewModel.isAnalogArcStyle
                     ? viewModel.outerRingLineWidth : viewModel.taskArcLineWidth,
@@ -199,6 +218,32 @@ struct ClockEditorView: View {
 
         // Принудительно обновляем цвета
         markersViewModel.updateCurrentThemeColors()
+
+        // Обновляем watchFace при синхронизации
+        watchFace = WatchFaceModel(
+            name: "Текущий",
+            style: viewModel.clockStyle == "Классический" ? "classic" : 
+                  viewModel.clockStyle == "Минимализм" ? "minimal" :
+                  viewModel.clockStyle == "Цифровой" ? "digital" : "modern",
+            lightModeClockFaceColor: lightModeClockFaceColor,
+            darkModeClockFaceColor: darkModeClockFaceColor,
+            lightModeOuterRingColor: lightModeOuterRingColor,
+            darkModeOuterRingColor: darkModeOuterRingColor,
+            lightModeMarkersColor: lightModeMarkersColor,
+            darkModeMarkersColor: darkModeMarkersColor,
+            showMarkers: showMarkers,
+            showHourNumbers: markersViewModel.showHourNumbers,
+            numberInterval: markersViewModel.numberInterval,
+            markersOffset: markersViewModel.markersOffset,
+            markersWidth: markersViewModel.markersWidth,
+            numbersSize: markersViewModel.numbersSize,
+            zeroPosition: viewModel.zeroPosition,
+            outerRingLineWidth: viewModel.outerRingLineWidth,
+            taskArcLineWidth: viewModel.taskArcLineWidth,
+            isAnalogArcStyle: viewModel.isAnalogArcStyle,
+            showTimeOnlyForActiveTask: showTimeOnlyForActiveTask,
+            fontName: fontName
+        )
     }
 
     private func saveMarkersViewModelToAppStorage() {

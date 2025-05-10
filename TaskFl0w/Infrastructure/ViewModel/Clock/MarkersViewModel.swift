@@ -27,50 +27,29 @@ final class ClockMarkersViewModel: ObservableObject {
     
     // Список доступных шрифтов с PostScript именами
     let customFonts: [String] = [
-        // Системные шрифты Apple
+
         "SF Pro",
  
-        
-        // Классические системные шрифты
-        "Arial",
-        "Arial-BoldMT",
-        "Courier",
-        "Courier New",
-        "CourierNewPS-BoldMT",
-        "Times New Roman",
-        "TimesNewRomanPS-BoldMT",
         "Georgia",
         "Georgia-Bold",
+
         "Verdana",
         "Verdana-Bold",
+
         "Trebuchet MS",
         "TrebuchetMS-Bold",
         
-        // Дополнительные встроенные шрифты
-        "American Typewriter",
-        "AmericanTypewriter-Bold",
-        "Chalkboard SE",
-        "ChalkboardSE-Bold",
-        "Cochin",
-        "Cochin-Bold",
-        "Didot",
-        "Didot-Bold",
         "Futura",
         "Futura-Bold",
+
         "Gill Sans",
         "GillSans-Bold",
-        "Marker Felt",
-        "Optima",
-        "Optima-Bold",
+
         "Palatino",
         "Palatino-Bold",
-        "Papyrus",
 
-        
-        // Моноширинные шрифты
         "Menlo",
         "Menlo-Bold",
-        "Menlo-Regular",
     ]
 
     // MARK: - Environment
