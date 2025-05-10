@@ -2,12 +2,13 @@ import SwiftUI
 
 struct RingWidthControlsView: View {
     @ObservedObject var viewModel: ClockViewModel
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         VStack(spacing: 16) {
             Text("Толщина кольца")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             // Управление толщиной внешнего кольца
@@ -15,7 +16,7 @@ struct RingWidthControlsView: View {
                 HStack {
                     Text("Внешнее кольцо")
                         .font(.subheadline)
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
                     
                     Spacer()
                     
@@ -34,7 +35,7 @@ struct RingWidthControlsView: View {
                         HStack {
                             Text("Тоньше")
                                 .font(.caption)
-                                .foregroundColor(.white)
+                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                             Image(systemName: "minus")
                                 .font(.caption)
                                 .foregroundColor(.yellow)
@@ -66,7 +67,7 @@ struct RingWidthControlsView: View {
                         HStack {
                             Text("Толще")
                                 .font(.caption)
-                                .foregroundColor(.white)
+                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                             Image(systemName: "plus")
                                 .font(.caption)
                                 .foregroundColor(.yellow)
@@ -83,14 +84,14 @@ struct RingWidthControlsView: View {
             // Секция для толщины дуги задачи
             if !viewModel.isAnalogArcStyle {
                 Divider()
-                    .background(Color.white.opacity(0.2))
+                    .background(themeManager.isDarkMode ? Color.white.opacity(0.2) : Color.black.opacity(0.2))
                     .padding(.vertical, 8)
                 
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         Text("Дуга задачи")
                             .font(.subheadline)
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         
                         Spacer()
                         
@@ -109,7 +110,7 @@ struct RingWidthControlsView: View {
                             HStack {
                                 Text("Тоньше")
                                     .font(.caption)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Image(systemName: "minus")
                                     .font(.caption)
                                     .foregroundColor(.yellow)
@@ -138,7 +139,7 @@ struct RingWidthControlsView: View {
                             HStack {
                                 Text("Толще")
                                     .font(.caption)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Image(systemName: "plus")
                                     .font(.caption)
                                     .foregroundColor(.yellow)
@@ -169,7 +170,9 @@ struct RingWidthControlsView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98))
+                .fill(themeManager.isDarkMode ? 
+                    Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98) :
+                    Color(red: 0.95, green: 0.95, blue: 0.95).opacity(0.98))
                 .shadow(radius: 8)
         )
         .padding(.horizontal, 24)

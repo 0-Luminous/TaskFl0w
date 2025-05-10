@@ -6,6 +6,7 @@ struct DockBarView: View {
     @Binding var showOuterRingWidthControls: Bool
     @Binding var showArcAnalogToggle: Bool
     @Binding var showMarkersControls: Bool
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         HStack(spacing: 20) {
@@ -96,7 +97,9 @@ struct DockBarView: View {
         .frame(width: UIScreen.main.bounds.width * 0.95)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color(red: 0.15, green: 0.15, blue: 0.15).opacity(0.95))
+                .fill(themeManager.isDarkMode ? 
+                    Color(red: 0.15, green: 0.15, blue: 0.15).opacity(0.95) : 
+                    Color(red: 0.98, green: 0.98, blue: 0.98))
                 .shadow(radius: 8)
         )
         .padding(.bottom, 24)

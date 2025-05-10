@@ -4,12 +4,13 @@ struct MarkersControlsView: View {
     @ObservedObject var viewModel: ClockViewModel
     @ObservedObject var markersViewModel: ClockMarkersViewModel
     @Binding var showMarkers: Bool
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         VStack(spacing: 16) {
-            Text("Маркеры")
+            Text("Настройки маркеров")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             // Первая строка с переключателем отображения маркеров
@@ -21,7 +22,7 @@ struct MarkersControlsView: View {
                     HStack {
                         Text(markersViewModel.showMarkers ? "Скрыть маркеры" : "Показать маркеры")
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         Image(systemName: markersViewModel.showMarkers ? "eye.slash" : "eye")
                             .font(.caption)
                             .foregroundColor(.yellow)
@@ -31,7 +32,9 @@ struct MarkersControlsView: View {
                     .frame(maxWidth: .infinity)
                     .background(
                         Capsule()
-                            .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                            .fill(themeManager.isDarkMode ? 
+                                Color(red: 0.184, green: 0.184, blue: 0.184) : 
+                                Color(red: 0.95, green: 0.95, blue: 0.95))
                     )
                     .overlay(
                         Capsule()
@@ -73,7 +76,7 @@ struct MarkersControlsView: View {
                         HStack {
                             Text("Тоньше")
                                 .font(.caption)
-                                .foregroundColor(.white)
+                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                             Image(systemName: "minus")
                                 .font(.caption)
                                 .foregroundColor(.yellow)
@@ -100,7 +103,7 @@ struct MarkersControlsView: View {
                         HStack {
                             Text("Толще")
                                 .font(.caption)
-                                .foregroundColor(.white)
+                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                             Image(systemName: "plus")
                                 .font(.caption)
                                 .foregroundColor(.yellow)
@@ -124,7 +127,9 @@ struct MarkersControlsView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98))
+                .fill(themeManager.isDarkMode ? 
+                    Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98) :
+                    Color(red: 0.95, green: 0.95, blue: 0.95).opacity(0.98))
                 .shadow(radius: 8)
         )
         .padding(.horizontal, 24)

@@ -24,7 +24,7 @@ struct ColorControlsView: View {
         VStack(spacing: 16) {
             Text("Цвета циферблата")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
             
             // Основная секция выбора цвета
             VStack(alignment: .leading, spacing: 10) {
@@ -33,7 +33,7 @@ struct ColorControlsView: View {
                          selectedColorType == "markers" ? "Маркеры" : 
                          selectedColorType == "outerRing" ? "Внешнее кольцо" : "Циферблат")
                         .font(.subheadline)
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
                     
                     Spacer()
                     

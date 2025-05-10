@@ -3,12 +3,13 @@ import SwiftUI
 struct ArcStyleControlsView: View {
     @ObservedObject var viewModel: ClockViewModel
     @Binding var showTimeOnlyForActiveTask: Bool
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         VStack(spacing: 16) {
-            Text("Отображения дуги")
+            Text("Стиль отображения")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             // Первая строка: Аналоговый вид дуги
@@ -37,7 +38,7 @@ struct ArcStyleControlsView: View {
             
             Text("Отображение времени")
                 .font(.subheadline)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             // Вторая строка: Отображение времени
@@ -51,7 +52,7 @@ struct ArcStyleControlsView: View {
                     HStack {
                         Text("Всегда")
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         Image(systemName: "clock")
                             .font(.caption)
                             .foregroundColor(.yellow)
@@ -69,7 +70,7 @@ struct ArcStyleControlsView: View {
                     HStack {
                         Text("Активная задача")
                             .font(.caption)
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         Image(systemName: "clock.badge")
                             .font(.caption)
                             .foregroundColor(.yellow)
@@ -90,7 +91,9 @@ struct ArcStyleControlsView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98))
+                .fill(themeManager.isDarkMode ? 
+                    Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98) :
+                    Color(red: 0.95, green: 0.95, blue: 0.95).opacity(0.98))
                 .shadow(radius: 8)
         )
         .padding(.horizontal, 24)

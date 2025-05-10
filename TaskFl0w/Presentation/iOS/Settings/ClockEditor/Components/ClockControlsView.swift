@@ -3,6 +3,7 @@ import SwiftUI
 struct ClockControlsView: View {
     @ObservedObject var viewModel: ClockViewModel
     @ObservedObject var markersViewModel: ClockMarkersViewModel
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     @Binding var showFontPicker: Bool
     @Binding var showSizeSettings: Bool
@@ -13,13 +14,13 @@ struct ClockControlsView: View {
         VStack(spacing: 16) {
             Text("Настройки циферблата")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
 
             if showFontPicker {
                 HStack {
                     Text("Выберите шрифт")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         
                     Spacer()
 
@@ -56,7 +57,7 @@ struct ClockControlsView: View {
                 HStack {
                     Text("Размер цифр")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
 
                     Spacer()
 
@@ -105,7 +106,7 @@ struct ClockControlsView: View {
                 HStack {
                     Text("Интервал цифр")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
 
                     Spacer()
 
@@ -162,7 +163,7 @@ struct ClockControlsView: View {
                             HStack {
                                 Text(markersViewModel.showHourNumbers ? "Скрыть" : "Показать")
                                     .font(.caption)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Image(systemName: markersViewModel.showHourNumbers ? "eye.slash" : "eye")
                                     .font(.caption)
                                     .foregroundColor(.yellow)
@@ -172,7 +173,9 @@ struct ClockControlsView: View {
                             .frame(maxWidth: .infinity)
                             .background(
                                 Capsule()
-                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) : 
+                                        Color(red: 0.95, green: 0.95, blue: 0.95))
                             )
                             .overlay(
                                 Capsule()
@@ -201,7 +204,7 @@ struct ClockControlsView: View {
                             HStack {
                                 Text("Интервал")
                                     .font(.caption)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Text("\(viewModel.numberInterval) ч")
                                     .font(.caption)
                                     .foregroundColor(.yellow)
@@ -212,7 +215,9 @@ struct ClockControlsView: View {
                             .frame(maxWidth: .infinity)
                             .background(
                                 Capsule()
-                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) : 
+                                        Color(red: 0.95, green: 0.95, blue: 0.95))
                             )
                             .overlay(
                                 Capsule()
@@ -245,7 +250,7 @@ struct ClockControlsView: View {
                             HStack {
                                 Text("Шрифт")
                                     .font(.caption)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Image(systemName: "textformat")
                                     .font(.caption)
                                     .foregroundColor(.yellow)
@@ -255,7 +260,9 @@ struct ClockControlsView: View {
                             .frame(maxWidth: .infinity)
                             .background(
                                 Capsule()
-                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) : 
+                                        Color(red: 0.95, green: 0.95, blue: 0.95))
                             )
                             .overlay(
                                 Capsule()
@@ -284,7 +291,7 @@ struct ClockControlsView: View {
                             HStack {
                                 Text("Размер")
                                     .font(.caption)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Text("\(Int(markersViewModel.numbersSize))")
                                     .font(.caption)
                                     .foregroundColor(.yellow)
@@ -295,7 +302,9 @@ struct ClockControlsView: View {
                             .frame(maxWidth: .infinity)
                             .background(
                                 Capsule()
-                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) : 
+                                        Color(red: 0.95, green: 0.95, blue: 0.95))
                             )
                             .overlay(
                                 Capsule()
@@ -330,7 +339,7 @@ struct ClockControlsView: View {
                             HStack {
                                 Text("Шрифт")
                                     .font(.caption)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Image(systemName: "textformat")
                                     .font(.caption)
                                     .foregroundColor(.yellow)
@@ -340,7 +349,9 @@ struct ClockControlsView: View {
                             .frame(maxWidth: .infinity)
                             .background(
                                 Capsule()
-                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) : 
+                                        Color(red: 0.95, green: 0.95, blue: 0.95))
                             )
                             .overlay(
                                 Capsule()
@@ -369,7 +380,7 @@ struct ClockControlsView: View {
                             HStack {
                                 Text("Размер")
                                     .font(.caption)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Text("\(Int(markersViewModel.numbersSize))")
                                     .font(.caption)
                                     .foregroundColor(.yellow)
@@ -380,7 +391,9 @@ struct ClockControlsView: View {
                             .frame(maxWidth: .infinity)
                             .background(
                                 Capsule()
-                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) : 
+                                        Color(red: 0.95, green: 0.95, blue: 0.95))
                             )
                             .overlay(
                                 Capsule()
@@ -405,7 +418,7 @@ struct ClockControlsView: View {
 
                 Text("Стиль")
                     .font(.subheadline)
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 VStack(spacing: 10) {
@@ -484,7 +497,9 @@ struct ClockControlsView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98))
+                .fill(themeManager.isDarkMode ? 
+                    Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98) :
+                    Color(red: 0.95, green: 0.95, blue: 0.95).opacity(0.98))
                 .shadow(radius: 8)
         )
         .padding(.horizontal, 24)
