@@ -7,6 +7,7 @@ struct SoundAndNotification: View {
     @AppStorage("notificationsEnabled") private var notificationsEnabled = true
     @AppStorage("reminderTime") private var reminderTime = 5  // минут до начала задачи
     @AppStorage("criticalAlertsEnabled") private var criticalAlertsEnabled = false
+    @StateObject private var themeManager = ThemeManager.shared
 
     @State private var showingPermissionAlert = false
 
@@ -37,13 +38,6 @@ struct SoundAndNotification: View {
                             Text(option.1).tag(option.0)
                         }
                     }
-
-                    Toggle("Важные уведомления", isOn: $criticalAlertsEnabled)
-                        .onChange(of: criticalAlertsEnabled) { oldValue, newValue in
-                            if newValue {
-                                requestCriticalAlertsPermission()
-                            }
-                        }
                 }
             } header: {
                 Text("Уведомления")
@@ -82,6 +76,10 @@ struct SoundAndNotification: View {
                 "Для отправки уведомлений необходимо разрешение. Пожалуйста, откройте настройки приложения и включите уведомления."
             )
         }
+        .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
+        .background(themeManager.isDarkMode ? 
+            Color(red: 0.098, green: 0.098, blue: 0.098) : 
+            Color(red: 0.95, green: 0.95, blue: 0.95))
     }
 
     // MARK: - Вспомогательные функции

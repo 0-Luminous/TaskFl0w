@@ -81,6 +81,7 @@ struct CategoryEditorViewIOS: View {
         let isSelected: Bool
         let isDisabled: Bool
         let color: Color
+        @ObservedObject private var themeManager = ThemeManager.shared
         
         init(isSelected: Bool = false, isDisabled: Bool = false, color: Color = .yellow) {
             self.isSelected = isSelected
@@ -93,11 +94,13 @@ struct CategoryEditorViewIOS: View {
                 .font(.subheadline)
                 .padding(.vertical, 10)
                 .padding(.horizontal, 16)
-                .foregroundColor(isSelected ? color : (isDisabled ? .gray : .white))
+                .foregroundColor(isSelected ? color : (isDisabled ? .gray : (themeManager.isDarkMode ? .white : .black)))
                 .frame(maxWidth: .infinity)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color(red: 0.22, green: 0.22, blue: 0.22) : Color(red: 0.184, green: 0.184, blue: 0.184))
+                        .fill(isSelected ? 
+                            (themeManager.isDarkMode ? Color(red: 0.22, green: 0.22, blue: 0.22) : Color(red: 0.95, green: 0.95, blue: 0.95)) : 
+                            (themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.9, green: 0.9, blue: 0.9)))
                         .opacity(isDisabled ? 0.5 : 1)
                 )
                 .overlay(
@@ -121,7 +124,7 @@ struct CategoryEditorViewIOS: View {
                         }
                     }
                 )
-                .shadow(color: isSelected ? color.opacity(0.3) : .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                .shadow(color: isSelected ? color.opacity(0.3) : .black.opacity(0.1), radius: 3, x: 0, y: 1)
                 .opacity(isDisabled ? 0.6 : 1)
         }
     }
@@ -129,18 +132,19 @@ struct CategoryEditorViewIOS: View {
     // Модификатор для табов
     private struct TabButtonModifier: ViewModifier {
         let isSelected: Bool
+        @ObservedObject private var themeManager = ThemeManager.shared
         
         func body(content: Content) -> some View {
             content
                 .font(.system(size: 18, weight: isSelected ? .semibold : .regular))
-                .foregroundColor(isSelected ? .yellow : .white)
+                .foregroundColor(isSelected ? .yellow : (themeManager.isDarkMode ? .white : .black))
                 .padding(.vertical, 12)
                 .padding(.horizontal, 16)
                 .background(
                     isSelected ?
                         RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(red: 0.22, green: 0.22, blue: 0.22))
-                        .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                        .fill(themeManager.isDarkMode ? Color(red: 0.22, green: 0.22, blue: 0.22) : Color(red: 0.95, green: 0.95, blue: 0.95))
+                        .shadow(color: .black.opacity(0.1), radius: 3, x: 0, y: 1)
                         : nil
                 )
         }
@@ -149,11 +153,12 @@ struct CategoryEditorViewIOS: View {
     // Модификатор для декоративных кнопок 
     private struct IconButtonModifier: ViewModifier {
         let color: Color
+        @ObservedObject private var themeManager = ThemeManager.shared
         
         func body(content: Content) -> some View {
             content
                 .font(.system(size: 22))
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                 .frame(width: 44, height: 44)
                 .background(
                     Circle()
@@ -161,7 +166,7 @@ struct CategoryEditorViewIOS: View {
                 )
                 .overlay(
                     Circle()
-                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                        .stroke(themeManager.isDarkMode ? Color.white.opacity(0.2) : Color.black.opacity(0.1), lineWidth: 1)
                 )
                 .shadow(color: color.opacity(0.3), radius: 3, x: 0, y: 1)
         }
@@ -174,7 +179,7 @@ struct CategoryEditorViewIOS: View {
             VStack(spacing: 16) {
                 Image(systemName: selectedIcon)
                     .font(.system(size: 40))
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                     .frame(width: 84, height: 84)
                     .background(
                         Circle()
@@ -187,12 +192,12 @@ struct CategoryEditorViewIOS: View {
                 TextField("Название категории", text: $categoryName)
                     .font(.system(size: 18, weight: .medium))
                     .multilineTextAlignment(.center)
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
+                            .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.95, green: 0.95, blue: 0.95))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(selectedColor.opacity(0.5), lineWidth: 1)
@@ -205,7 +210,7 @@ struct CategoryEditorViewIOS: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color(red: 0.16, green: 0.16, blue: 0.16))
+                .fill(themeManager.isDarkMode ? Color(red: 0.16, green: 0.16, blue: 0.16) : Color(red: 0.98, green: 0.98, blue: 0.98))
         )
         .padding(.horizontal, 16)
         .padding(.top, 16)
@@ -227,7 +232,7 @@ struct CategoryEditorViewIOS: View {
                         
                         Text("Изменить иконку")
                             .font(.system(size: 16))
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         
                         Spacer()
                         
@@ -239,7 +244,7 @@ struct CategoryEditorViewIOS: View {
                     .padding(.horizontal, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(red: 0.22, green: 0.22, blue: 0.22))
+                            .fill(themeManager.isDarkMode ? Color(red: 0.22, green: 0.22, blue: 0.22) : Color(red: 0.95, green: 0.95, blue: 0.95))
                     )
                 }
                 
@@ -254,7 +259,7 @@ struct CategoryEditorViewIOS: View {
                         
                         Text("Изменить цвет")
                             .font(.system(size: 16))
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         
                         Spacer()
                         
@@ -263,7 +268,7 @@ struct CategoryEditorViewIOS: View {
                             .frame(width: 24, height: 24)
                             .overlay(
                                 Circle()
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                    .stroke(themeManager.isDarkMode ? Color.white.opacity(0.3) : Color.black.opacity(0.1), lineWidth: 1)
                             )
                         
                         Image(systemName: "chevron.right")
@@ -274,7 +279,7 @@ struct CategoryEditorViewIOS: View {
                     .padding(.horizontal, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(red: 0.22, green: 0.22, blue: 0.22))
+                            .fill(themeManager.isDarkMode ? Color(red: 0.22, green: 0.22, blue: 0.22) : Color(red: 0.95, green: 0.95, blue: 0.95))
                     )
                 }
                 
@@ -289,19 +294,19 @@ struct CategoryEditorViewIOS: View {
                         
                         Text(isHidden ? "Категория скрыта" : "Категория видима")
                             .font(.system(size: 16))
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         
                         Spacer()
                         
                         Text(isHidden ? "Показать" : "Скрыть")
                             .font(.system(size: 14))
-                            .foregroundColor(isHidden ? .yellow : .gray)
+                            .foregroundColor(isHidden ? .yellow : (themeManager.isDarkMode ? .gray : .gray.opacity(0.7)))
                     }
                     .padding(.vertical, 10)
                     .padding(.horizontal, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(red: 0.22, green: 0.22, blue: 0.22))
+                            .fill(themeManager.isDarkMode ? Color(red: 0.22, green: 0.22, blue: 0.22) : Color(red: 0.95, green: 0.95, blue: 0.95))
                     )
                 }
                 .disabled(editingCategory == nil)
@@ -418,7 +423,7 @@ struct CategoryEditorViewIOS: View {
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+                .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.98, green: 0.98, blue: 0.98))
                 .navigationTitle(editingCategory == nil ? "Новая категория" : "Редактирование категории")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -435,7 +440,6 @@ struct CategoryEditorViewIOS: View {
                             feedbackGenerator.impactOccurred()
                             saveCategory(autoClose: true)
                         }
-                        .foregroundColor(.coral1)
                         .disabled(categoryName.isEmpty)
                     }
                     

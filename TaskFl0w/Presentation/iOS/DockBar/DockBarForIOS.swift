@@ -61,7 +61,8 @@ struct DockBarIOS: View {
             categoryWidth: viewModel.categoryWidth,
             selectedCategory: $viewModel.selectedCategory,
             draggedCategory: $viewModel.draggedCategory,
-            moveCategory: viewModel.moveCategory
+            moveCategory: viewModel.moveCategory,
+            themeManager: ThemeManager.shared
         )
     }
 

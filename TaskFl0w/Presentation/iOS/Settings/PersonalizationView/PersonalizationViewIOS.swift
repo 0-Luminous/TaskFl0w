@@ -3,6 +3,7 @@ import SwiftUI
 struct PersonalizationViewIOS: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: ClockViewModel
+    @StateObject private var themeManager = ThemeManager.shared
     @State private var showingClockFaceEditor = false
     @State private var showingCategoryEditor = false
     @State private var showingClockEditor = false
@@ -10,7 +11,9 @@ struct PersonalizationViewIOS: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.098, green: 0.098, blue: 0.098)
+            (themeManager.isDarkMode ? 
+                Color(red: 0.098, green: 0.098, blue: 0.098) :
+                Color(red: 0.95, green: 0.95, blue: 0.95))
                 .ignoresSafeArea()
 
             VStack(spacing: 25) {
@@ -28,7 +31,9 @@ struct PersonalizationViewIOS: View {
                             .padding(8)
                             .background(
                                 Circle()
-                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) :
+                                        Color(red: 0.9, green: 0.9, blue: 0.9))
                             )
                             .frame(width: 40, height: 40)
                             .overlay(
@@ -43,12 +48,15 @@ struct PersonalizationViewIOS: View {
                                     )
                             )
                             .frame(width: 40, height: 40)
-                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                            .shadow(color: themeManager.isDarkMode ? 
+                                .black.opacity(0.3) : 
+                                .black.opacity(0.1), 
+                                radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
                         Text("Уведомления")
                             .font(.system(size: 18))
-                            .foregroundColor(.primary)
+                            .foregroundColor(themeManager.isDarkMode ? .primary : .black)
                             .padding(.leading, 12)
 
                         Spacer()
@@ -60,8 +68,13 @@ struct PersonalizationViewIOS: View {
                     .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 15)
-                            .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
-                            .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
+                            .fill(themeManager.isDarkMode ? 
+                                Color(red: 0.2, green: 0.2, blue: 0.2) :
+                                Color(red: 0.95, green: 0.95, blue: 0.95))
+                            .shadow(color: themeManager.isDarkMode ? 
+                                .black.opacity(0.2) : 
+                                .black.opacity(0.1), 
+                                radius: 3, y: 1)
                     )
                     .padding(.horizontal, 16)
                 }
@@ -77,7 +90,9 @@ struct PersonalizationViewIOS: View {
                             .padding(8)
                             .background(
                                 Circle()
-                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) :
+                                        Color(red: 0.9, green: 0.9, blue: 0.9))
                             )
                             .frame(width: 40, height: 40)
                             .overlay(
@@ -92,12 +107,15 @@ struct PersonalizationViewIOS: View {
                                     )
                             )
                             .frame(width: 40, height: 40)
-                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                            .shadow(color: themeManager.isDarkMode ? 
+                                .black.opacity(0.3) : 
+                                .black.opacity(0.1), 
+                                radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
                         Text("Библиотека циферблатов")
                             .font(.system(size: 18))
-                            .foregroundColor(.primary)
+                            .foregroundColor(themeManager.isDarkMode ? .primary : .black)
                             .padding(.leading, 12)
 
                         Spacer()
@@ -109,8 +127,13 @@ struct PersonalizationViewIOS: View {
                     .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 15)
-                            .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
-                            .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
+                            .fill(themeManager.isDarkMode ? 
+                                Color(red: 0.2, green: 0.2, blue: 0.2) :
+                                Color(red: 0.95, green: 0.95, blue: 0.95))
+                            .shadow(color: themeManager.isDarkMode ? 
+                                .black.opacity(0.2) : 
+                                .black.opacity(0.1), 
+                                radius: 3, y: 1)
                     )
                     .padding(.horizontal, 16)
                 }
@@ -126,7 +149,9 @@ struct PersonalizationViewIOS: View {
                             .padding(8)
                             .background(
                                 Circle()
-                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) :
+                                        Color(red: 0.9, green: 0.9, blue: 0.9))
                             )
                             .frame(width: 40, height: 40)
                             .overlay(
@@ -141,12 +166,15 @@ struct PersonalizationViewIOS: View {
                                     )
                             )
                             .frame(width: 40, height: 40)
-                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                            .shadow(color: themeManager.isDarkMode ? 
+                                .black.opacity(0.3) : 
+                                .black.opacity(0.1), 
+                                radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
                         Text("Циферблат")
                             .font(.system(size: 18))
-                            .foregroundColor(.primary)
+                            .foregroundColor(themeManager.isDarkMode ? .primary : .black)
                             .padding(.leading, 12)
 
                         Spacer()
@@ -158,8 +186,13 @@ struct PersonalizationViewIOS: View {
                     .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 15)
-                            .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
-                            .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
+                            .fill(themeManager.isDarkMode ? 
+                                Color(red: 0.2, green: 0.2, blue: 0.2) :
+                                Color(red: 0.95, green: 0.95, blue: 0.95))
+                            .shadow(color: themeManager.isDarkMode ? 
+                                .black.opacity(0.2) : 
+                                .black.opacity(0.1), 
+                                radius: 3, y: 1)
                     )
                     .padding(.horizontal, 16)
                 }
@@ -175,7 +208,9 @@ struct PersonalizationViewIOS: View {
                             .padding(8)
                             .background(
                                 Circle()
-                                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) :
+                                        Color(red: 0.9, green: 0.9, blue: 0.9))
                             )
                             .frame(width: 40, height: 40)
                             .overlay(
@@ -190,12 +225,15 @@ struct PersonalizationViewIOS: View {
                                     )
                             )
                             .frame(width: 40, height: 40)
-                            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                            .shadow(color: themeManager.isDarkMode ? 
+                                .black.opacity(0.3) : 
+                                .black.opacity(0.1), 
+                                radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
                         Text("Категории")
                             .font(.system(size: 18))
-                            .foregroundColor(.primary)
+                            .foregroundColor(themeManager.isDarkMode ? .primary : .black)
                             .padding(.leading, 12)
 
                         Spacer()
@@ -207,8 +245,13 @@ struct PersonalizationViewIOS: View {
                     .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 15)
-                            .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
-                            .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
+                            .fill(themeManager.isDarkMode ? 
+                                Color(red: 0.2, green: 0.2, blue: 0.2) :
+                                Color(red: 0.95, green: 0.95, blue: 0.95))
+                            .shadow(color: themeManager.isDarkMode ? 
+                                .black.opacity(0.2) : 
+                                .black.opacity(0.1), 
+                                radius: 3, y: 1)
                     )
                     .padding(.horizontal, 16)
                 }
@@ -225,6 +268,9 @@ struct PersonalizationViewIOS: View {
         }
         .navigationTitle("Настройки")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(themeManager.isDarkMode ? .dark : .light, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
@@ -235,6 +281,7 @@ struct PersonalizationViewIOS: View {
                 }
             }
         }
+        .foregroundColor(themeManager.isDarkMode ? .white : .black)
         .fullScreenCover(isPresented: $showingClockEditor) {
             NavigationView {
                 SoundAndNotification()

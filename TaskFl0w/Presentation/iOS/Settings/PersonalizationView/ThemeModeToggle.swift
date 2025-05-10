@@ -25,7 +25,7 @@ struct CustomToggleStyle: ToggleStyle {
             configuration.label
             
             RoundedRectangle(cornerRadius: 25)
-                .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                .fill(configuration.isOn ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.9, green: 0.9, blue: 0.9))
                 .frame(width: 90, height: 40)
                 .overlay(
                     Circle()

@@ -77,7 +77,7 @@ struct ClockEditorView: View {
                                 || showArcAnalogToggle || showMarkersControls) ? 180 : 0)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+                .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.98, green: 0.98, blue: 0.98))
                 .ignoresSafeArea()
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {

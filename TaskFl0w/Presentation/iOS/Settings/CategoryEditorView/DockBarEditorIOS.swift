@@ -16,6 +16,7 @@ struct DockBarEditorIOS: View {
     let categoryWidth: CGFloat = 70
 
     @Environment(\.colorScheme) var colorScheme
+    @ObservedObject private var themeManager = ThemeManager.shared
 
     var body: some View {
         VStack(spacing: 5) {
@@ -61,7 +62,8 @@ struct DockBarEditorIOS: View {
             categoryWidth: categoryWidth,
             selectedCategory: $selectedCategory,
             editingCategory: editingCategory,
-            isNewCategory: editingCategory != nil && selectedCategory == nil
+            isNewCategory: editingCategory != nil && selectedCategory == nil,
+            themeManager: ThemeManager.shared
         )
     }
 
@@ -96,6 +98,7 @@ struct DockBarEditorIOS: View {
         @Binding var selectedCategory: TaskCategoryModel?
         let editingCategory: TaskCategoryModel?
         let isNewCategory: Bool
+        @ObservedObject var themeManager: ThemeManager
 
         var body: some View {
             VStack {
@@ -110,7 +113,8 @@ struct DockBarEditorIOS: View {
                             // Если это выбранная категория, которая редактируется, показываем её текущую версию с изменениями
                             CategoryButton(
                                 category: editingCategory,
-                                isSelected: true
+                                isSelected: true,
+                                themeManager: themeManager
                             )
                             .frame(width: categoryWidth, height: 70)
                             .scaleEffect(1.1)
@@ -120,7 +124,8 @@ struct DockBarEditorIOS: View {
                             // Обычные категории показываем как есть
                             CategoryButton(
                                 category: category,
-                                isSelected: selectedCategory == category
+                                isSelected: selectedCategory == category,
+                                themeManager: themeManager
                             )
                             .frame(width: categoryWidth, height: 70)
                             .scaleEffect(selectedCategory == category ? 1.1 : 1.0)
@@ -142,7 +147,8 @@ struct DockBarEditorIOS: View {
                     if isNewCategory, let previewCategory = editingCategory {
                         CategoryButton(
                             category: previewCategory,
-                            isSelected: true
+                            isSelected: true,
+                            themeManager: themeManager
                         )
                         .frame(width: categoryWidth, height: 70)
                         .scaleEffect(1.1)
@@ -158,18 +164,18 @@ struct DockBarEditorIOS: View {
                         }) {
                             VStack(spacing: 5) {
                                 Circle()
-                                    .fill(Color.blue)
+                                    .fill(themeManager.isDarkMode ? Color.blue : Color.blue.opacity(0.8))
                                     .frame(width: 40, height: 40)
                                     .overlay(
                                         Image(systemName: "plus")
-                                            .foregroundColor(.white)
+                                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                             .font(.system(size: 24))
                                     )
-                                    .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+                                    .shadow(color: .black.opacity(themeManager.isDarkMode ? 0.25 : 0.10), radius: 4, y: 2)
                                 
                                 Text("Добавить")
                                     .font(.caption)
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                     .lineLimit(1)
                             }
                         }
@@ -185,11 +191,11 @@ struct DockBarEditorIOS: View {
     // MARK: - Вспомогательные
 
     private var backgroundColorForTheme: Color {
-        colorScheme == .dark ? Color(white: 0.2) : Color.white.opacity(0.9)
+        themeManager.isDarkMode ? Color(white: 0.2) : Color.white.opacity(0.95)
     }
 
     private var shadowColorForTheme: Color {
-        colorScheme == .dark ? Color.black.opacity(0.3) : Color.black.opacity(0.1)
+        themeManager.isDarkMode ? Color.black.opacity(0.3) : Color.black.opacity(0.08)
     }
 
     private var numberOfPages: Int {

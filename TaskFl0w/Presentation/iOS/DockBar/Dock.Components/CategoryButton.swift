@@ -9,6 +9,7 @@ import SwiftUI
 struct CategoryButton: View {
     let category: TaskCategoryModel
     let isSelected: Bool
+    @ObservedObject var themeManager: ThemeManager
     
     var body: some View {
         VStack(spacing: 5) {
@@ -59,8 +60,9 @@ struct CategoryButton: View {
             
             Text(category.rawValue)
                 .font(.caption)
-                .foregroundColor(.primary)
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                 .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
     }
 }
