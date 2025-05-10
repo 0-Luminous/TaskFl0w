@@ -11,6 +11,7 @@ struct TaskTimeline: View {
     @State var selectedDate: Date
     let tasks: [TaskOnRing]
     @ObservedObject var listViewModel: ListViewModel
+    @ObservedObject private var themeManager = ThemeManager.shared
     let categoryManager: CategoryManagementProtocol
 
     // Добавляем ClockViewModel для TopBarView
@@ -138,7 +139,7 @@ struct TaskTimeline: View {
                 }
                 .padding(.top, 30)
             }
-            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+            .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.9, green: 0.9, blue: 0.9))
             
             // Нижний и верхний слои интерфейса
             VStack {
@@ -251,25 +252,25 @@ struct TaskTimeline: View {
                 ZStack {
                     // Вертикальная линия сверху
                     Rectangle()
-                        .fill(Color.gray.opacity(0.3))
+                        .fill(themeManager.isDarkMode ? Color.gray.opacity(0.3) : Color.black.opacity(0.3))
                         .frame(width: 1)
                         .frame(height: 0)  // Начинается от солнца
 
                     // Солнце
                     Circle()
-                        .fill(Color.gray.opacity(0.2))
+                        .fill(themeManager.isDarkMode ? Color.gray.opacity(0.2) : Color.black.opacity(0.2))
                         .frame(width: 30, height: 30)
                         .zIndex(1)
 
                     Image(systemName: "sun.max")
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         .font(.system(size: 16))
                         .zIndex(2)
                 }
 
                 // Основная часть вертикальной линии
                 Rectangle()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(themeManager.isDarkMode ? Color.gray.opacity(0.3) : Color.black.opacity(0.3))
                     .frame(width: 1)
                     .frame(maxHeight: .infinity)
 
@@ -277,18 +278,18 @@ struct TaskTimeline: View {
                 ZStack {
                     // Луна
                     Circle()
-                        .fill(Color.gray.opacity(0.2))
+                        .fill(themeManager.isDarkMode ? Color.gray.opacity(0.2) : Color.black.opacity(0.2))
                         .frame(width: 30, height: 30)
                         .zIndex(1)
 
                     Image(systemName: "moon")
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         .font(.system(size: 16))
                         .zIndex(2)
 
                     // Вертикальная линия снизу
                     Rectangle()
-                        .fill(Color.gray.opacity(0.3))
+                        .fill(themeManager.isDarkMode ? Color.gray.opacity(0.3) : Color.black.opacity(0.3))
                         .frame(width: 1)
                         .frame(height: 0)  // Заканчивается на луне
                 }
@@ -325,7 +326,7 @@ struct TaskTimeline: View {
                     // Метка часа
                     Text(String(format: "%02d", timeBlock.hour))
                         .font(.system(size: 40, weight: .bold))
-                        .foregroundColor(.gray.opacity(0.3))
+                        .foregroundColor(themeManager.isDarkMode ? .gray.opacity(0.3) : .black.opacity(0.3))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.leading, 45)
                         .padding(.top, 10)
@@ -348,7 +349,7 @@ struct TaskTimeline: View {
 
                                 // Иконка категории
                                 Image(systemName: task.icon)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                     .font(.system(size: 14))
                             }
                         }

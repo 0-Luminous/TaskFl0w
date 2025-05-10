@@ -17,6 +17,8 @@ struct WeekCalendarView: View {
     @State private var visibleMonth: Date
     @State private var showMonthCalendar = false
     @State private var showMonthYearPicker = false
+
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     // Добавляем ссылку на общее состояние календаря
     @ObservedObject private var calendarState = CalendarState.shared
@@ -88,7 +90,7 @@ struct WeekCalendarView: View {
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 24)
-                        .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                        .fill(themeManager.isDarkMode ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.9, green: 0.9, blue: 0.9))
                         .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
                 )
                 .padding(.horizontal, 10)
@@ -178,12 +180,13 @@ struct WeekCalendarView: View {
                             }
                         }
                         .id(weekIndex)
+                        .padding(.vertical, 5)
                     }
                 }
-                .padding(.horizontal, 2)
+                .padding(.horizontal, 3)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 65)
+            .frame(height: 75)
             .clipShape(Rectangle())
             .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
             // Добавляем модификатор декларативной пагинации
@@ -262,6 +265,8 @@ struct DayCell: View {
     let date: Date
     let isSelected: Bool
     let dayName: String
+
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         VStack(spacing: 2) {
@@ -276,7 +281,7 @@ struct DayCell: View {
                 .foregroundColor(textColor)
         }
         .frame(width: 40, height: 60)
-        .background(isSelected ? Color.blue : Color(red: 0.098, green: 0.098, blue: 0.098))
+        .background(themeManager.isDarkMode ? isSelected ? Color.blue : Color(red: 0.098, green: 0.098, blue: 0.098) : isSelected ? Color.blue : Color(red: 0.9, green: 0.9, blue: 0.9))
         .cornerRadius(20)
         .shadow(color: isSelected ? Color.blue.opacity(0.5) : Color.black.opacity(0.2), radius: 3, x: 0, y: 2)
         .overlay(
@@ -303,10 +308,10 @@ struct DayCell: View {
         let isWeekend = weekday == 1 || weekday == 7
         
         if isWeekend {
-            return .red
+            return .red 
         } else {
             // Для будних дней используем белый цвет для названий дней и чисел
-            return .white
+            return themeManager.isDarkMode ? .white : .black
         }
     }
 }

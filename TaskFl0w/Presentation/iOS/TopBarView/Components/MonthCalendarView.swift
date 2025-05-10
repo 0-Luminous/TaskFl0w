@@ -21,6 +21,8 @@ struct MonthCalendarView: View {
     
     // Добавляем ссылку на общее состояние календаря
     @ObservedObject private var calendarState = CalendarState.shared
+
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     // Добавлена функция обратного вызова для сокрытия календаря
     var onHideCalendar: (() -> Void)?
@@ -77,7 +79,7 @@ struct MonthCalendarView: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                .fill(themeManager.isDarkMode ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.9, green: 0.9, blue: 0.9))
                 .shadow(color: .black.opacity(0.4), radius: 8, x: 0, y: 4)
         )
         .padding(.horizontal, 10)
@@ -204,6 +206,8 @@ struct MonthGrid: View {
     @Binding var selectedDate: Date
     let onDateSelected: (Date) -> Void
     let onVisibleMonthChanged: (Date) -> Void
+
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 7)
@@ -219,7 +223,7 @@ struct MonthGrid: View {
                     Text(dayNames[index])
                         .font(.caption)
                         .fontWeight(.medium)
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(themeManager.isDarkMode ? .white.opacity(0.7) : .black.opacity(0.7))
                         .frame(width: 36, height: 20)
                 }
             }
@@ -235,7 +239,7 @@ struct MonthGrid: View {
                             Circle()
                                 .fill(calendar.isDate(day.date, inSameDayAs: selectedDate) ? 
                                       Color.blue : 
-                                      Color(red: 0.098, green: 0.098, blue: 0.098))
+                                      themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.9, green: 0.9, blue: 0.9))
                                 .frame(width: 36, height: 36)
                                 .shadow(color: calendar.isDate(day.date, inSameDayAs: selectedDate) ? 
                                         Color.blue.opacity(0.5) : 
@@ -330,7 +334,7 @@ struct MonthGrid: View {
             return .red
         } else {
             // Для будних дней используем белый цвет
-            return .white
+            return themeManager.isDarkMode ? .white : .black
         }
     }
 }

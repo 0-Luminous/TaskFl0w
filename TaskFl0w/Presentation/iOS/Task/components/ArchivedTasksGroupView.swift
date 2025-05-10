@@ -18,6 +18,8 @@ struct ArchivedTasksGroupView: View {
     let onDelete: (UUID) -> Void
     let onShare: (UUID) -> Void
 
+    @ObservedObject private var themeManager = ThemeManager.shared
+
     // Группировка задач по датам завершения
     private var groupedTasks: [Date: [ToDoItem]] {
         Dictionary(grouping: items) { item in
@@ -47,14 +49,14 @@ struct ArchivedTasksGroupView: View {
                     HStack {
                         Text(dateFormatter.string(from: date))
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         
                         Spacer()
                         
                         // Количество задач
                         Text("\(tasksForDate.count)")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.gray)
+                            .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
@@ -78,7 +80,7 @@ struct ArchivedTasksGroupView: View {
                             .background(
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
+                                        .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
                                     
                                     // Добавляем внешний бордер для задач с приоритетом
                                     if item.priority != .none {
@@ -110,7 +112,7 @@ struct ArchivedTasksGroupView: View {
                 .background(
                     ZStack {
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(red: 0.13, green: 0.13, blue: 0.13))
+                            .fill(themeManager.isDarkMode ? Color(red: 0.13, green: 0.13, blue: 0.13) : Color(red: 0.9, green: 0.9, blue: 0.9))
                         
                         // Градиентный бордер
                         RoundedRectangle(cornerRadius: 16)

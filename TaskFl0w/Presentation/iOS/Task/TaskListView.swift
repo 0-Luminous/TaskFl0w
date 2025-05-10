@@ -24,6 +24,8 @@ struct TaskListView: View {
     
     // Заменяем локальные состояния на ObservedObject
     @ObservedObject private var calendarState = CalendarState.shared
+
+    @ObservedObject private var themeManager = ThemeManager.shared
    
     
     private let topID = "top_of_list"
@@ -116,8 +118,8 @@ struct TaskListView: View {
                                     .listRowBackground(
                                         ZStack {
                                             RoundedRectangle(cornerRadius: 10)
-                                                .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
-                                            
+                                                .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
+                                                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
                                             if item.priority != .none {
                                                 RoundedRectangle(cornerRadius: 10)
                                                     .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
@@ -163,7 +165,7 @@ struct TaskListView: View {
                             }
                             
                             Color.clear
-                                .frame(height: 90)
+                                .frame(height: 160)
                                 .listRowBackground(Color.clear)
                                 .listRowSeparator(.hidden)
                             
@@ -177,8 +179,7 @@ struct TaskListView: View {
                         }
                         .onChange(of: isAddingNewTask) { oldValue, newValue in
                             if newValue == true {
-                                withAnimation {
-                                    // Меняем скролл к новому элементу внизу списка
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                     scrollProxy.scrollTo("new_task_input", anchor: .bottom)
                                 }
                             }
@@ -224,7 +225,7 @@ struct TaskListView: View {
                                 showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
                             )
                             .transition(.move(edge: .bottom))
-                            .padding(.bottom, 50)
+                            .padding(.bottom, 60)
                         }
                     }
                 }
@@ -259,7 +260,7 @@ struct TaskListView: View {
             }
             .scrollContentBackground(.hidden)
             .background{
-                Color(red: 0.098, green: 0.098, blue: 0.098)
+               themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95)
             }
             .actionSheet(isPresented: $showingPrioritySheet) {
                 ActionSheet(

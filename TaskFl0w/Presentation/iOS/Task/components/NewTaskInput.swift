@@ -12,11 +12,14 @@ struct NewTaskInput: View {
     @FocusState var isNewTaskFocused: Bool
     @Binding var selectedPriority: TaskPriority
     var onSave: () -> Void
+
+    @ObservedObject private var themeManager = ThemeManager.shared
+    
     
     var body: some View {
         HStack(alignment: .center) {
             TextField("Новая задача", text: $newTaskTitle, axis: .vertical)
-                .foregroundColor(.white)
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                 .lineLimit(3) // Разрешить до 3 строк
                 .onSubmit {
                     onSave()
@@ -49,7 +52,8 @@ struct NewTaskInput: View {
         .listRowBackground(
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(.darkGray))
+                    .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
+                    .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
                     .padding(.vertical, 5)
                     .padding(.horizontal, 8)
                 

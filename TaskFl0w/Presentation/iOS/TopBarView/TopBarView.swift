@@ -77,12 +77,12 @@ struct TopBarView: View {
                     Button(action: searchAction) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 20))
-                            .foregroundColor(.coral1)
+                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                             .padding(4)
                     }
                     .background(
                         Circle()
-                            .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                            .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
                     )
                     .overlay(
                         Circle()
@@ -106,10 +106,10 @@ struct TopBarView: View {
                         VStack(spacing: 0) {
                             Text(viewModel.formattedDate)
                                 .font(.subheadline)
-                                .foregroundColor(.primary)
+                                .foregroundColor(themeManager.isDarkMode ? .primary : .black)
                             Text(viewModel.formattedWeekday)
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(themeManager.isDarkMode ? .secondary : .gray)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
                     } else {
@@ -130,12 +130,12 @@ struct TopBarView: View {
                         Button(action: showSettingsAction) {
                             Image(systemName: "gear")
                                 .font(.system(size: 20))
-                                .foregroundColor(.coral1)
+                                .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                                 .padding(4)
                         }
                         .background(
                             Circle()
-                                .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                                .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
                         )
                         .overlay(
                             Circle()
@@ -160,7 +160,7 @@ struct TopBarView: View {
                 .frame(height: 50)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                        .fill(themeManager.isDarkMode ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.95, green: 0.95, blue: 0.95))
                         .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
                         .padding(.horizontal, 10)
                 )

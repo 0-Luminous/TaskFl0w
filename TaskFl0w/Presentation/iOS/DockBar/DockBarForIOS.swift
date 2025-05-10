@@ -10,6 +10,8 @@ struct DockBarIOS: View {
     @ObservedObject var viewModel: DockBarViewModel
     @Environment(\.colorScheme) var colorScheme
 
+    @ObservedObject private var themeManager = ThemeManager.shared
+
     var body: some View {
         VStack(spacing: 5) {
             pageIndicator
@@ -29,12 +31,12 @@ struct DockBarIOS: View {
                         Circle()
                             .fill(
                                 viewModel.currentPage == index
-                                    ? Color.blue : Color.gray.opacity(0.5)
+                                    ? themeManager.isDarkMode ? Color.coral1 : Color.red1 : Color.gray.opacity(0.5)
                             )
                             .frame(width: 7, height: 7)
                     }
                 }
-                .padding(.bottom, 5)
+                .padding(.bottom, 2)
             }
         }
     }

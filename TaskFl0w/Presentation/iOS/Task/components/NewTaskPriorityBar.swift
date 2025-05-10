@@ -11,6 +11,8 @@ struct NewTaskPriorityBar: View {
     @Binding var selectedPriority: TaskPriority
     var onSave: () -> Void
     var onCancel: () -> Void
+
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     // MARK: - Body
     var body: some View {
@@ -82,7 +84,7 @@ struct NewTaskPriorityBar: View {
                 ZStack {
                     // Размытый фон с уменьшенной шириной
                     Capsule()
-                        .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                        .fill(themeManager.isDarkMode ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.95, green: 0.95, blue: 0.95))
                     
                     // Добавляем градиентный бордер
                     Capsule()
@@ -169,7 +171,7 @@ struct NewTaskPriorityBar: View {
             .padding(6)
             .background(
                 Circle()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                    .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
             )
             .overlay(
                 Circle()
@@ -192,7 +194,7 @@ struct NewTaskPriorityBar: View {
             .padding(6)
             .background(
                 Circle()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                    .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
             )
             .overlay(
                 Circle()

@@ -16,6 +16,8 @@ struct BottomBar: View {
     var onArchiveTapped: () -> Void
     var onUnarchiveSelectedTasks: () -> Void
     @Binding var showCompletedTasksOnly: Bool
+
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     // Добавляем состояние для отслеживания нажатий
     @State private var isAddButtonPressed = false
@@ -96,7 +98,7 @@ struct BottomBar: View {
                 ZStack {
                     // Размытый фон с уменьшенной шириной
                     Capsule()
-                        .fill(Color(red: 0.2, green: 0.2, blue: 0.2))
+                        .fill(themeManager.isDarkMode ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.95, green: 0.95, blue: 0.95))
                     
                     // Добавляем градиентный бордер
                     Capsule()
@@ -124,14 +126,14 @@ struct BottomBar: View {
     
     private var archiveButton: some View {
         Button(action: onArchiveTapped) {
-            toolbarIcon(systemName: "archivebox.fill", 
-                       color: showCompletedTasksOnly ? .blue : .gray)
+            toolbarIcon(systemName: "archivebox", 
+                        color: themeManager.isDarkMode ? showCompletedTasksOnly ? .coral1 : .gray : showCompletedTasksOnly ? .red1 : .black)
         }
     }
     
     private var selectionModeToggleButton: some View {
         Button(action: toggleSelectionMode) {
-            toolbarIcon(systemName: "checkmark.circle", color: .gray)
+            toolbarIcon(systemName: "checkmark.circle", color: themeManager.isDarkMode ? .gray : .black)
         }
     }
     
@@ -161,7 +163,7 @@ struct BottomBar: View {
     
     private var exitSelectionModeButton: some View {
         Button(action: toggleSelectionMode) {
-            toolbarIcon(systemName: "checkmark.circle", color: .blue)
+            toolbarIcon(systemName: "checkmark.circle", color: themeManager.isDarkMode ? .coral1 : .red1)
         }
     }
     
@@ -181,7 +183,7 @@ struct BottomBar: View {
             onArchiveTapped()
             toggleSelectionMode()
         }) {
-            toolbarIcon(systemName: "archivebox", color: .blue)
+            toolbarIcon(systemName: "archivebox", color: themeManager.isDarkMode ? .coral1 : .red1)
         }
     }
     
@@ -191,7 +193,7 @@ struct BottomBar: View {
                 onAddTap()
             }
         }) {
-            toolbarIcon(systemName: "plus", color: showCompletedTasksOnly ? .gray : .blue)
+            toolbarIcon(systemName: "plus", color: themeManager.isDarkMode ? showCompletedTasksOnly ? .gray : .coral1 : showCompletedTasksOnly ? .gray : .red1)
         }
         .disabled(showCompletedTasksOnly)
         .opacity(showCompletedTasksOnly ? 0.5 : 1.0)
@@ -213,7 +215,7 @@ struct BottomBar: View {
             .padding(6)
             .background(
                 Circle()
-                    .fill(Color(red: 0.184, green: 0.184, blue: 0.184))
+                    .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
             )
             .overlay(
                 Circle()
@@ -228,41 +230,4 @@ struct BottomBar: View {
             )
             .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
     }
-}
-
-// MARK: - Preview
-#Preview {
-    struct PreviewWrapper: View {
-        @State private var isSelectionMode = false
-        @State private var selectedTasks: Set<UUID> = []
-        @State private var showCompletedTasksOnly = false
-        
-        var body: some View {
-            ZStack {
-                // Добавляем градиентный фон для лучшей визуализации эффекта размытия
-                LinearGradient(
-                    colors: [.blue.opacity(0.6), Color(uiColor: .systemBackground)],
-                    startPoint: .topTrailing,
-                    endPoint: .bottomLeading
-                )
-                .ignoresSafeArea()
-                
-                VStack {
-                    Spacer()
-                    BottomBar(
-                        onAddTap: { print("Add tapped") }, 
-                        isSelectionMode: $isSelectionMode,
-                        selectedTasks: $selectedTasks,
-                        onDeleteSelectedTasks: { print("Delete selected tasks") },
-                        onChangePriorityForSelectedTasks: { print("Change priority for selected tasks") },
-                        onArchiveTapped: { print("Archive completed tasks") },
-                        onUnarchiveSelectedTasks: { print("Unarchive selected tasks") },
-                        showCompletedTasksOnly: $showCompletedTasksOnly
-                    )
-                }
-            }
-        }
-    }
-    
-    return PreviewWrapper()
 }

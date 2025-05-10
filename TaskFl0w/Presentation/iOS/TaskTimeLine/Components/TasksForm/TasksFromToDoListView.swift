@@ -10,6 +10,7 @@ import SwiftUI
 // Компонент для отображения задач из ToDoList
 struct TasksFromView: View {
     @ObservedObject var listViewModel: ListViewModel
+    @ObservedObject private var themeManager = ThemeManager.shared
     let selectedDate: Date
     let categoryManager: CategoryManagementProtocol
     let selectedCategoryID: UUID
@@ -31,7 +32,7 @@ struct TasksFromView: View {
                 
                 if categoryTasks.isEmpty {
                     Text("Нет задач на этот день")
-                        .foregroundColor(.gray)
+                        .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 15)
                 } else {
@@ -70,7 +71,7 @@ struct TasksFromView: View {
             } else {
                 // Если категория вообще не найдена
                 Text("Категория не найдена")
-                    .foregroundColor(.gray)
+                    .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 15)
             }
@@ -85,6 +86,7 @@ struct TasksFromView: View {
         let endTime: Date?
         let showFullTasks: Bool // Новый параметр
         var onToggleTask: ((UUID) -> Void)? = nil
+        @ObservedObject private var themeManager = ThemeManager.shared
         
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
@@ -98,7 +100,7 @@ struct TasksFromView: View {
                         Text(category.rawValue)
                             .font(.subheadline)
                             .fontWeight(.medium)
-                            .foregroundColor(.white)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         
                         Spacer()
                         
@@ -117,22 +119,22 @@ struct TasksFromView: View {
                         HStack {
                             Text(formatTime(start))
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                             
                             Text("-")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                             
                             Text(formatTime(end))
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                             
                             Spacer()
                             
                             // Добавляем продолжительность
                             Text("\(formatDuration(end.timeIntervalSince(start)))")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(
@@ -174,7 +176,7 @@ struct TasksFromView: View {
                 if !showFullTasks && !todoTasks.isEmpty {
                     Text("Незавершённые задачи перенесены в следующую категорию")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                 }
@@ -183,7 +185,7 @@ struct TasksFromView: View {
                 if todoTasks.isEmpty {
                     Text("Нет задач на этот день")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                 }

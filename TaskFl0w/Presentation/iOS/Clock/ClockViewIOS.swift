@@ -94,7 +94,11 @@ struct ClockViewIOS: View {
                             Spacer()
                                 .frame(height: 50)
                         }
-                        .transition(.opacity)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .move(edge: .bottom).combined(with: .opacity)
+                        ))
+                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.selectedCategory)
                         .gesture(
                             DragGesture()
                                 .onChanged { value in
@@ -108,14 +112,14 @@ struct ClockViewIOS: View {
                                 .onEnded { value in
                                     // Если свайп вниз больше 80 пикселей и начался в верхней части экрана
                                     if value.translation.height > 80 && value.startLocation.y < 100 {
-                                        withAnimation(.spring()) {
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                             // Закрываем список задач и очищаем выбранную категорию
                                             viewModel.selectedCategory = nil
                                         }
                                     }
                                     
                                     // В любом случае сбрасываем смещение
-                                    withAnimation(.spring()) {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                         isDragging = false
                                         dragOffset = .zero
                                     }

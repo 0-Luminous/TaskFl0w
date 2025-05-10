@@ -16,6 +16,8 @@ struct TaskRow: View {
     let isSelectionMode: Bool
     let isInArchiveMode: Bool
     @Binding var selectedTasks: Set<UUID>
+
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         ZStack {
@@ -27,13 +29,13 @@ struct TaskRow: View {
                             toggleSelection()
                         }) {
                             Image(systemName: isSelected ? "checkmark.circle.fill" : (item.isCompleted ? "checkmark.circle" : "circle"))
-                                .foregroundColor(isSelected ? categoryColor : (item.isCompleted ? .black : .white))
+                                .foregroundColor(themeManager.isDarkMode ? isSelected ? categoryColor : (item.isCompleted ? .black : .white) : isSelected ? categoryColor : (item.isCompleted ? .black : .white))
                                 .font(.system(size: 22))
                         }
                     } else {
                         Button(action: onToggle) {
                             Image(systemName: item.isCompleted ? "checkmark.circle" : "circle")
-                                .foregroundColor(item.isCompleted ? .black : .white)
+                                .foregroundColor(themeManager.isDarkMode ? item.isCompleted ? .black : .white : item.isCompleted ? .black : .white)
                                 .font(.system(size: 22))
                         }
                     }
@@ -41,7 +43,7 @@ struct TaskRow: View {
                     // Название задачи без отображения приоритета
                     Text(item.title)
                         .strikethrough(item.isCompleted && !isSelectionMode && !isInArchiveMode)
-                        .foregroundColor(item.isCompleted && !isSelectionMode && !isInArchiveMode ? .gray : .white)
+                        .foregroundColor(themeManager.isDarkMode ? item.isCompleted && !isSelectionMode && !isInArchiveMode ? .gray : .white : item.isCompleted && !isSelectionMode && !isInArchiveMode ? .gray : .black)
                         .fontWeight(getFontWeight(for: item.priority))
                     
                     Spacer()

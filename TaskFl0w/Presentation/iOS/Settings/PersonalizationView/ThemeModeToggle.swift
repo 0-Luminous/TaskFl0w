@@ -32,8 +32,8 @@ struct CustomToggleStyle: ToggleStyle {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    configuration.isOn ? Color(red: 0.1, green: 0.1, blue: 0.2) : Color(red: 0.4, green: 0.8, blue: 1),
-                                    configuration.isOn ? Color(red: 0.2, green: 0.2, blue: 0.3) : Color(red: 0.6, green: 0.9, blue: 0.8)
+                                    configuration.isOn ? Color(red: 0.1, green: 0.1, blue: 0.2) : Color(red: 0.8, green: 0.8, blue: 0.8),
+                                    configuration.isOn ? Color(red: 0.2, green: 0.2, blue: 0.3) : Color(red: 0.9, green: 0.9, blue: 0.9)
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -61,7 +61,7 @@ struct CustomToggleStyle: ToggleStyle {
                         .frame(width: 36, height: 36)
                         .overlay(
                             Image(systemName: configuration.isOn ? "moon.fill" : "sun.max.fill")
-                                .foregroundColor(configuration.isOn ? .white : .yellow)
+                                .foregroundColor(configuration.isOn ? .white : .red1)
                                 .font(.system(size: 16))
                         )
                         .offset(x: configuration.isOn ? 25 : -25)

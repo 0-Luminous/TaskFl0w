@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ArchiveView: View {
+
+    @ObservedObject private var themeManager = ThemeManager.shared
     var body: some View {
         VStack(spacing: 0) {
             Rectangle()
@@ -16,12 +18,12 @@ struct ArchiveView: View {
             
             HStack {
                 Image(systemName: "archivebox.fill")
-                    .foregroundColor(.blue)
+                    .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                     .font(.system(size: 16))
                 
                 Text("Архив выполненных задач")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
             }
             .padding(.horizontal, 16)
             .padding(.top, 10)
@@ -30,7 +32,7 @@ struct ArchiveView: View {
                 // Размытый фон
                 Capsule()
                     .fill(.ultraThinMaterial)
-                    .environment(\.colorScheme, .dark)
+                    .environment(\.colorScheme, themeManager.isDarkMode ? .dark : .light)
                     .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
             }
             .padding(.horizontal, 20)
