@@ -10,9 +10,11 @@ import SwiftUI
 struct SettingsTask: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var themeManager = ThemeManager.shared
-    @State private var moveUnfinishedTasks = false
-    @State private var increasePriority = false
-    @State private var priorityIncreaseFrequency = 0 // 0 - каждый день, 1 - раз в два дня, 2 - раз в три дня
+    
+    // Используем AppStorage для сохранения настроек между сессиями
+    @AppStorage("moveUnfinishedTasks") private var moveUnfinishedTasks = false
+    @AppStorage("increasePriority") private var increasePriority = false
+    @AppStorage("priorityIncreaseFrequency") private var priorityIncreaseFrequency = 0 // 0 - каждый день, 1 - раз в два дня, 2 - раз в три дня
     
     private let frequencyOptions = [
         (0, "Каждый день"),
@@ -25,9 +27,21 @@ struct SettingsTask: View {
             Form {
                 Section {
                     Toggle("Переносить невыполненные задачи", isOn: $moveUnfinishedTasks)
+                        .onChange(of: moveUnfinishedTasks) { _, newValue in
+                            if !newValue {
+                                // Если отключили перенос задач, отключаем и повышение приоритета
+                                increasePriority = false
+                            }
+                        }
                     
                     if moveUnfinishedTasks {
                         Toggle("Повышать приоритет при переносе", isOn: $increasePriority)
+                            .onChange(of: increasePriority) { _, newValue in
+                                // При отключении повышения приоритета сбрасываем частоту
+                                if !newValue {
+                                    priorityIncreaseFrequency = 0
+                                }
+                            }
                         
                         if increasePriority {
                             Picker("Частота повышения приоритета", selection: $priorityIncreaseFrequency) {
@@ -40,7 +54,7 @@ struct SettingsTask: View {
                 } header: {
                     Text("Перенос задач")
                 } footer: {
-                    Text("Невыполненные задачи будут автоматически переноситься на текущий день")
+                    Text("Невыполненные задачи будут автоматически переноситься на текущий день при смене даты. При включении повышения приоритета задачи будут повышать свой приоритет согласно выбранной частоте.")
                 }
             }
             .navigationTitle("Настройки задач")
@@ -59,7 +73,7 @@ struct SettingsTask: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
-                        // Здесь будет код для сохранения настроек
+                        saveSettings()
                         dismiss()
                     }) {
                         Text("Готово")
@@ -73,6 +87,18 @@ struct SettingsTask: View {
                 Color(red: 0.098, green: 0.098, blue: 0.098) : 
                 Color(red: 0.95, green: 0.95, blue: 0.95))
         }
+    }
+    
+    // Функция для сохранения настроек
+    private func saveSettings() {
+        // Настройки уже сохраняются автоматически через @AppStorage
+        // Но здесь можно добавить любую дополнительную логику
+        
+        // Синхронизируем UserDefaults
+        UserDefaults.standard.synchronize()
+        
+        // При необходимости можно выполнить дополнительные действия
+        print("🔄 Настройки задач сохранены: перенос=\(moveUnfinishedTasks), повышение приоритета=\(increasePriority), частота=\(priorityIncreaseFrequency)")
     }
 }
 

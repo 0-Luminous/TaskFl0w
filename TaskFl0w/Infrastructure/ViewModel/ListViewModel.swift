@@ -24,12 +24,8 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
     @Published var isSelectionMode: Bool = false
     @Published var selectedDate: Date = Date() {
         didSet {
-            let calendar = Calendar.current
-            // Проверяем, что новая дата - это следующий день после старой даты
-            if calendar.isDateInToday(oldValue) && calendar.isDate(selectedDate, inSameDayAs: calendar.date(byAdding: .day, value: 1, to: oldValue) ?? oldValue) {
-                // Переносим невыполненные задачи только при переходе на следующий день
-                moveUncompletedTasksToNextDay()
-            }
+            // Проверяем невыполненные задачи из прошлого при любом изменении даты
+            checkUncompletedPastTasks()
             refreshData()
         }
     }
@@ -258,7 +254,14 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
         }
     }
 
-    func moveUncompletedTasksToNextDay() {
+    // Новый метод для проверки всех невыполненных задач из прошлого
+    func checkUncompletedPastTasks() {
+        // Проверяем настройку переноса задач
+        let shouldMoveUnfinishedTasks = UserDefaults.standard.bool(forKey: "moveUnfinishedTasks")
+        if !shouldMoveUnfinishedTasks {
+            return // Если настройка отключена, прекращаем выполнение
+        }
+        
         let calendar = Calendar.current
         let today = Date()  // Текущая дата
         
@@ -273,10 +276,43 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
             calendar.compare(task.date, to: today, toGranularity: .day) == .orderedAscending
         }
         
+        // Проверяем, нужно ли повышать приоритет
+        let shouldIncreasePriority = UserDefaults.standard.bool(forKey: "increasePriority")
+        let priorityFrequency = UserDefaults.standard.integer(forKey: "priorityIncreaseFrequency")
+        
         // Для каждой невыполненной задачи из прошлого
         for task in uncompletedPastTasks {
             // Обновляем дату на текущий день
             presenter?.updateTaskDate(id: task.id, newDate: today)
+            
+            // Если нужно повышать приоритет
+            if shouldIncreasePriority {
+                // Проверяем, не уже ли высокий приоритет
+                if task.priority != .high {
+                    let daysOverdue = calendar.dateComponents([.day], from: task.date, to: today).day ?? 0
+                    
+                    // Определяем, нужно ли повышать приоритет в зависимости от частоты
+                    let shouldUpgrade = (priorityFrequency == 0) || // каждый день
+                                        (priorityFrequency == 1 && daysOverdue % 2 == 0) || // раз в 2 дня
+                                        (priorityFrequency == 2 && daysOverdue % 3 == 0)    // раз в 3 дня
+                    
+                    if shouldUpgrade {
+                        // Повышаем приоритет на один уровень
+                        let newPriority: TaskPriority
+                        switch task.priority {
+                        case .none:
+                            newPriority = .low
+                        case .low:
+                            newPriority = .medium
+                        case .medium, .high:
+                            newPriority = .high
+                        }
+                        
+                        // Устанавливаем новый приоритет
+                        presenter?.changePriority(id: task.id, priority: newPriority)
+                    }
+                }
+            }
         }
     }
     // Проверяем, является ли дата сегодняшней
