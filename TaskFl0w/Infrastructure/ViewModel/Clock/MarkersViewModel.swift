@@ -41,6 +41,15 @@ final class ClockMarkersViewModel: ObservableObject {
         "cellblocknbp",
         "catstack",
         "Chokokutai-Regular",
+        "Vertiger",
+        "ElfarNormalG98",
+        "Brunothg",
+        "pershotravneva55-regular",
+        "Daneehand Regular Cyr",
+        "NovaCut",
+        "UnifrakturCook-Bold",
+        "Tsarevich old",
+
 
         "Georgia",
         "Georgia-Bold",

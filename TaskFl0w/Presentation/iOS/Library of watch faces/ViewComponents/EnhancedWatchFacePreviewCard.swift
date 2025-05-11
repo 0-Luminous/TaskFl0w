@@ -39,12 +39,12 @@ struct EnhancedWatchFacePreviewCard: View {
                                     : Color(hex: watchFace.lightModeOuterRingColor) ?? .gray,
                                 lineWidth: watchFace.outerRingLineWidth * 0.35
                             )
-                            .frame(width: 110, height: 110)
+                            .frame(width: 130, height: 130)
                         
                         // Наш новый компонент для отображения циферблата
                         LibraryClockFaceView(watchFace: watchFace)
-                            .scaleEffect(0.35)
-                            .frame(width: 120, height: 120)
+                            .scaleEffect(0.42)
+                            .frame(width: 140, height: 140)
                     }
                     .padding(.top, 12)
                     
@@ -65,7 +65,7 @@ struct EnhancedWatchFacePreviewCard: View {
                 }
             }
         }
-        .frame(width: 160, height: 180)
+        .frame(width: 170, height: 210)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(
