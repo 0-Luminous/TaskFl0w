@@ -24,6 +24,12 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
     @Published var isSelectionMode: Bool = false
     @Published var selectedDate: Date = Date() {
         didSet {
+            let calendar = Calendar.current
+            // Проверяем, что новая дата - это следующий день после старой даты
+            if calendar.isDateInToday(oldValue) && calendar.isDate(selectedDate, inSameDayAs: calendar.date(byAdding: .day, value: 1, to: oldValue) ?? oldValue) {
+                // Переносим невыполненные задачи только при переходе на следующий день
+                moveUncompletedTasksToNextDay()
+            }
             refreshData()
         }
     }
@@ -250,5 +256,31 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
             // Если приоритеты одинаковые, сортируем по дате
             return item1.date > item2.date
         }
+    }
+
+    func moveUncompletedTasksToNextDay() {
+        let calendar = Calendar.current
+        let today = Date()  // Текущая дата
+        
+        // Получаем все задачи
+        let allTasks = items
+        
+        // Находим невыполненные задачи из прошлого
+        let uncompletedPastTasks = allTasks.filter { task in
+            // Проверяем, что задача не выполнена
+            !task.isCompleted &&
+            // И дата задачи меньше текущей даты (в прошлом)
+            calendar.compare(task.date, to: today, toGranularity: .day) == .orderedAscending
+        }
+        
+        // Для каждой невыполненной задачи из прошлого
+        for task in uncompletedPastTasks {
+            // Обновляем дату на текущий день
+            presenter?.updateTaskDate(id: task.id, newDate: today)
+        }
+    }
+    // Проверяем, является ли дата сегодняшней
+    private var isToday: Bool {
+        Calendar.current.isDateInToday(selectedDate)
     }
 }

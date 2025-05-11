@@ -31,4 +31,6 @@ protocol ToDoPresenterProtocol: AnyObject {
     // Архивация выполненных задач
     func archiveCompletedTasks()
     func didArchiveTasks()
+
+    func updateTaskDate(id: UUID, newDate: Date)
 }

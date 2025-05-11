@@ -8,6 +8,7 @@ struct PersonalizationViewIOS: View {
     @State private var showingCategoryEditor = false
     @State private var showingClockEditor = false
     @State private var showingWatchFaceLibrary = false
+    @State private var showingFirstView = false
 
     var body: some View {
         ZStack {
@@ -256,6 +257,65 @@ struct PersonalizationViewIOS: View {
                     .padding(.horizontal, 16)
                 }
 
+                // Кнопка для открытия FirstView
+                Button {
+                    showingFirstView = true
+                } label: {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 20))
+                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
+                            .padding(8)
+                            .background(
+                                Circle()
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) :
+                                        Color(red: 0.9, green: 0.9, blue: 0.9))
+                            )
+                            .frame(width: 40, height: 40)
+                            .overlay(
+                                Circle()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                            .frame(width: 40, height: 40)
+                            .shadow(color: themeManager.isDarkMode ? 
+                                .black.opacity(0.3) : 
+                                .black.opacity(0.1), 
+                                radius: 3, x: 0, y: 1)
+                            .padding(.leading, 16)
+
+                        Text("Стартовый экран")
+                            .font(.system(size: 18))
+                            .foregroundColor(themeManager.isDarkMode ? .primary : .black)
+                            .padding(.leading, 12)
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray)
+                            .padding(.trailing, 16)
+                    }
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 15)
+                            .fill(themeManager.isDarkMode ? 
+                                Color(red: 0.2, green: 0.2, blue: 0.2) :
+                                Color(red: 0.95, green: 0.95, blue: 0.95))
+                            .shadow(color: themeManager.isDarkMode ? 
+                                .black.opacity(0.2) : 
+                                .black.opacity(0.1), 
+                                radius: 3, y: 1)
+                    )
+                    .padding(.horizontal, 16)
+                }
+
                 Spacer()
 
                 // Переключатель темы
@@ -302,6 +362,9 @@ struct PersonalizationViewIOS: View {
         }
         .fullScreenCover(isPresented: $showingWatchFaceLibrary) {
             LibraryOfWatchFaces()
+        }
+        .fullScreenCover(isPresented: $showingFirstView) {
+            FirstView()
         }
     }
 }

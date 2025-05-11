@@ -92,4 +92,10 @@ class ToDoPresenter: ToDoPresenterProtocol {
     func addItemWithCategory(title: String, category: TaskCategoryModel, priority: TaskPriority, date: Date) {
         interactor?.addItemWithCategory(title: title, category: category, date: date)
     }
+
+    func updateTaskDate(id: UUID, newDate: Date) {
+        // Обновляем дату задачи в репозитории
+        interactor?.updateTaskDate(id: id, newDate: newDate)
+        // Не вызываем refreshItems() здесь, так как это может привести к нежелательному поведению
+    }
 }

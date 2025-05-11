@@ -22,4 +22,7 @@ protocol ToDoInteractorProtocol: AnyObject {
     
     // Функционал архива
     func archiveCompletedTasks()
+
+    // Добавляем новый метод
+    func updateTaskDate(id: UUID, newDate: Date)
 }

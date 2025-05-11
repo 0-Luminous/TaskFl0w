@@ -253,6 +253,32 @@ class ToDoInteractor: ToDoInteractorProtocol {
         }
     }
 
+    func updateTaskDate(id: UUID, newDate: Date) {
+        print("📅 Обновление даты задачи: ID=\(id), Новая дата=\(newDate)")
+        
+        let request = NSFetchRequest<NSManagedObject>(entityName: "CDToDoItem")
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+
+        do {
+            let items = try viewContext.fetch(request)
+            if let item = items.first {
+                let oldDate = item.value(forKey: "date") as? Date
+                print("📅 Старая дата задачи: \(oldDate?.description ?? "неизвестно")")
+                
+                // Проверяем, что новая дата действительно отличается
+                if oldDate != newDate {
+                    item.setValue(newDate, forKey: "date")
+                    saveContext()
+                    // Обновляем только эту конкретную задачу
+                    let updatedItem = convertToToDoItem(item)
+                    presenter?.didFetchItems(ToDoItem: [updatedItem])
+                }
+            }
+        } catch {
+            print("❌ Ошибка при обновлении даты задачи: \(error)")
+        }
+    }
+
     // Вспомогательный метод для сохранения контекста
     private func saveContext() {
         if viewContext.hasChanges {

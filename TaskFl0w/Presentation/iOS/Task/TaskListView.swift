@@ -56,7 +56,7 @@ struct TaskListView: View {
                              // Заменяем локальные состояния на свойства CalendarState
                             if calendarState.isWeekCalendarVisible {
                                 Color.clear
-                                    .frame(height: 50)
+                                    .frame(height: 70)
                                     .listRowBackground(Color.clear)
                                     .listRowSeparator(.hidden)
                             }
