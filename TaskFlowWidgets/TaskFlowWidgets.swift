@@ -234,208 +234,376 @@ struct Provider: AppIntentTimelineProvider {
     }
 }
 
-// Компонент для отображения циферблата с другим именем
-struct WidgetClockView: View {
+// Улучшенный компонент для отображения циферблата
+struct EnhancedClockView: View {
     var categories: [String]
     var currentCategory: String
     var timeRemaining: TimeInterval
     var totalTime: TimeInterval
     
+    // Функция для получения цвета категории
+    private func colorForCategory(_ category: String) -> Color {
+        CategoryColorProvider.getColorFor(category: category)
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             let size = min(geometry.size.width, geometry.size.height)
             let center = CGPoint(x: size/2, y: size/2)
-            let radius = size/2 - 4
+            let radius = size/2 - 8
             
             ZStack {
-                // Фоновый круг (серый)
+                // Фоновый круг с градиентом
                 Circle()
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 4)
-                    .frame(width: size, height: size)
-                
-                // Прогресс-индикатор (заполняющийся круг)
-                Circle()
-                    .trim(from: 0, to: CGFloat(1 - (timeRemaining / totalTime)))
-                    .stroke(Color.blue, lineWidth: 4)
-                    .rotationEffect(.degrees(-90))
-                    .frame(width: size, height: size)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.black.opacity(0.8), Color.black.opacity(0.9)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.5
+                            )
+                    )
+                    .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 2)
                 
                 // Секторы категорий
                 ForEach(0..<categories.count, id: \.self) { index in
-                    let startAngle = Angle(degrees: Double(index) * (360.0 / Double(categories.count)))
-                    let endAngle = Angle(degrees: Double(index + 1) * (360.0 / Double(categories.count)))
+                    let angle = 360.0 / Double(categories.count)
+                    let startAngle = Angle(degrees: Double(index) * angle - 90)
+                    let endAngle = Angle(degrees: Double(index + 1) * angle - 90)
                     let isActive = categories[index] == currentCategory
+                    let categoryColor = colorForCategory(categories[index])
                     
                     Path { path in
                         path.move(to: center)
                         path.addArc(
                             center: center,
-                            radius: radius,
+                            radius: radius * 0.8,
                             startAngle: startAngle,
                             endAngle: endAngle,
                             clockwise: false
                         )
                         path.closeSubpath()
                     }
-                    .fill(isActive ? Color.blue.opacity(0.3) : Color.gray.opacity(0.1))
+                    .fill(isActive ? categoryColor.opacity(0.5) : Color.gray.opacity(0.15))
+                    
+                    // Добавляем иконку категории, если активна
+                    if isActive {
+                        let iconAngle = startAngle.degrees + (endAngle.degrees - startAngle.degrees) / 2
+                        let distance = radius * 0.55
+                        let iconX = center.x + cos(iconAngle * .pi / 180) * distance
+                        let iconY = center.y + sin(iconAngle * .pi / 180) * distance
+                        
+                        Image(systemName: iconForCategory(categories[index]))
+                            .font(.system(size: size * 0.08))
+                            .foregroundColor(.white)
+                            .position(x: iconX, y: iconY)
+                    }
                 }
                 
-                // Внутренний круг для текста
+                // Прогресс-индикатор (заполняющийся круг)
+                if totalTime > 0 {
+                    let progress = 1 - (timeRemaining / totalTime)
+                    let categoryColor = colorForCategory(currentCategory)
+                    
+                    Circle()
+                        .trim(from: 0, to: CGFloat(progress))
+                        .stroke(categoryColor, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .frame(width: size * 0.85, height: size * 0.85)
+                }
+                
+                // Внутренний круг для текста с эффектом стекла
                 Circle()
-                    .fill(Color.black)
-                    .frame(width: size * 0.6, height: size * 0.6)
+                    .fill(.ultraThinMaterial)
+                    .frame(width: size * 0.65, height: size * 0.65)
+                    .overlay(
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.white.opacity(0.5), Color.clear]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
+                    .blur(radius: 0.5)
                 
                 // Текст с оставшимся временем
-                VStack {
+                VStack(spacing: 6) {
                     Text(formatTime(timeRemaining))
-                        .font(.system(size: size * 0.15, weight: .bold))
+                        .font(.system(size: size * 0.18, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                     
                     Text(currentCategory)
-                        .font(.system(size: size * 0.08))
-                        .foregroundColor(.white)
+                        .font(.system(size: size * 0.09, design: .rounded))
+                        .foregroundColor(.white.opacity(0.9))
                 }
+                .frame(width: size * 0.6)
             }
             .frame(width: size, height: size)
         }
         .aspectRatio(1, contentMode: .fit)
     }
     
+    // Форматирование времени в читаемый вид
     private func formatTime(_ timeInterval: TimeInterval) -> String {
         let hours = Int(timeInterval) / 3600
         let minutes = (Int(timeInterval) % 3600) / 60
-        return String(format: "%02d:%02d", hours, minutes)
+        
+        if hours > 0 {
+            return String(format: "%d:%02d", hours, minutes)
+        } else {
+            return String(format: "%d мин", minutes)
+        }
+    }
+    
+    // Определение иконки по названию категории
+    private func iconForCategory(_ category: String) -> String {
+        switch category {
+        case "Работа": return "briefcase.fill"
+        case "Перерыв": return "cup.and.saucer.fill"
+        case "Учеба": return "book.fill"
+        case "Хобби": return "paintpalette.fill"
+        case "Отдых": return "house.fill"
+        default: return "clock.fill"
+        }
     }
 }
 
-struct WidgetTaskView: View {
-    var categories: [String]
+struct EnhancedTaskView: View {
     var currentCategory: String
-    var tasks: [WidgetTodoTask] 
+    var tasks: [WidgetTodoTask]
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
+            // Заголовок с категорией
             Text(currentCategory)
-                .font(.headline)
-                .padding(.bottom, 4)
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .foregroundColor(CategoryColorProvider.getColorFor(category: currentCategory))
+                .padding(.bottom, 2)
             
             let filteredTasks = tasks.filter { $0.category == currentCategory }
             
             if filteredTasks.isEmpty {
-                Text("Нет активных задач")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                // Улучшенное сообщение при отсутствии задач
+                HStack {
+                    Image(systemName: "checkmark.circle")
+                        .foregroundColor(.gray.opacity(0.6))
+                    Text("Нет активных задач")
+                        .font(.system(size: 14, design: .rounded))
+                        .foregroundColor(.gray.opacity(0.8))
+                }
+                .padding(.vertical, 6)
             } else {
-                ForEach(filteredTasks.prefix(5)) { task in
+                // Список задач с анимированным появлением
+                ForEach(Array(filteredTasks.prefix(5).enumerated()), id: \.element.id) { index, task in
                     HStack {
-                        Circle()
-                            .fill(task.isCompleted ? Color.green : Color.blue)
-                            .frame(width: 10, height: 10)
+                        // Улучшенный индикатор задачи
+                        ZStack {
+                            Circle()
+                                .fill(task.isCompleted ? Color.green0.opacity(0.2) : CategoryColorProvider.getColorFor(category: currentCategory).opacity(0.2))
+                                .frame(width: 22, height: 22)
+                            
+                            Circle()
+                                .strokeBorder(task.isCompleted ? Color.green0 : CategoryColorProvider.getColorFor(category: currentCategory), lineWidth: 1.5)
+                                .frame(width: 22, height: 22)
+                            
+                            if task.isCompleted {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(Color.green0)
+                            }
+                        }
                         
                         Text(task.title)
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, design: .rounded))
+                            .foregroundColor(.primary)
                             .lineLimit(1)
+                            .strikethrough(task.isCompleted)
+                            .opacity(task.isCompleted ? 0.7 : 1.0)
                         
                         Spacer()
                     }
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.gray.opacity(0.1))
+                    )
+                    .animation(.easeInOut(duration: 0.2).delay(Double(index) * 0.05), value: filteredTasks.count)
                 }
                 
                 if filteredTasks.count > 5 {
-                    Text("+ ещё \(filteredTasks.count - 5)")
-                        .font(.caption)
-                        .foregroundColor(.gray)
+                    HStack {
+                        Spacer()
+                        Text("+ ещё \(filteredTasks.count - 5)")
+                            .font(.system(size: 12, design: .rounded))
+                            .foregroundColor(.gray)
+                            .padding(.top, 4)
+                    }
                 }
             }
         }
         .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
+        )
     }
 }
 
 struct TaskFlowWidgetsEntryView: View {
     var entry: Provider.Entry
     @Environment(\.widgetFamily) var family
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        switch family {
-        case .systemSmall:
-            // Обновленный циферблат для маленького виджета
-            WidgetClockView(
-                categories: entry.categories,
-                currentCategory: entry.currentCategory,
-                timeRemaining: entry.timeRemaining, 
-                totalTime: entry.totalTime
-            )
+        ZStack {
+            // Добавляем единый фон для всех виджетов
+            backgroundView
             
-        case .systemMedium:
-            // Комбинированный вид для среднего виджета
-            HStack {
-                WidgetClockView(
+            switch family {
+            case .systemSmall:
+                // Улучшенный циферблат для маленького виджета
+                EnhancedClockView(
                     categories: entry.categories,
                     currentCategory: entry.currentCategory,
-                    timeRemaining: entry.timeRemaining,
+                    timeRemaining: entry.timeRemaining, 
                     totalTime: entry.totalTime
                 )
-                .frame(width: 100, height: 100)
+                .padding(8)
                 
-                Divider()
-                    .background(Color.gray.opacity(0.5))
-                
-                // Список задач для текущей категории
-                VStack(alignment: .leading) {
-                    let filteredTasks = entry.tasks.filter { $0.category == entry.currentCategory }
+            case .systemMedium:
+                // Комбинированный вид для среднего виджета
+                HStack(spacing: 0) {
+                    // Левая часть с циферблатом
+                    EnhancedClockView(
+                        categories: entry.categories,
+                        currentCategory: entry.currentCategory,
+                        timeRemaining: entry.timeRemaining,
+                        totalTime: entry.totalTime
+                    )
+                    .frame(width: 140, height: 140)
+                    .padding(.leading, 8)
                     
-                    Text(entry.currentCategory)
-                        .font(.headline)
-                        .padding(.bottom, 4)
-                    
-                    if filteredTasks.isEmpty {
-                        Text("Нет активных задач")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    } else {
-                        ForEach(filteredTasks.prefix(3)) { task in
-                            HStack {
-                                Circle()
-                                    .fill(task.isCompleted ? Color.green : Color.blue)
-                                    .frame(width: 8, height: 8)
-                                
-                                Text(task.title)
-                                    .font(.system(size: 12))
-                                    .lineLimit(1)
+                    // Правая часть с задачами
+                    VStack(alignment: .leading) {
+                        let filteredTasks = entry.tasks.filter { $0.category == entry.currentCategory }
+                        
+                        // Заголовок
+                        Text(entry.currentCategory)
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundColor(CategoryColorProvider.getColorFor(category: entry.currentCategory))
+                            .padding(.bottom, 4)
+                        
+                        if filteredTasks.isEmpty {
+                            // Сообщение об отсутствии задач
+                            Text("Нет активных задач")
+                                .font(.system(size: 14, design: .rounded))
+                                .foregroundColor(.gray)
+                                .padding(.vertical, 8)
+                        } else {
+                            // Список задач
+                            ForEach(filteredTasks.prefix(3)) { task in
+                                HStack(spacing: 8) {
+                                    // Индикатор выполнения
+                                    Circle()
+                                        .fill(task.isCompleted ? Color.green0 : .clear)
+                                        .frame(width: 12, height: 12)
+                                        .overlay(
+                                            Circle()
+                                                .strokeBorder(
+                                                    task.isCompleted ? Color.green0 : CategoryColorProvider.getColorFor(category: entry.currentCategory),
+                                                    lineWidth: 1.5
+                                                )
+                                        )
+                                    
+                                    Text(task.title)
+                                        .font(.system(size: 14, design: .rounded))
+                                        .foregroundColor(.primary)
+                                        .lineLimit(1)
+                                        .strikethrough(task.isCompleted)
+                                        .opacity(task.isCompleted ? 0.7 : 1.0)
+                                }
+                                .padding(.vertical, 4)
                             }
                         }
                     }
+                    .padding(.leading, 16)
+                    .padding(.trailing, 12)
+                    .padding(.vertical, 12)
                 }
-                .padding(.leading, 8)
-            }
-            
-        case .systemLarge:
-            // Для большого виджета - циферблат + большой список задач
-            VStack {
-                WidgetClockView(
-                    categories: entry.categories,
-                    currentCategory: entry.currentCategory,
-                    timeRemaining: entry.timeRemaining,
-                    totalTime: entry.totalTime
-                )
-                .frame(height: 120)
-                .padding(.bottom, 8)
                 
-                Divider()
-                    .background(Color.gray.opacity(0.5))
-                    .padding(.horizontal)
+            case .systemLarge:
+                // Для большого виджета - улучшенный вид
+                VStack(spacing: 10) {
+                    // Циферблат на верху
+                    EnhancedClockView(
+                        categories: entry.categories,
+                        currentCategory: entry.currentCategory,
+                        timeRemaining: entry.timeRemaining,
+                        totalTime: entry.totalTime
+                    )
+                    .frame(height: 180)
+                    .padding(.top, 10)
+                    
+                    Divider()
+                        .background(
+                            LinearGradient(
+                                gradient: Gradient(colors: [.clear, .gray.opacity(0.5), .clear]), 
+                                startPoint: .leading, 
+                                endPoint: .trailing
+                            )
+                        )
+                        .padding(.horizontal, 30)
+                    
+                    // Список задач внизу
+                    EnhancedTaskView(
+                        currentCategory: entry.currentCategory,
+                        tasks: entry.tasks
+                    )
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 10)
+                }
                 
-                // Список задач с полной информацией
-                WidgetTaskView(
-                    categories: entry.categories,
-                    currentCategory: entry.currentCategory,
-                    tasks: entry.tasks
-                )
+            default:
+                Text("Неподдерживаемый размер виджета")
+                    .font(.system(size: 14, design: .rounded))
             }
-            
-        default:
-            Text("Неподдерживаемый размер виджета")
         }
+    }
+    
+    // Градиентный фон для виджетов
+    private var backgroundView: some View {
+        let categoryColor = CategoryColorProvider.getColorFor(category: entry.currentCategory)
+        
+        return LinearGradient(
+            gradient: Gradient(colors: [
+                colorScheme == .dark ? Color.black : Color(red: 0.1, green: 0.1, blue: 0.1),
+                colorScheme == .dark ? Color.black.opacity(0.8) : Color(red: 0.15, green: 0.15, blue: 0.15)
+            ]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .overlay(
+            // Subtle category color accent in the background
+            RoundedRectangle(cornerRadius: 20)
+                .fill(
+                    categoryColor.opacity(colorScheme == .dark ? 0.1 : 0.08)
+                )
+        )
     }
 }
 
@@ -445,11 +613,12 @@ struct TaskFlowWidgets: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
             TaskFlowWidgetsEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(.clear, for: .widget)
         }
     }
 }
 
+// Настройки для предпросмотра
 extension ConfigurationAppIntent {
     fileprivate static var smiley: ConfigurationAppIntent {
         let intent = ConfigurationAppIntent()
@@ -473,7 +642,7 @@ extension SimpleEntry {
     }
 }
 
-// И обновленные превью
+// Предпросмотры
 #Preview(as: .systemSmall) {
     TaskFlowWidgets()
 } timeline: {

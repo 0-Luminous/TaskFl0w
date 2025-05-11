@@ -31,6 +31,9 @@ class CategoryManagement: CategoryManagementProtocol {
         do {
             let categoryEntities = try context.fetch(request)
             _categories = categoryEntities.map { $0.categoryModel }
+            
+            // Обновляем цвета категорий для виджетов
+            CategoryColorSharing.shared.updateCategoryColors(categories: _categories)
         } catch {
             print("Ошибка при загрузке категорий: \(error)")
         }
