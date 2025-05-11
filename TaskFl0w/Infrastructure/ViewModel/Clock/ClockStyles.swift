@@ -20,8 +20,14 @@ enum ClockStyle: String, CaseIterable {
     }
 }
 
-public enum MarkerStyle {
-    case numbers
-    case lines
-    case dots
+public enum MarkerStyle: String {
+    case numbers    // Числовые маркеры
+    case lines      // Обычные линии
+    case dots       // Точечные маркеры
+    
+    // Новые стили, соответствующие изображению
+    case classicWatch    // Верхний левый - классический стиль часов
+    case thinUniform     // Верхний правый - тонкие линии одинаковой длины
+    case hourAccent      // Нижний левый - акцент только на часовых отметках
+    case uniformDense    // Нижний правый - плотные линии одинаковой длины
 }

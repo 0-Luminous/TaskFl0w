@@ -69,23 +69,50 @@ struct GlobleClockFaceViewIOS: View {
                 DigitalTimeDisplay(hour: hour, minute: minute, color: themeManager.currentMarkersColor)
             }
 
-            // Маркеры часов (24 шт.) - без цифр
+            // Маркеры часов (24 шт.) и промежуточные маркеры
             if markersViewModel.showMarkers {
+                // Основные часовые маркеры (24 шт.)
                 ForEach(0..<24, id: \.self) { hour in
                     let angle = Double(hour) * (360.0 / 24.0)
                     ClockMarker(
                         hour: hour,
-                        style: clockStyleEnum.markerStyle,
+                        style: markersViewModel.markerStyle,
                         viewModel: markersViewModel,
                         MarkersColor: themeManager.currentMarkersColor,
                         zeroPosition: zeroPosition,
-                        showNumbers: false
+                        showNumbers: false,
+                        isMainMarker: true
                     )
                     .rotationEffect(.degrees(angle))
                     .frame(
                         width: UIScreen.main.bounds.width * 0.7,
                         height: UIScreen.main.bounds.width * 0.7)
-                    .id("marker-\(hour)-\(Int(zeroPosition))")
+                    .id("marker-\(hour)-\(Int(zeroPosition))-\(markersViewModel.markerStyle)-main")
+                }
+                
+                // Промежуточные маркеры (4 маркера между каждой парой часов)
+                if markersViewModel.showIntermediateMarkers {
+                    ForEach(0..<96, id: \.self) { minuteMarker in
+                        let angle = Double(minuteMarker) * (360.0 / 96.0)
+                        // Пропускаем позиции, где уже есть часовые маркеры
+                        if minuteMarker % 4 != 0 {
+                            ClockMarker(
+                                hour: minuteMarker / 4, // Сопоставляем с ближайшим часом
+                                minuteIndex: minuteMarker % 4, // Индекс минутного маркера (1, 2, 3)
+                                style: markersViewModel.markerStyle,
+                                viewModel: markersViewModel,
+                                MarkersColor: themeManager.currentMarkersColor,
+                                zeroPosition: zeroPosition,
+                                showNumbers: false,
+                                isMainMarker: false
+                            )
+                            .rotationEffect(.degrees(angle))
+                            .frame(
+                                width: UIScreen.main.bounds.width * 0.7,
+                                height: UIScreen.main.bounds.width * 0.7)
+                            .id("marker-minute-\(minuteMarker)-\(Int(zeroPosition))-\(markersViewModel.markerStyle)")
+                        }
+                    }
                 }
             }
             
@@ -141,6 +168,7 @@ struct GlobleClockFaceViewIOS: View {
             markersViewModel.markersOffset = markersOffset
             markersViewModel.markersWidth = markersWidth
             markersViewModel.numbersSize = numbersSize
+            markersViewModel.markerStyle = viewModel.markerStyle
             // Принудительно обновляем View
             updateMarkersViewModel()
         }
@@ -163,6 +191,14 @@ struct GlobleClockFaceViewIOS: View {
         }
         .onChange(of: numbersSize) { oldValue, newValue in
             markersViewModel.numbersSize = newValue
+            updateMarkersViewModel()
+        }
+        .onChange(of: markersViewModel.markerStyle) { oldValue, newValue in
+            // Принудительно обновляем View
+            updateMarkersViewModel()
+        }
+        .onChange(of: markersViewModel.showIntermediateMarkers) { oldValue, newValue in
+            // Принудительно обновляем View
             updateMarkersViewModel()
         }
     }

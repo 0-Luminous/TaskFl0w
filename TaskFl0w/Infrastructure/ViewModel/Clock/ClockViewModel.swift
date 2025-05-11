@@ -219,6 +219,31 @@ final class ClockViewModel: ObservableObject {
     // В ClockViewModel добавить:
     @AppStorage("showTimeOnlyForActiveTask") var showTimeOnlyForActiveTask: Bool = false
 
+    // В списке свойств AppStorage:
+    @AppStorage("markerStyle") var markerStyleRaw: String = MarkerStyle.lines.rawValue {
+        didSet {
+            if let style = MarkerStyle(rawValue: markerStyleRaw) {
+                markersViewModel.markerStyle = style
+            }
+        }
+    }
+
+    var markerStyle: MarkerStyle {
+        get {
+            MarkerStyle(rawValue: markerStyleRaw) ?? .lines
+        }
+        set {
+            markerStyleRaw = newValue.rawValue
+        }
+    }
+
+    // После свойства showMarkers добавляем:
+    @AppStorage("showIntermediateMarkers") var showIntermediateMarkers: Bool = true {
+        didSet {
+            markersViewModel.showIntermediateMarkers = showIntermediateMarkers
+        }
+    }
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState
@@ -330,6 +355,8 @@ final class ClockViewModel: ObservableObject {
         markersViewModel.numberInterval = numberInterval
         markersViewModel.showMarkers = showMarkers
         markersViewModel.fontName = fontName
+        markersViewModel.markerStyle = markerStyle
+        markersViewModel.showIntermediateMarkers = showIntermediateMarkers
     }
     
     // MARK: - Методы форматирования даты

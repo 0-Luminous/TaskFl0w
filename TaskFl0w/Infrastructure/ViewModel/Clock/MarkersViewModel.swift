@@ -23,7 +23,9 @@ final class ClockMarkersViewModel: ObservableObject {
         }
     }
     @Published var showMarkers: Bool = true
+    @Published var showIntermediateMarkers: Bool = true // Новое свойство для промежуточных маркеров
     @Published var fontName: String = "SF Pro" // или любой дефолтный шрифт
+    @Published var markerStyle: MarkerStyle = .lines // Добавляем стиль маркеров
     
     // Список доступных шрифтов с PostScript именами
     let customFonts: [String] = [
@@ -81,6 +83,17 @@ final class ClockMarkersViewModel: ObservableObject {
         let hexColor = isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
         return Color(hex: hexColor) ?? .gray
     }
+
+    // Названия стилей маркеров для отображения в интерфейсе
+    var markerStyleNames: [MarkerStyle: String] = [
+        .lines: "Линии",
+        .dots: "Точки",
+        .numbers: "Цифры",
+        .classicWatch: "Классические",
+        .thinUniform: "Тонкие",
+        .hourAccent: "Часовые",
+        .uniformDense: "Плотные"
+    ]
 
     // MARK: - Methods
     func startPoint(angle: CGFloat, length: CGFloat, geometry: GeometryProxy) -> CGPoint {
