@@ -70,11 +70,21 @@
 			);
 			target = 2C9D00502DC1552200B6724A /* TaskFlowWidgetsExtension */;
 		};
+		2C9FDCB72DD0E89D00DF9783 /* Exceptions for "TaskFl0w" folder in "TaskFl0w" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2C1DB3892D1AB92000C768B1 /* TaskFl0w */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2C1DB38C2D1AB92000C768B1 /* TaskFl0w */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2C9FDCB72DD0E89D00DF9783 /* Exceptions for "TaskFl0w" folder in "TaskFl0w" target */,
+			);
 			path = TaskFl0w;
 			sourceTree = "<group>";
 		};
@@ -524,6 +534,7 @@
 				DEVELOPMENT_TEAM = 4JCS7KTRQH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TaskFl0w/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TaskFl0w;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -561,6 +572,7 @@
 				DEVELOPMENT_TEAM = 4JCS7KTRQH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TaskFl0w/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TaskFl0w;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

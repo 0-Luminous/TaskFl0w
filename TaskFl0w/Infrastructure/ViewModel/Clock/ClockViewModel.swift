@@ -267,11 +267,26 @@ final class ClockViewModel: ObservableObject {
         
         // Настраиваем двустороннее связывание с dockBarViewModel
         setupDockBarBindings()
+
+        // Добавляем обработчик для обновления стиля часов
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleClockStyleChange),
+            name: NSNotification.Name("ClockStyleDidChange"),
+            object: nil
+        )
     }
     
     deinit {
         // Отписываемся от уведомлений
         NotificationCenter.default.removeObserver(self)
+        
+        // Отписываемся от уведомления о смене стиля
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSNotification.Name("ClockStyleDidChange"),
+            object: nil
+        )
     }
     
     // MARK: - Обработчики уведомлений
@@ -284,6 +299,19 @@ final class ClockViewModel: ObservableObject {
             self?.markersViewModel.zeroPosition = newPosition
             // Принудительно обновляем UI
             self?.objectWillChange.send()
+        }
+    }
+    
+    // Добавляем метод для обработки уведомления
+    @objc private func handleClockStyleChange(_ notification: Notification) {
+        if let newStyle = notification.userInfo?["clockStyle"] as? String {
+            DispatchQueue.main.async { [weak self] in
+                // Проверяем, что стиль действительно изменился
+                if self?.clockStyle != newStyle {
+                    self?.clockStyle = newStyle
+                    // objectWillChange.send() вызывается автоматически в сеттере clockStyle
+                }
+            }
         }
     }
     

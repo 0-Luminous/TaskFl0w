@@ -52,12 +52,13 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 style: "classic",
                 isCustom: false,
                 category: WatchFaceCategory.classic.rawValue,
-                lightModeClockFaceColor: Color.green.toHex(),
-                darkModeClockFaceColor: Color.green.toHex(),
+                lightModeClockFaceColor: Color.white.toHex(),
+                darkModeClockFaceColor: Color.black.toHex(),
                 lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
                 darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
                 lightModeMarkersColor: Color.black.toHex(),
-                darkModeMarkersColor: Color.white.toHex()
+                darkModeMarkersColor: Color.white.toHex(),
+                showHourNumbers: true
             ),
             // Добавляем еще один классический циферблат
             WatchFaceModel(
@@ -68,9 +69,10 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 lightModeClockFaceColor: Color(red: 0.95, green: 0.95, blue: 0.87).toHex(),
                 darkModeClockFaceColor: Color(red: 1, green: 0.851, blue: 0.4).toHex(), // #ffd966
                 lightModeOuterRingColor: Color.brown.opacity(0.3).toHex(),
-                darkModeOuterRingColor: Color.brown.opacity(0.5).toHex(),
+                darkModeOuterRingColor: Color.gray.toHex(),
                 lightModeMarkersColor: Color.brown.toHex(),
-                darkModeMarkersColor: Color.brown.opacity(0.7).toHex()
+                darkModeMarkersColor: Color.brown.opacity(0.7).toHex(),
+                showHourNumbers: true
             ),
             WatchFaceModel(
                 name: "Капучино",
@@ -83,20 +85,6 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeOuterRingColor: Color.brown.opacity(0.5).toHex(),
                 lightModeMarkersColor: Color.black.toHex(),
                 darkModeMarkersColor: Color.black.opacity(0.7).toHex(),
-                showHourNumbers: false
-            ),
-            // Минималистичный циферблат
-            WatchFaceModel(
-                name: "Чистый",
-                style: "minimal",
-                isCustom: false,
-                category: WatchFaceCategory.minimal.rawValue,
-                lightModeClockFaceColor: Color.white.toHex(),
-                darkModeClockFaceColor: Color.black.toHex(),
-                lightModeOuterRingColor: Color.gray.opacity(0.2).toHex(),
-                darkModeOuterRingColor: Color.gray.opacity(0.2).toHex(),
-                lightModeMarkersColor: Color.gray.toHex(),
-                darkModeMarkersColor: Color.gray.toHex(),
                 showHourNumbers: false
             ),
             // Цифровой циферблат
@@ -118,7 +106,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
     }
     
     // Метод для применения циферблата
-    func apply(to themeManager: ThemeManager) {
+    func apply(to themeManager: ThemeManager, markersViewModel: ClockMarkersViewModel? = nil) {
         // Применяем цвета через метод ThemeManager
         let lightFaceColor = Color(hex: lightModeClockFaceColor) ?? .white
         themeManager.updateColor(lightFaceColor, for: ThemeManager.Constants.lightModeClockFaceColorKey)
@@ -138,8 +126,11 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
         let darkMarkersColor = Color(hex: darkModeMarkersColor) ?? .white
         themeManager.updateColor(darkMarkersColor, for: ThemeManager.Constants.darkModeMarkersColorKey)
 
+        // Получаем отображаемое имя стиля для сохранения и уведомлений
+        let displayStyleName = WatchFaceModel.displayStyleName(for: style)
+        
         // Сохраняем другие настройки в UserDefaults как раньше
-        UserDefaults.standard.set(WatchFaceModel.displayStyleName(for: style), forKey: "clockStyle")
+        UserDefaults.standard.set(displayStyleName, forKey: "clockStyle")
         UserDefaults.standard.set(showMarkers, forKey: "showMarkers")
         UserDefaults.standard.set(showHourNumbers, forKey: "showHourNumbers")
         UserDefaults.standard.set(numberInterval, forKey: "numberInterval")
@@ -159,8 +150,21 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
         let _ = themeManager.currentOuterRingColor
         let _ = themeManager.currentMarkersColor
         
+        // Отправляем уведомление для обновления clockStyle во всех активных экземплярах ClockViewModel
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ClockStyleDidChange"),
+            object: nil,
+            userInfo: ["clockStyle": displayStyleName]
+        )
+        
         DispatchQueue.main.async {
             themeManager.objectWillChange.send()
+        }
+        
+        // Дополнительно обновляем ViewModel для маркеров
+        if let markersViewModel = markersViewModel {
+            markersViewModel.showHourNumbers = showHourNumbers
+            markersViewModel.objectWillChange.send()
         }
     }
     
@@ -169,7 +173,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
         switch internalStyle {
         case "classic": return "Классический"
         case "minimal": return "Минимализм"
-        case "digital": return "Мегаполис"
+        case "digital": return "Цифровой"
         case "modern": return "Контур"
         default: return "Классический"
         }
@@ -180,7 +184,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
         switch displayStyle {
         case "Классический": return "classic"
         case "Минимализм": return "minimal" 
-        case "Мегаполис": return "digital"
+        case "Цифровой": return "digital"
         case "Контур": return "modern"
         default: return "classic"
         }

@@ -29,7 +29,19 @@ final class ClockMarkersViewModel: ObservableObject {
     let customFonts: [String] = [
 
         "SF Pro",
- 
+        "MOSCOW2024",
+        "ForestSmooth",
+        "Brillant",
+        "TDAText",
+        "Hussar3dTwo",
+        "Minstrels",
+        "Letterblocks",
+        "CaptainLethargic",
+        "BungeeShade-Regular",
+        "cellblocknbp",
+        "catstack",
+        "Chokokutai-Regular",
+
         "Georgia",
         "Georgia-Bold",
 

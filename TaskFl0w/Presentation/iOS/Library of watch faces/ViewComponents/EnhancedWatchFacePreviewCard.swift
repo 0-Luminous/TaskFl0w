@@ -24,7 +24,7 @@ struct EnhancedWatchFacePreviewCard: View {
                         Color(red: 0.18, green: 0.18, blue: 0.18) :
                         Color(red: 0.95, green: 0.95, blue: 0.95))
                     .shadow(color: isSelected ? 
-                        (themeManager.isDarkMode ? .yellow.opacity(0.4) : .yellow.opacity(0.3)) : 
+                        (themeManager.isDarkMode ? .yellow.opacity(0.4) : .red1.opacity(0.3)) : 
                         (themeManager.isDarkMode ? .black.opacity(0.5) : .gray.opacity(0.3)), 
                         radius: 5)
                 

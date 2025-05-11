@@ -107,7 +107,8 @@ class WatchFaceLibraryManager: ObservableObject {
             selectedFaceID = faceID
             UserDefaults.standard.set(faceID.uuidString, forKey: selectedFaceIDKey)
             
-            // Применяем настройки циферблата
+            // Применяем настройки циферблата - без передачи markersViewModel,
+            // так как в этом контексте у нас его может не быть
             face.apply(to: ThemeManager.shared)
         }
     }

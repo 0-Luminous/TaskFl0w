@@ -90,7 +90,7 @@ struct GlobleClockFaceViewIOS: View {
             }
             
             // Слой с цифрами (отдельно) - показываем независимо от маркеров
-            if markersViewModel.showHourNumbers {
+            if markersViewModel.showHourNumbers && viewModel.clockStyle != "Цифровой" {
                 ForEach(0..<24, id: \.self) { hour in
                     let angle = Double(hour) * (360.0 / 24.0)
                     // Проверяем, нужно ли отображать число в соответствии с интервалом

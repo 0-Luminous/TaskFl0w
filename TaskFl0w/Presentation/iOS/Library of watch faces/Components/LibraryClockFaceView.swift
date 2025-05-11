@@ -14,7 +14,7 @@ struct LibraryClockFaceView: View {
     @StateObject private var viewModel = ClockViewModel()
     @StateObject private var markersViewModel = ClockMarkersViewModel()
     @State private var draggedCategory: TaskCategoryModel? = nil
-    @Environment(\.colorScheme) var colorScheme
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         ZStack {
@@ -112,7 +112,7 @@ struct LibraryClockFaceView: View {
         markersViewModel.numbersSize = watchFace.numbersSize
         markersViewModel.lightModeMarkersColor = watchFace.lightModeMarkersColor
         markersViewModel.darkModeMarkersColor = watchFace.darkModeMarkersColor
-        markersViewModel.isDarkMode = colorScheme == .dark
+        markersViewModel.isDarkMode = themeManager.isDarkMode
         markersViewModel.fontName = watchFace.fontName
         markersViewModel.zeroPosition = watchFace.zeroPosition
         
@@ -125,15 +125,15 @@ struct LibraryClockFaceView: View {
         viewModel.showTimeOnlyForActiveTask = watchFace.showTimeOnlyForActiveTask
     }
     
-    // Вычисляемые свойства для цветов на основе colorScheme
+    // Вычисляемые свойства для цветов на основе ThemeManager
     private var clockFaceColor: Color {
-        colorScheme == .dark 
+        themeManager.isDarkMode 
             ? Color(hex: watchFace.darkModeClockFaceColor) ?? .black
             : Color(hex: watchFace.lightModeClockFaceColor) ?? .white
     }
     
     private var markersColor: Color {
-        colorScheme == .dark
+        themeManager.isDarkMode
             ? Color(hex: watchFace.darkModeMarkersColor) ?? .white
             : Color(hex: watchFace.lightModeMarkersColor) ?? .black
     }
