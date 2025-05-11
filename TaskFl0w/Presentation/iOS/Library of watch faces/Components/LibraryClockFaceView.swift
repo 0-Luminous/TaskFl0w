@@ -140,11 +140,11 @@ struct LibraryClockFaceView: View {
     
     private var markerStyle: MarkerStyle {
         switch watchFace.style {
-        case "classic": return .numbers
+        case "classic": return .standard
         case "minimal": return .lines
         case "digital": return .lines
         case "modern": return .dots
-        default: return .numbers
+        default: return .standard
         }
     }
 } 

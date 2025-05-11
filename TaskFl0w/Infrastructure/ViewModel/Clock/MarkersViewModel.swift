@@ -88,7 +88,7 @@ final class ClockMarkersViewModel: ObservableObject {
     var markerStyleNames: [MarkerStyle: String] = [
         .lines: "Линии",
         .dots: "Точки",
-        .numbers: "Цифры",
+        .standard: "Стандартные",
         .classicWatch: "Классические",
         .thinUniform: "Тонкие",
         .hourAccent: "Часовые",

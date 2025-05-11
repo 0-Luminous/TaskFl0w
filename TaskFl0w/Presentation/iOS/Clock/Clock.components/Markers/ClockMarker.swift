@@ -57,13 +57,13 @@ struct ClockMarker: View {
     private var markerView: some View {
         Group {
             switch style {
-            case .numbers:
+            case .standard:
                 if isMainMarker {
                     Rectangle()
                         .fill(MarkersColor)
                         .frame(width: viewModel.markersWidth, height: shouldShowNumber && viewModel.numberInterval > 1 ? 16 : 12)
                 } else {
-                    // Минутные маркеры для стиля с цифрами
+                    // Минутные маркеры для стандартного стиля
                     Rectangle()
                         .fill(MarkersColor.opacity(0.6))
                         .frame(width: max(1.0, viewModel.markersWidth * 0.5), height: 8)

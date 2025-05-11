@@ -9,9 +9,9 @@ enum ClockStyle: String, CaseIterable {
     var markerStyle: MarkerStyle {
         switch self {
         case .classic:
-            return .numbers
+            return .standard
         case .minimal:
-            return .numbers
+            return .standard
         case .modern:
             return .dots
         case .digital:
@@ -21,9 +21,9 @@ enum ClockStyle: String, CaseIterable {
 }
 
 public enum MarkerStyle: String {
-    case numbers    // Числовые маркеры
-    case lines      // Обычные линии
-    case dots       // Точечные маркеры
+    case standard    // Стандартные маркеры (было "numbers")
+    case lines       // Обычные линии
+    case dots        // Точечные маркеры
     
     // Новые стили, соответствующие изображению
     case classicWatch    // Верхний левый - классический стиль часов

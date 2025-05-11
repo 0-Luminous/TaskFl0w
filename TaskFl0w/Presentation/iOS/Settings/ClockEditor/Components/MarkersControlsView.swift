@@ -6,6 +6,7 @@ struct MarkersControlsView: View {
     @Binding var showMarkers: Bool
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var selectedStyle: MarkerStyle = .lines
+    @State private var showStylePicker: Bool = false // Для показа/скрытия выбора стиля
 
     var body: some View {
         VStack(spacing: 16) {
@@ -119,35 +120,123 @@ struct MarkersControlsView: View {
                     .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.bottom, 8)
-            }
-
-            // Выбор стиля маркеров
-            if markersViewModel.showMarkers {
+                
+                // Кнопка выбора стиля маркеров (заменяет галерею стилей)
                 VStack(spacing: 8) {
-                    Text("Стиль маркеров")
-                        .font(.caption)
-                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    // Первый ряд стилей - стандартные
-                    HStack(spacing: 10) {
-                        ForEach([MarkerStyle.lines, .dots, .numbers], id: \.self) { style in
-                            styleButton(for: style)
+                    Button(action: {
+                        withAnimation {
+                            showStylePicker.toggle()
                         }
+                    }) {
+                        HStack {
+                            // Превью текущего стиля
+                            stylePreviewView(for: markersViewModel.markerStyle)
+                                .frame(width: 50, height: 30)
+                                .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                                .padding(.leading, 8)
+                            
+                            Text("Стиль маркеров: \(markersViewModel.markerStyleNames[markersViewModel.markerStyle] ?? "")")
+                                .font(.caption)
+                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                            
+                            Spacer()
+                            
+                            Image(systemName: showStylePicker ? "chevron.up" : "chevron.down")
+                                .font(.caption)
+                                .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                                .padding(.trailing, 10)
+                        }
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(
+                                    themeManager.isDarkMode
+                                        ? Color(red: 0.184, green: 0.184, blue: 0.184)
+                                        : Color(red: 0.95, green: 0.95, blue: 0.95)
+                                )
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color.gray.opacity(0.7),
+                                            Color.gray.opacity(0.3),
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.0
+                                )
+                        )
                     }
+                    .buttonStyle(PlainButtonStyle())
                     
-                    // Второй ряд стилей - новые, как на картинке
-                    HStack(spacing: 10) {
-                        ForEach([MarkerStyle.classicWatch, .thinUniform, .hourAccent, .uniformDense], id: \.self) { style in
-                            styleButton(for: style)
+                    // Выпадающее меню стилей
+                    if showStylePicker {
+                        VStack(spacing: 2) {
+                            ForEach([MarkerStyle.lines, .dots, .standard, .classicWatch, .thinUniform, .hourAccent, .uniformDense], id: \.self) { style in
+                                Button(action: {
+                                    markersViewModel.markerStyle = style
+                                    viewModel.markerStyle = style
+                                    selectedStyle = style
+                                    withAnimation {
+                                        showStylePicker = false
+                                    }
+                                }) {
+                                    HStack {
+                                        stylePreviewView(for: style)
+                                            .frame(width: 50, height: 30)
+                                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                                            .padding(.leading, 8)
+                                        
+                                        Text(markersViewModel.markerStyleNames[style] ?? "")
+                                            .font(.caption)
+                                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                                        
+                                        Spacer()
+                                        
+                                        if style == markersViewModel.markerStyle {
+                                            Image(systemName: "checkmark")
+                                                .font(.caption)
+                                                .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                                                .padding(.trailing, 10)
+                                        }
+                                    }
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(
+                                                style == markersViewModel.markerStyle
+                                                ? (themeManager.isDarkMode ? Color.yellow.opacity(0.15) : Color.red1.opacity(0.15))
+                                                : Color.clear
+                                            )
+                                    )
+                                    .padding(.horizontal, 4)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
                         }
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(
+                                    themeManager.isDarkMode
+                                        ? Color(red: 0.22, green: 0.22, blue: 0.22)
+                                        : Color(red: 0.92, green: 0.92, blue: 0.92)
+                                )
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        )
+                        .transition(.scale.combined(with: .opacity))
                     }
                 }
                 .padding(.bottom, 8)
-            }
 
-            // Вторая строка с управлением толщиной
-            if markersViewModel.showMarkers {
+                // Вторая строка с управлением толщиной
                 HStack(spacing: 10) {
                     // Кнопка уменьшения толщины
                     Button(action: {
@@ -200,24 +289,24 @@ struct MarkersControlsView: View {
                 .padding(.bottom, 8)
 
                 // Дополнительная информация о маркерах
-                Text(
-                    "Толщина маркеров влияет на визуальное отображение циферблата. Более тонкие маркеры создают минималистичный вид, а более толстые обеспечивают лучшую видимость."
-                )
-                .font(.caption)
-                .foregroundColor(.gray)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 4)
+                // Text(
+                //     "Толщина маркеров влияет на визуальное отображение циферблата. Более тонкие маркеры создают минималистичный вид, а более толстые обеспечивают лучшую видимость."
+                // )
+                // .font(.caption)
+                // .foregroundColor(.gray)
+                // .frame(maxWidth: .infinity, alignment: .leading)
+                // .padding(.top, 4)
             }
 
             // После кнопки для промежуточных маркеров:
-            if markersViewModel.showMarkers && markersViewModel.showIntermediateMarkers {
-                Text("Промежуточные маркеры добавляют более детальную шкалу между часовыми отметками, делая циферблат более точным.")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 4)
-                    .padding(.bottom, 8)
-            }
+            // if markersViewModel.showMarkers && markersViewModel.showIntermediateMarkers {
+            //     Text("Промежуточные маркеры добавляют более детальную шкалу между часовыми отметками, делая циферблат более точным.")
+            //         .font(.caption)
+            //         .foregroundColor(.gray)
+            //         .frame(maxWidth: .infinity, alignment: .leading)
+            //         .padding(.top, 4)
+            //         .padding(.bottom, 8)
+            // }
         }
         .padding()
         .background(
@@ -236,41 +325,6 @@ struct MarkersControlsView: View {
     }
     
     @ViewBuilder
-    private func styleButton(for style: MarkerStyle) -> some View {
-        Button(action: {
-            markersViewModel.markerStyle = style
-            viewModel.markerStyle = style
-            selectedStyle = style
-        }) {
-            VStack {
-                stylePreviewView(for: style)
-                    .frame(width: 40, height: 40)
-                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
-                
-                Text(markersViewModel.markerStyleNames[style] ?? "")
-                    .font(.caption2)
-                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
-            }
-            .padding(8)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(selectedStyle == style 
-                         ? (themeManager.isDarkMode ? Color.yellow.opacity(0.3) : Color.red1.opacity(0.3))
-                         : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(selectedStyle == style 
-                            ? (themeManager.isDarkMode ? Color.yellow : Color.red1)
-                            : Color.gray.opacity(0.3), 
-                            lineWidth: 1)
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-        .frame(maxWidth: .infinity)
-    }
-    
-    @ViewBuilder
     private func stylePreviewView(for style: MarkerStyle) -> some View {
         switch style {
         case .lines:
@@ -285,9 +339,13 @@ struct MarkersControlsView: View {
                 Circle().frame(width: 4, height: 4)
                 Circle().frame(width: 6, height: 6)
             }
-        case .numbers:
-            Text("3 6 9")
-                .font(.system(size: 10))
+        case .standard:
+            HStack(spacing: 4) {
+                Rectangle().frame(width: 2, height: 12)
+                Rectangle().frame(width: 2, height: 16)
+                Rectangle().frame(width: 2, height: 12)
+                Rectangle().frame(width: 2, height: 16)
+            }
         case .classicWatch:
             HStack(spacing: 4) {
                 Rectangle().frame(width: 3, height: 16)
