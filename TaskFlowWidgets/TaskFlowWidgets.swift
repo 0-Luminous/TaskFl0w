@@ -234,12 +234,13 @@ struct Provider: AppIntentTimelineProvider {
     }
 }
 
-// Улучшенный компонент для отображения циферблата
+// Модернизированный компонент для отображения циферблата
 struct EnhancedClockView: View {
     var categories: [String]
     var currentCategory: String
     var timeRemaining: TimeInterval
     var totalTime: TimeInterval
+    @Environment(\.colorScheme) var colorScheme
     
     // Функция для получения цвета категории
     private func colorForCategory(_ category: String) -> Color {
@@ -253,29 +254,16 @@ struct EnhancedClockView: View {
             let radius = size/2 - 8
             
             ZStack {
-                // Фоновый круг с градиентом
+                // Фоновый круг - упрощенная версия
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.black.opacity(0.8), Color.black.opacity(0.9)]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(colorScheme == .dark ? Color.black.opacity(0.7) : Color.gray.opacity(0.1))
                     .overlay(
                         Circle()
-                            .stroke(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1.5
-                            )
+                            .stroke(Color.white.opacity(0.3), lineWidth: 1.5)
                     )
-                    .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 2)
+                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                 
-                // Секторы категорий
+                // Секторы категорий - упрощенная версия
                 ForEach(0..<categories.count, id: \.self) { index in
                     let angle = 360.0 / Double(categories.count)
                     let startAngle = Angle(degrees: Double(index) * angle - 90)
@@ -283,80 +271,183 @@ struct EnhancedClockView: View {
                     let isActive = categories[index] == currentCategory
                     let categoryColor = colorForCategory(categories[index])
                     
-                    Path { path in
-                        path.move(to: center)
-                        path.addArc(
+                    SectorView(
                             center: center,
                             radius: radius * 0.8,
                             startAngle: startAngle,
                             endAngle: endAngle,
-                            clockwise: false
+                        isActive: isActive,
+                        categoryColor: categoryColor
                         )
-                        path.closeSubpath()
-                    }
-                    .fill(isActive ? categoryColor.opacity(0.5) : Color.gray.opacity(0.15))
                     
-                    // Добавляем иконку категории, если активна
-                    if isActive {
+                    // Иконка категории
                         let iconAngle = startAngle.degrees + (endAngle.degrees - startAngle.degrees) / 2
                         let distance = radius * 0.55
                         let iconX = center.x + cos(iconAngle * .pi / 180) * distance
                         let iconY = center.y + sin(iconAngle * .pi / 180) * distance
                         
-                        Image(systemName: iconForCategory(categories[index]))
-                            .font(.system(size: size * 0.08))
-                            .foregroundColor(.white)
-                            .position(x: iconX, y: iconY)
-                    }
+                    CategoryIconView(
+                        category: categories[index],
+                        isActive: isActive,
+                        categoryColor: categoryColor,
+                        size: size * 0.08,
+                        position: CGPoint(x: iconX, y: iconY)
+                    )
                 }
                 
-                // Прогресс-индикатор (заполняющийся круг)
+                // Прогресс-индикатор
                 if totalTime > 0 {
                     let progress = 1 - (timeRemaining / totalTime)
-                    let categoryColor = colorForCategory(currentCategory)
-                    
-                    Circle()
-                        .trim(from: 0, to: CGFloat(progress))
-                        .stroke(categoryColor, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .frame(width: size * 0.85, height: size * 0.85)
-                }
-                
-                // Внутренний круг для текста с эффектом стекла
-                Circle()
-                    .fill(.ultraThinMaterial)
-                    .frame(width: size * 0.65, height: size * 0.65)
-                    .overlay(
-                        Circle()
-                            .stroke(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [Color.white.opacity(0.5), Color.clear]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
+                    ProgressRingView(
+                        progress: progress,
+                        categoryColor: colorForCategory(currentCategory),
+                        size: size * 0.85
                     )
-                    .blur(radius: 0.5)
-                
-                // Текст с оставшимся временем
-                VStack(spacing: 6) {
-                    Text(formatTime(timeRemaining))
-                        .font(.system(size: size * 0.18, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                    
-                    Text(currentCategory)
-                        .font(.system(size: size * 0.09, design: .rounded))
-                        .foregroundColor(.white.opacity(0.9))
                 }
-                .frame(width: size * 0.6)
+                
+                // Внутренний круг
+                InnerCircleView(size: size * 0.65)
+                
+                // Текст времени и категории
+                TimeAndCategoryView(
+                    timeRemaining: timeRemaining,
+                    category: currentCategory,
+                    categoryColor: colorForCategory(currentCategory),
+                    size: size,
+                    isDarkMode: colorScheme == .dark
+                )
             }
             .frame(width: size, height: size)
         }
         .aspectRatio(1, contentMode: .fit)
     }
     
-    // Форматирование времени в читаемый вид
+    // Определение иконки по названию категории
+    private func iconForCategory(_ category: String) -> String {
+        switch category {
+        case "Работа": return "briefcase.fill"
+        case "Перерыв": return "cup.and.saucer.fill"
+        case "Учеба": return "book.fill"
+        case "Хобби": return "paintpalette.fill"
+        case "Отдых": return "house.fill"
+        case "Спорт": return "figure.run"
+        case "Встречи": return "person.2.fill"
+        case "Питание": return "fork.knife"
+        case "Созвоны": return "phone.fill"
+        default: return "clock.fill"
+        }
+    }
+    
+    // Если в EnhancedClockView есть отдельный метод formatTime
+    private func formatTime(_ timeInterval: TimeInterval) -> String {
+        let hours = Int(timeInterval) / 3600
+        let minutes = (Int(timeInterval) % 3600) / 60
+        
+        if hours > 0 {
+            return String(format: "%d:%02d", hours, minutes)
+        } else {
+            return String(format: "%d мин", minutes)
+        }
+    }
+}
+
+// Вспомогательное представление для сектора
+struct SectorView: View {
+    let center: CGPoint
+    let radius: CGFloat
+    let startAngle: Angle
+    let endAngle: Angle
+    let isActive: Bool
+    let categoryColor: Color
+    
+    var body: some View {
+        Path { path in
+            path.move(to: center)
+            path.addArc(
+                center: center,
+                radius: radius,
+                startAngle: startAngle,
+                endAngle: endAngle,
+                clockwise: false
+            )
+            path.closeSubpath()
+        }
+        .fill(isActive ? categoryColor.opacity(0.6) : Color.gray.opacity(0.15))
+        .shadow(color: isActive ? categoryColor.opacity(0.4) : .clear, radius: isActive ? 3 : 0, x: 0, y: 0)
+    }
+}
+
+// Вспомогательное представление для иконки категории
+struct CategoryIconView: View {
+    let category: String
+    let isActive: Bool
+    let categoryColor: Color
+    let size: CGFloat
+    let position: CGPoint
+    
+    var iconName: String {
+        switch category {
+        case "Работа": return "briefcase.fill"
+        case "Перерыв": return "cup.and.saucer.fill"
+        case "Учеба": return "book.fill"
+        case "Хобби": return "paintpalette.fill"
+        case "Отдых": return "house.fill"
+        case "Спорт": return "figure.run"
+        case "Встречи": return "person.2.fill"
+        case "Питание": return "fork.knife"
+        case "Созвоны": return "phone.fill"
+        default: return "clock.fill"
+        }
+    }
+    
+    var body: some View {
+        Image(systemName: iconName)
+            .font(.system(size: size, weight: isActive ? .bold : .regular))
+            .foregroundColor(isActive ? .white : .gray.opacity(0.6))
+            .opacity(isActive ? 1.0 : 0.5)
+            .position(x: position.x, y: position.y)
+    }
+}
+
+// Вспомогательное представление для кольца прогресса
+struct ProgressRingView: View {
+    let progress: Double
+    let categoryColor: Color
+    let size: CGFloat
+    
+    var body: some View {
+        Circle()
+            .trim(from: 0, to: CGFloat(progress))
+            .stroke(categoryColor, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+            .rotationEffect(.degrees(-90))
+            .frame(width: size, height: size)
+    }
+}
+
+// Вспомогательное представление для внутреннего круга
+struct InnerCircleView: View {
+    let size: CGFloat
+    
+    var body: some View {
+        Circle()
+            .fill(.ultraThinMaterial)
+            .frame(width: size, height: size)
+            .overlay(
+                Circle()
+                    .stroke(Color.white.opacity(0.3), lineWidth: 1.5)
+            )
+    }
+}
+
+// Вспомогательное представление для времени и категории
+struct TimeAndCategoryView: View {
+    let timeRemaining: TimeInterval
+    let category: String
+    let categoryColor: Color
+    let size: CGFloat
+    let isDarkMode: Bool
+    
+    // Форматирование времени в читаемый вид без секунд
     private func formatTime(_ timeInterval: TimeInterval) -> String {
         let hours = Int(timeInterval) / 3600
         let minutes = (Int(timeInterval) % 3600) / 60
@@ -368,6 +459,188 @@ struct EnhancedClockView: View {
         }
     }
     
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(formatTime(timeRemaining))
+                .font(.system(size: size * 0.20, weight: .bold, design: .rounded))
+                .foregroundColor(isDarkMode ? .white : .black.opacity(0.8))
+            
+            Text(category)
+                .font(.system(size: size * 0.09, weight: .medium, design: .rounded))
+                .foregroundColor(categoryColor)
+        }
+        .frame(width: size * 0.6)
+    }
+}
+
+// Улучшенное представление задач
+struct EnhancedTaskView: View {
+    var currentCategory: String
+    var tasks: [WidgetTodoTask]
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // Заголовок с категорией
+            HStack(spacing: 8) {
+                Image(systemName: iconForCategory(currentCategory))
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(CategoryColorProvider.getColorFor(category: currentCategory))
+                
+            Text(currentCategory)
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundColor(CategoryColorProvider.getColorFor(category: currentCategory))
+                
+                Spacer()
+                
+                // Добавляем счетчик выполненных задач
+                let completedCount = tasks.filter { $0.category == currentCategory && $0.isCompleted }.count
+                let totalCount = tasks.filter { $0.category == currentCategory }.count
+                
+                if totalCount > 0 {
+                    Text("\(completedCount)/\(totalCount)")
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundColor(.gray.opacity(0.8))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(colorScheme == .dark ? Color.black.opacity(0.3) : Color.white.opacity(0.5))
+                                .overlay(
+                                    Capsule()
+                                        .strokeBorder(
+                                            Color.gray.opacity(0.3),
+                                            lineWidth: 1
+                                        )
+                                )
+                        )
+                }
+            }
+            .padding(.bottom, 6)
+            
+            let filteredTasks = tasks.filter { $0.category == currentCategory }
+            
+            if filteredTasks.isEmpty {
+                // Улучшенное сообщение при отсутствии задач
+                HStack {
+                    Image(systemName: "checkmark.circle")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(CategoryColorProvider.getColorFor(category: currentCategory).opacity(0.6))
+                    
+                    Text("Все задачи выполнены")
+                        .font(.system(size: 14, design: .rounded))
+                        .foregroundColor(.gray.opacity(0.8))
+                }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(colorScheme == .dark ? Color.black.opacity(0.2) : Color.white.opacity(0.5))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .strokeBorder(Color.gray.opacity(0.2), lineWidth: 1)
+                        )
+                )
+            } else {
+                // Список задач с усовершенствованным дизайном
+                ForEach(Array(filteredTasks.prefix(5).enumerated()), id: \.element.id) { index, task in
+                    HStack(spacing: 12) {
+                        // Улучшенный индикатор задачи с эффектом нажатия
+                        ZStack {
+                            Circle()
+                                .fill(task.isCompleted ? 
+                                      Color.green0.opacity(0.3) : 
+                                      CategoryColorProvider.getColorFor(category: currentCategory).opacity(0.2))
+                                .frame(width: 24, height: 24)
+                            
+                            Circle()
+                                .strokeBorder(
+                                    task.isCompleted ? 
+                                    Color.green0 : 
+                                    CategoryColorProvider.getColorFor(category: currentCategory),
+                                    lineWidth: 1.5
+                                )
+                                .frame(width: 24, height: 24)
+                            
+                            if task.isCompleted {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(Color.green0)
+                            }
+                        }
+                        .shadow(
+                            color: task.isCompleted ? 
+                            Color.green0.opacity(0.3) : 
+                            CategoryColorProvider.getColorFor(category: currentCategory).opacity(0.3),
+                            radius: 2,
+                            x: 0,
+                            y: 1
+                        )
+                        
+                        Text(task.title)
+                            .font(.system(size: 14, weight: task.isCompleted ? .regular : .medium, design: .rounded))
+                            .foregroundColor(task.isCompleted ? .gray : (colorScheme == .dark ? .white : .black))
+                            .lineLimit(1)
+                            .strikethrough(task.isCompleted)
+                            .opacity(task.isCompleted ? 0.7 : 1.0)
+                        
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(
+                                colorScheme == .dark ? 
+                                Color.black.opacity(0.2) : 
+                                Color.white.opacity(0.7)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .strokeBorder(
+                                        Color.gray.opacity(0.2),
+                                        lineWidth: 1
+                                    )
+                            )
+                    )
+                    .shadow(
+                        color: Color.black.opacity(0.05),
+                        radius: 2,
+                        x: 0,
+                        y: 1
+                    )
+                    .animation(.easeInOut(duration: 0.3).delay(Double(index) * 0.05), value: filteredTasks.count)
+                }
+                
+                if filteredTasks.count > 5 {
+                    HStack {
+                        Spacer()
+                        Text("+ ещё \(filteredTasks.count - 5)")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundColor(.gray)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .background(
+                                Capsule()
+                                    .fill(colorScheme == .dark ? Color.black.opacity(0.2) : Color.white.opacity(0.5))
+                                    .overlay(
+                                        Capsule()
+                                            .strokeBorder(Color.gray.opacity(0.2), lineWidth: 1)
+                                    )
+                            )
+                            .padding(.top, 6)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+        )
+    }
+    
     // Определение иконки по названию категории
     private func iconForCategory(_ category: String) -> String {
         switch category {
@@ -376,91 +649,12 @@ struct EnhancedClockView: View {
         case "Учеба": return "book.fill"
         case "Хобби": return "paintpalette.fill"
         case "Отдых": return "house.fill"
+        case "Спорт": return "figure.run"
+        case "Встречи": return "person.2.fill"
+        case "Питание": return "fork.knife"
+        case "Созвоны": return "phone.fill"
         default: return "clock.fill"
         }
-    }
-}
-
-struct EnhancedTaskView: View {
-    var currentCategory: String
-    var tasks: [WidgetTodoTask]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Заголовок с категорией
-            Text(currentCategory)
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundColor(CategoryColorProvider.getColorFor(category: currentCategory))
-                .padding(.bottom, 2)
-            
-            let filteredTasks = tasks.filter { $0.category == currentCategory }
-            
-            if filteredTasks.isEmpty {
-                // Улучшенное сообщение при отсутствии задач
-                HStack {
-                    Image(systemName: "checkmark.circle")
-                        .foregroundColor(.gray.opacity(0.6))
-                    Text("Нет активных задач")
-                        .font(.system(size: 14, design: .rounded))
-                        .foregroundColor(.gray.opacity(0.8))
-                }
-                .padding(.vertical, 6)
-            } else {
-                // Список задач с анимированным появлением
-                ForEach(Array(filteredTasks.prefix(5).enumerated()), id: \.element.id) { index, task in
-                    HStack {
-                        // Улучшенный индикатор задачи
-                        ZStack {
-                            Circle()
-                                .fill(task.isCompleted ? Color.green0.opacity(0.2) : CategoryColorProvider.getColorFor(category: currentCategory).opacity(0.2))
-                                .frame(width: 22, height: 22)
-                            
-                            Circle()
-                                .strokeBorder(task.isCompleted ? Color.green0 : CategoryColorProvider.getColorFor(category: currentCategory), lineWidth: 1.5)
-                                .frame(width: 22, height: 22)
-                            
-                            if task.isCompleted {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(Color.green0)
-                            }
-                        }
-                        
-                        Text(task.title)
-                            .font(.system(size: 14, design: .rounded))
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
-                            .strikethrough(task.isCompleted)
-                            .opacity(task.isCompleted ? 0.7 : 1.0)
-                        
-                        Spacer()
-                    }
-                    .padding(.vertical, 4)
-                    .padding(.horizontal, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.gray.opacity(0.1))
-                    )
-                    .animation(.easeInOut(duration: 0.2).delay(Double(index) * 0.05), value: filteredTasks.count)
-                }
-                
-                if filteredTasks.count > 5 {
-                    HStack {
-                        Spacer()
-                        Text("+ ещё \(filteredTasks.count - 5)")
-                            .font(.system(size: 12, design: .rounded))
-                            .foregroundColor(.gray)
-                            .padding(.top, 4)
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
-        )
     }
 }
 
@@ -471,7 +665,7 @@ struct TaskFlowWidgetsEntryView: View {
     
     var body: some View {
         ZStack {
-            // Добавляем единый фон для всех виджетов
+            // Улучшенный фон для всех виджетов
             backgroundView
             
             switch family {
@@ -483,11 +677,11 @@ struct TaskFlowWidgetsEntryView: View {
                     timeRemaining: entry.timeRemaining, 
                     totalTime: entry.totalTime
                 )
-                .padding(8)
+                .padding(10)
                 
             case .systemMedium:
-                // Комбинированный вид для среднего виджета
-                HStack(spacing: 0) {
+                // Комбинированный вид для среднего виджета с улучшенным дизайном
+                HStack(spacing: 10) {
                     // Левая часть с циферблатом
                     EnhancedClockView(
                         categories: entry.categories,
@@ -496,59 +690,100 @@ struct TaskFlowWidgetsEntryView: View {
                         totalTime: entry.totalTime
                     )
                     .frame(width: 140, height: 140)
-                    .padding(.leading, 8)
+                    .padding(.leading, 10)
                     
-                    // Правая часть с задачами
-                    VStack(alignment: .leading) {
+                    // Разделитель с градиентом
+                    Rectangle()
+                        .fill(
+                            .linearGradient(
+                                colors: [
+                                    .clear,
+                                    CategoryColorProvider.getColorFor(category: entry.currentCategory).opacity(0.3),
+                                    .clear
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 1)
+                        .padding(.vertical, 20)
+                    
+                    // Правая часть с задачами и улучшенным отображением
+                    VStack(alignment: .leading, spacing: 8) {
                         let filteredTasks = entry.tasks.filter { $0.category == entry.currentCategory }
                         
-                        // Заголовок
+                        // Заголовок с иконкой
+                        HStack(spacing: 6) {
+                            Image(systemName: iconForCategory(entry.currentCategory))
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(CategoryColorProvider.getColorFor(category: entry.currentCategory))
+                            
                         Text(entry.currentCategory)
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
                             .foregroundColor(CategoryColorProvider.getColorFor(category: entry.currentCategory))
+                        }
                             .padding(.bottom, 4)
                         
                         if filteredTasks.isEmpty {
                             // Сообщение об отсутствии задач
-                            Text("Нет активных задач")
+                            HStack {
+                                Image(systemName: "checkmark.circle")
+                                    .foregroundColor(CategoryColorProvider.getColorFor(category: entry.currentCategory).opacity(0.6))
+                                Text("Задачи выполнены")
                                 .font(.system(size: 14, design: .rounded))
                                 .foregroundColor(.gray)
+                            }
                                 .padding(.vertical, 8)
                         } else {
-                            // Список задач
+                            // Список задач с улучшенным дизайном
                             ForEach(filteredTasks.prefix(3)) { task in
                                 HStack(spacing: 8) {
-                                    // Индикатор выполнения
+                                    // Улучшенный индикатор выполнения
+                                    ZStack {
                                     Circle()
-                                        .fill(task.isCompleted ? Color.green0 : .clear)
-                                        .frame(width: 12, height: 12)
-                                        .overlay(
+                                            .fill(task.isCompleted ? Color.green0.opacity(0.2) : Color.clear)
+                                            .frame(width: 18, height: 18)
+                                        
                                             Circle()
                                                 .strokeBorder(
                                                     task.isCompleted ? Color.green0 : CategoryColorProvider.getColorFor(category: entry.currentCategory),
                                                     lineWidth: 1.5
                                                 )
-                                        )
+                                            .frame(width: 18, height: 18)
+                                        
+                                        if task.isCompleted {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .foregroundColor(Color.green0)
+                                        }
+                                    }
                                     
                                     Text(task.title)
-                                        .font(.system(size: 14, design: .rounded))
-                                        .foregroundColor(.primary)
+                                        .font(.system(size: 14, weight: task.isCompleted ? .regular : .medium, design: .rounded))
+                                        .foregroundColor(colorScheme == .dark ? .white : .black)
                                         .lineLimit(1)
                                         .strikethrough(task.isCompleted)
                                         .opacity(task.isCompleted ? 0.7 : 1.0)
                                 }
-                                .padding(.vertical, 4)
+                                .padding(.vertical, 5)
+                            }
+                            
+                            if filteredTasks.count > 3 {
+                                Text("+ ещё \(filteredTasks.count - 3)")
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .foregroundColor(.gray)
+                                    .padding(.top, 2)
                             }
                         }
                     }
-                    .padding(.leading, 16)
-                    .padding(.trailing, 12)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 
             case .systemLarge:
-                // Для большого виджета - улучшенный вид
-                VStack(spacing: 10) {
+                // Для большого виджета - улучшенный дизайн с нейморфизмом
+                VStack(spacing: 12) {
                     // Циферблат на верху
                     EnhancedClockView(
                         categories: entry.categories,
@@ -557,25 +792,31 @@ struct TaskFlowWidgetsEntryView: View {
                         totalTime: entry.totalTime
                     )
                     .frame(height: 180)
-                    .padding(.top, 10)
+                    .padding(.top, 12)
                     
-                    Divider()
-                        .background(
-                            LinearGradient(
-                                gradient: Gradient(colors: [.clear, .gray.opacity(0.5), .clear]), 
+                    // Улучшенный разделитель с градиентом
+                    Rectangle()
+                        .fill(
+                            .linearGradient(
+                                colors: [
+                                    .clear,
+                                    CategoryColorProvider.getColorFor(category: entry.currentCategory).opacity(0.5),
+                                    .clear
+                                ],
                                 startPoint: .leading, 
                                 endPoint: .trailing
                             )
                         )
-                        .padding(.horizontal, 30)
+                        .frame(height: 1)
+                        .padding(.horizontal, 40)
                     
-                    // Список задач внизу
+                    // Улучшенный список задач
                     EnhancedTaskView(
                         currentCategory: entry.currentCategory,
                         tasks: entry.tasks
                     )
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 10)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
                 }
                 
             default:
@@ -585,25 +826,62 @@ struct TaskFlowWidgetsEntryView: View {
         }
     }
     
-    // Градиентный фон для виджетов
+    // Улучшенный градиентный фон для виджетов с акцентами
     private var backgroundView: some View {
         let categoryColor = CategoryColorProvider.getColorFor(category: entry.currentCategory)
         
-        return LinearGradient(
+        return ZStack {
+            // Основной градиент
+            LinearGradient(
             gradient: Gradient(colors: [
-                colorScheme == .dark ? Color.black : Color(red: 0.1, green: 0.1, blue: 0.1),
-                colorScheme == .dark ? Color.black.opacity(0.8) : Color(red: 0.15, green: 0.15, blue: 0.15)
+                    colorScheme == .dark ? Color(red: 0.12, green: 0.12, blue: 0.12) : Color(red: 0.95, green: 0.95, blue: 0.97),
+                    colorScheme == .dark ? Color(red: 0.07, green: 0.07, blue: 0.08) : Color(red: 0.90, green: 0.90, blue: 0.92)
             ]),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
-        .overlay(
-            // Subtle category color accent in the background
-            RoundedRectangle(cornerRadius: 20)
-                .fill(
-                    categoryColor.opacity(colorScheme == .dark ? 0.1 : 0.08)
-                )
-        )
+            
+            // Динамические акцентные элементы
+            GeometryReader { geometry in
+                // Верхний левый акцент
+                Circle()
+                    .fill(categoryColor.opacity(colorScheme == .dark ? 0.15 : 0.10))
+                    .blur(radius: 20)
+                    .frame(width: geometry.size.width * 0.4, height: geometry.size.width * 0.4)
+                    .position(x: geometry.size.width * 0.15, y: geometry.size.height * 0.15)
+                
+                // Нижний правый акцент
+                Circle()
+                    .fill(categoryColor.opacity(colorScheme == .dark ? 0.12 : 0.08))
+                    .blur(radius: 25)
+                    .frame(width: geometry.size.width * 0.5, height: geometry.size.width * 0.5)
+                    .position(x: geometry.size.width * 0.85, y: geometry.size.height * 0.85)
+            }
+            
+            // Сетка для глубины
+            if colorScheme == .dark {
+                Image(systemName: "grid")
+                    .resizable(resizingMode: .tile)
+                    .foregroundColor(.white.opacity(0.03))
+                    .blendMode(.overlay)
+            }
+        }
+    }
+    
+    // Определение иконки по названию категории
+    private func iconForCategory(_ category: String) -> String {
+        switch category {
+        case "Работа": return "briefcase.fill"
+        case "Перерыв": return "cup.and.saucer.fill"
+        case "Учеба": return "book.fill"
+        case "Хобби": return "paintpalette.fill"
+        case "Отдых": return "house.fill"
+        case "Спорт": return "figure.run"
+        case "Встречи": return "person.2.fill"
+        case "Питание": return "fork.knife"
+        case "Созвоны": return "phone.fill"
+        default: return "clock.fill"
+        }
     }
 }
 
