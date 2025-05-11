@@ -12,6 +12,8 @@ struct ToDoTaskRow: View {
     let task: ToDoItem
     let categoryColor: Color
     var onToggle: (() -> Void)? = nil
+
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         Button(action: {
@@ -36,7 +38,7 @@ struct ToDoTaskRow: View {
                     Text(task.title)
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundColor(.white)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         .strikethrough(task.isCompleted)
                 }
                 
@@ -51,7 +53,7 @@ struct ToDoTaskRow: View {
             .padding(.horizontal, 12)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(red: 0.18, green: 0.18, blue: 0.18))
+                    .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
                             .strokeBorder(getPriorityBorderColor(for: task.priority), lineWidth: task.priority != .none ? 1.5 : 0)
