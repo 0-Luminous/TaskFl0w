@@ -502,7 +502,7 @@ struct TaskTimeline: View {
     
     // Переключение календаря
     private func toggleWeekCalendar() {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+        withAnimation(Animation.spring(response: 0.3, dampingFraction: 0.7).delay(0.01)) {
             showWeekCalendar.toggle()
         }
     }

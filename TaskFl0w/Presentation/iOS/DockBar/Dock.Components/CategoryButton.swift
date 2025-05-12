@@ -58,7 +58,9 @@ struct CategoryButton: View {
                 )
                 .shadow(color: isSelected ? Color.blue.opacity(0.5) : Color.clear, radius: 3)
             
-            Text(category.rawValue)
+            Text(category.rawValue.count > 10 ? 
+                 "\(category.rawValue.prefix(7))..." : 
+                 category.rawValue)
                 .font(.caption)
                 .foregroundColor(themeManager.isDarkMode ? .white : .black)
                 .lineLimit(1)
