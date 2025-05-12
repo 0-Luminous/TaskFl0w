@@ -172,17 +172,32 @@ class TimelineManager: ObservableObject {
     }
     
     // Расчет позиции индикатора текущего времени
-    func calculateTimeIndicatorPosition(for date: Date, in height: CGFloat) -> CGFloat {
+    func calculateTimeIndicatorPosition(for date: Date, in height: CGFloat, timeBlocks: [TimeBlock]) -> CGFloat {
         let calendar = Calendar.current
         let currentHour = calendar.component(.hour, from: date)
         let currentMinute = calendar.component(.minute, from: date)
         
-        // Прогресс часа и дня
-        let hourProgress = CGFloat(currentMinute) / 60.0
-        let dayProgress = CGFloat(currentHour) + hourProgress
+        // Находим ближайший нижний блок
+        let lowerBlock = timeBlocks.filter { $0.hour <= currentHour }.max(by: { $0.hour < $1.hour })
+        // Находим ближайший верхний блок
+        let upperBlock = timeBlocks.filter { $0.hour > currentHour }.min(by: { $0.hour < $1.hour })
         
-        // Учитываем 25 блоков (24 часа + доп. блок)
-        return (dayProgress / 25.0) * height
+        // Значения по умолчанию
+        let lowerHour = lowerBlock?.hour ?? 0
+        let upperHour = upperBlock?.hour ?? 24
+        
+        // Позиции блоков (пропорционально высоте)
+        let lowerPosition = CGFloat(lowerHour) / 24.0 * height
+        let upperPosition = CGFloat(upperHour) / 24.0 * height
+        
+        // Расстояние между блоками
+        let blockDistance = upperPosition - lowerPosition
+        
+        // Прогресс между нижним и верхним блоками
+        let hourProgress = (CGFloat(currentHour - lowerHour) + CGFloat(currentMinute) / 60.0) / CGFloat(upperHour - lowerHour)
+        
+        // Вычисляем позицию между блоками
+        return lowerPosition + blockDistance * hourProgress
     }
 }
 
@@ -329,7 +344,8 @@ struct TaskTimeline: View {
         let isToday = Calendar.current.isDateInToday(selectedDate)
         let yPosition = timelineManager.calculateTimeIndicatorPosition(
             for: timelineManager.currentTime,
-            in: geometry.size.height
+            in: geometry.size.height,
+            timeBlocks: timeBlocks
         )
         
         return HStack(alignment: .center, spacing: 4) {
