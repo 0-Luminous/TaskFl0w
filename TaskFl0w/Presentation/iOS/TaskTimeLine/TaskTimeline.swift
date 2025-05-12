@@ -292,21 +292,21 @@ struct TaskTimeline: View {
                     
                     Spacer()
                     
-                    // Нижняя панель
-                    TimelineBar(
-                        onTodayTap: { 
-                            let today = Date()
-                            clockViewModel.selectedDate = today
-                            selectedDate = today
-                        },
-                        onAddTaskTap: {
-                            NotificationCenter.default.post(
-                                name: NSNotification.Name("ShowAddTaskForm"),
-                                object: nil
-                            )
-                        },
-                        onInfoTap: { showSettings = true }
-                    )
+                    // // Нижняя панель
+                    // TimelineBar(
+                    //     onTodayTap: { 
+                    //         let today = Date()
+                    //         clockViewModel.selectedDate = today
+                    //         selectedDate = today
+                    //     },
+                    //     onAddTaskTap: {
+                    //         NotificationCenter.default.post(
+                    //             name: NSNotification.Name("ShowAddTaskForm"),
+                    //             object: nil
+                    //         )
+                    //     },
+                    //     onInfoTap: { showSettings = true }
+                    // )
                 }
             }
         }
@@ -333,6 +333,7 @@ struct TaskTimeline: View {
         }
         .onAppear {
             clockViewModel.selectedDate = selectedDate
+            listViewModel.refreshData()
         }
         .onChange(of: clockViewModel.selectedDate) { newValue in
             selectedDate = newValue
@@ -342,33 +343,37 @@ struct TaskTimeline: View {
     // Визуализация индикатора текущего времени
     private func timeIndicatorView(in geometry: GeometryProxy) -> some View {
         let isToday = Calendar.current.isDateInToday(selectedDate)
-        let yPosition = timelineManager.calculateTimeIndicatorPosition(
-            for: timelineManager.currentTime,
-            in: geometry.size.height,
-            timeBlocks: timeBlocks
-        )
         
-        return HStack(alignment: .center, spacing: 4) {
-            // Метка времени
-            Text(formatTime(timelineManager.currentTime))
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.pink)
+        if isToday {
+            let yPosition = timelineManager.calculateTimeIndicatorPosition(
+                for: timelineManager.currentTime,
+                in: geometry.size.height,
+                timeBlocks: timeBlocks
+            )
             
-            // Линия с индикатором
-            ZStack(alignment: .leading) {
-                Rectangle()
-                    .fill(Color.pink)
-                    .frame(height: 1.5)
+            return HStack(alignment: .center, spacing: 4) {
+                // Метка времени
+                Text(formatTime(timelineManager.currentTime))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.pink)
                 
-                Circle()
-                    .fill(Color.pink)
-                    .frame(width: 6, height: 6)
+                // Линия с индикатором
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(Color.pink)
+                        .frame(height: 1.5)
+                    
+                    Circle()
+                        .fill(Color.pink)
+                        .frame(width: 6, height: 6)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .offset(y: yPosition - 10)
+            .padding(.leading, -15)
+        } else {
+            return Color.clear.frame(height: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .offset(y: yPosition - 10)
-        .padding(.leading, -15)
-        .opacity(isToday ? 1.0 : 0.5) // Прозрачность для не сегодняшних дней
     }
     
     // Содержимое временной шкалы
