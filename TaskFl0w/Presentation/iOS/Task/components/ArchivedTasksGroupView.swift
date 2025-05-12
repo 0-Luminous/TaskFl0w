@@ -81,7 +81,7 @@ struct ArchivedTasksGroupView: View {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 10)
                                         .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
-                                    
+                                        .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
                                     // Добавляем внешний бордер для задач с приоритетом
                                     if item.priority != .none {
                                         RoundedRectangle(cornerRadius: 10)
@@ -113,7 +113,7 @@ struct ArchivedTasksGroupView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 16)
                             .fill(themeManager.isDarkMode ? Color(red: 0.13, green: 0.13, blue: 0.13) : Color(red: 0.9, green: 0.9, blue: 0.9))
-                        
+                            .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
                         // Градиентный бордер
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(
@@ -126,7 +126,6 @@ struct ArchivedTasksGroupView: View {
                             )
                     }
                 )
-                .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
                 .padding(.vertical, 8)
                 .simultaneousGesture(TapGesture().onEnded {}) // Перехватываем нажатия на группу, но ничего не делаем
             }

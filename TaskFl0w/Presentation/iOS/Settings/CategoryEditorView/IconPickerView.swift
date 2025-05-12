@@ -149,7 +149,7 @@ struct IconPickerView: View {
                                         icon == selectedIcon
                                             ? (themeManager.isDarkMode
                                                 ? Color(red: 0.22, green: 0.22, blue: 0.22)
-                                                : Color(UIColor.systemGray6).opacity(0.8)) 
+                                                : Color(red: 0.95, green: 0.95, blue: 0.95).opacity(0.8)) 
                                             : Color.clear)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 16)
