@@ -242,6 +242,16 @@ struct IconPickerDockBar: View {
             // Основное содержимое с категориями
             categoryGrid
         }
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(themeManager.isDarkMode ? Color(red: 0.16, green: 0.16, blue: 0.16) : Color.white)
+                .shadow(
+                    color: Color.black.opacity(themeManager.isDarkMode ? 0.25 : 0.08),
+                    radius: 4,
+                    x: 0,
+                    y: 1
+                )
+        )
         .padding(.horizontal, 10)
         .padding(.bottom, 20)
     }
@@ -257,16 +267,7 @@ struct IconPickerDockBar: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
         }
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(themeManager.isDarkMode ? Color(red: 0.16, green: 0.16, blue: 0.16) : Color.white)
-                .shadow(
-                    color: Color.black.opacity(themeManager.isDarkMode ? 0.25 : 0.08),
-                    radius: 4,
-                    x: 0,
-                    y: 1
-                )
-        )
+        .clipShape(RoundedRectangle(cornerRadius: 24))
     }
     
     // Кнопка категории
