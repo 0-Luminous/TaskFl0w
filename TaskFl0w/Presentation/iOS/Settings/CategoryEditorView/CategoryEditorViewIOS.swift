@@ -33,6 +33,12 @@ struct CategoryEditorViewIOS: View {
     // Состояния для панелей управления
     @State private var activeTab: CategorySettingsTab = .settings
 
+    // Добавьте эти состояния в начало структуры CategoryEditorViewIOS
+    @State private var showingInlineColorPicker = false
+    @State private var sliderBrightnessPosition: CGFloat = 0.5
+    @State private var currentBaseColor: Color = .blue
+    @State private var selectedColorHex: String = ""
+
     private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
 
     // Перечисление для вкладок
@@ -249,153 +255,275 @@ struct CategoryEditorViewIOS: View {
     private var settingsTab: some View {
         VStack(spacing: 16) {
             // Основные настройки
-            VStack(spacing: 12) {
-                // Выбор иконки
-                Button(action: {
-                    feedbackGenerator.impactOccurred()
-                    showingIconPicker = true
-                }) {
-                    HStack(spacing: 14) {
-                        Image(systemName: "square.grid.2x2")
-                            .modifier(IconButtonModifier(color: Color.blue))
-
-                        Text("Изменить иконку")
-                            .font(.system(size: 16))
-                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(
-                                themeManager.isDarkMode
-                                    ? Color(red: 0.22, green: 0.22, blue: 0.22)
-                                    : Color(red: 0.95, green: 0.95, blue: 0.95))
-                    )
-                }
-
-                // Выбор цвета
-                Button(action: {
-                    feedbackGenerator.impactOccurred()
-                    showingColorPicker = true
-                }) {
-                    HStack(spacing: 14) {
-                        Image(systemName: "paintpalette")
-                            .modifier(IconButtonModifier(color: Color.Apricot1))
-
-                        Text("Изменить цвет")
-                            .font(.system(size: 16))
-                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
-
-                        Spacer()
-
-                        Circle()
-                            .fill(selectedColor)
-                            .frame(width: 24, height: 24)
-                            .overlay(
-                                Circle()
-                                    .stroke(
-                                        themeManager.isDarkMode
-                                            ? Color.white.opacity(0.3) : Color.black.opacity(0.1),
-                                        lineWidth: 1)
-                            )
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(
-                                themeManager.isDarkMode
-                                    ? Color(red: 0.22, green: 0.22, blue: 0.22)
-                                    : Color(red: 0.95, green: 0.95, blue: 0.95))
-                    )
-                }
-
-                // Видимость категории
-                Button(action: {
-                    feedbackGenerator.impactOccurred()
-                    isHidden.toggle()
-                }) {
-                    HStack(spacing: 14) {
-                        Image(systemName: isHidden ? "eye.slash" : "eye")
-                            .modifier(IconButtonModifier(color: Color.teal))
-
-                        Text(isHidden ? "Категория скрыта" : "Категория видима")
-                            .font(.system(size: 16))
-                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
-
-                        Spacer()
-
-                        Text(isHidden ? "Показать" : "Скрыть")
-                            .font(.system(size: 14))
-                            .foregroundColor(
-                                isHidden
-                                    ? .yellow
-                                    : (themeManager.isDarkMode ? .gray : .gray.opacity(0.7)))
-                    }
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(
-                                themeManager.isDarkMode
-                                    ? Color(red: 0.22, green: 0.22, blue: 0.22)
-                                    : Color(red: 0.95, green: 0.95, blue: 0.95))
-                    )
-                }
-                .disabled(editingCategory == nil)
-                .opacity(editingCategory == nil ? 0.5 : 1.0)
-            }
-            .padding(.horizontal, 16)
-
-            // Кнопки действий
-            VStack(spacing: 12) {
-                if editingCategory == nil {
-                    // Кнопка добавления категории
+            if !showingInlineColorPicker {
+                VStack(spacing: 12) {
+                    // Выбор иконки
                     Button(action: {
                         feedbackGenerator.impactOccurred()
-                        saveCategory(autoClose: false)
+                        showingIconPicker = true
                     }) {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 18))
-                            Text("Добавить категорию")
-                                .font(.system(size: 16, weight: .medium))
+                        HStack(spacing: 14) {
+                            Image(systemName: "square.grid.2x2")
+                                .modifier(IconButtonModifier(color: Color.blue))
+
+                            Text("Изменить иконку")
+                                .font(.system(size: 16))
+                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
                         }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(
+                                    themeManager.isDarkMode
+                                        ? Color(red: 0.22, green: 0.22, blue: 0.22)
+                                        : Color(red: 0.95, green: 0.95, blue: 0.95))
+                        )
                     }
-                    .modifier(ButtonModifier(color: .blue))
-                    .padding(.horizontal, 50)
-                    .disabled(categoryName.isEmpty)
-                } else {
-                    // Кнопка удаления категории
+
+                    // Выбор цвета
                     Button(action: {
                         feedbackGenerator.impactOccurred()
-                        showingDeleteAlert = true
+                        showingInlineColorPicker = true
                     }) {
-                        HStack {
-                            Image(systemName: "trash.fill")
-                                .font(.system(size: 18))
-                            Text("Удалить категорию")
-                                .font(.system(size: 16, weight: .medium))
+                        HStack(spacing: 14) {
+                            Image(systemName: "paintpalette")
+                                .modifier(IconButtonModifier(color: Color.Apricot1))
+
+                            Text("Изменить цвет")
+                                .font(.system(size: 16))
+                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
+
+                            Spacer()
+
+                            Circle()
+                                .fill(selectedColor)
+                                .frame(width: 24, height: 24)
+                                .overlay(
+                                    Circle()
+                                        .stroke(
+                                            themeManager.isDarkMode
+                                                ? Color.white.opacity(0.3) : Color.black.opacity(0.1),
+                                            lineWidth: 1)
+                                )
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(
+                                    themeManager.isDarkMode
+                                        ? Color(red: 0.22, green: 0.22, blue: 0.22)
+                                        : Color(red: 0.95, green: 0.95, blue: 0.95))
+                        )
+                    }
+
+                    // Видимость категории
+                    Button(action: {
+                        feedbackGenerator.impactOccurred()
+                        isHidden.toggle()
+                    }) {
+                        HStack(spacing: 14) {
+                            Image(systemName: isHidden ? "eye.slash" : "eye")
+                                .modifier(IconButtonModifier(color: Color.teal))
+
+                            Text(isHidden ? "Категория скрыта" : "Категория видима")
+                                .font(.system(size: 16))
+                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
+
+                            Spacer()
+
+                            Text(isHidden ? "Показать" : "Скрыть")
+                                .font(.system(size: 14))
+                                .foregroundColor(
+                                    isHidden
+                                        ? .yellow
+                                        : (themeManager.isDarkMode ? .gray : .gray.opacity(0.7)))
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(
+                                    themeManager.isDarkMode
+                                        ? Color(red: 0.22, green: 0.22, blue: 0.22)
+                                        : Color(red: 0.95, green: 0.95, blue: 0.95))
+                        )
+                    }
+                    .disabled(editingCategory == nil)
+                    .opacity(editingCategory == nil ? 0.5 : 1.0)
+                }
+                .padding(.horizontal, 16)
+
+                // Кнопки действий
+                VStack(spacing: 12) {
+                    if editingCategory == nil {
+                        // Кнопка добавления категории
+                        Button(action: {
+                            feedbackGenerator.impactOccurred()
+                            saveCategory(autoClose: false)
+                        }) {
+                            HStack {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 18))
+                                Text("Добавить категорию")
+                                    .font(.system(size: 16, weight: .medium))
+                            }
+                        }
+                        .modifier(ButtonModifier(color: .blue))
+                        .padding(.horizontal, 50)
+                        .disabled(categoryName.isEmpty)
+                    } else {
+                        // Кнопка удаления категории
+                        Button(action: {
+                            feedbackGenerator.impactOccurred()
+                            showingDeleteAlert = true
+                        }) {
+                            HStack {
+                                Image(systemName: "trash.fill")
+                                    .font(.system(size: 18))
+                                Text("Удалить категорию")
+                                    .font(.system(size: 16, weight: .medium))
+                            }
+                        }
+                        .modifier(ButtonModifier(color: .red))
+                        .padding(.horizontal, 50)
+                    }
+                }
+                .padding(.top, 20)
+            }
+            
+            // Панель выбора цвета
+            if showingInlineColorPicker {
+                VStack(spacing: 16) {
+                    HStack {
+                        Text("Выбор цвета")
+                            .font(.headline)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            showingInlineColorPicker = false
+                        }) {
+                            Text("Готово")
+                                .font(.caption)
+                                .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                                .fontWeight(.medium)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 4)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(themeManager.isDarkMode ? Color.yellow : Color.red1, lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.horizontal)
+                    
+                    // Градиентный слайдер для выбора яркости цвета
+                    ZStack(alignment: .center) {
+                        // Градиент от светлого к темному
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                ColorUtils.brightenColor(currentBaseColor, factor: 1.3),
+                                currentBaseColor,
+                                ColorUtils.darkenColor(currentBaseColor, factor: 0.7)
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(height: 26)
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.black.opacity(0.3), lineWidth: 1)
+                        )
+                        .padding(.horizontal, 20)
+                        
+                        // Ползунок слайдера
+                        GeometryReader { geometry in
+                            let paddingHorizontal: CGFloat = 30
+                            let width = geometry.size.width - paddingHorizontal*2
+                            let minX = paddingHorizontal
+                            let currentX = minX + (width * sliderBrightnessPosition)
+                            
+                            Circle()
+                                .fill(.white)
+                                .frame(width: 36, height: 36)
+                                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 2)
+                                .overlay(
+                                    Circle()
+                                        .fill(ColorUtils.getColorAt(position: sliderBrightnessPosition, baseColor: currentBaseColor))
+                                        .frame(width: 24, height: 24)
+                                        .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                                )
+                                .position(x: currentX, y: geometry.size.height / 2)
+                                .gesture(
+                                    DragGesture(minimumDistance: 0)
+                                        .onChanged { value in
+                                            let maxX = minX + width
+                                            let xPosition = min(max(value.location.x, minX), maxX)
+                                            sliderBrightnessPosition = (xPosition - minX) / width
+                                            
+                                            let newColor = ColorUtils.getColorAt(
+                                                position: sliderBrightnessPosition, 
+                                                baseColor: currentBaseColor
+                                            )
+                                            selectedColor = newColor
+                                            selectedColorHex = newColor.toHex() ?? ""
+                                        }
+                                )
                         }
                     }
-                    .modifier(ButtonModifier(color: .red))
-                    .padding(.horizontal, 50)
+                    .frame(height: 50)
+                    .padding(.bottom, 10)
+                    .padding(.horizontal)
+                    .onAppear {
+                        initializeSliderPosition()
+                    }
+                    
+                    // Скролл с готовыми цветами
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 16) {
+                            
+                            let standardColors: [Color] = [
+                                .Lilac1, .Pink1, .red1, .Peony1, .Rose1, .coral1, .Orange1, .yellow1, .green0, .green1,
+                                .Clover1, .Mint1, .Teal1, .Blue1, .LightBlue1, .BlueJay1, .OceanBlue1,
+                                .StormBlue1, .Indigo1, .Purple1 
+                            ]
+                            
+                            ForEach(0..<standardColors.count, id: \.self) { index in
+                                colorButton(color: standardColors[index], index: index)
+                            }
+                        }
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                    }
+                    .frame(height: 50)
                 }
+                .padding(.vertical)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98) : Color(red: 0.95, green: 0.95, blue: 0.95).opacity(0.98))
+                        .shadow(radius: 8)
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
             }
-            .padding(.top, 20)
         }
         .padding(.vertical, 16)
+        .animation(.easeInOut(duration: 0.2), value: showingInlineColorPicker)
     }
 
     var body: some View {
@@ -424,7 +552,7 @@ struct CategoryEditorViewIOS: View {
                                             isHidden = category.isHidden
                                             feedbackGenerator.impactOccurred()
                                         } else {
-                                            // Сбрасываем значения
+                                            // Сбрасываем значения для новой категории
                                             editingCategory = nil
                                             categoryName = ""
                                             selectedColor = .blue
@@ -445,11 +573,9 @@ struct CategoryEditorViewIOS: View {
                                 )
                                 : (selectedDockCategory == nil ? previewCategory : nil)
                         )
-                        .padding(.top, 10)
-                        .id(
-                            "\(previewCategory.id)-\(selectedDockCategory?.id ?? UUID())-\(selectedColor.toHex() ?? "")-\(selectedIcon)"
-                        )
-                        .transition(.opacity)  // Добавляем анимацию появления/исчезновения
+                        .padding(.top, 30)
+                        .id("dockBarEditor")
+                        .transition(.opacity)
                     } else {
                         // Когда DockBarEditorIOS скрыт, добавляем пустое пространство с отступом 150
                         Spacer()
@@ -583,7 +709,14 @@ struct CategoryEditorViewIOS: View {
             Button("Удалить", role: .destructive) {
                 if let category = editingCategory {
                     viewModel.categoryManagement.removeCategory(category)
-                    isPresented = false
+                    // Удаляем строку isPresented = false
+                    // Устанавливаем значения для создания новой категории
+                    editingCategory = nil
+                    selectedDockCategory = nil
+                    categoryName = ""
+                    selectedColor = .blue
+                    selectedIcon = "star.fill"
+                    isHidden = false
                 }
             }
         } message: {
@@ -606,7 +739,21 @@ struct CategoryEditorViewIOS: View {
             selectedDockCategory = newCategory
             editingCategory = newCategory
         } else {
-            viewModel.categoryManagement.addCategory(newCategory)
+            // При добавлении новой категории, вставляем её в начало списка
+            var categories = viewModel.categories
+            // Добавляем новую категорию в начало массива
+            categories.insert(newCategory, at: 0)
+            
+            // Сначала удаляем все категории
+            for category in viewModel.categories {
+                viewModel.categoryManagement.removeCategory(category)
+            }
+            
+            // Затем добавляем все категории по порядку
+            for category in categories {
+                viewModel.categoryManagement.addCategory(category)
+            }
+            
             // Подготавливаем для добавления следующей категории
             categoryName = ""
             isHidden = false
@@ -618,6 +765,83 @@ struct CategoryEditorViewIOS: View {
         // Закрываем только если явно запрошено
         if autoClose {
             isPresented = false
+        }
+    }
+
+    // Добавьте эти функции в структуру CategoryEditorViewIOS
+    func colorButton(color: Color, index: Int? = nil) -> some View {
+        // Определяем, выбрана ли эта кнопка
+        let isSelected = selectedColor.toHex() == color.toHex()
+        
+        return Button(action: {
+            selectedColor = color
+            selectedColorHex = color.toHex() ?? ""
+            currentBaseColor = ColorUtils.getBaseColor(forColor: color)
+            updateSliderPosition()
+            feedbackGenerator.impactOccurred()
+        }) {
+            ZStack {
+                if isSelected {
+                    Circle()
+                        .fill(Color.clear)
+                        .frame(width: 42, height: 42)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.yellow, lineWidth: 2)
+                        )
+                        .shadow(color: Color.yellow.opacity(0.6), radius: 4, x: 0, y: 0)
+                }
+                
+                Circle()
+                    .fill(color)
+                    .frame(width: 30, height: 30)
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.7), lineWidth: isSelected ? 1.5 : 0)
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(Color.black.opacity(0.2), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                    
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(ColorUtils.isLightColor(color) ? .black : .white)
+                }
+            }
+            .frame(width: 44, height: 44)
+            .contentShape(Circle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    // Инициализирует положение слайдера на основе текущей яркости цвета
+    func initializeSliderPosition() {
+        currentBaseColor = ColorUtils.getBaseColor(forColor: selectedColor)
+        
+        let brightness = ColorUtils.getBrightness(of: selectedColor) / ColorUtils.getBrightness(of: currentBaseColor)
+        
+        if brightness <= 0.7 {
+            sliderBrightnessPosition = 1.0
+        } else if brightness >= 1.3 {
+            sliderBrightnessPosition = 0.0
+        } else {
+            sliderBrightnessPosition = 1.0 - ((brightness - 0.7) / 0.6)
+        }
+    }
+
+    // Обновляет положение слайдера
+    func updateSliderPosition() {
+        let brightness = ColorUtils.getBrightness(of: selectedColor) / ColorUtils.getBrightness(of: currentBaseColor)
+        
+        if brightness <= 0.7 {
+            sliderBrightnessPosition = 1.0
+        } else if brightness >= 1.3 {
+            sliderBrightnessPosition = 0.0
+        } else {
+            sliderBrightnessPosition = 1.0 - ((brightness - 0.7) / 0.6)
         }
     }
 }

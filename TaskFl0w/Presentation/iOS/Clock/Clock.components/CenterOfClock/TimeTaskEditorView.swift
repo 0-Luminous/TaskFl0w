@@ -56,6 +56,17 @@ struct TimeTaskEditorOverlay: View {
                         .labelsHidden()
                         .colorScheme(colorScheme)
                         .scaleEffect(1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [.gray.opacity(0.3), .gray.opacity(0.7)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 2
+                                )
+                        )
                         .onChange(of: startTime) { oldValue, newValue in
                             guard !isInternalUpdate else { return }
                             viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
@@ -69,6 +80,17 @@ struct TimeTaskEditorOverlay: View {
                         .labelsHidden()
                         .colorScheme(colorScheme)
                         .scaleEffect(1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [.gray.opacity(0.3), .gray.opacity(0.7)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 2
+                                )
+                        )
                         .onChange(of: endTime) { oldValue, newValue in
                             guard !isInternalUpdate else { return }
                             viewModel.taskManagement.updateTaskDuration(task, newEndTime: newValue)
