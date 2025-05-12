@@ -89,7 +89,7 @@ class TimelineManager: ObservableObject {
             // Интеллектуальная корректировка часа окончания
             let adjustedEndHour: Int
             if endMinute > 0 {
-                adjustedEndHour = (endHour + 1) % 24
+                adjustedEndHour = (endHour + 1) % 24  // Увеличиваем на 1, если есть минуты
             } else if startHour == endHour && startMinute == 0 && endMinute == 0 {
                 adjustedEndHour = (endHour + 1) % 24
             } else {
@@ -126,8 +126,7 @@ class TimelineManager: ObservableObject {
             
             // Интеллектуальный алгоритм показа меток
             let showHourLabel = isStartHour || isEndHour || 
-                               (isSignificantHour && !isInsideTask) || 
-                               isImportantHour
+                               ((isSignificantHour || isImportantHour) && !isInsideTask && !endHours.contains((hour+23) % 24))
             
             blocks.append(
                 TimeBlock(
