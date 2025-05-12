@@ -6,6 +6,185 @@
 //
 
 import SwiftUI
+import Combine
+
+// Оптимизируем структуру TimeBlock для большей гибкости
+struct TimeBlock: Identifiable {
+    let id = UUID()
+    let hour: Int
+    let tasks: [TaskOnRing]
+    let showHourLabel: Bool
+    let isInsideTask: Bool
+    let isStartHour: Bool
+    let isEndHour: Bool
+    let isImportantHour: Bool  // Полдень или полночь
+    
+    // Вычисляемые свойства для удобства использования
+    var hourString: String {
+        String(format: "%02d:00", hour % 24)
+    }
+    
+    var hasActiveTasks: Bool {
+        !tasks.isEmpty
+    }
+}
+
+// Абстрагируем логику работы с таймлайном в отдельный класс
+class TimelineManager: ObservableObject {
+    @Published var currentTime = Date()
+    
+    // Используем AnyCancellable вместо Timer для работы с Combine
+    private var timerCancellable: AnyCancellable?
+    
+    init() {
+        // Создаем таймер с интервалом в 1 минуту для обновления времени
+        timerCancellable = Timer.publish(every: 60, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.currentTime = Date()
+            }
+    }
+    
+    deinit {
+        // Отменяем подписку при уничтожении объекта
+        timerCancellable?.cancel()
+    }
+    
+    // Интеллектуальное определение диапазона задач
+    func createTimeBlocks(from tasks: [TaskOnRing], for selectedDate: Date) -> [TimeBlock] {
+        let calendar = Calendar.current
+        
+        struct TimeRange {
+            let start: Int
+            let end: Int
+            let task: TaskOnRing
+            
+            func contains(_ hour: Int) -> Bool {
+                if end > start {
+                    return hour > start && hour < end
+                } else { // Диапазон через полночь
+                    return hour > start || hour < end
+                }
+            }
+        }
+        
+        // Кэшируем результаты вычислений
+        var taskRanges: [TimeRange] = []
+        var tasksByHour: [Int: [TaskOnRing]] = [:]
+        var startHours: Set<Int> = []
+        var endHours: Set<Int> = []
+        
+        // Анализируем задачи и создаем временные диапазоны
+        for task in tasks {
+            // Убедимся, что задача действительно на этот день
+            guard calendar.isDate(task.startTime, inSameDayAs: selectedDate) else {
+                continue
+            }
+            
+            let startHour = calendar.component(.hour, from: task.startTime)
+            let startMinute = calendar.component(.minute, from: task.startTime)
+            let endHour = calendar.component(.hour, from: task.endTime)
+            let endMinute = calendar.component(.minute, from: task.endTime)
+            
+            // Интеллектуальная корректировка часа окончания
+            let adjustedEndHour: Int
+            if endMinute > 0 {
+                adjustedEndHour = (endHour + 1) % 24
+            } else if startHour == endHour && startMinute == 0 && endMinute == 0 {
+                adjustedEndHour = (endHour + 1) % 24
+            } else {
+                adjustedEndHour = endHour
+            }
+            
+            // Аккуратно обрабатываем граничные случаи
+            if tasksByHour[startHour] == nil {
+                tasksByHour[startHour] = []
+            }
+            tasksByHour[startHour]?.append(task)
+            
+            startHours.insert(startHour)
+            endHours.insert(adjustedEndHour)
+            
+            // Создаем диапазон для задачи
+            taskRanges.append(TimeRange(start: startHour, end: adjustedEndHour, task: task))
+        }
+        
+        // Создаем блоки времени с интеллектуальной группировкой
+        var blocks: [TimeBlock] = []
+        
+        // Показываем полные сутки и еще час для наглядности
+        for hour in 0...24 {
+            let hourMod24 = hour % 24
+            let tasksAtHour = tasksByHour[hourMod24] ?? []
+            
+            // Определяем статус часа для визуализации
+            let isInsideTask = taskRanges.contains { $0.contains(hourMod24) }
+            let isStartHour = startHours.contains(hourMod24)
+            let isEndHour = endHours.contains(hourMod24)
+            let isSignificantHour = hour % 3 == 0 // Каждый третий час
+            let isImportantHour = hour == 0 || hour == 12 || hour == 24 // Полночь и полдень
+            
+            // Интеллектуальный алгоритм показа меток
+            let showHourLabel = isStartHour || isEndHour || 
+                               (isSignificantHour && !isInsideTask) || 
+                               isImportantHour
+            
+            blocks.append(
+                TimeBlock(
+                    hour: hour,
+                    tasks: tasksAtHour,
+                    showHourLabel: showHourLabel,
+                    isInsideTask: isInsideTask,
+                    isStartHour: isStartHour,
+                    isEndHour: isEndHour,
+                    isImportantHour: isImportantHour
+                )
+            )
+        }
+        
+        return blocks
+    }
+    
+    // Расчет времени до конца дня
+    func calculateTimeUntilEndOfDay(from now: Date = Date()) -> (hours: Int, minutes: Int) {
+        let calendar = Calendar.current
+        
+        var components = calendar.dateComponents([.year, .month, .day], from: now)
+        components.hour = 23
+        components.minute = 59
+        components.second = 59
+        
+        guard let endOfDay = calendar.date(from: components) else {
+            return (0, 0)
+        }
+        
+        let timeRemaining = endOfDay.timeIntervalSince(now)
+        let hours = Int(timeRemaining) / 3600
+        let minutes = (Int(timeRemaining) % 3600) / 60
+        
+        return (hours, minutes)
+    }
+    
+    // Интеллектуальная группировка задач по категориям
+    func groupTasksByCategory(_ tasks: [TaskOnRing]) -> [(key: String, value: [TaskOnRing])] {
+        let grouped = Dictionary(grouping: tasks) { $0.category.rawValue }
+        return grouped.sorted { $0.key < $1.key }
+    }
+    
+    // Расчет позиции индикатора текущего времени
+    func calculateTimeIndicatorPosition(for date: Date, in height: CGFloat) -> CGFloat {
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: date)
+        let currentMinute = calendar.component(.minute, from: date)
+        
+        // Прогресс часа и дня
+        let hourProgress = CGFloat(currentMinute) / 60.0
+        let dayProgress = CGFloat(currentHour) + hourProgress
+        
+        // Учитываем 25 блоков (24 часа + доп. блок)
+        return (dayProgress / 25.0) * height
+    }
+}
 
 struct TaskTimeline: View {
     @State var selectedDate: Date
@@ -13,202 +192,115 @@ struct TaskTimeline: View {
     @ObservedObject var listViewModel: ListViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
     let categoryManager: CategoryManagementProtocol
-
-    // Добавляем ClockViewModel для TopBarView
+    
+    // Добавляем менеджер таймлайна
+    @StateObject private var timelineManager = TimelineManager()
     @StateObject private var clockViewModel = ClockViewModel()
-
-    // Состояние для отображения настроек и календаря
+    
+    // Состояние интерфейса
     @State private var showSettings = false
     @State private var showWeekCalendar = false
 
-    // Добавляем переменную weekCalendarOffset
-    @State private var weekCalendarOffset: CGFloat = -200
-
-    // Вычисляем задачи на выбранную дату, сортированные по времени начала
+    // Вычисляемые свойства для фильтрации задач
     private var filteredTasks: [TaskOnRing] {
-        tasks.filter { task in
-            Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
-        }.sorted { $0.startTime < $1.startTime }
+        tasks.filter { Calendar.current.isDate($0.startTime, inSameDayAs: selectedDate) }
+             .sorted { $0.startTime < $1.startTime }
     }
-
-    // Вычисляем часы, для которых есть задачи
-    private var hoursWithTasks: [Int] {
-        let calendar = Calendar.current
-        let hours = filteredTasks.map { calendar.component(.hour, from: $0.startTime) }
-        return Array(Set(hours)).sorted()
+    
+    // Кэшируем расчет блоков времени
+    private var timeBlocks: [TimeBlock] {
+        timelineManager.createTimeBlocks(from: tasks, for: selectedDate)
     }
-
-    // Текущее время для отображения индикатора
-    @State private var currentTime = Date()
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
+    
     // Расчет времени до конца дня
-    private var timeUntilEndOfDay: (hours: Int, minutes: Int, seconds: Int) {
-        let calendar = Calendar.current
-        let now = currentTime
-
-        // Получаем конец текущего дня (23:59:59)
-        var components = calendar.dateComponents([.year, .month, .day], from: now)
-        components.hour = 23
-        components.minute = 59
-        components.second = 59
-
-        guard let endOfDay = calendar.date(from: components) else {
-            return (0, 0, 0)
-        }
-
-        let timeRemaining = endOfDay.timeIntervalSince(now)
-        let hours = Int(timeRemaining) / 3600
-        let minutes = (Int(timeRemaining) % 3600) / 60
-        let seconds = Int(timeRemaining) % 60
-
-        return (hours, minutes, seconds)
+    private var timeUntilEndOfDay: (hours: Int, minutes: Int) {
+        timelineManager.calculateTimeUntilEndOfDay(from: timelineManager.currentTime)
     }
-
+    
     var body: some View {
         ZStack(alignment: .top) {
-            // Основное содержимое сначала (нижний слой)
+            // Основное содержимое
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 0) {
                         Color.clear
                             .frame(height: 40)
                             .listRowBackground(Color.clear)
-                        // Контейнер для временной шкалы и индикатора времени
+                            
+                        // Контейнер для временной шкалы и индикатора
                         ZStack(alignment: .leading) {
-                            // Индикатор текущего времени (теперь ПЕРВЫЙ элемент, чтобы быть НИЖЕ в Z-порядке)
+                            // Индикатор текущего времени
                             GeometryReader { geometry in
-                                let totalHeight = geometry.size.height
-                                let calendar = Calendar.current
-                                let now = currentTime
-                                
-                                // Получаем общее количество блоков времени и их распределение
-                                let timeBlocks = createTimeBlocks()
-                                
-                                // Определяем высоту одного блока
-                                let blockHeight = totalHeight / CGFloat(timeBlocks.count)
-                                
-                                // Определяем текущий час и минуты
-                                let currentHour = calendar.component(.hour, from: now)
-                                let currentMinute = calendar.component(.minute, from: now)
-                                
-                                // Вычисляем, какая часть часа прошла (от 0 до 1)
-                                let minuteProgress = CGFloat(currentMinute) / 60.0
-                                
-                                // Вычисляем положение индикатора на шкале
-                                // Расчет позиции на основе самого часа, а не индекса блока
-                                // Это позволяет привязать индикатор к правильным значениям часов
-                                // Находим общий "прогресс дня" (от 0 до 24 часов с дробной частью)
-                                let dayProgress = CGFloat(currentHour) + minuteProgress
-                                
-                                // Вычисляем позицию как долю от общей высоты (24 часа + 1 для полночи следующего дня)
-                                let yPosition = (dayProgress / 25.0) * totalHeight
-                                
-                                // Только линия и текст слева
-                                HStack(alignment: .center, spacing: 2) {
-                                    // Метка времени слева от линии
-                                    Text(formatTime(currentTime))
-                                        .font(.caption)
-                                        .foregroundColor(.pink)
-                                    
-                                    // Горизонтальная линия
-                                    Rectangle()
-                                        .fill(Color.pink)
-                                        .frame(height: 1)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .offset(y: yPosition - 10)  // Вычитаем половину высоты текста для центрирования
-                                .padding(.leading, -15)  // Отрицательный padding для максимального смещения влево
+                                timeIndicatorView(in: geometry)
                             }
                             
-                            // Базовая временная шкала (теперь ВТОРОЙ элемент, чтобы быть ВЫШЕ в Z-порядке)
-                            timelineContent
+                            // Базовая временная шкала
+                            timelineContentView
                         }
 
                         // Информация о конце дня
-                        Text(
-                            "End of day: \(timeUntilEndOfDay.hours) hrs, \(timeUntilEndOfDay.minutes) min"
-                        )
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                        .padding(.top, 20)
-                        .padding(.bottom, 10)
+                        Text("End of day: \(timeUntilEndOfDay.hours) hrs, \(timeUntilEndOfDay.minutes) min")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                            .padding(.top, 20)
+                            .padding(.bottom, 10)
                     }
-                    .padding(.leading, 20)
-                    .padding(.trailing, 10)
+                    .padding(.horizontal, 15)
                 }
                 .padding(.top, 30)
             }
             .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.9, green: 0.9, blue: 0.9))
             
-            // Нижний и верхний слои интерфейса
+            // Интерфейсные элементы
             VStack {
-                // TopBarView поверх всего содержимого (верхний слой) - БЕЗ АНИМАЦИИ
                 VStack {
-                    // TopBarView отображается только когда календарь скрыт
+                    // TopBarView когда календарь скрыт
                     if !showWeekCalendar {
                         TopBarView(
                             viewModel: clockViewModel,
                             showSettingsAction: { showSettings = true },
                             toggleCalendarAction: toggleWeekCalendar,
                             isCalendarVisible: false,
-                            searchAction: { 
-                                // Здесь добавляем логику поиска
-                            }
+                            searchAction: { /* Логика поиска */ }
                         )
                         .zIndex(100)
                     }
                     
-                    // Используем обновленный WeekCalendarView с колбэком
+                    // Календарь
                     if showWeekCalendar {
                         WeekCalendarView(
                             selectedDate: $clockViewModel.selectedDate,
-                            onHideCalendar: {
-                                showWeekCalendar = false
-                            }
+                            onHideCalendar: { showWeekCalendar = false }
                         )
-                        .zIndex(90) // Ниже чем TopBarView, но выше остального содержимого
+                        .zIndex(90)
                     }
                     
-                    Spacer() // Отодвигаем календарь и TopBar вверх
+                    Spacer()
                     
-                    // Добавляем TimelineBar внизу экрана
+                    // Нижняя панель
                     TimelineBar(
                         onTodayTap: { 
-                            // Переход к сегодняшней дате
                             let today = Date()
                             clockViewModel.selectedDate = today
                             selectedDate = today
                         },
                         onAddTaskTap: {
-                            // Добавление новой задачи
-                            // Можно использовать NotificationCenter для вызова формы создания задачи
                             NotificationCenter.default.post(
                                 name: NSNotification.Name("ShowAddTaskForm"),
                                 object: nil
                             )
                         },
-                        onInfoTap: {
-                            // Показать дополнительную информацию или настройки таймлайна
-                            showSettings = true
-                        }
+                        onInfoTap: { showSettings = true }
                     )
                 }
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: showWeekCalendar) // Анимация только для календаря
+        .animation(.easeInOut(duration: 0.3), value: showWeekCalendar)
         .gesture(
             DragGesture()
-                .onChanged { value in
-                    // Обрабатываем только горизонтальное перемещение вправо
-                    if value.translation.width > 0 {
-                        // Здесь можно добавить анимацию при перетаскивании
-                    }
-                }
+                .onChanged { _ in }
                 .onEnded { value in
-                    // Если свайп вправо больше 100 пикселей, закрываем TaskTimeline
                     if value.translation.width > 100 {
-                        // Отправляем уведомление о необходимости закрыть экран
                         NotificationCenter.default.post(
                             name: NSNotification.Name("CloseTaskTimeline"),
                             object: nil
@@ -216,115 +308,130 @@ struct TaskTimeline: View {
                     }
                 }
         )
-        .onReceive(timer) { _ in
-            self.currentTime = Date()
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
+            self.timelineManager.currentTime = Date()
         }
-        // Добавляем модальное окно для настроек
         .fullScreenCover(isPresented: $showSettings) {
             NavigationStack {
                 PersonalizationViewIOS(viewModel: clockViewModel)
             }
         }
         .onAppear {
-            // Устанавливаем selectedDate в ClockViewModel
             clockViewModel.selectedDate = selectedDate
         }
-        // Добавляем наблюдатель за изменениями даты в ClockViewModel
         .onChange(of: clockViewModel.selectedDate) { newValue in
-            // Обновляем основную selectedDate при изменении даты в календаре
             selectedDate = newValue
         }
     }
 
-    // Функция для переключения отображения недельного календаря
-    private func toggleWeekCalendar() {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            showWeekCalendar.toggle()
+    // Визуализация индикатора текущего времени
+    private func timeIndicatorView(in geometry: GeometryProxy) -> some View {
+        let isToday = Calendar.current.isDateInToday(selectedDate)
+        let yPosition = timelineManager.calculateTimeIndicatorPosition(
+            for: timelineManager.currentTime,
+            in: geometry.size.height
+        )
+        
+        return HStack(alignment: .center, spacing: 4) {
+            // Метка времени
+            Text(formatTime(timelineManager.currentTime))
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.pink)
+            
+            // Линия с индикатором
+            ZStack(alignment: .leading) {
+                Rectangle()
+                    .fill(Color.pink)
+                    .frame(height: 1.5)
+                
+                Circle()
+                    .fill(Color.pink)
+                    .frame(width: 6, height: 6)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .offset(y: yPosition - 10)
+        .padding(.leading, -15)
+        .opacity(isToday ? 1.0 : 0.5) // Прозрачность для не сегодняшних дней
     }
-
-    // Основное содержимое временной шкалы (без индикатора времени)
-    private var timelineContent: some View {
+    
+    // Содержимое временной шкалы
+    private var timelineContentView: some View {
         ZStack(alignment: .leading) {
             // Вертикальная линия с иконками
-            VStack(spacing: 0) {
-                // Иконка солнца на линии
-                ZStack {
-                    // Вертикальная линия сверху
-                    Rectangle()
-                        .fill(themeManager.isDarkMode ? Color.gray.opacity(0.3) : Color.black.opacity(0.3))
-                        .frame(width: 1)
-                        .frame(height: 0)  // Начинается от солнца
-
-                    // Солнце
-                    Circle()
-                        .fill(themeManager.isDarkMode ? Color.gray.opacity(0.2) : Color.black.opacity(0.2))
-                        .frame(width: 30, height: 30)
-                        .zIndex(1)
-
-                    Image(systemName: "sun.max")
-                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                        .font(.system(size: 16))
-                        .zIndex(2)
-                }
-
-                // Основная часть вертикальной линии
-                Rectangle()
-                    .fill(themeManager.isDarkMode ? Color.gray.opacity(0.3) : Color.black.opacity(0.3))
-                    .frame(width: 1)
-                    .frame(maxHeight: .infinity)
-
-                // Иконка луны на линии
-                ZStack {
-                    // Луна
-                    Circle()
-                        .fill(themeManager.isDarkMode ? Color.gray.opacity(0.2) : Color.black.opacity(0.2))
-                        .frame(width: 30, height: 30)
-                        .zIndex(1)
-
-                    Image(systemName: "moon")
-                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                        .font(.system(size: 16))
-                        .zIndex(2)
-
-                    // Вертикальная линия снизу
-                    Rectangle()
-                        .fill(themeManager.isDarkMode ? Color.gray.opacity(0.3) : Color.black.opacity(0.3))
-                        .frame(width: 1)
-                        .frame(height: 0)  // Заканчивается на луне
-                }
-            }
-            .padding(.leading, 15)
-
+            timelineAxisView
+            
             // Расположение всего содержимого
             VStack(spacing: 0) {
-                // Блоки задач с отступами для иконок
-                VStack(spacing: 0) {
-                    // Отступ для иконки солнца
-                    Spacer().frame(height: 20)
-
-                    // Блоки задач
-                    ForEach(createTimeBlocks(), id: \.hour) { timeBlock in
-                        timeBlockView(for: timeBlock)
-                    }
-
-                    // Отступ для иконки луны
-                    Spacer().frame(height: 20)
+                // Отступ для иконки солнца
+                Spacer().frame(height: 20)
+                
+                // Блоки времени с задачами
+                ForEach(timeBlocks) { block in
+                    timeBlockView(for: block)
                 }
-                .padding(.leading, 15)
+                
+                // Отступ для иконки луны
+                Spacer().frame(height: 20)
             }
+            .padding(.leading, 15)
         }
         .padding(.leading, 10)
     }
-
-    // Отображение блока часа с задачами - переименованный метод для ясности
+    
+    // Ось времени с иконками
+    private var timelineAxisView: some View {
+        VStack(spacing: 0) {
+            // Иконка солнца
+            ZStack {
+                Rectangle()
+                    .fill(themeManager.isDarkMode ? Color.gray.opacity(0.3) : Color.black.opacity(0.3))
+                    .frame(width: 1, height: 0)
+                
+                Circle()
+                    .fill(themeManager.isDarkMode ? Color.gray.opacity(0.2) : Color.black.opacity(0.2))
+                    .frame(width: 30, height: 30)
+                    .zIndex(1)
+                
+                Image(systemName: "sun.max")
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                    .font(.system(size: 16))
+                    .zIndex(2)
+            }
+            
+            // Линия
+            Rectangle()
+                .fill(themeManager.isDarkMode ? Color.gray.opacity(0.3) : Color.black.opacity(0.3))
+                .frame(width: 1)
+                .frame(maxHeight: .infinity)
+            
+            // Иконка луны
+            ZStack {
+                Circle()
+                    .fill(themeManager.isDarkMode ? Color.gray.opacity(0.2) : Color.black.opacity(0.2))
+                    .frame(width: 30, height: 30)
+                    .zIndex(1)
+                
+                Image(systemName: "moon")
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                    .font(.system(size: 16))
+                    .zIndex(2)
+                
+                Rectangle()
+                    .fill(themeManager.isDarkMode ? Color.gray.opacity(0.3) : Color.black.opacity(0.3))
+                    .frame(width: 1, height: 0)
+            }
+        }
+        .padding(.leading, 15)
+    }
+    
+    // Отображение блока времени
     private func timeBlockView(for timeBlock: TimeBlock) -> some View {
         VStack(spacing: 0) {
-            // Если есть отметка часа, показываем большим текстом
+            // Метка часа (если нужно показать)
             if timeBlock.showHourLabel {
                 ZStack {
-                    // Метка часа
-                    Text(String(format: "%02d", timeBlock.hour))
+                    Text(String(format: "%02d", timeBlock.hour % 24))
                         .font(.system(size: 40, weight: .bold))
                         .foregroundColor(themeManager.isDarkMode ? .gray.opacity(0.3) : .black.opacity(0.3))
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -332,207 +439,85 @@ struct TaskTimeline: View {
                         .padding(.top, 10)
                 }
             }
-
-            // Создаем горизонтальный стек для линии времени и списка задач
-            HStack(alignment: .top, spacing: 0) {
-                // Левая колонка с индикаторами цвета и иконками
-                if !timeBlock.tasks.isEmpty {
-                    // Вертикальный стек цветных блоков
+            
+            // Задачи для этого часа
+            if !timeBlock.tasks.isEmpty {
+                HStack(alignment: .top, spacing: 0) {
+                    // Левая колонка с индикаторами
                     VStack(spacing: 0) {
                         ForEach(timeBlock.tasks, id: \.id) { task in
-                            // Цветной индикатор задачи с иконкой внутри
                             ZStack {
                                 Rectangle()
-                                    .fill(getCategoryColor(for: task))
+                                    .fill(task.category.color)
                                     .frame(width: 30, height: getTaskHeight(for: task))
                                     .cornerRadius(5)
-
-                                // Иконка категории
+                                
                                 Image(systemName: task.icon)
                                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                     .font(.system(size: 14))
                             }
                         }
                     }
-                }
-
-                // Правая колонка с задачами, сгруппированными по категориям
-                VStack(spacing: 15) {
-                    // Группируем задачи по категориям и используем CategoryTaskView
-                    ForEach(groupTasksByCategory(timeBlock.tasks), id: \.key) {
-                        category, tasksInCategory in
-                        if let firstTask = tasksInCategory.first {
-                            TasksFromView(
-                                listViewModel: listViewModel,
-                                selectedDate: selectedDate,
-                                categoryManager: categoryManager,
-                                selectedCategoryID: firstTask.category.id,
-                                startTime: getEarliestStartTime(for: tasksInCategory),
-                                endTime: getLatestEndTime(for: tasksInCategory)
-                            )
+                    
+                    // Правая колонка с задачами по категориям
+                    VStack(spacing: 15) {
+                        ForEach(timelineManager.groupTasksByCategory(timeBlock.tasks), id: \.key) { category, tasksInCategory in
+                            if let firstTask = tasksInCategory.first {
+                                TasksFromView(
+                                    listViewModel: listViewModel,
+                                    selectedDate: selectedDate,
+                                    categoryManager: categoryManager,
+                                    selectedCategoryID: firstTask.category.id,
+                                    startTime: getEarliestStartTime(for: tasksInCategory),
+                                    endTime: getLatestEndTime(for: tasksInCategory)
+                                )
+                            }
                         }
                     }
+                    .padding(.leading, 15)
                 }
-                .padding(.leading, 15)
             }
         }
     }
-
-    // Группировка задач по категориям
-    private func groupTasksByCategory(_ tasks: [TaskOnRing]) -> [(key: String, value: [TaskOnRing])]
-    {
-        let grouped = Dictionary(grouping: tasks) { $0.category.rawValue }
-        return grouped.sorted { $0.key < $1.key }
-    }
-
-    // Вычисление высоты блока задачи в зависимости от длительности
-    private func getTaskHeight(for task: TaskOnRing) -> CGFloat {
-        // Получаем задачи из ToDoList для этой категории
-        let todoTasks = listViewModel.items.filter { item in
-            Calendar.current.isDate(item.date, inSameDayAs: selectedDate)
-                && item.categoryID == task.category.id
-        }
-
-        if todoTasks.isEmpty {
-            // Минимальная высота если нет задач (пустой блок с сообщением "Нет задач")
-            return 100
-        } else {
-            // Базовая высота для категории (заголовок, отступы)
-            let baseHeight: CGFloat = 60  // Заголовок + отступы
-
-            // Высота одной строки задачи (ToDoTaskRow)
-            let taskRowHeight: CGFloat = 45  // Включая содержимое и отступы
-
-            // Общая высота всех задач
-            let tasksHeight = CGFloat(todoTasks.count) * taskRowHeight
-            
-            // Добавляем отступы фона TasksFromView
-            let padding: CGFloat = 10 // Отступы сверху и снизу (10 + 10)
-            
-            return baseHeight + tasksHeight + padding
+    
+    // Переключение календаря
+    private func toggleWeekCalendar() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            showWeekCalendar.toggle()
         }
     }
-
-    // Получение цвета категории задачи (с немного увеличенной яркостью для соответствия дизайну)
-    private func getCategoryColor(for task: TaskOnRing) -> Color {
-        // Для разных категорий можно настроить разные цвета
-        switch task.category.rawValue {
-        case "Morning Workout": return .pink
-        case "Shower": return .blue
-        case "Breakfast": return .orange
-        case "Check Email": return .purple
-        default: return task.category.color
-        }
-    }
-
-    // Форматирование времени
+    
+    // Вспомогательные методы
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
     }
-
-    // Форматирование продолжительности
-    private func formatDuration(_ interval: TimeInterval) -> String {
-        let minutes = Int(interval / 60)
-        return "\(minutes) min"
-    }
-
-    // Создаем структуры блоков времени для отображения
-    private func createTimeBlocks() -> [TimeBlock] {
-        let calendar = Calendar.current
-        let now = Date()
-        let _ = calendar.component(.hour, from: now)
-
-        // Группируем задачи по часам
-        var tasksByHour: [Int: [TaskOnRing]] = [:]
-        // Отдельно отслеживаем часы окончания задач
-        var endHours: Set<Int> = []
-
-        // Отслеживаем все занятые диапазоны (чтобы скрыть ненужные метки внутри задач)
-        var occupiedRanges: [(start: Int, end: Int)] = []
-
-        for task in filteredTasks {
-            let startHour = calendar.component(.hour, from: task.startTime)
-            // Вместо endHour берем следующий час, если задача заканчивается не ровно в час
-            let endTime = task.endTime
-            let endMinute = calendar.component(.minute, from: endTime)
-            let endHour = calendar.component(.hour, from: endTime)
+    
+    
+    private func getTaskHeight(for task: TaskOnRing) -> CGFloat {
+        let todoTasks = listViewModel.items.filter { item in
+            Calendar.current.isDate(item.date, inSameDayAs: selectedDate) && 
+            item.categoryID == task.category.id
+        }
+        
+        if todoTasks.isEmpty {
+            return 100
+        } else {
+            let baseHeight: CGFloat = 60
+            let taskRowHeight: CGFloat = 45
+            let tasksHeight = CGFloat(todoTasks.count) * taskRowHeight
+            let padding: CGFloat = 10
             
-            // Если задача заканчивается не ровно в час (есть минуты),
-            // показываем следующий час вместо текущего
-            let adjustedEndHour = endMinute > 0 ? (endHour + 1) % 24 : endHour
-
-            // Добавляем час начала в коллекцию задач
-            if tasksByHour[startHour] == nil {
-                tasksByHour[startHour] = []
-            }
-            tasksByHour[startHour]?.append(task)
-
-            // Добавляем скорректированный час окончания в множество часов окончания
-            endHours.insert(adjustedEndHour)
-
-            // Добавляем диапазон в занятые часы с скорректированным концом
-            if adjustedEndHour > startHour {
-                occupiedRanges.append((startHour, adjustedEndHour))
-            } else if adjustedEndHour < startHour {  // Задача через полночь
-                occupiedRanges.append((startHour, 24))
-                occupiedRanges.append((0, adjustedEndHour))
-            }
-        }
-
-        // Создаем блоки времени
-        var blocks: [TimeBlock] = []
-
-        // Берем все часы с 0 до 24
-        for hour in 0...24 {
-            let tasks = tasksByHour[hour % 24] ?? []
-            let hourMod24 = hour % 24
-
-            // Проверяем, находится ли час внутри занятого диапазона
-            let isInsideTask = occupiedRanges.contains { range in
-                hourMod24 > range.start && hourMod24 < range.end
-            }
-
-            // Показываем метку для часа если:
-            // 1. В этот час начинается задача
-            // 2. Это час окончания задачи
-            // 3. Это каждый третий час (для разметки), но только если не внутри задачи
-            let showHourLabel =
-                !tasks.isEmpty || endHours.contains(hourMod24) || (hour % 3 == 0 && !isInsideTask)
-
-            blocks.append(
-                TimeBlock(
-                    hour: hour,
-                    tasks: tasks,
-                    showHourLabel: showHourLabel
-                ))
-        }
-
-        return blocks
-    }
-
-    // Добавляем метод для получения задач из ToDo-списка
-    private func getAllTodoTasks() -> [ToDoItem] {
-        return listViewModel.items.filter { item in
-            Calendar.current.isDate(item.date, inSameDayAs: selectedDate)
+            return baseHeight + tasksHeight + padding
         }
     }
-
-    // Получаем самое раннее время начала задач в категории
+    
     private func getEarliestStartTime(for tasks: [TaskOnRing]) -> Date {
         return tasks.min { $0.startTime < $1.startTime }?.startTime ?? Date()
     }
-
-    // Получаем самое позднее время окончания задач в категории
+    
     private func getLatestEndTime(for tasks: [TaskOnRing]) -> Date {
         return tasks.max { $0.endTime < $1.endTime }?.endTime ?? Date()
     }
-}
-
-// Структура для блока времени
-struct TimeBlock {
-    let hour: Int
-    let tasks: [TaskOnRing]
-    let showHourLabel: Bool
 }
