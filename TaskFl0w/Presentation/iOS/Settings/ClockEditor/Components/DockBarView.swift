@@ -6,6 +6,7 @@ struct DockBarView: View {
     @Binding var showOuterRingWidthControls: Bool
     @Binding var showArcAnalogToggle: Bool
     @Binding var showMarkersControls: Bool
+    @Binding var showZeroPositionControls: Bool
     @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
@@ -18,6 +19,7 @@ struct DockBarView: View {
                         showColorControls = false
                         showOuterRingWidthControls = false
                         showMarkersControls = false
+                        showZeroPositionControls = false
                     }
                 }
             }) {
@@ -33,6 +35,7 @@ struct DockBarView: View {
                         showColorControls = false
                         showOuterRingWidthControls = false
                         showArcAnalogToggle = false
+                        showZeroPositionControls = false
                     }
                 }
             }) {
@@ -48,6 +51,7 @@ struct DockBarView: View {
                         showArcAnalogToggle = false
                         showOuterRingWidthControls = false
                         showMarkersControls = false
+                        showZeroPositionControls = false
                     }
                 }
             }) {
@@ -63,6 +67,7 @@ struct DockBarView: View {
                         showColorControls = false
                         showArcAnalogToggle = false
                         showMarkersControls = false
+                        showZeroPositionControls = false
                     }
                 }
             }) {
@@ -71,10 +76,19 @@ struct DockBarView: View {
             }
 
             Button(action: {
-                // Действие 4
+                withAnimation {
+                    showZeroPositionControls.toggle()
+                    if showZeroPositionControls {
+                        showClockControls = false
+                        showColorControls = false
+                        showOuterRingWidthControls = false
+                        showMarkersControls = false
+                        showArcAnalogToggle = false
+                    }
+                }
             }) {
                 Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
-                    .dockButtonStyle(isSelected: false)
+                    .dockButtonStyle(isSelected: showZeroPositionControls)
             }
 
             Button(action: {
@@ -85,6 +99,7 @@ struct DockBarView: View {
                         showColorControls = false
                         showOuterRingWidthControls = false
                         showMarkersControls = false
+                        showZeroPositionControls = false
                     }
                 }
             }) {

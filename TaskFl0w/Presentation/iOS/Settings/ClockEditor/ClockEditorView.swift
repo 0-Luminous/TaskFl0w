@@ -48,6 +48,7 @@ struct ClockEditorView: View {
     @State private var selectedColorIndex: Int? = nil
 
     @State private var watchFace: WatchFaceModel
+    @State private var showZeroPositionControls = false
 
     init(viewModel: ClockViewModel, markersViewModel: ClockMarkersViewModel, taskArcLineWidth: CGFloat) {
         self.viewModel = viewModel
@@ -84,6 +85,8 @@ struct ClockEditorView: View {
                                     return 300  // Минимальное поднятие для переключения стиля
                                 } else if showMarkersControls {
                                     return 300  // Среднее поднятие для настроек маркеров
+                                } else if showZeroPositionControls {
+                                    return 300  // Среднее поднятие для настроек нуля
                                 }
                                 return 0
                             }()
@@ -93,6 +96,7 @@ struct ClockEditorView: View {
                         .animation(.spring(), value: showOuterRingWidthControls)
                         .animation(.spring(), value: showArcAnalogToggle)
                         .animation(.spring(), value: showMarkersControls)
+                        .animation(.spring(), value: showZeroPositionControls)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.98, green: 0.98, blue: 0.98))
@@ -167,17 +171,24 @@ struct ClockEditorView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                         .padding(.bottom, 8)
                     }
+                    if showZeroPositionControls {
+                        ZeroPositionControlView(viewModel: viewModel)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .padding(.bottom, 8)
+                    }
                     
                     DockBarView(
                         showClockControls: $showClockControls,
                         showColorControls: $showColorControls,
                         showOuterRingWidthControls: $showOuterRingWidthControls,
                         showArcAnalogToggle: $showArcAnalogToggle,
-                        showMarkersControls: $showMarkersControls
+                        showMarkersControls: $showMarkersControls,
+                        showZeroPositionControls: $showZeroPositionControls
                     )
                 }
                 .animation(.spring(), value: showClockControls)
                 .animation(.spring(), value: showColorControls)
+                .animation(.spring(), value: showZeroPositionControls)
             }
         }
         .onAppear {
@@ -283,6 +294,17 @@ struct ClockEditorView: View {
         // Сохраняем цвета в локальные AppStorage переменные
         lightModeMarkersColor = markersViewModel.lightModeMarkersColor
         darkModeMarkersColor = markersViewModel.darkModeMarkersColor
+    }
+
+    private func resetZeroPosition() {
+        // Сбрасываем позицию нуля на 0
+        viewModel.updateZeroPosition(0)
+        
+        // Обновляем данные в watchFace
+        watchFace.zeroPosition = 0
+        
+        // Обновляем UI
+        viewModel.objectWillChange.send()
     }
 }
 

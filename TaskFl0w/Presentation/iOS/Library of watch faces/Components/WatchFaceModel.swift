@@ -30,6 +30,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
     var markersOffset: Double = 0.0
     var markersWidth: Double = 2.0
     var numbersSize: Double = 16.0
+    var markerStyle: String = "standard" // Добавляем стиль маркеров
+    var showIntermediateMarkers: Bool = true // Добавляем промежуточные маркеры
     
     // Дополнительные настройки
     var zeroPosition: Double = 0.0 // Угол поворота 0 часов
@@ -41,6 +43,11 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
     
     static func == (lhs: WatchFaceModel, rhs: WatchFaceModel) -> Bool {
         return lhs.id == rhs.id
+    }
+    
+    // Получение MarkerStyle из строки
+    var markerStyleEnum: MarkerStyle {
+        MarkerStyle(rawValue: markerStyle) ?? .standard
     }
     
     // Предустановленные циферблаты
@@ -58,7 +65,10 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
                 lightModeMarkersColor: Color.black.toHex(),
                 darkModeMarkersColor: Color.white.toHex(),
-                showHourNumbers: true
+                showHourNumbers: true,
+                markerStyle: "standard",
+                showIntermediateMarkers: true,
+                fontName: "ForestSmooth"
             ),
             // Добавляем еще один классический циферблат
             WatchFaceModel(
@@ -72,10 +82,62 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeOuterRingColor: Color.gray.toHex(),
                 lightModeMarkersColor: Color.brown.toHex(),
                 darkModeMarkersColor: Color.brown.opacity(0.7).toHex(),
-                showHourNumbers: true
+                showHourNumbers: true,
+                markerStyle: "classicWatch",
+                showIntermediateMarkers: true,
+                fontName: "Brillant"
+            ),
+            // Добавляем кастомные циферблаты с разными шрифтами и стилями маркеров
+            WatchFaceModel(
+                name: "Московский",
+                style: "classic",
+                isCustom: false,
+                category: WatchFaceCategory.classic.rawValue,
+                lightModeClockFaceColor: Color(red: 0.95, green: 0.95, blue: 0.95).toHex(),
+                darkModeClockFaceColor: Color(red: 0.15, green: 0.15, blue: 0.15).toHex(),
+                lightModeOuterRingColor: Color.red1.opacity(0.3).toHex(),
+                darkModeOuterRingColor: Color.red1.opacity(0.5).toHex(),
+                lightModeMarkersColor: Color.black.toHex(),
+                darkModeMarkersColor: Color.white.toHex(),
+                showHourNumbers: true,
+                markerStyle: "lines",
+                showIntermediateMarkers: true,
+                fontName: "MOSCOW2024"
             ),
             WatchFaceModel(
-                name: "Капучино",
+                name: "Лесной",
+                style: "classic",
+                isCustom: false,
+                category: WatchFaceCategory.classic.rawValue,
+                lightModeClockFaceColor: Color(red: 0.9, green: 0.95, blue: 0.9).toHex(),
+                darkModeClockFaceColor: Color(red: 0.1, green: 0.2, blue: 0.1).toHex(),
+                lightModeOuterRingColor: Color.green.opacity(0.3).toHex(),
+                darkModeOuterRingColor: Color.green.opacity(0.5).toHex(),
+                lightModeMarkersColor: Color.black.toHex(),
+                darkModeMarkersColor: Color.white.toHex(),
+                showHourNumbers: true,
+                markerStyle: "hourAccent",
+                showIntermediateMarkers: true,
+                fontName: "ForestSmooth"
+            ),
+            WatchFaceModel(
+                name: "Бриллиант",
+                style: "classic",
+                isCustom: false,
+                category: WatchFaceCategory.classic.rawValue,
+                lightModeClockFaceColor: Color(red: 1.0, green: 1.0, blue: 1.0).toHex(),
+                darkModeClockFaceColor: Color(red: 0.0, green: 0.0, blue: 0.0).toHex(),
+                lightModeOuterRingColor: Color.blue.opacity(0.3).toHex(),
+                darkModeOuterRingColor: Color.blue.opacity(0.5).toHex(),
+                lightModeMarkersColor: Color.black.toHex(),
+                darkModeMarkersColor: Color.white.toHex(),
+                showHourNumbers: true,
+                markerStyle: "thinUniform",
+                showIntermediateMarkers: false,
+                fontName: "Brillant"
+            ),
+            WatchFaceModel(
+                name: "Цифровой",
                 style: "digital",
                 isCustom: false,
                 category: WatchFaceCategory.digital.rawValue,
@@ -85,7 +147,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeOuterRingColor: Color.brown.opacity(0.5).toHex(),
                 lightModeMarkersColor: Color.black.toHex(),
                 darkModeMarkersColor: Color.black.opacity(0.7).toHex(),
-                showHourNumbers: false
+                showHourNumbers: false,
+                markerStyle: "dots",
+                showIntermediateMarkers: false
             ),
             // Цифровой циферблат
             WatchFaceModel(
@@ -100,7 +164,79 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 lightModeMarkersColor: Color.gray.toHex(),
                 darkModeMarkersColor: Color.gray.toHex(),
                 showHourNumbers: true, 
-                numberInterval: 2
+                numberInterval: 2,
+                markerStyle: "uniformDense",
+                showIntermediateMarkers: true,
+                fontName: "ForestSmooth"
+            ),
+            // Необычные стили
+            WatchFaceModel(
+                name: "Ретро",
+                style: "classic",
+                isCustom: false,
+                category: WatchFaceCategory.classic.rawValue,
+                lightModeClockFaceColor: Color(red: 0.98, green: 0.94, blue: 0.85).toHex(), 
+                darkModeClockFaceColor: Color(red: 0.2, green: 0.12, blue: 0.05).toHex(),
+                lightModeOuterRingColor: Color.brown.opacity(0.3).toHex(),
+                darkModeOuterRingColor: Color.brown.opacity(0.4).toHex(),
+                lightModeMarkersColor: Color.black.toHex(),
+                darkModeMarkersColor: Color.white.opacity(0.9).toHex(),
+                showHourNumbers: true,
+                markerStyle: "classicWatch",
+                showIntermediateMarkers: false,
+                fontName: "Tsarevich old"
+            ),
+            WatchFaceModel(
+                name: "Футуристический",
+                style: "digital",
+                isCustom: false,
+                category: WatchFaceCategory.digital.rawValue,
+                lightModeClockFaceColor: Color(red: 0.2, green: 0.2, blue: 0.25).toHex(),
+                darkModeClockFaceColor: Color(red: 0.1, green: 0.1, blue: 0.2).toHex(),
+                lightModeOuterRingColor: Color.blue.opacity(0.7).toHex(),
+                darkModeOuterRingColor: Color.blue.opacity(0.9).toHex(),
+                lightModeMarkersColor: Color.white.toHex(),
+                darkModeMarkersColor: Color.white.toHex(),
+                showHourNumbers: false,
+                markerStyle: "dots",
+                showIntermediateMarkers: true,
+                fontName: "Menlo-Bold"
+            ),
+            // Минималистичный стиль с необычными маркерами
+            WatchFaceModel(
+                name: "Тонкий",
+                style: "minimal",
+                isCustom: false,
+                category: WatchFaceCategory.minimal.rawValue,
+                lightModeClockFaceColor: Color(red: 0.98, green: 0.98, blue: 0.98).toHex(),
+                darkModeClockFaceColor: Color(red: 0.1, green: 0.1, blue: 0.1).toHex(),
+                lightModeOuterRingColor: Color.gray.opacity(0.2).toHex(),
+                darkModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
+                lightModeMarkersColor: Color.black.opacity(0.7).toHex(),
+                darkModeMarkersColor: Color.white.opacity(0.7).toHex(),
+                showHourNumbers: true,
+                numberInterval: 3,
+                markerStyle: "thinUniform",
+                showIntermediateMarkers: true,
+                fontName: "Gill Sans"
+            ),
+            // Детальный циферблат
+            WatchFaceModel(
+                name: "Детальный",
+                style: "classic",
+                isCustom: false,
+                category: WatchFaceCategory.classic.rawValue,
+                lightModeClockFaceColor: Color(red: 0.9, green: 0.9, blue: 0.9).toHex(),
+                darkModeClockFaceColor: Color(red: 0.15, green: 0.15, blue: 0.15).toHex(),
+                lightModeOuterRingColor: Color.gray.opacity(0.4).toHex(),
+                darkModeOuterRingColor: Color.gray.opacity(0.6).toHex(),
+                lightModeMarkersColor: Color.black.toHex(),
+                darkModeMarkersColor: Color.white.toHex(),
+                showHourNumbers: true,
+                numberInterval: 2,
+                markerStyle: "hourAccent",
+                showIntermediateMarkers: true,
+                fontName: "Futura"
             )
         ]
     }
@@ -143,6 +279,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
         UserDefaults.standard.set(isAnalogArcStyle, forKey: "isAnalogArcStyle")
         UserDefaults.standard.set(showTimeOnlyForActiveTask, forKey: "showTimeOnlyForActiveTask")
         UserDefaults.standard.set(fontName, forKey: "fontName")
+        UserDefaults.standard.set(markerStyle, forKey: "markerStyle")
+        UserDefaults.standard.set(showIntermediateMarkers, forKey: "showIntermediateMarkers")
         
         // Принудительно обновляем представление ThemeManager
         // Вызываем публичные методы вместо приватного updateColorsForCurrentTheme()
@@ -164,6 +302,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
         // Дополнительно обновляем ViewModel для маркеров
         if let markersViewModel = markersViewModel {
             markersViewModel.showHourNumbers = showHourNumbers
+            markersViewModel.fontName = fontName
+            markersViewModel.markerStyle = markerStyleEnum // Устанавливаем стиль маркеров
+            markersViewModel.showIntermediateMarkers = showIntermediateMarkers // Добавляем промежуточные маркеры
             markersViewModel.objectWillChange.send()
         }
     }
@@ -193,5 +334,19 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
     // Получение отображаемого имени стиля
     var displayStyleName: String {
         WatchFaceModel.displayStyleName(for: style)
+    }
+    
+    // Получить отображаемое имя стиля маркеров
+    func getMarkerStyleDisplayName() -> String {
+        let styleEnum = markerStyleEnum
+        switch styleEnum {
+        case .lines: return "Линии"
+        case .dots: return "Точки"
+        case .standard: return "Стандартные"
+        case .classicWatch: return "Классические"
+        case .thinUniform: return "Тонкие"
+        case .hourAccent: return "Часовые"
+        case .uniformDense: return "Плотные"
+        }
     }
 } 

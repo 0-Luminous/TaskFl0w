@@ -29,42 +29,11 @@ struct FirstView: View {
                 .ignoresSafeArea()
                 
                 VStack {
+                    // Удаляем Spacer() отсюда
+                    
+                    // Кнопка выбора циферблата размещается внизу экрана
                     Spacer()
                     
-                    // Анимированные дуги категорий
-                    ZStack {
-                        ForEach(0..<5, id: \.self) { i in
-                            CategoryArcView(
-                                radius: CGFloat.random(in: 80...180),
-                                thickness: CGFloat.random(in: 8...18),
-                                startAngle: .degrees(Double.random(in: 0...180)),
-                                endAngle: .degrees(Double.random(in: 200...360)),
-                                color: [Color.pink, Color.blue, Color.purple, Color.green, Color.orange][i % 5],
-                                animationDuration: Double.random(in: 3.5...6.5),
-                                maxOffset: 120
-                            )
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: 320)
-                    .padding(.top, 40)
-                    
-                    Spacer()
-                    
-                    // Анимированные циферблаты
-                    ZStack {
-                        ForEach(Array(watchFaces.enumerated()), id: \.1.id) { (idx, face) in
-                            AnimatedFlyingWatchFaceView(
-                                watchFace: face,
-                                index: idx,
-                                isAnimating: isAnimating
-                            )
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: 400)
-                    
-                    Spacer()
-                    
-                    // Кнопка выбора циферблата
                     if showButton {
                         Button(action: {
                             navigateToSelectCategory = true
@@ -86,10 +55,39 @@ struct FirstView: View {
                                 .shadow(radius: 5)
                         }
                         .transition(.scale.combined(with: .opacity))
+                        .zIndex(10) // Чтобы кнопка была поверх циферблатов
                     }
                     
-                    Spacer()
+                    Spacer().frame(height: 20)
                 }
+                
+                // Анимированные дуги категорий (вынесены из VStack)
+                ZStack {
+                    ForEach(0..<5, id: \.self) { i in
+                        CategoryArcView(
+                            radius: CGFloat.random(in: 80...180),
+                            thickness: CGFloat.random(in: 8...18),
+                            startAngle: .degrees(Double.random(in: 0...180)),
+                            endAngle: .degrees(Double.random(in: 200...360)),
+                            color: [Color.pink, Color.blue, Color.purple, Color.green, Color.orange][i % 5],
+                            animationDuration: Double.random(in: 3.5...6.5),
+                            maxOffset: 120
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                
+                // Анимированные циферблаты (вынесены из VStack)
+                ZStack {
+                    ForEach(Array(watchFaces.enumerated()), id: \.1.id) { (idx, face) in
+                        AnimatedFlyingWatchFaceView(
+                            watchFace: face,
+                            index: idx,
+                            isAnimating: isAnimating
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .navigationDestination(isPresented: $navigateToLibrary) {
                 LibraryOfWatchFaces()
@@ -162,14 +160,14 @@ struct AnimatedFlyingWatchFaceView: View {
     @State private var randomScale: CGFloat = 0.3
 
     func randomize() {
-        randomOffset = CGSize(width: CGFloat.random(in: -160...160), height: CGFloat.random(in: -180...180))
+        randomOffset = CGSize(width: CGFloat.random(in: -180...180), height: CGFloat.random(in: -300...300))
         randomRotation = Double.random(in: -60...60)
-        randomScale = CGFloat.random(in: 0.22...0.38)
+        randomScale = CGFloat.random(in: 0.2...0.4)
     }
 
     func animateForever() {
         guard isAnimating else { return }
-        let duration = Double.random(in: 3.5...6.5)
+        let duration = Double.random(in: 7.0...12.0)
         withAnimation(Animation.easeInOut(duration: duration)) {
             randomize()
         }
@@ -192,7 +190,6 @@ struct AnimatedFlyingWatchFaceView: View {
         .scaleEffect(randomScale)
         .rotationEffect(.degrees(randomRotation))
         .offset(randomOffset)
-        .opacity(isAnimating ? 0.7 : 0)
         .onAppear {
             randomize()
             if isAnimating {

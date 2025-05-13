@@ -41,6 +41,7 @@ struct LibraryClockFaceView: View {
             
             // Маркеры часов (если включены)
             if watchFace.showMarkers {
+                // Основные часовые маркеры
                 ForEach(0..<24) { hour in
                     let angle = Double(hour) * (360.0 / 24.0)
                     ClockMarker(
@@ -49,10 +50,35 @@ struct LibraryClockFaceView: View {
                         viewModel: markersViewModel,
                         MarkersColor: markersColor,
                         zeroPosition: watchFace.zeroPosition,
-                        showNumbers: false
+                        showNumbers: false,
+                        isMainMarker: true
                     )
                     .rotationEffect(.degrees(angle))
                     .frame(width: 100, height: 100)
+                    .id("marker-hour-\(hour)-\(watchFace.markerStyle)-\(Int(watchFace.markersWidth * 10))")
+                }
+                
+                // Промежуточные маркеры
+                if watchFace.showIntermediateMarkers {
+                    ForEach(0..<96) { minuteMarker in
+                        let angle = Double(minuteMarker) * (360.0 / 96.0)
+                        // Пропускаем позиции, где уже есть часовые маркеры
+                        if minuteMarker % 4 != 0 {
+                            ClockMarker(
+                                hour: minuteMarker / 4, // Сопоставляем с ближайшим часом
+                                minuteIndex: minuteMarker % 4, // Индекс минутного маркера (1, 2, 3)
+                                style: markerStyle,
+                                viewModel: markersViewModel,
+                                MarkersColor: markersColor,
+                                zeroPosition: watchFace.zeroPosition,
+                                showNumbers: false,
+                                isMainMarker: false
+                            )
+                            .rotationEffect(.degrees(angle))
+                            .frame(width: 100, height: 100)
+                            .id("marker-minute-\(minuteMarker)-\(watchFace.markerStyle)")
+                        }
+                    }
                 }
             }
             
@@ -115,6 +141,8 @@ struct LibraryClockFaceView: View {
         markersViewModel.isDarkMode = themeManager.isDarkMode
         markersViewModel.fontName = watchFace.fontName
         markersViewModel.zeroPosition = watchFace.zeroPosition
+        markersViewModel.markerStyle = watchFace.markerStyleEnum // Используем стиль из модели
+        markersViewModel.showIntermediateMarkers = watchFace.showIntermediateMarkers // Настраиваем промежуточные маркеры
         
         // Настройка viewModel
         viewModel.clockStyle = WatchFaceModel.displayStyleName(for: watchFace.style)
@@ -138,13 +166,8 @@ struct LibraryClockFaceView: View {
             : Color(hex: watchFace.lightModeMarkersColor) ?? .black
     }
     
+    // Получаем стиль маркеров из модели циферблата
     private var markerStyle: MarkerStyle {
-        switch watchFace.style {
-        case "classic": return .standard
-        case "minimal": return .lines
-        case "digital": return .lines
-        case "modern": return .dots
-        default: return .standard
-        }
+        watchFace.markerStyleEnum
     }
 } 
