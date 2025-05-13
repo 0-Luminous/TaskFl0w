@@ -250,11 +250,11 @@ struct GlobleClockFaceViewIOS: View {
             VStack(spacing: 0) {
                 Text("\(hour, specifier: "%02d")")
                     .font(digitalFont)
-                    .foregroundColor(color)
+                    .foregroundColor(markersViewModel.currentDigitalFontColor)
                 
                 Text("\(minute, specifier: "%02d")")
                     .font(digitalFont)
-                    .foregroundColor(color)
+                    .foregroundColor(markersViewModel.currentDigitalFontColor)
             }
         }
         

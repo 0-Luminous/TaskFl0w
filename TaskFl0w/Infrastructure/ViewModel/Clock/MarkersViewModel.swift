@@ -32,6 +32,8 @@ final class ClockMarkersViewModel: ObservableObject {
             objectWillChange.send()
         }
     }
+    @Published var lightModeDigitalFontColor: String = Color.gray.toHex()
+    @Published var darkModeDigitalFontColor: String = Color.white.toHex()
     
     // Список доступных шрифтов с PostScript именами
     let customFonts: [String] = [
@@ -89,6 +91,11 @@ final class ClockMarkersViewModel: ObservableObject {
     var currentMarkersColor: Color {
         let hexColor = isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
         return Color(hex: hexColor) ?? .gray
+    }
+
+    var currentDigitalFontColor: Color {
+        let hexColor = isDarkMode ? darkModeDigitalFontColor : lightModeDigitalFontColor
+        return Color(hex: hexColor) ?? (isDarkMode ? .white : .gray)
     }
 
     // Названия стилей маркеров для отображения в интерфейсе

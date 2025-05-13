@@ -27,6 +27,10 @@ struct ColorControlsView: View {
     // Добавляем состояние для отображения настроек цвета стрелки
     @State private var showHandColorSettings: Bool = false
     
+    // Добавляем новые свойства в ColorControlsView
+    @Binding var lightModeDigitalFontColor: String
+    @Binding var darkModeDigitalFontColor: String
+    
     var body: some View {
         VStack(spacing: 16) {
 
@@ -34,7 +38,8 @@ struct ColorControlsView: View {
                 Text(selectedColorType == "clockFace" ? "Цвет циферблата" : 
                      selectedColorType == "markers" ? "Цвет маркеров" : 
                      selectedColorType == "outerRing" ? "Цвет внешнего кольца" : 
-                     selectedColorType == "handColor" ? "Цвет стрелки" : "Цвет стрелки")
+                     selectedColorType == "handColor" ? "Цвет стрелки" : 
+                     selectedColorType == "digitalFontColor" ? "Цвет цифр" : "Цвет стрелки")
                     .font(.headline)
                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                 
@@ -385,6 +390,55 @@ struct ColorControlsView: View {
                     .padding(.top, 6)
                 }
             }
+            
+            // Добавим кнопку для настройки цвета цифрового шрифта когда выбран цифровой стиль часов
+            if selectedColorType == "clockFace" && viewModel.clockStyle == "Цифровой" {
+                // Добавляем кнопку настройки цвета цифрового шрифта
+                Button(action: {
+                    withAnimation {
+                        selectedColorType = "digitalFontColor"
+                    }
+                }) {
+                    HStack {
+                        Text("Цвет цифр")
+                            .font(.caption)
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                        Circle()
+                            .fill(currentDigitalFontColor)
+                            .frame(width: 16, height: 16)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.5), lineWidth: 1)
+                            )
+                    }
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        Capsule()
+                            .fill(themeManager.isDarkMode ? 
+                                Color(red: 0.184, green: 0.184, blue: 0.184) : 
+                                Color(red: 0.95, green: 0.95, blue: 0.95))
+                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.gray.opacity(0.7),
+                                        Color.gray.opacity(0.3),
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.0
+                            )
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.top, 6)
+            }
         }
         .padding()
         .background(
@@ -408,6 +462,8 @@ struct ColorControlsView: View {
             currentHex = themeManager.isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
         case "outerRing":
             currentHex = themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
+        case "digitalFontColor":
+            currentHex = themeManager.isDarkMode ? darkModeDigitalFontColor : lightModeDigitalFontColor
         default:
             currentHex = ""
         }
@@ -451,6 +507,22 @@ struct ColorControlsView: View {
                 // Не трогаем selectedColorIndex
                 selectedColorType = type
                 selectedColorHex = color.toHex()
+                return
+            case "digitalFontColor":
+                // Обработка цвета цифрового шрифта
+                if themeManager.isDarkMode {
+                    darkModeDigitalFontColor = color.toHex()
+                    viewModel.darkModeDigitalFontColor = color.toHex()
+                    markersViewModel.darkModeDigitalFontColor = color.toHex()
+                } else {
+                    lightModeDigitalFontColor = color.toHex()
+                    viewModel.lightModeDigitalFontColor = color.toHex()
+                    markersViewModel.lightModeDigitalFontColor = color.toHex()
+                }
+                selectedColorType = type
+                selectedColorHex = color.toHex()
+                initializeSliderPositionWithoutUpdatingSelection()
+                markersViewModel.updateCurrentThemeColors()
                 return
             default:
                 break
@@ -534,6 +606,8 @@ struct ColorControlsView: View {
             currentColor = Color(
                 hex: themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
             ) ?? .gray.opacity(0.3)
+        case "digitalFontColor":
+            currentColor = currentDigitalFontColor
         default:
             currentColor = Color(
                 hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
@@ -577,10 +651,13 @@ struct ColorControlsView: View {
             selectedColorHex = themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
             currentBaseColor = ColorUtils.getBaseColor(forColor: currentColor)
         case "handColor":
-            // Добавляем обработку для типа "handColor"
             let currentColor = currentHandColor
             selectedColorHex = themeManager.isDarkMode ? darkModeHandColor : lightModeHandColor
-            // Не устанавливаем currentBaseColor, так как для стрелки не используется слайдер
+        case "digitalFontColor":
+            // Добавляем обработку для типа "digitalFontColor"
+            let currentColor = currentDigitalFontColor
+            selectedColorHex = themeManager.isDarkMode ? darkModeDigitalFontColor : lightModeDigitalFontColor
+            currentBaseColor = ColorUtils.getBaseColor(forColor: currentColor)
         default:
             break
         }
@@ -605,6 +682,8 @@ struct ColorControlsView: View {
             currentColor = Color(
                 hex: themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
             ) ?? .gray.opacity(0.3)
+        case "digitalFontColor":
+            currentColor = currentDigitalFontColor
         default:
             currentColor = Color(
                 hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
@@ -626,6 +705,12 @@ struct ColorControlsView: View {
     private var currentHandColor: Color {
         let hexColor = themeManager.isDarkMode ? darkModeHandColor : lightModeHandColor
         return Color(hex: hexColor) ?? .blue
+    }
+    
+    // Добавляем вычисляемое свойство для цвета цифрового шрифта
+    private var currentDigitalFontColor: Color {
+        let hexColor = themeManager.isDarkMode ? darkModeDigitalFontColor : lightModeDigitalFontColor
+        return Color(hex: hexColor) ?? (themeManager.isDarkMode ? .white : .gray)
     }
     
     // Добавляем функцию для кнопки выбора цвета стрелки

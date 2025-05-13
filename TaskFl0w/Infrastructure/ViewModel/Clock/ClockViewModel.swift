@@ -255,6 +255,10 @@ final class ClockViewModel: ObservableObject {
         }
     }
 
+    // Добавляем в список AppStorage свойств для цвета цифр цифрового стиля
+    @AppStorage("lightModeDigitalFontColor") var lightModeDigitalFontColor: String = Color.gray.toHex()
+    @AppStorage("darkModeDigitalFontColor") var darkModeDigitalFontColor: String = Color.white.toHex()
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState
@@ -369,6 +373,8 @@ final class ClockViewModel: ObservableObject {
         markersViewModel.markerStyle = markerStyle
         markersViewModel.showIntermediateMarkers = showIntermediateMarkers
         markersViewModel.digitalFontSize = digitalFontSizeRaw
+        markersViewModel.lightModeDigitalFontColor = lightModeDigitalFontColor
+        markersViewModel.darkModeDigitalFontColor = darkModeDigitalFontColor
     }
     
     // MARK: - Методы форматирования даты

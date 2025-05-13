@@ -27,6 +27,9 @@ struct ClockEditorView: View {
         .toHex()
     @AppStorage("lightModeHandColor") private var lightModeHandColor: String = Color.blue.toHex()
     @AppStorage("darkModeHandColor") private var darkModeHandColor: String = Color.blue.toHex()
+    // Добавляем новые @AppStorage свойства для цвета цифр цифрового стиля
+    @AppStorage("lightModeDigitalFontColor") private var lightModeDigitalFontColor: String = Color.gray.toHex()
+    @AppStorage("darkModeDigitalFontColor") private var darkModeDigitalFontColor: String = Color.white.toHex()
 
     @AppStorage("showMarkers") private var showMarkers: Bool = true
     @AppStorage("fontName") private var fontName: String = "SF Pro"
@@ -150,7 +153,9 @@ struct ClockEditorView: View {
                             currentBaseColor: $currentBaseColor, 
                             selectedColorType: $selectedColorType,
                             selectedColorHex: $selectedColorHex,
-                            selectedColorIndex: $selectedColorIndex
+                            selectedColorIndex: $selectedColorIndex,
+                            lightModeDigitalFontColor: $lightModeDigitalFontColor,
+                            darkModeDigitalFontColor: $darkModeDigitalFontColor
                         )
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                         .padding(.bottom, 8)
@@ -250,7 +255,15 @@ struct ClockEditorView: View {
         markersViewModel.showMarkers = showMarkers
         markersViewModel.fontName = fontName
         
-        // Добавляем синхронизацию новой настройки
+        // Добавляем синхронизацию новых параметров
+        markersViewModel.lightModeDigitalFontColor = lightModeDigitalFontColor
+        markersViewModel.darkModeDigitalFontColor = darkModeDigitalFontColor
+        
+        // Обновляем свойства ViewModel
+        viewModel.lightModeDigitalFontColor = lightModeDigitalFontColor
+        viewModel.darkModeDigitalFontColor = darkModeDigitalFontColor
+        
+        // Добавляем синхронизацию настройки
         viewModel.showTimeOnlyForActiveTask = showTimeOnlyForActiveTask
 
         // Принудительно обновляем цвета
@@ -303,6 +316,12 @@ struct ClockEditorView: View {
         viewModel.darkModeMarkersColor = markersViewModel.darkModeMarkersColor
         showMarkers = markersViewModel.showMarkers
         fontName = markersViewModel.fontName
+        
+        // Сохраняем новые настройки
+        lightModeDigitalFontColor = markersViewModel.lightModeDigitalFontColor
+        darkModeDigitalFontColor = markersViewModel.darkModeDigitalFontColor
+        viewModel.lightModeDigitalFontColor = markersViewModel.lightModeDigitalFontColor
+        viewModel.darkModeDigitalFontColor = markersViewModel.darkModeDigitalFontColor
         
         // Сохраняем настройку отображения времени только для активной задачи
         showTimeOnlyForActiveTask = viewModel.showTimeOnlyForActiveTask
