@@ -40,6 +40,10 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
     var isAnalogArcStyle: Bool = false
     var showTimeOnlyForActiveTask: Bool = false
     var fontName: String = "SF Pro"
+    var digitalFont: String = "SF Pro" // Шрифт для цифровых циферблатов
+    var digitalFontSize: Double = 32.0 // Размер шрифта для цифровых циферблатов
+    var lightModeDigitalFontColor: String = Color.black.toHex() // Цвет шрифта в светлой теме
+    var darkModeDigitalFontColor: String = Color.white.toHex() // Цвет шрифта в темной теме
     
     var lightModeHandColor: String
     var darkModeHandColor: String
@@ -169,7 +173,28 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color(red: 0.361, green: 0.686, blue: 0.773).toHex()
             ),
             WatchFaceModel(
-                name: "Цифровой",
+                name: "Линии",
+                style: "digital",
+                isCustom: false,
+                category: WatchFaceCategory.digital.rawValue,
+                lightModeClockFaceColor: Color(red: 0.85, green: 0.85, blue: 0.85).toHex(),
+                darkModeClockFaceColor: Color(red: 0.2, green: 0.2, blue: 0.2).toHex(),
+                lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
+                darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
+                lightModeMarkersColor: Color.black.toHex(),
+                darkModeMarkersColor: Color.white.toHex(),
+                showHourNumbers: false,
+                markerStyle: "hourAccent",
+                showIntermediateMarkers: true,
+                digitalFont: "catstack",
+                digitalFontSize: 60.0,
+                lightModeDigitalFontColor: Color.black.toHex(),
+                darkModeDigitalFontColor: Color.white.toHex(),
+                lightModeHandColor: Color.gray.toHex(),
+                darkModeHandColor: Color.gray.toHex()
+            ), 
+            WatchFaceModel(
+                name: "Кораловый",
                 style: "digital",
                 isCustom: false,
                 category: WatchFaceCategory.digital.rawValue,
@@ -180,29 +205,99 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 lightModeMarkersColor: Color.black.toHex(),
                 darkModeMarkersColor: Color.black.opacity(0.7).toHex(),
                 showHourNumbers: false,
-                markerStyle: "hourAccent",
+                markerStyle: "thinUniform",
                 showIntermediateMarkers: true,
+                digitalFont: "SF Pro",
+                digitalFontSize: 55.0,
+                lightModeDigitalFontColor: Color.black.toHex(),
+                darkModeDigitalFontColor: Color.black.opacity(0.7).toHex(),
                 lightModeHandColor: Color.gray.toHex(),
                 darkModeHandColor: Color.gray.toHex()
             ), 
             WatchFaceModel(
-                name: "Футуристический",
+                name: "Хэппи-бит",
                 style: "digital",
                 isCustom: false,
                 category: WatchFaceCategory.digital.rawValue,
-                lightModeClockFaceColor: Color(red: 0.2, green: 0.2, blue: 0.25).toHex(),
-                darkModeClockFaceColor: Color(red: 0.1, green: 0.1, blue: 0.2).toHex(),
+                lightModeClockFaceColor: Color.Pink1.toHex(),
+                darkModeClockFaceColor: Color.Pink1.toHex(), // #ffd966
                 lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
                 darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
-                lightModeMarkersColor: Color.white.toHex(),
+                lightModeMarkersColor: Color.black.toHex(),
+                darkModeMarkersColor: Color.black.toHex(),
+                showHourNumbers: false,
+                markerStyle: "uniformDense",
+                showIntermediateMarkers: true,
+                digitalFont: "pershotravneva55-regular",
+                digitalFontSize: 60.0,
+                lightModeDigitalFontColor: Color(red: 0.969, green: 0.808, blue: 0.275).toHex(),
+                darkModeDigitalFontColor: Color(red: 0.969, green: 0.808, blue: 0.275).toHex(),
+                lightModeHandColor: Color.gray.toHex(),
+                darkModeHandColor: Color.gray.toHex()
+            ), 
+            WatchFaceModel(
+                name: "Техно-ритм",
+                style: "digital",
+                isCustom: false,
+                category: WatchFaceCategory.digital.rawValue,
+                lightModeClockFaceColor: Color(red: 0.969, green: 0.808, blue: 0.275).toHex(),
+                darkModeClockFaceColor: Color(red: 0.596, green: 0.596, blue: 0.596).toHex(),
+                lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
+                darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
+                lightModeMarkersColor: Color.gray.toHex(),
+                darkModeMarkersColor: Color.black.toHex(),
+                showHourNumbers: false,
+                markerStyle: "lines",
+                showIntermediateMarkers: true,
+                digitalFont: "Minstrels",
+                digitalFontSize: 60.0,
+                lightModeDigitalFontColor: Color.black.toHex(),
+                darkModeDigitalFontColor: Color(red: 0.969, green: 0.808, blue: 0.275).toHex(),
+                lightModeHandColor: Color.gray.toHex(),
+                darkModeHandColor: Color.gray.toHex()
+            ),
+            WatchFaceModel(
+                name: "Красный пиксель",
+                style: "digital",
+                isCustom: false,
+                category: WatchFaceCategory.digital.rawValue,
+                lightModeClockFaceColor: Color(red: 0.851, green: 0.851, blue: 0.851).toHex(),
+                darkModeClockFaceColor: Color(red: 0.098, green: 0.098, blue: 0.098).toHex(),
+                lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
+                darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
+                lightModeMarkersColor: Color.black.toHex(),
                 darkModeMarkersColor: Color.white.toHex(),
                 showHourNumbers: false,
-                markerStyle: "dots",
+                markerStyle: "lines",
                 showIntermediateMarkers: true,
-                fontName: "Menlo-Bold",
-                lightModeHandColor: Color.blue.toHex(),
-                darkModeHandColor: Color.blue.toHex()
-            ),    
+                digitalFont: "TDAText",
+                digitalFontSize: 60.0,
+                lightModeDigitalFontColor: Color(red: 0.922, green: 0.267, blue: 0.353).toHex(),
+                darkModeDigitalFontColor: Color(red: 0.922, green: 0.267, blue: 0.353).toHex(),
+                lightModeHandColor: Color.gray.toHex(),
+                darkModeHandColor: Color.gray.toHex()
+            ),
+            WatchFaceModel(
+                name: "Зеленый",
+                style: "digital",
+                isCustom: false,
+                category: WatchFaceCategory.digital.rawValue,
+                lightModeClockFaceColor: Color.green0.toHex(),
+                darkModeClockFaceColor: Color(red: 0.098, green: 0.098, blue: 0.098).toHex(),
+                lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
+                darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
+                lightModeMarkersColor: Color.black.toHex(),
+                darkModeMarkersColor: Color.green0.toHex(),
+                showHourNumbers: false,
+                markerStyle: "lines",
+                showIntermediateMarkers: true,
+                digitalFont: "Letterblocks",
+                digitalFontSize: 60.0,
+                lightModeDigitalFontColor: Color.black.toHex(),
+                darkModeDigitalFontColor: Color.green0.toHex(),
+                lightModeHandColor: Color.gray.toHex(),
+                darkModeHandColor: Color.green0.toHex()
+            ),     
             // Классический светлый циферблат
             WatchFaceModel(
                 name: "Классический",
@@ -304,8 +399,12 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
         UserDefaults.standard.set(isAnalogArcStyle, forKey: "isAnalogArcStyle")
         UserDefaults.standard.set(showTimeOnlyForActiveTask, forKey: "showTimeOnlyForActiveTask")
         UserDefaults.standard.set(fontName, forKey: "fontName")
+        UserDefaults.standard.set(digitalFont, forKey: "digitalFont")
+        UserDefaults.standard.set(lightModeDigitalFontColor, forKey: "lightModeDigitalFontColor")
+        UserDefaults.standard.set(darkModeDigitalFontColor, forKey: "darkModeDigitalFontColor")
         UserDefaults.standard.set(markerStyle, forKey: "markerStyle")
         UserDefaults.standard.set(showIntermediateMarkers, forKey: "showIntermediateMarkers")
+        UserDefaults.standard.set(digitalFontSize, forKey: "digitalFontSize")
         
         // Принудительно обновляем представление ThemeManager
         // Вызываем публичные методы вместо приватного updateColorsForCurrentTheme()
@@ -330,6 +429,18 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             markersViewModel.fontName = fontName
             markersViewModel.markerStyle = markerStyleEnum // Устанавливаем стиль маркеров
             markersViewModel.showIntermediateMarkers = showIntermediateMarkers // Добавляем промежуточные маркеры
+            
+            // Обновляем настройки для цифровых циферблатов
+            // Закомментируем строки, так как свойства еще не добавлены в ClockMarkersViewModel
+            /*
+            if style == "digital" {
+                markersViewModel.digitalFont = digitalFont
+                markersViewModel.digitalFontSize = digitalFontSize
+                markersViewModel.lightModeDigitalFontColor = lightModeDigitalFontColor
+                markersViewModel.darkModeDigitalFontColor = darkModeDigitalFontColor
+            }
+            */
+            
             markersViewModel.objectWillChange.send()
         }
     }

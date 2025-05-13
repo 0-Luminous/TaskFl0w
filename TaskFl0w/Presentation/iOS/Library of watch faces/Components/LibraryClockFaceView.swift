@@ -35,8 +35,14 @@ struct LibraryClockFaceView: View {
                     .fill(clockFaceColor)
                     .frame(width: 200, height: 200)
                 
-                // Цифровое время
-                DigitalTimeDisplay(hour: hour, minute: minute, color: markersColor)
+                // Цифровое время с использованием настроек шрифта
+                DigitalTimeDisplay(
+                    hour: hour,
+                    minute: minute,
+                    color: digitalFontColor,
+                    fontName: watchFace.digitalFont,
+                    fontSize: watchFace.digitalFontSize
+                )
             }
             
             // Маркеры часов (если включены)
@@ -118,16 +124,35 @@ struct LibraryClockFaceView: View {
         let hour: Int
         let minute: Int
         let color: Color
+        let fontName: String
+        let fontSize: Double
+        
+        init(hour: Int, minute: Int, color: Color, fontName: String = "SF Pro", fontSize: Double = 40.0) {
+            self.hour = hour
+            self.minute = minute
+            self.color = color
+            self.fontName = fontName
+            self.fontSize = fontSize
+        }
         
         var body: some View {
             VStack(spacing: 0) {
                 Text("\(hour, specifier: "%02d")")
-                    .font(.system(size: 40, weight: .bold, design: .monospaced))
+                    .font(customFont)
                     .foregroundColor(color)
                 
                 Text("\(minute, specifier: "%02d")")
-                    .font(.system(size: 40, weight: .bold, design: .monospaced))
+                    .font(customFont)
                     .foregroundColor(color)
+            }
+        }
+        
+        // Создаем шрифт на основе переданных параметров
+        private var customFont: Font {
+            if fontName != "SF Pro" {
+                return Font.custom(fontName, size: fontSize)
+            } else {
+                return .system(size: fontSize, weight: .bold, design: .monospaced)
             }
         }
     }
@@ -148,6 +173,10 @@ struct LibraryClockFaceView: View {
         markersViewModel.zeroPosition = watchFace.zeroPosition
         markersViewModel.markerStyle = watchFace.markerStyleEnum // Используем стиль из модели
         markersViewModel.showIntermediateMarkers = watchFace.showIntermediateMarkers // Настраиваем промежуточные маркеры
+        markersViewModel.digitalFont = watchFace.digitalFont
+        markersViewModel.digitalFontSize = watchFace.digitalFontSize
+        markersViewModel.lightModeDigitalFontColor = watchFace.lightModeDigitalFontColor
+        markersViewModel.darkModeDigitalFontColor = watchFace.darkModeDigitalFontColor
         
         // Настройка viewModel
         viewModel.clockStyle = WatchFaceModel.displayStyleName(for: watchFace.style)
@@ -158,6 +187,12 @@ struct LibraryClockFaceView: View {
         viewModel.showTimeOnlyForActiveTask = watchFace.showTimeOnlyForActiveTask
         viewModel.lightModeHandColor = watchFace.lightModeHandColor  
         viewModel.darkModeHandColor = watchFace.darkModeHandColor
+        
+        // Добавляем эти строки в SetupViewModels()
+        if watchFace.style == "digital" {
+            UserDefaults.standard.set(watchFace.digitalFont, forKey: "digitalFont")  
+            UserDefaults.standard.set(watchFace.digitalFontSize, forKey: "digitalFontSize")
+        }
     }
     
     // Вычисляемые свойства для цветов на основе ThemeManager
@@ -176,5 +211,12 @@ struct LibraryClockFaceView: View {
     // Получаем стиль маркеров из модели циферблата
     private var markerStyle: MarkerStyle {
         watchFace.markerStyleEnum
+    }
+    
+    // Добавьте новое вычисляемое свойство для цвета цифрового шрифта
+    private var digitalFontColor: Color {
+        themeManager.isDarkMode
+            ? Color(hex: watchFace.darkModeDigitalFontColor) ?? .white
+            : Color(hex: watchFace.lightModeDigitalFontColor) ?? .black
     }
 } 

@@ -34,6 +34,7 @@ final class ClockMarkersViewModel: ObservableObject {
     }
     @Published var lightModeDigitalFontColor: String = Color.gray.toHex()
     @Published var darkModeDigitalFontColor: String = Color.white.toHex()
+    @Published var digitalFont: String = "SF Pro" // Добавляем шрифт для цифрового циферблата
     
     // Список доступных шрифтов с PostScript именами
     let customFonts: [String] = [

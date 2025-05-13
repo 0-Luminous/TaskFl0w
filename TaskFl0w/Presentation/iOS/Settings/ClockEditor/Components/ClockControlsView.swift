@@ -49,6 +49,11 @@ struct ClockControlsView: View {
                         set: {
                             markersViewModel.fontName = $0
                             fontName = $0
+                            // Добавляем обновление digitalFont
+                            if viewModel.clockStyle == "Цифровой" {
+                                viewModel.digitalFont = $0
+                                UserDefaults.standard.set($0, forKey: "digitalFont")
+                            }
                         }
                     )
                 ) {

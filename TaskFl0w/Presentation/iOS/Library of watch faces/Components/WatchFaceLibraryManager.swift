@@ -98,6 +98,10 @@ class WatchFaceLibraryManager: ObservableObject {
             isAnalogArcStyle: UserDefaults.standard.bool(forKey: "isAnalogArcStyle"),
             showTimeOnlyForActiveTask: UserDefaults.standard.bool(forKey: "showTimeOnlyForActiveTask"),
             fontName: UserDefaults.standard.string(forKey: "fontName") ?? "SF Pro",
+            digitalFont: UserDefaults.standard.string(forKey: "digitalFont") ?? "SF Pro",
+            digitalFontSize: UserDefaults.standard.double(forKey: "digitalFontSize"),
+            lightModeDigitalFontColor: UserDefaults.standard.string(forKey: "lightModeDigitalFontColor") ?? Color.black.toHex(),
+            darkModeDigitalFontColor: UserDefaults.standard.string(forKey: "darkModeDigitalFontColor") ?? Color.white.toHex(),
             lightModeHandColor: lightModeHandColor,
             darkModeHandColor: darkModeHandColor
         )

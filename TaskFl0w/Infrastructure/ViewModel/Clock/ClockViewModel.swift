@@ -259,6 +259,13 @@ final class ClockViewModel: ObservableObject {
     @AppStorage("lightModeDigitalFontColor") var lightModeDigitalFontColor: String = Color.gray.toHex()
     @AppStorage("darkModeDigitalFontColor") var darkModeDigitalFontColor: String = Color.white.toHex()
 
+    // Добавим новое свойство в ClockViewModel
+    @AppStorage("digitalFont") var digitalFont: String = "SF Pro" {
+        didSet {
+            // Обновление не требуется, так как digitalFont считывается напрямую в компоненте DigitalTimeDisplay
+        }
+    }
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState

@@ -260,12 +260,15 @@ struct GlobleClockFaceViewIOS: View {
         
         // Создаем шрифт на основе настроек
         private var digitalFont: Font {
-            // Получаем размер шрифта из настроек или используем значение по умолчанию
+            // Получаем размер шрифта из настроек
             let fontSize: CGFloat = CGFloat(markersViewModel.digitalFontSize)
             
+            // Для цифрового циферблата используем digitalFont, если он доступен в UserDefaults
+            let digitalFontName = UserDefaults.standard.string(forKey: "digitalFont") ?? markersViewModel.fontName
+            
             // Сначала пробуем использовать кастомный шрифт
-            if markersViewModel.fontName != "SF Pro" {
-                return Font.custom(markersViewModel.fontName, size: fontSize)
+            if digitalFontName != "SF Pro" {
+                return Font.custom(digitalFontName, size: fontSize)
                     .weight(.bold)
             }
             
