@@ -248,6 +248,13 @@ final class ClockViewModel: ObservableObject {
     @AppStorage("lightModeHandColor") var lightModeHandColor: String = Color.blue.toHex()
     @AppStorage("darkModeHandColor") var darkModeHandColor: String = Color.blue.toHex()
 
+    // Добавляем в список AppStorage свойств
+    @AppStorage("digitalFontSize") var digitalFontSizeRaw: Double = 42.0 {
+        didSet {
+            markersViewModel.digitalFontSize = digitalFontSizeRaw
+        }
+    }
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState
@@ -361,6 +368,7 @@ final class ClockViewModel: ObservableObject {
         markersViewModel.fontName = fontName
         markersViewModel.markerStyle = markerStyle
         markersViewModel.showIntermediateMarkers = showIntermediateMarkers
+        markersViewModel.digitalFontSize = digitalFontSizeRaw
     }
     
     // MARK: - Методы форматирования даты

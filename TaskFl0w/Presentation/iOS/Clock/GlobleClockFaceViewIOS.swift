@@ -66,7 +66,12 @@ struct GlobleClockFaceViewIOS: View {
                     .frame(width: UIScreen.main.bounds.width * 0.3)
                 
                 // Отображаем цифровое время
-                DigitalTimeDisplay(hour: hour, minute: minute, color: themeManager.currentMarkersColor)
+                DigitalTimeDisplay(
+                    hour: hour, 
+                    minute: minute, 
+                    color: themeManager.currentMarkersColor,
+                    markersViewModel: markersViewModel
+                )
             }
 
             // Маркеры часов (24 шт.) и промежуточные маркеры
@@ -232,17 +237,40 @@ struct GlobleClockFaceViewIOS: View {
         let hour: Int
         let minute: Int
         let color: Color
+        @ObservedObject private var markersViewModel: ClockMarkersViewModel
+        
+        init(hour: Int, minute: Int, color: Color, markersViewModel: ClockMarkersViewModel = ClockMarkersViewModel.shared) {
+            self.hour = hour
+            self.minute = minute
+            self.color = color
+            self.markersViewModel = markersViewModel
+        }
         
         var body: some View {
             VStack(spacing: 0) {
                 Text("\(hour, specifier: "%02d")")
-                    .font(.system(size: 42, weight: .bold, design: .monospaced))
+                    .font(digitalFont)
                     .foregroundColor(color)
                 
                 Text("\(minute, specifier: "%02d")")
-                    .font(.system(size: 42, weight: .bold, design: .monospaced))
+                    .font(digitalFont)
                     .foregroundColor(color)
             }
+        }
+        
+        // Создаем шрифт на основе настроек
+        private var digitalFont: Font {
+            // Получаем размер шрифта из настроек или используем значение по умолчанию
+            let fontSize: CGFloat = CGFloat(markersViewModel.digitalFontSize)
+            
+            // Сначала пробуем использовать кастомный шрифт
+            if markersViewModel.fontName != "SF Pro" {
+                return Font.custom(markersViewModel.fontName, size: fontSize)
+                    .weight(.bold)
+            }
+            
+            // По умолчанию используем системный моноширинный шрифт
+            return .system(size: fontSize, weight: .bold, design: .monospaced)
         }
     }
 

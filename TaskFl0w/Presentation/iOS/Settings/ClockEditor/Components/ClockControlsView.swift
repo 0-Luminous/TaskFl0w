@@ -61,7 +61,7 @@ struct ClockControlsView: View {
             } else if showSizeSettings {
                 // Настройки размера цифр
                 HStack {
-                    Text("Размер цифр")
+                    Text(viewModel.clockStyle == "Цифровой" ? "Размер цифр на часах" : "Размер цифр")
                         .font(.headline)
                         .foregroundColor(themeManager.isDarkMode ? .white : .black)
 
@@ -79,33 +79,66 @@ struct ClockControlsView: View {
                 }
                 .padding(.bottom, 8)
                 
-                HStack(spacing: 10) {
-                    Button(action: {
-                        if markersViewModel.numbersSize > 14 {
-                            markersViewModel.numbersSize -= 1
-                            viewModel.numbersSize = markersViewModel.numbersSize
+                if viewModel.clockStyle == "Цифровой" {
+                    // Настройки размера для цифрового стиля
+                    HStack(spacing: 10) {
+                        Button(action: {
+                            if markersViewModel.digitalFontSize > 30 {
+                                markersViewModel.digitalFontSize -= 2
+                                viewModel.digitalFontSizeRaw = markersViewModel.digitalFontSize
+                            }
+                        }) {
+                            Text("Меньше")
+                                .buttonStyle()
                         }
-                    }) {
-                        Text("Меньше")
-                            .buttonStyle()
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    Text("\(Int(markersViewModel.numbersSize))")
-                        .font(.system(size: 23))
-                        .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
-                        .frame(width: 30)
-                    
-                    Button(action: {
-                        if markersViewModel.numbersSize < 21 {
-                            markersViewModel.numbersSize += 1
-                            viewModel.numbersSize = markersViewModel.numbersSize
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Text("\(Int(markersViewModel.digitalFontSize))")
+                            .font(.system(size: 23))
+                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                            .frame(width: 30)
+                        
+                        Button(action: {
+                            if markersViewModel.digitalFontSize < 60 {
+                                markersViewModel.digitalFontSize += 2
+                                viewModel.digitalFontSizeRaw = markersViewModel.digitalFontSize
+                            }
+                        }) {
+                            Text("Больше")
+                                .buttonStyle()
                         }
-                    }) {
-                        Text("Больше")
-                            .buttonStyle()
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .buttonStyle(PlainButtonStyle())
+                } else {
+                    // Существующие настройки размера для других стилей
+                    HStack(spacing: 10) {
+                        Button(action: {
+                            if markersViewModel.numbersSize > 14 {
+                                markersViewModel.numbersSize -= 1
+                                viewModel.numbersSize = markersViewModel.numbersSize
+                            }
+                        }) {
+                            Text("Меньше")
+                                .buttonStyle()
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Text("\(Int(markersViewModel.numbersSize))")
+                            .font(.system(size: 23))
+                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                            .frame(width: 30)
+                        
+                        Button(action: {
+                            if markersViewModel.numbersSize < 21 {
+                                markersViewModel.numbersSize += 1
+                                viewModel.numbersSize = markersViewModel.numbersSize
+                            }
+                        }) {
+                            Text("Больше")
+                                .buttonStyle()
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
                 }
             } else if showIntervalSettings {
                 // Настройки интервала цифр
@@ -388,6 +421,95 @@ struct ClockControlsView: View {
                                     .font(.caption)
                                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 Text("\(Int(markersViewModel.numbersSize))")
+                                    .font(.caption)
+                                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                                    .padding(.leading, 2)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Capsule()
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) : 
+                                        Color(red: 0.95, green: 0.95, blue: 0.95))
+                                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.gray.opacity(0.7),
+                                                Color.gray.opacity(0.3),
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.bottom, 6)
+                }
+                
+                // Добавим блок для цифрового стиля
+                if viewModel.clockStyle == "Цифровой" {
+                    HStack(spacing: 10) {
+                        // Кнопка изменения шрифта
+                        Button(action: {
+                            withAnimation {
+                                showFontPicker = true
+                            }
+                        }) {
+                            HStack {
+                                Text("Шрифт")
+                                    .font(.caption)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                                Image(systemName: "textformat")
+                                    .font(.caption)
+                                    .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                Capsule()
+                                    .fill(themeManager.isDarkMode ? 
+                                        Color(red: 0.184, green: 0.184, blue: 0.184) : 
+                                        Color(red: 0.95, green: 0.95, blue: 0.95))
+                                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.gray.opacity(0.7),
+                                                Color.gray.opacity(0.3),
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1.0
+                                    )
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Кнопка размера цифр
+                        Button(action: {
+                            withAnimation {
+                                showSizeSettings = true
+                            }
+                        }) {
+                            HStack {
+                                Text("Размер")
+                                    .font(.caption)
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                                Text("\(Int(markersViewModel.digitalFontSize))")
                                     .font(.caption)
                                     .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                                     .padding(.leading, 2)

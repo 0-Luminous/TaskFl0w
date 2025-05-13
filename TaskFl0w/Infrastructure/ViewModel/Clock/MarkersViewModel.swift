@@ -26,6 +26,12 @@ final class ClockMarkersViewModel: ObservableObject {
     @Published var showIntermediateMarkers: Bool = true // Новое свойство для промежуточных маркеров
     @Published var fontName: String = "SF Pro" // или любой дефолтный шрифт
     @Published var markerStyle: MarkerStyle = .lines // Добавляем стиль маркеров
+    @Published var digitalFontSize: Double = 42.0 {
+        didSet {
+            // Принудительно обновляем UI при изменении размера шрифта
+            objectWillChange.send()
+        }
+    }
     
     // Список доступных шрифтов с PostScript именами
     let customFonts: [String] = [
@@ -162,4 +168,7 @@ final class ClockMarkersViewModel: ObservableObject {
             self.objectWillChange.send()
         }
     }
+
+    // В начале класса ClockMarkersViewModel добавим статический экземпляр
+    static let shared = ClockMarkersViewModel()
 }
