@@ -177,6 +177,21 @@ struct ClockTaskArcIOS: View {
                             y: center.y + iconRadius * sin(midAngle.radians)
                         )
                         .id("task-icon-\(task.id)-\(viewModel.zeroPosition)")
+                        .gesture(
+                            TapGesture()
+                                .onEnded {
+                                    withAnimation {
+                                        if viewModel.isEditingMode, viewModel.editingTask?.id == task.id
+                                        {
+                                            viewModel.isEditingMode = false
+                                            viewModel.editingTask = nil
+                                        } else {
+                                            viewModel.isEditingMode = true
+                                            viewModel.editingTask = task
+                                        }
+                                    }
+                                }
+                        )
                     
                     // Добавляем отображение времени начала задачи только для цифрового стиля
                     // Скрываем цифры, когда активны маркеры редактирования
