@@ -49,7 +49,10 @@ final class ClockMarkersViewModel: ObservableObject {
         "Daneehand Regular Cyr",
         "NovaCut",
         "UnifrakturCook-Bold",
-
+        "Banana Brick",
+        "Cakra-Normal",
+        "EternalLent",
+        "Vetka",
 
         "Georgia",
         "Georgia-Bold",

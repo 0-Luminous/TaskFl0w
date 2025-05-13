@@ -100,8 +100,13 @@ struct LibraryClockFaceView: View {
             }
             
             // Стрелка часов
-            ClockHandViewIOS(currentDate: currentDate, outerRingLineWidth: watchFace.outerRingLineWidth)
-                .rotationEffect(.degrees(watchFace.zeroPosition))
+            ClockHandViewIOS(
+                currentDate: currentDate, 
+                outerRingLineWidth: watchFace.outerRingLineWidth,
+                lightModeCustomHandColor: watchFace.lightModeHandColor,
+                darkModeCustomHandColor: watchFace.darkModeHandColor
+            )
+            .rotationEffect(.degrees(watchFace.zeroPosition))
         }
         .onAppear {
            setupViewModels()
@@ -151,6 +156,8 @@ struct LibraryClockFaceView: View {
         viewModel.taskArcLineWidth = watchFace.taskArcLineWidth
         viewModel.isAnalogArcStyle = watchFace.isAnalogArcStyle
         viewModel.showTimeOnlyForActiveTask = watchFace.showTimeOnlyForActiveTask
+        viewModel.lightModeHandColor = watchFace.lightModeHandColor  
+        viewModel.darkModeHandColor = watchFace.darkModeHandColor
     }
     
     // Вычисляемые свойства для цветов на основе ThemeManager

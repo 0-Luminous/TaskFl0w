@@ -13,7 +13,11 @@ struct ClockHandViewIOS: View {
     @AppStorage("useManualTime") private var useManualTime = false
     @ObservedObject private var themeManager = ThemeManager.shared
     
-    // Добавляем свойства для цвета стрелки
+    // Добавляем параметры для кастомного цвета стрелки
+    var lightModeCustomHandColor: String?
+    var darkModeCustomHandColor: String?
+    
+    // Существующие параметры для цвета стрелки
     @AppStorage("lightModeHandColor") private var lightModeHandColor: String = Color.blue.toHex()
     @AppStorage("darkModeHandColor") private var darkModeHandColor: String = Color.blue.toHex()
     
@@ -45,9 +49,15 @@ struct ClockHandViewIOS: View {
     }
     
     private var handColor: Color {
-        themeManager.isDarkMode 
-            ? Color(hex: darkModeHandColor) ?? .blue 
-            : Color(hex: lightModeHandColor) ?? .blue
+        let hexColor: String
+        
+        if themeManager.isDarkMode {
+            hexColor = darkModeCustomHandColor ?? darkModeHandColor
+        } else {
+            hexColor = lightModeCustomHandColor ?? lightModeHandColor
+        }
+        
+        return Color(hex: hexColor) ?? .blue
     }
     
     var body: some View {
