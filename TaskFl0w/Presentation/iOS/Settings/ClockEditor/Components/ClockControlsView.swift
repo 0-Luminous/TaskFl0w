@@ -10,6 +10,12 @@ struct ClockControlsView: View {
     @Binding var showIntervalSettings: Bool
     @Binding var fontName: String
     
+    // Удаляем состояние для настройки цвета стрелки - переносим в ColorControlsView
+    // @State private var showHandColorSettings: Bool = false
+    // @AppStorage переменные оставляем, так как они нужны для сохранения данных
+    @AppStorage("lightModeHandColor") private var lightModeHandColor: String = Color.blue.toHex()
+    @AppStorage("darkModeHandColor") private var darkModeHandColor: String = Color.blue.toHex()
+    
     var body: some View {
         VStack(spacing: 16) {
             Text("Настройки циферблата")
@@ -415,7 +421,7 @@ struct ClockControlsView: View {
                     }
                     .padding(.bottom, 6)
                 }
-
+                
                 Text("Стиль")
                     .font(.subheadline)
                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
@@ -503,5 +509,11 @@ struct ClockControlsView: View {
                 .shadow(radius: 8)
         )
         .padding(.horizontal, 24)
+    }
+    
+    // Оставляем это свойство, так как оно может использоваться в других местах
+    private var currentHandColor: Color {
+        let hexColor = themeManager.isDarkMode ? darkModeHandColor : lightModeHandColor
+        return Color(hex: hexColor) ?? .blue
     }
 } 

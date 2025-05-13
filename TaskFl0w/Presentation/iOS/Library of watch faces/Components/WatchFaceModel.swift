@@ -41,6 +41,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
     var showTimeOnlyForActiveTask: Bool = false
     var fontName: String = "SF Pro"
     
+    var lightModeHandColor: String
+    var darkModeHandColor: String
+    
     static func == (lhs: WatchFaceModel, rhs: WatchFaceModel) -> Bool {
         return lhs.id == rhs.id
     }
@@ -68,7 +71,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 showHourNumbers: true,
                 markerStyle: "standard",
                 showIntermediateMarkers: true,
-                fontName: "ForestSmooth"
+                fontName: "ForestSmooth",
+                lightModeHandColor: Color.blue.toHex(),
+                darkModeHandColor: Color.blue.toHex()
             ),
             // Добавляем еще один классический циферблат
             WatchFaceModel(
@@ -85,7 +90,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 showHourNumbers: true,
                 markerStyle: "classicWatch",
                 showIntermediateMarkers: true,
-                fontName: "Brillant"
+                fontName: "Brillant",
+                lightModeHandColor: Color.blue.toHex(),
+                darkModeHandColor: Color.blue.toHex()
             ),
             // Добавляем кастомные циферблаты с разными шрифтами и стилями маркеров
             WatchFaceModel(
@@ -102,7 +109,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 showHourNumbers: true,
                 markerStyle: "lines",
                 showIntermediateMarkers: true,
-                fontName: "MOSCOW2024"
+                fontName: "MOSCOW2024",
+                lightModeHandColor: Color.blue.toHex(),
+                darkModeHandColor: Color.blue.toHex()
             ),
             WatchFaceModel(
                 name: "Лесной",
@@ -118,7 +127,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 showHourNumbers: true,
                 markerStyle: "hourAccent",
                 showIntermediateMarkers: true,
-                fontName: "ForestSmooth"
+                fontName: "ForestSmooth",
+                lightModeHandColor: Color.blue.toHex(),
+                darkModeHandColor: Color.blue.toHex()
             ),
             WatchFaceModel(
                 name: "Бриллиант",
@@ -134,7 +145,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 showHourNumbers: true,
                 markerStyle: "thinUniform",
                 showIntermediateMarkers: false,
-                fontName: "Brillant"
+                fontName: "Brillant",
+                lightModeHandColor: Color.blue.toHex(),
+                darkModeHandColor: Color.blue.toHex()
             ),
             WatchFaceModel(
                 name: "Цифровой",
@@ -149,7 +162,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeMarkersColor: Color.black.opacity(0.7).toHex(),
                 showHourNumbers: false,
                 markerStyle: "dots",
-                showIntermediateMarkers: false
+                showIntermediateMarkers: false,
+                lightModeHandColor: Color.blue.toHex(),
+                darkModeHandColor: Color.blue.toHex()
             ),
             // Цифровой циферблат
             WatchFaceModel(
@@ -167,7 +182,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 numberInterval: 2,
                 markerStyle: "uniformDense",
                 showIntermediateMarkers: true,
-                fontName: "ForestSmooth"
+                fontName: "ForestSmooth",
+                lightModeHandColor: Color.blue.toHex(),
+                darkModeHandColor: Color.blue.toHex()
             ),
             // Необычные стили
             WatchFaceModel(
@@ -184,7 +201,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 showHourNumbers: true,
                 markerStyle: "classicWatch",
                 showIntermediateMarkers: false,
-                fontName: "Tsarevich old"
+                fontName: "Tsarevich old",
+                lightModeHandColor: Color.blue.toHex(),
+                darkModeHandColor: Color.blue.toHex()
             ),
             WatchFaceModel(
                 name: "Футуристический",
@@ -200,7 +219,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 showHourNumbers: false,
                 markerStyle: "dots",
                 showIntermediateMarkers: true,
-                fontName: "Menlo-Bold"
+                fontName: "Menlo-Bold",
+                lightModeHandColor: Color.blue.toHex(),
+                darkModeHandColor: Color.blue.toHex()
             ),
             // Минималистичный стиль с необычными маркерами
             WatchFaceModel(
@@ -218,7 +239,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 numberInterval: 3,
                 markerStyle: "thinUniform",
                 showIntermediateMarkers: true,
-                fontName: "Gill Sans"
+                fontName: "Gill Sans",
+                lightModeHandColor: Color.blue.toHex(),
+                darkModeHandColor: Color.blue.toHex()
             ),
             // Детальный циферблат
             WatchFaceModel(
@@ -236,7 +259,9 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 numberInterval: 2,
                 markerStyle: "hourAccent",
                 showIntermediateMarkers: true,
-                fontName: "Futura"
+                fontName: "Futura",
+                lightModeHandColor: Color.blue.toHex(),
+                darkModeHandColor: Color.blue.toHex()
             )
         ]
     }

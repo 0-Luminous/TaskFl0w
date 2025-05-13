@@ -70,6 +70,10 @@ class WatchFaceLibraryManager: ObservableObject {
             category = WatchFaceCategory.classic.rawValue
         }
         
+        // Получаем цвета стрелки из UserDefaults
+        let lightModeHandColor = UserDefaults.standard.string(forKey: "lightModeHandColor") ?? Color.blue.toHex()
+        let darkModeHandColor = UserDefaults.standard.string(forKey: "darkModeHandColor") ?? Color.blue.toHex()
+        
         // Берем цвета напрямую из ThemeManager вместо UserDefaults
         let newFace = WatchFaceModel(
             name: name,
@@ -93,7 +97,9 @@ class WatchFaceLibraryManager: ObservableObject {
             taskArcLineWidth: CGFloat(UserDefaults.standard.double(forKey: "taskArcLineWidth")),
             isAnalogArcStyle: UserDefaults.standard.bool(forKey: "isAnalogArcStyle"),
             showTimeOnlyForActiveTask: UserDefaults.standard.bool(forKey: "showTimeOnlyForActiveTask"),
-            fontName: UserDefaults.standard.string(forKey: "fontName") ?? "SF Pro"
+            fontName: UserDefaults.standard.string(forKey: "fontName") ?? "SF Pro",
+            lightModeHandColor: lightModeHandColor,
+            darkModeHandColor: darkModeHandColor
         )
         
         watchFaces.append(newFace)

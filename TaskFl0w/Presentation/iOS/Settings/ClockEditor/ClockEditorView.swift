@@ -25,6 +25,8 @@ struct ClockEditorView: View {
         .toHex()
     @AppStorage("darkModeMarkersColor") private var darkModeMarkersColor: String = Color.gray
         .toHex()
+    @AppStorage("lightModeHandColor") private var lightModeHandColor: String = Color.blue.toHex()
+    @AppStorage("darkModeHandColor") private var darkModeHandColor: String = Color.blue.toHex()
 
     @AppStorage("showMarkers") private var showMarkers: Bool = true
     @AppStorage("fontName") private var fontName: String = "SF Pro"
@@ -63,7 +65,9 @@ struct ClockEditorView: View {
             lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
             darkModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
             lightModeMarkersColor: Color.black.toHex(),
-            darkModeMarkersColor: Color.white.toHex()
+            darkModeMarkersColor: Color.white.toHex(),
+            lightModeHandColor: Color.blue.toHex(),
+            darkModeHandColor: Color.blue.toHex()
         ))
     }
 
@@ -138,6 +142,8 @@ struct ClockEditorView: View {
                             darkModeClockFaceColor: $darkModeClockFaceColor,
                             lightModeMarkersColor: $lightModeMarkersColor,
                             darkModeMarkersColor: $darkModeMarkersColor,
+                            lightModeHandColor: $lightModeHandColor,
+                            darkModeHandColor: $darkModeHandColor,
                             showColorPickerSheet: $showColorPickerSheet,
                             colorPickerType: $colorPickerType,
                             sliderBrightnessPosition: $sliderBrightnessPosition,
@@ -273,8 +279,18 @@ struct ClockEditorView: View {
             taskArcLineWidth: viewModel.taskArcLineWidth,
             isAnalogArcStyle: viewModel.isAnalogArcStyle,
             showTimeOnlyForActiveTask: showTimeOnlyForActiveTask,
-            fontName: fontName
+            fontName: fontName,
+            lightModeHandColor: lightModeHandColor,
+            darkModeHandColor: darkModeHandColor
         )
+
+        // Добавляем синхронизацию цвета стрелки
+        if viewModel.lightModeHandColor != lightModeHandColor {
+            viewModel.lightModeHandColor = lightModeHandColor
+        }
+        if viewModel.darkModeHandColor != darkModeHandColor {
+            viewModel.darkModeHandColor = darkModeHandColor
+        }
     }
 
     private func saveMarkersViewModelToAppStorage() {

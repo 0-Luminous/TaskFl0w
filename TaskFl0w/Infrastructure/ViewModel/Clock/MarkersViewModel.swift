@@ -30,6 +30,8 @@ final class ClockMarkersViewModel: ObservableObject {
     // Список доступных шрифтов с PostScript именами
     let customFonts: [String] = [
 
+
+ 
         "SF Pro",
         "MOSCOW2024",
         "ForestSmooth",
@@ -38,19 +40,15 @@ final class ClockMarkersViewModel: ObservableObject {
         "Hussar3dTwo",
         "Minstrels",
         "Letterblocks",
-        "CaptainLethargic",
-        "BungeeShade-Regular",
         "cellblocknbp",
         "catstack",
         "Chokokutai-Regular",
-        "Vertiger",
         "ElfarNormalG98",
         "Brunothg",
         "pershotravneva55-regular",
         "Daneehand Regular Cyr",
         "NovaCut",
         "UnifrakturCook-Bold",
-        "Tsarevich old",
 
 
         "Georgia",

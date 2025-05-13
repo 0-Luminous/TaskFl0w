@@ -244,6 +244,10 @@ final class ClockViewModel: ObservableObject {
         }
     }
 
+    // После других @AppStorage свойств для цветов
+    @AppStorage("lightModeHandColor") var lightModeHandColor: String = Color.blue.toHex()
+    @AppStorage("darkModeHandColor") var darkModeHandColor: String = Color.blue.toHex()
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState

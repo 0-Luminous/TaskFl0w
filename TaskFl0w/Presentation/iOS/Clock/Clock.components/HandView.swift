@@ -11,6 +11,11 @@ struct ClockHandViewIOS: View {
     let currentDate: Date
     let outerRingLineWidth: CGFloat
     @AppStorage("useManualTime") private var useManualTime = false
+    @ObservedObject private var themeManager = ThemeManager.shared
+    
+    // Добавляем свойства для цвета стрелки
+    @AppStorage("lightModeHandColor") private var lightModeHandColor: String = Color.blue.toHex()
+    @AppStorage("darkModeHandColor") private var darkModeHandColor: String = Color.blue.toHex()
     
     private var calendar: Calendar {
         Calendar.current
@@ -39,6 +44,12 @@ struct ClockHandViewIOS: View {
         return angle * .pi / 180
     }
     
+    private var handColor: Color {
+        themeManager.isDarkMode 
+            ? Color(hex: darkModeHandColor) ?? .blue 
+            : Color(hex: lightModeHandColor) ?? .blue
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             Path { path in
@@ -55,7 +66,7 @@ struct ClockHandViewIOS: View {
                 path.move(to: center)
                 path.addLine(to: endpoint)
             }
-            .stroke(Color.blue, lineWidth: 3)
+            .stroke(handColor, lineWidth: 3)
             .shadow(color: .black.opacity(0.5), radius: 2, x: 1, y: 1)
         }
     }
