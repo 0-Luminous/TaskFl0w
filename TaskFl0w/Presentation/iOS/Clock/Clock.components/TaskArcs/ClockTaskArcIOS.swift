@@ -32,7 +32,16 @@ struct ClockTaskArcIOS: View {
                 let radius = min(geometry.size.width, geometry.size.height) / 2
                 let (startAngle, endAngle) = RingTimeCalculator.calculateAngles(for: task)
                 let midAngle = RingTimeCalculator.calculateMidAngle(start: startAngle, end: endAngle)
-                let iconSize: CGFloat = 22
+                
+                // Вычисляем коэффициент масштаба для коротких задач (менее часа)
+                let taskDurationMinutes = task.duration / 60
+                let isShortTask = taskDurationMinutes < 60
+                let shortTaskScale: CGFloat = isShortTask ? max(0.6, taskDurationMinutes / 60) : 1.0
+                
+                // Базовый размер иконки с учетом масштаба для коротких задач
+                let baseIconSize: CGFloat = 22
+                let iconSize: CGFloat = baseIconSize * shortTaskScale
+                
                 let isAnalog = viewModel.isAnalogArcStyle
                 let minOuterRingWidth: CGFloat = 20
                 let maxOuterRingWidth: CGFloat = 38
@@ -65,13 +74,15 @@ struct ClockTaskArcIOS: View {
                 let minIconFontSize: CGFloat = 11
                 let maxIconFontSize: CGFloat = 19
                 let t = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
-                let iconFontSize: CGFloat = isAnalog
+                // Размер шрифта иконки с учетом короткой задачи
+                let baseIconFontSize: CGFloat = isAnalog
                     ? minIconFontSize + (maxIconFontSize - minIconFontSize) * t
                     : minIconFontSize
+                let iconFontSize: CGFloat = baseIconFontSize * shortTaskScale
                 
                 // Определение размера и отступа для текста времени
-                let timeFontSize: CGFloat = 10
-                // Смещение текста внутрь циферблата (было -6, делаем -9)
+                let timeFontSize: CGFloat = 10 * shortTaskScale
+                // Смещение текста внутрь циферблата
                 let timeTextOffset: CGFloat = -8
 
                 ZStack {
@@ -147,7 +158,8 @@ struct ClockTaskArcIOS: View {
                             angle: startAngle,
                             isDraggingStart: true,
                             adjustTask: adjustTaskStartTimesForOverlap,
-                            analogOffset: analogOffset
+                            analogOffset: analogOffset,
+                            shortTaskScale: shortTaskScale
                         )
 
                         // Маркер конца
@@ -158,7 +170,8 @@ struct ClockTaskArcIOS: View {
                             angle: endAngle,
                             isDraggingStart: false,
                             adjustTask: adjustTaskEndTimesForOverlap,
-                            analogOffset: analogOffset
+                            analogOffset: analogOffset,
+                            shortTaskScale: shortTaskScale
                         )
                     }
 
@@ -214,10 +227,10 @@ struct ClockTaskArcIOS: View {
                             let endTimeText = timeFormatter.string(from: task.endTime)
 
                             ZStack {
-                                // Фон в виде капсулы с фиксированной шириной
+                                // Фон в виде капсулы с фиксированной шириной, уменьшаем для коротких задач
                                 Capsule()
                                     .fill(task.category.color)
-                                    .frame(width: CGFloat(startTimeText.count) * 6 + 6, height: 16)
+                                    .frame(width: (CGFloat(startTimeText.count) * 6 + 6) * shortTaskScale, height: 16 * shortTaskScale)
                                 
                                 // Текст времени
                                 Text(startTimeText)
@@ -233,10 +246,10 @@ struct ClockTaskArcIOS: View {
                             
                             // Текст времени окончания задачи с корректной капсулой
                             ZStack {
-                                // Фон в виде капсулы с фиксированной шириной
+                                // Фон в виде капсулы с фиксированной шириной, уменьшаем для коротких задач
                                 Capsule()
                                     .fill(task.category.color)
-                                    .frame(width: CGFloat(endTimeText.count) * 6 + 6, height: 16)
+                                    .frame(width: (CGFloat(endTimeText.count) * 6 + 6) * shortTaskScale, height: 16 * shortTaskScale)
                                 
                                 // Текст времени
                                 Text(endTimeText)
@@ -279,7 +292,8 @@ struct ClockTaskArcIOS: View {
         angle: Angle,
         isDraggingStart: Bool,
         adjustTask: @escaping (TaskOnRing, Date) -> Void,
-        analogOffset: CGFloat
+        analogOffset: CGFloat,
+        shortTaskScale: CGFloat
     ) -> some View {
         let minOuterRingWidth: CGFloat = 20
         let maxOuterRingWidth: CGFloat = 38
@@ -288,9 +302,11 @@ struct ClockTaskArcIOS: View {
 
         // Интерполяция размера маркера
         let t = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
-        let handleSize: CGFloat = viewModel.isAnalogArcStyle
+        // Базовый размер маркера с учетом масштаба для коротких задач
+        let baseHandleSize: CGFloat = viewModel.isAnalogArcStyle
             ? minHandleSize + (maxHandleSize - minHandleSize) * t
             : minHandleSize
+        let handleSize: CGFloat = baseHandleSize * shortTaskScale
 
         let arcRadius: CGFloat = viewModel.isAnalogArcStyle
             ? radius + (viewModel.outerRingLineWidth / 2) + analogOffset
@@ -303,7 +319,7 @@ struct ClockTaskArcIOS: View {
         Circle()
             .fill(color)
             .frame(width: handleSize, height: handleSize)
-            .overlay(Circle().stroke(Color.gray, lineWidth: 2))
+            .overlay(Circle().stroke(Color.gray, lineWidth: 2 * shortTaskScale))
             .position(
                 x: center.x + handleRadius * cos(angle.radians),
                 y: center.y + handleRadius * sin(angle.radians)
