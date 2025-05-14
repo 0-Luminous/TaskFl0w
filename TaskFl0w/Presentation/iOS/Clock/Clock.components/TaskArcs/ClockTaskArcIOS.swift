@@ -148,33 +148,6 @@ struct ClockTaskArcIOS: View {
                             }
                     }
 
-                    // Если текущая задача в режиме редактирования — показываем маркеры
-                    if viewModel.isEditingMode && task.id == viewModel.editingTask?.id {
-                        // Маркер начала
-                        createDragHandle(
-                            color: task.category.color,
-                            center: center,
-                            radius: radius,
-                            angle: startAngle,
-                            isDraggingStart: true,
-                            adjustTask: adjustTaskStartTimesForOverlap,
-                            analogOffset: analogOffset,
-                            shortTaskScale: shortTaskScale
-                        )
-
-                        // Маркер конца
-                        createDragHandle(
-                            color: task.category.color,
-                            center: center,
-                            radius: radius,
-                            angle: endAngle,
-                            isDraggingStart: false,
-                            adjustTask: adjustTaskEndTimesForOverlap,
-                            analogOffset: analogOffset,
-                            shortTaskScale: shortTaskScale
-                        )
-                    }
-
                     // Иконка категории на середине дуги
                     Image(systemName: task.category.iconName)
                         .font(.system(size: iconFontSize))
@@ -205,6 +178,33 @@ struct ClockTaskArcIOS: View {
                                     }
                                 }
                         )
+                    
+                    // Если текущая задача в режиме редактирования — показываем маркеры (после иконки, чтобы они были выше по Z-порядку)
+                    if viewModel.isEditingMode && task.id == viewModel.editingTask?.id {
+                        // Маркер начала
+                        createDragHandle(
+                            color: task.category.color,
+                            center: center,
+                            radius: radius,
+                            angle: startAngle,
+                            isDraggingStart: true,
+                            adjustTask: adjustTaskStartTimesForOverlap,
+                            analogOffset: analogOffset,
+                            shortTaskScale: shortTaskScale
+                        )
+
+                        // Маркер конца
+                        createDragHandle(
+                            color: task.category.color,
+                            center: center,
+                            radius: radius,
+                            angle: endAngle,
+                            isDraggingStart: false,
+                            adjustTask: adjustTaskEndTimesForOverlap,
+                            analogOffset: analogOffset,
+                            shortTaskScale: shortTaskScale
+                        )
+                    }
                     
                     // Добавляем отображение времени начала задачи только для цифрового стиля
                     // Скрываем цифры, когда активны маркеры редактирования
@@ -312,9 +312,15 @@ struct ClockTaskArcIOS: View {
             ? radius + (viewModel.outerRingLineWidth / 2) + analogOffset
             : radius + arcLineWidth / 2
 
+        // Определяем разные радиусы для маркеров начала и конца
+        // Смещаем маркеры только для коротких задач (когда shortTaskScale < 1.0)
+        let isSmallTask = shortTaskScale < 1.0
+        let startHandleOffset: CGFloat = (isDraggingStart && isSmallTask) ? -4 * (1.0 - shortTaskScale) * 2 : 0
+        let endHandleOffset: CGFloat = (!isDraggingStart && isSmallTask) ? 4 * (1.0 - shortTaskScale) * 2 : 0
+        
         let handleRadius: CGFloat = viewModel.isAnalogArcStyle
-            ? arcRadius
-            : radius + arcLineWidth / 2
+            ? arcRadius + (isDraggingStart ? startHandleOffset : endHandleOffset)
+            : radius + arcLineWidth / 2 + (isDraggingStart ? startHandleOffset : endHandleOffset)
 
         Circle()
             .fill(color)

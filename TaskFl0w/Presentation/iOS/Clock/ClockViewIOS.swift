@@ -381,13 +381,13 @@ struct ClockViewIOS: View {
             // Проверяем длительность задачи в часах
             let durationHours = task.duration / 3600
             
-            // Если длительность меньше 2 часов, увеличиваем масштаб и фокусируем на задаче
-            if durationHours < 2 {
+            // Если длительность меньше 1 часа, увеличиваем масштаб и фокусируем на задаче
+            if durationHours < 1 {
                 // Вычисляем масштаб: чем меньше длительность, тем больше масштаб
                 // Минимальная длительность (10 минут) -> масштаб 1.8
-                // Длительность 2 часа -> масштаб 1.0
+                // Длительность 1 час -> масштаб 1.0
                 let minDuration: Double = 10 * 60 // 10 минут в секундах
-                let maxDuration: Double = 2 * 3600 // 2 часа в секундах
+                let maxDuration: Double = 1 * 3600 // 1 час в секундах
                 let minScale: CGFloat = 1.0
                 let maxScale: CGFloat = 1.5
                 
@@ -423,7 +423,7 @@ struct ClockViewIOS: View {
                     focusOffset = CGPoint(x: offsetX, y: offsetY)
                 }
             } else {
-                // Длительность больше или равна 2 часам, используем нормальный масштаб
+                // Длительность больше или равна 1 часу, используем нормальный масштаб
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     zoomScale = 1.0
                     focusOffset = CGPoint(x: 0, y: 0)
