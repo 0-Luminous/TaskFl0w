@@ -295,6 +295,14 @@ class TaskManagement: TaskManagementProtocol {
                     NSLocalizedDescriptionKey: "Время начала должно быть раньше времени окончания"
                 ])
         }
+        
+        // Проверяем минимальную продолжительность в 20 минут (1200 секунд)
+        let minimumDuration: TimeInterval = 20 * 60
+        let actualDuration = endTime.timeIntervalSince(startTime)
+        
+        // Если продолжительность меньше 20 минут, корректируем время окончания
+        let correctedEndTime = actualDuration < minimumDuration ? 
+            startTime.addingTimeInterval(minimumDuration) : endTime
 
         let calendar = Calendar.current
 
@@ -312,10 +320,10 @@ class TaskManagement: TaskManagementProtocol {
         normalizedStartComponents.minute = startComponents.minute
         normalizedStartComponents.timeZone = TimeZone.current
 
-        // Нормализуем время окончания
+        // Нормализуем время окончания (используем correctedEndTime вместо endTime)
         let endComponents = calendar.dateComponents(
             [.year, .month, .day, .hour, .minute],
-            from: endTime
+            from: correctedEndTime
         )
 
         var normalizedEndComponents = DateComponents()
@@ -374,10 +382,10 @@ class TaskManagement: TaskManagementProtocol {
         }
 
         // Проверяем валидность времени
-        if updatedTask.endTime.timeIntervalSince(updatedTask.startTime) <= 0 {
-            throw NSError(
-                domain: "TaskErrorDomain", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Некорректный интервал времени"])
+        let minimumDuration: TimeInterval = 20 * 60 // 20 минут
+        if updatedTask.endTime.timeIntervalSince(updatedTask.startTime) < minimumDuration {
+            // Корректируем конечное время, если продолжительность меньше 20 минут
+            updatedTask.endTime = updatedTask.startTime.addingTimeInterval(minimumDuration)
         }
 
         // Обновляем задачу в CoreData

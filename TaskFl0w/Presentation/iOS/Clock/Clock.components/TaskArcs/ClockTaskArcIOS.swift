@@ -334,18 +334,50 @@ struct ClockTaskArcIOS: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
+                        // Фиксируем состояние перетаскивания
                         if isDraggingStart {
                             viewModel.isDraggingStart = true
                         } else {
                             viewModel.isDraggingEnd = true
                         }
 
+                        // Получаем новое время из позиции пользователя
                         let newTime = viewModel.clockState.timeForLocation(
                             value.location,
                             screenWidth: UIScreen.main.bounds.width
                         )
-                        viewModel.previewTime = newTime
-                        adjustTask(task, newTime)
+                        
+                        // Проверяем минимальную продолжительность (20 минут)
+                        let minimumDuration: TimeInterval = 20 * 60 // 20 минут в секундах
+                        
+                        // Проверяем и ограничиваем время в зависимости от типа маркера
+                        if isDraggingStart {
+                            // Для маркера начала: проверяем, что новое время не приведет к продолжительности меньше минимальной
+                            let maxAllowedStartTime = task.endTime.addingTimeInterval(-minimumDuration)
+                            
+                            // Если новое время превышает максимально допустимое - не обновляем позицию
+                            if newTime <= maxAllowedStartTime {
+                                viewModel.previewTime = newTime
+                                adjustTask(task, newTime)
+                            } else {
+                                // Если пользователь пытается перетащить за предел - используем предельное значение
+                                viewModel.previewTime = maxAllowedStartTime
+                                adjustTask(task, maxAllowedStartTime)
+                            }
+                        } else {
+                            // Для маркера конца: проверяем, что новое время не приведет к продолжительности меньше минимальной
+                            let minAllowedEndTime = task.startTime.addingTimeInterval(minimumDuration)
+                            
+                            // Если новое время меньше минимально допустимого - не обновляем позицию
+                            if newTime >= minAllowedEndTime {
+                                viewModel.previewTime = newTime
+                                adjustTask(task, newTime)
+                            } else {
+                                // Если пользователь пытается перетащить за предел - используем предельное значение
+                                viewModel.previewTime = minAllowedEndTime
+                                adjustTask(task, minAllowedEndTime)
+                            }
+                        }
                     }
                     .onEnded { _ in
                         if let updatedTask = viewModel.editingTask,
@@ -367,13 +399,20 @@ struct ClockTaskArcIOS: View {
     }
 
     func adjustTaskStartTimesForOverlap(_ currentTask: TaskOnRing, newStartTime: Date) {
+        // Проверяем минимальную продолжительность задачи (20 минут)
+        let minimumDuration: TimeInterval = 20 * 60 // 20 минут в секундах
+        
+        // Ограничиваем время начала, чтобы обеспечить минимальную продолжительность
+        let maxAllowedStartTime = currentTask.endTime.addingTimeInterval(-minimumDuration)
+        let adjustedStartTime = min(newStartTime, maxAllowedStartTime)
+        
         viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
-            currentTask, newStartTime: newStartTime)
-
+            currentTask, newStartTime: adjustedStartTime)
+        
         guard let updatedTask = viewModel.tasks.first(where: { $0.id == currentTask.id }) else {
             return
         }
-
+        
         for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {
             if updatedTask.startTime >= otherTask.startTime
                 && updatedTask.startTime < otherTask.endTime
@@ -385,12 +424,19 @@ struct ClockTaskArcIOS: View {
     }
 
     func adjustTaskEndTimesForOverlap(_ currentTask: TaskOnRing, newEndTime: Date) {
-        viewModel.taskManagement.updateTaskDuration(currentTask, newEndTime: newEndTime)
-
+        // Проверяем минимальную продолжительность задачи (20 минут)
+        let minimumDuration: TimeInterval = 20 * 60 // 20 минут в секундах
+        
+        // Ограничиваем время окончания, чтобы обеспечить минимальную продолжительность
+        let minAllowedEndTime = currentTask.startTime.addingTimeInterval(minimumDuration)
+        let adjustedEndTime = max(newEndTime, minAllowedEndTime)
+        
+        viewModel.taskManagement.updateTaskDuration(currentTask, newEndTime: adjustedEndTime)
+        
         guard let updatedTask = viewModel.tasks.first(where: { $0.id == currentTask.id }) else {
             return
         }
-
+        
         for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {
             if updatedTask.endTime > otherTask.startTime && updatedTask.endTime <= otherTask.endTime
             {
