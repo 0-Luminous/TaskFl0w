@@ -192,15 +192,16 @@ struct ClockViewIOS: View {
             .gesture(
                 DragGesture()
                     .onChanged { value in
-                        // Обрабатываем только горизонтальное перемещение влево если календарь не показан
-                        if value.translation.width < 0 && !showingWeekCalendar {
+                        // Блокируем жест свайпа, если активен режим редактирования задачи
+                        if value.translation.width < 0 && !showingWeekCalendar && !viewModel.isEditingMode {
                             isDragging = true
                             dragOffset = value.translation
                         }
                     }
                     .onEnded { value in
-                        // Если свайп влево больше 100 пикселей (по модулю), показываем TaskTimeline
-                        if value.translation.width < -100 && !showingWeekCalendar {
+                        // Если свайп влево больше 100 пикселей (по модулю), показываем TaskTimeline,
+                        // только если не активен режим редактирования задачи
+                        if value.translation.width < -100 && !showingWeekCalendar && !viewModel.isEditingMode {
                             withAnimation {
                                 showingTaskTimeline = true
                             }
