@@ -339,13 +339,60 @@ struct ClockTaskArcIOS: View {
                         } else {
                             viewModel.isDraggingEnd = true
                         }
-
-                        let newTime = viewModel.clockState.timeForLocation(
-                            value.location,
-                            screenWidth: UIScreen.main.bounds.width
-                        )
-                        viewModel.previewTime = newTime
-                        adjustTask(task, newTime)
+                        
+                        // Вычисляем вектор от центра к точке перетаскивания
+                        let vector = CGVector(dx: value.location.x - center.x, dy: value.location.y - center.y)
+                        
+                        // Рассчитываем угол в радианах от центра к текущей позиции
+                        let angle = atan2(vector.dy, vector.dx)
+                        
+                        // Конвертируем в градусы
+                        var degrees = angle * 180 / .pi
+                        
+                        // Нормализуем значение от 0 до 360 градусов (0 градусов - это направление вправо)
+                        degrees = (degrees + 360).truncatingRemainder(dividingBy: 360)
+                        
+                        // Корректируем с учетом zeroPosition, где 270 градусов - 12 часов (верх циферблата)
+                        let adjustedDegrees = (degrees - 270 - viewModel.zeroPosition + 360).truncatingRemainder(dividingBy: 360)
+                        
+                        // Вычисляем часы и минуты из градусов
+                        // 360 градусов соответствуют 24 часам
+                        let hours = adjustedDegrees / 15 // 15 градусов = 1 час
+                        let hourComponent = Int(hours)
+                        let minuteComponent = Int((hours - Double(hourComponent)) * 60)
+                        
+                        // Используем компоненты из выбранной даты
+                        var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
+                        components.hour = hourComponent
+                        components.minute = minuteComponent
+                        components.timeZone = TimeZone.current
+                        
+                        if let newTime = Calendar.current.date(from: components) {
+                            // Проверка минимальной длительности (20 минут)
+                            let minimumDuration: TimeInterval = 20 * 60
+                            
+                            if isDraggingStart {
+                                if task.endTime.timeIntervalSince(newTime) >= minimumDuration {
+                                    viewModel.previewTime = newTime
+                                    adjustTask(task, newTime)
+                                } else {
+                                    // Если минимальная длительность не соблюдается, устанавливаем ограничение
+                                    let limitedStartTime = task.endTime.addingTimeInterval(-minimumDuration)
+                                    viewModel.previewTime = limitedStartTime
+                                    adjustTask(task, limitedStartTime)
+                                }
+                            } else {
+                                if newTime.timeIntervalSince(task.startTime) >= minimumDuration {
+                                    viewModel.previewTime = newTime
+                                    adjustTask(task, newTime)
+                                } else {
+                                    // Если минимальная длительность не соблюдается, устанавливаем ограничение
+                                    let limitedEndTime = task.startTime.addingTimeInterval(minimumDuration)
+                                    viewModel.previewTime = limitedEndTime
+                                    adjustTask(task, limitedEndTime)
+                                }
+                            }
+                        }
                     }
                     .onEnded { _ in
                         if let updatedTask = viewModel.editingTask,
@@ -367,6 +414,7 @@ struct ClockTaskArcIOS: View {
     }
 
     func adjustTaskStartTimesForOverlap(_ currentTask: TaskOnRing, newStartTime: Date) {
+        // Обновляем задачу с новым временем начала
         viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
             currentTask, newStartTime: newStartTime)
 
@@ -374,28 +422,53 @@ struct ClockTaskArcIOS: View {
             return
         }
 
+        // Обрабатываем перекрытия с другими задачами
         for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {
             if updatedTask.startTime >= otherTask.startTime
                 && updatedTask.startTime < otherTask.endTime
             {
-                viewModel.taskManagement.updateTaskDuration(
-                    otherTask, newEndTime: updatedTask.startTime)
+                // Проверяем, не нарушит ли это минимальную длительность для другой задачи
+                let minimumDuration: TimeInterval = 20 * 60
+                if updatedTask.startTime.timeIntervalSince(otherTask.startTime) >= minimumDuration {
+                    // Для другой задачи остаётся достаточно времени
+                    viewModel.taskManagement.updateTaskDuration(
+                        otherTask, newEndTime: updatedTask.startTime)
+                } else {
+                    // В этом случае не корректируем другую задачу,
+                    // а возвращаем нашу задачу после окончания другой
+                    let safeStartTime = otherTask.endTime
+                    viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
+                        updatedTask, newStartTime: safeStartTime)
+                }
             }
         }
     }
 
     func adjustTaskEndTimesForOverlap(_ currentTask: TaskOnRing, newEndTime: Date) {
+        // Обновляем задачу с новым временем окончания
         viewModel.taskManagement.updateTaskDuration(currentTask, newEndTime: newEndTime)
 
         guard let updatedTask = viewModel.tasks.first(where: { $0.id == currentTask.id }) else {
             return
         }
 
+        // Обрабатываем перекрытия с другими задачами
         for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {
             if updatedTask.endTime > otherTask.startTime && updatedTask.endTime <= otherTask.endTime
             {
-                viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
-                    otherTask, newStartTime: updatedTask.endTime)
+                // Проверяем, не нарушит ли это минимальную длительность для другой задачи
+                let minimumDuration: TimeInterval = 20 * 60
+                if otherTask.endTime.timeIntervalSince(updatedTask.endTime) >= minimumDuration {
+                    // Для другой задачи остаётся достаточно времени
+                    viewModel.taskManagement.updateTaskStartTimeKeepingEnd(
+                        otherTask, newStartTime: updatedTask.endTime)
+                } else {
+                    // В этом случае не корректируем другую задачу,
+                    // а возвращаем нашу задачу перед началом другой
+                    let safeEndTime = otherTask.startTime
+                    viewModel.taskManagement.updateTaskDuration(
+                        updatedTask, newEndTime: safeEndTime)
+                }
             }
         }
     }
