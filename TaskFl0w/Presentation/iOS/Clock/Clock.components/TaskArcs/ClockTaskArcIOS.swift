@@ -368,28 +368,42 @@ struct ClockTaskArcIOS: View {
                         components.timeZone = TimeZone.current
                         
                         if let newTime = Calendar.current.date(from: components) {
+                            // Получаем текущие время начала и окончания задачи
+                            let startCalendarComponents = Calendar.current.dateComponents([.hour, .minute], from: task.startTime)
+                            let endCalendarComponents = Calendar.current.dateComponents([.hour, .minute], from: task.endTime)
+                            
                             // Проверка минимальной длительности (20 минут)
                             let minimumDuration: TimeInterval = 20 * 60
                             
                             if isDraggingStart {
+                                // Проверяем, не является ли новое время начала равным 0 часов 0 минут
+                                if hourComponent == 0 && minuteComponent == 0 {
+                                    // Блокируем маркер на отметке 0 - не делаем ничего
+                                    return
+                                }
+                                
+                                // Проверяем, не приведет ли изменение к нарушению минимальной длительности
                                 if task.endTime.timeIntervalSince(newTime) >= minimumDuration {
                                     viewModel.previewTime = newTime
                                     adjustTask(task, newTime)
                                 } else {
-                                    // Если минимальная длительность не соблюдается, устанавливаем ограничение
-                                    let limitedStartTime = task.endTime.addingTimeInterval(-minimumDuration)
-                                    viewModel.previewTime = limitedStartTime
-                                    adjustTask(task, limitedStartTime)
+                                    // Блокируем маркер на минимальной длительности без его перемещения
+                                    return
                                 }
-                            } else {
+                            } else { // Маркер конца
+                                // Проверяем, не является ли новое время окончания равным 0 часов 0 минут
+                                if hourComponent == 0 && minuteComponent == 0 {
+                                    // Блокируем маркер на отметке 0 - не делаем ничего
+                                    return
+                                }
+                                
+                                // Проверяем, не приведет ли изменение к нарушению минимальной длительности
                                 if newTime.timeIntervalSince(task.startTime) >= minimumDuration {
                                     viewModel.previewTime = newTime
                                     adjustTask(task, newTime)
                                 } else {
-                                    // Если минимальная длительность не соблюдается, устанавливаем ограничение
-                                    let limitedEndTime = task.startTime.addingTimeInterval(minimumDuration)
-                                    viewModel.previewTime = limitedEndTime
-                                    adjustTask(task, limitedEndTime)
+                                    // Блокируем маркер на минимальной длительности без его перемещения
+                                    return
                                 }
                             }
                         }
