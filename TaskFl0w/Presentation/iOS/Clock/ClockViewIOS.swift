@@ -285,7 +285,7 @@ struct ClockViewIOS: View {
         }
         .onAppear {
             // Обновляем интерфейс при первом появлении
-            initializeUI()
+           initializeUI()
             
             // Регистрируем обработчик уведомлений для отслеживания состояния поиска
             NotificationCenter.default.addObserver(
@@ -343,15 +343,15 @@ struct ClockViewIOS: View {
             )
         }
         .onChange(of: viewModel.isEditingMode) { oldValue, newValue in
-            updateZoomForEditingTask()
+//            updateZoomForEditingTask()
         }
         .onChange(of: viewModel.editingTask) { oldValue, newValue in
-            updateZoomForEditingTask()
+//            updateZoomForEditingTask()
         }
         .onChange(of: viewModel.previewTime) { oldValue, newValue in
             // Обновляем масштаб при перетаскивании маркеров задачи (изменение длительности)
             if viewModel.isEditingMode && (viewModel.isDraggingStart || viewModel.isDraggingEnd) {
-                updateZoomForEditingTask()
+//                updateZoomForEditingTask()
             }
         }
     }
@@ -375,68 +375,68 @@ struct ClockViewIOS: View {
         viewModel.updateMarkersViewModel()
     }
     
-    // Обработчик изменения редактируемой задачи
-    private func updateZoomForEditingTask() {
-        if viewModel.isEditingMode, let task = viewModel.editingTask {
-            // Проверяем длительность задачи в часах
-            let durationHours = task.duration / 3600
+    // // Обработчик изменения редактируемой задачи
+    // private func updateZoomForEditingTask() {
+    //     if viewModel.isEditingMode, let task = viewModel.editingTask {
+    //         // Проверяем длительность задачи в часах
+    //         let durationHours = task.duration / 3600
             
-            // Если длительность меньше 1 часа, увеличиваем масштаб и фокусируем на задаче
-            if durationHours < 1 {
-                // Вычисляем масштаб: чем меньше длительность, тем больше масштаб
-                // Минимальная длительность (10 минут) -> масштаб 1.8
-                // Длительность 1 час -> масштаб 1.0
-                let minDuration: Double = 10 * 60 // 10 минут в секундах
-                let maxDuration: Double = 1 * 3600 // 1 час в секундах
-                let minScale: CGFloat = 1.0
-                let maxScale: CGFloat = 1.5
+    //         // Если длительность меньше 1 часа, увеличиваем масштаб и фокусируем на задаче
+    //         if durationHours < 1 {
+    //             // Вычисляем масштаб: чем меньше длительность, тем больше масштаб
+    //             // Минимальная длительность (10 минут) -> масштаб 1.8
+    //             // Длительность 1 час -> масштаб 1.0
+    //             let minDuration: Double = 10 * 60 // 10 минут в секундах
+    //             let maxDuration: Double = 1 * 3600 // 1 час в секундах
+    //             let minScale: CGFloat = 1.0
+    //             let maxScale: CGFloat = 1.5
                 
-                // Ограничиваем длительность минимальным значением
-                let limitedDuration = max(minDuration, task.duration)
+    //             // Ограничиваем длительность минимальным значением
+    //             let limitedDuration = max(minDuration, task.duration)
                 
-                // Рассчитываем относительное положение длительности между минимальной и максимальной
-                let normalizedDuration = 1 - ((limitedDuration - minDuration) / (maxDuration - minDuration))
+    //             // Рассчитываем относительное положение длительности между минимальной и максимальной
+    //             let normalizedDuration = 1 - ((limitedDuration - minDuration) / (maxDuration - minDuration))
                 
-                // Вычисляем итоговый масштаб
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    zoomScale = minScale + normalizedDuration * (maxScale - minScale)
+    //             // Вычисляем итоговый масштаб
+    //             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+    //                 zoomScale = minScale + normalizedDuration * (maxScale - minScale)
                     
-                    // Рассчитываем угол для центра задачи
-                    // Находим среднюю точку дуги задачи
-                    let startAngle = viewModel.timeToAngle(task.startTime)
-                    let endAngle = viewModel.timeToAngle(task.endTime)
-                    let midAngle = (startAngle + endAngle) / 2.0
+    //                 // Рассчитываем угол для центра задачи
+    //                 // Находим среднюю точку дуги задачи
+    //                 let startAngle = viewModel.timeToAngle(task.startTime)
+    //                 let endAngle = viewModel.timeToAngle(task.endTime)
+    //                 let midAngle = (startAngle + endAngle) / 2.0
                     
-                    // Конвертируем угол в радианы (SwiftUI использует радианы)
-                    let midAngleRadians = midAngle * .pi / 180.0
+    //                 // Конвертируем угол в радианы (SwiftUI использует радианы)
+    //                 let midAngleRadians = midAngle * .pi / 180.0
                     
-                    // Приблизительный радиус циферблата (без использования UIScreen)
-                    let approximateRadius: CGFloat = 150
+    //                 // Приблизительный радиус циферблата (без использования UIScreen)
+    //                 let approximateRadius: CGFloat = 150
                     
-                    // Рассчитываем смещение в направлении задачи, чтобы центрировать её
-                    // Разбиваем вычисление на более простые выражения
-                    let scaleFactor = zoomScale - 1.0
-                    // Инвертируем направление смещения, убирая знак минус
-                    let offsetX = cos(midAngleRadians) * approximateRadius * scaleFactor
-                    let offsetY = sin(midAngleRadians) * approximateRadius * scaleFactor
+    //                 // Рассчитываем смещение в направлении задачи, чтобы центрировать её
+    //                 // Разбиваем вычисление на более простые выражения
+    //                 let scaleFactor = zoomScale - 1.0
+    //                 // Инвертируем направление смещения, убирая знак минус
+    //                 let offsetX = cos(midAngleRadians) * approximateRadius * scaleFactor
+    //                 let offsetY = sin(midAngleRadians) * approximateRadius * scaleFactor
                     
-                    focusOffset = CGPoint(x: offsetX, y: offsetY)
-                }
-            } else {
-                // Длительность больше или равна 1 часу, используем нормальный масштаб
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    zoomScale = 1.0
-                    focusOffset = CGPoint(x: 0, y: 0)
-                }
-            }
-        } else {
-            // Нет редактируемой задачи, используем нормальный масштаб
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                zoomScale = 1.0
-                focusOffset = CGPoint(x: 0, y: 0)
-            }
-        }
-    }
+    //                 focusOffset = CGPoint(x: offsetX, y: offsetY)
+    //             }
+    //         } else {
+    //             // Длительность больше или равна 1 часу, используем нормальный масштаб
+    //             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+    //                 zoomScale = 1.0
+    //                 focusOffset = CGPoint(x: 0, y: 0)
+    //             }
+    //         }
+    //     } else {
+    //         // Нет редактируемой задачи, используем нормальный масштаб
+    //         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+    //             zoomScale = 1.0
+    //             focusOffset = CGPoint(x: 0, y: 0)
+    //         }
+    //     }
+    // }
 }
 
 #Preview {
