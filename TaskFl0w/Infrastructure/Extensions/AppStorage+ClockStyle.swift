@@ -9,6 +9,8 @@ extension ClockStyle: RawRepresentable {
             self = .minimal
         case "modern":
             self = .modern
+        case "digital":
+            self = .digital
         default:
             return nil
         }
@@ -22,6 +24,8 @@ extension ClockStyle: RawRepresentable {
             return "minimal"
         case .modern:
             return "modern"
+        case .digital:
+            return "digital"
         }
     }
 } 

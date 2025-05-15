@@ -7,6 +7,7 @@
 import SwiftUI
 // Новая структура для содержимого сетки
   struct CategoryGridContent<Content: View>: View {
+       @ObservedObject private var themeManager = ThemeManager.shared
        @Binding var currentPage: Int
        let numberOfPages: Int
        let backgroundColorForTheme: Color
@@ -23,8 +24,8 @@ import SwiftUI
                .frame(height: 100)
                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
            }
-           .background(backgroundColorForTheme)
-           .cornerRadius(20)
+           .background(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
+           .cornerRadius(24)
            .shadow(color: shadowColorForTheme, radius: 8, x: 0, y: 4)
        }
    }

@@ -1,28 +1,17 @@
 import SwiftUI
 import UIKit
+import UserNotifications
 
 struct SoundAndNotification: View {
-    @AppStorage("soundEnabled") private var soundEnabled = true
+    @Environment(\.dismiss) private var dismiss
     @AppStorage("notificationsEnabled") private var notificationsEnabled = true
     @AppStorage("reminderTime") private var reminderTime = 5  // минут до начала задачи
-    @AppStorage("soundVolume") private var soundVolume = 0.7
-    @AppStorage("selectedSoundId") private var selectedSoundId = "bell"
-    @AppStorage("vibrationEnabled") private var vibrationEnabled = true
     @AppStorage("criticalAlertsEnabled") private var criticalAlertsEnabled = false
+    @StateObject private var themeManager = ThemeManager.shared
 
     @State private var showingPermissionAlert = false
-    @State private var isTestingSoundEnabled = false
 
     private let notificationService = NotificationService.shared
-
-    private let availableSounds = [
-        ("bell", "Колокольчик"),
-        ("chime", "Перезвон"),
-        ("crystal", "Кристалл"),
-        ("digital", "Цифровой"),
-        ("gentle", "Нежный"),
-        ("minimal", "Минимальный"),
-    ]
 
     private let reminderTimeOptions = [
         (1, "1 минута"),
@@ -35,46 +24,6 @@ struct SoundAndNotification: View {
 
     var body: some View {
         Form {
-            Section {
-                Toggle("Звуки", isOn: $soundEnabled)
-                    .onChange(of: soundEnabled) { oldValue, newValue in
-                        if newValue {
-                            playTestSound()
-                        }
-                    }
-
-                if soundEnabled {
-                    VStack {
-                        HStack {
-                            Text("Громкость")
-                            Spacer()
-                            Text("\(Int(soundVolume * 100))%")
-                        }
-
-                        Slider(value: $soundVolume, in: 0...1) { editing in
-                            if !editing && isTestingSoundEnabled {
-                                playTestSound()
-                            }
-                        }
-                    }
-
-                    Picker("Звук уведомления", selection: $selectedSoundId) {
-                        ForEach(availableSounds, id: \.0) { sound in
-                            Text(sound.1).tag(sound.0)
-                        }
-                    }
-                    .onChange(of: selectedSoundId) { oldValue, newValue in
-                        playTestSound()
-                    }
-
-                    Toggle("Вибрация", isOn: $vibrationEnabled)
-                }
-            } header: {
-                Text("Звуки и тактильный отклик")
-            } footer: {
-                Text("Выберите звук уведомления и настройте громкость")
-            }
-
             Section {
                 Toggle("Уведомления", isOn: $notificationsEnabled)
                     .onChange(of: notificationsEnabled) { oldValue, newValue in
@@ -89,13 +38,6 @@ struct SoundAndNotification: View {
                             Text(option.1).tag(option.0)
                         }
                     }
-
-                    Toggle("Важные уведомления", isOn: $criticalAlertsEnabled)
-                        .onChange(of: criticalAlertsEnabled) { oldValue, newValue in
-                            if newValue {
-                                requestCriticalAlertsPermission()
-                            }
-                        }
                 }
             } header: {
                 Text("Уведомления")
@@ -104,11 +46,6 @@ struct SoundAndNotification: View {
             }
 
             Section {
-                Button("Проверить звук") {
-                    playTestSound()
-                }
-                .disabled(!soundEnabled)
-
                 Button("Проверить уведомление") {
                     sendTestNotification()
                 }
@@ -117,7 +54,18 @@ struct SoundAndNotification: View {
                 Text("Тестирование")
             }
         }
-        .navigationTitle("Звук и уведомления")
+        .navigationTitle("Уведомления")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.backward")
+                        .foregroundColor(.red1)
+                    Text("Назад")
+                    .foregroundColor(.red1)
+                }
+            }
+        }
         .alert("Требуется разрешение", isPresented: $showingPermissionAlert) {
             Button("Настройки") {
                 openSettings()
@@ -128,18 +76,13 @@ struct SoundAndNotification: View {
                 "Для отправки уведомлений необходимо разрешение. Пожалуйста, откройте настройки приложения и включите уведомления."
             )
         }
+        .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
+        .background(themeManager.isDarkMode ? 
+            Color(red: 0.098, green: 0.098, blue: 0.098) : 
+            Color(red: 0.95, green: 0.95, blue: 0.95))
     }
 
     // MARK: - Вспомогательные функции
-
-    private func playTestSound() {
-        guard soundEnabled else { return }
-        notificationService.playSound(selectedSoundId, volume: Float(soundVolume))
-
-        if vibrationEnabled {
-            notificationService.vibrate()
-        }
-    }
 
     private func requestNotificationPermission() {
         notificationService.requestNotificationPermission { granted in
@@ -158,7 +101,10 @@ struct SoundAndNotification: View {
     }
 
     private func sendTestNotification() {
-        guard notificationsEnabled else { return }
+        // Явно устанавливаем значение в UserDefaults, чтобы синхронизировать с интерфейсом
+        UserDefaults.standard.set(true, forKey: "notificationsEnabled")
+        
+        // Просто отправляем запрос на тестовое уведомление
         notificationService.sendTestNotification()
     }
 

@@ -5,7 +5,6 @@
 //  Created by Yan on 23/3/25.
 //
 import SwiftUI
-import UIKit
 
 struct TaskRow: View {
     let item: ToDoItem
@@ -17,37 +16,26 @@ struct TaskRow: View {
     let isSelectionMode: Bool
     let isInArchiveMode: Bool
     @Binding var selectedTasks: Set<UUID>
-    
-    @State private var isLongPressed: Bool = false
+
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     var body: some View {
         ZStack {
-            // Удаляем фоновую полосу для обозначения приоритета, так как теперь
-            // задачи будут сгруппированы по приоритету
-            // if item.priority != .none {
-            //     HStack {
-            //         Rectangle()
-            //             .fill(priorityColor(for: item.priority))
-            //             .frame(width: 4)
-            //             .opacity(0.8)
-            //         Spacer()
-            //     }
-            // }
-            
+        
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     if isSelectionMode {
                         Button(action: {
                             toggleSelection()
                         }) {
-                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                .foregroundColor(isSelected ? categoryColor : .white)
+                            Image(systemName: isSelected ? "checkmark.circle.fill" : (item.isCompleted ? "checkmark.circle" : "circle"))
+                                .foregroundColor(themeManager.isDarkMode ? isSelected ? categoryColor : (item.isCompleted ? .black : .white) : isSelected ? categoryColor : (item.isCompleted ? .black : .white))
                                 .font(.system(size: 22))
                         }
                     } else {
                         Button(action: onToggle) {
                             Image(systemName: item.isCompleted ? "checkmark.circle" : "circle")
-                                .foregroundColor(item.isCompleted ? .black : .white)
+                                .foregroundColor(themeManager.isDarkMode ? item.isCompleted ? .black : .white : item.isCompleted ? .black : .white)
                                 .font(.system(size: 22))
                         }
                     }
@@ -55,7 +43,7 @@ struct TaskRow: View {
                     // Название задачи без отображения приоритета
                     Text(item.title)
                         .strikethrough(item.isCompleted && !isSelectionMode && !isInArchiveMode)
-                        .foregroundColor(item.isCompleted && !isSelectionMode && !isInArchiveMode ? .gray : .white)
+                        .foregroundColor(themeManager.isDarkMode ? item.isCompleted && !isSelectionMode && !isInArchiveMode ? .gray : .white : item.isCompleted && !isSelectionMode && !isInArchiveMode ? .gray : .black)
                         .fontWeight(getFontWeight(for: item.priority))
                     
                     Spacer()
@@ -65,7 +53,6 @@ struct TaskRow: View {
                         priorityIndicator(for: item.priority)
                     }
                 }
-                .padding(.horizontal, -5)
             }
         }
         .animation(.easeInOut, value: item.priority)
@@ -110,14 +97,14 @@ struct TaskRow: View {
         }
         .padding(.vertical, 2)
         .padding(.horizontal, 3)
-        .opacity(item.isCompleted && !isSelectionMode && !isInArchiveMode ? 0.5 : 1.0)
+        .opacity((item.isCompleted && !isSelectionMode && !isInArchiveMode) || isInArchiveMode ? 0.5 : 1.0)
     }
     
     // Настройка жирности шрифта в зависимости от приоритета
     private func getFontWeight(for priority: TaskPriority) -> Font.Weight {
         switch priority {
         case .high:
-            return .bold
+            return .semibold
         case .medium:
             return .semibold
         case .low, .none:

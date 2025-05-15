@@ -15,16 +15,35 @@ struct GlobleClockFaceViewIOS: View {
 
     @Binding var draggedCategory: TaskCategoryModel?
     let zeroPosition: Double
+    let taskArcLineWidth: CGFloat
+    let outerRingLineWidth: CGFloat
 
     // Добавляем новый параметр
     var isNavigationOverlayVisible: Bool = false
 
     @Environment(\.colorScheme) var colorScheme
-    @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
+    // Удаляем @AppStorage и используем свойство из viewModel
+    // @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
     @AppStorage("markersOffset") private var markersOffset: Double = 0.0
     @AppStorage("numberInterval") private var numberInterval: Int = 1
     @AppStorage("markersWidth") private var markersWidth: Double = 2.0
     @AppStorage("numbersSize") private var numbersSize: Double = 16.0
+
+    // Вычисляемое свойство для получения ClockStyle из строки
+    private var clockStyleEnum: ClockStyle {
+        switch viewModel.clockStyle {
+        case "Классический":
+            return .classic
+        case "Минимализм":
+            return .minimal
+        case "Цифровой":
+            return .digital
+        case "Контур":
+            return .modern
+        default:
+            return .classic
+        }
+    }
 
     // Локальные состояния убраны и перенесены в ViewModel
     // Используем состояния из ViewModel через viewModel
@@ -35,27 +54,75 @@ struct GlobleClockFaceViewIOS: View {
                 .fill(themeManager.currentClockFaceColor)
                 .stroke(Color.gray, lineWidth: 2)
 
-            // Маркеры часов (24 шт.) - без цифр
-            ForEach(0..<24, id: \.self) { hour in
-                let angle = Double(hour) * (360.0 / 24.0)
-                ClockMarker(
-                    hour: hour,
-                    style: clockStyle.markerStyle,
-                    viewModel: markersViewModel,
-                    MarkersColor: themeManager.currentMarkersColor,
-                    zeroPosition: zeroPosition,
-                    showNumbers: false // Не показываем цифры на этом слое
+            // Добавляем цифровое отображение времени для стиля "Цифровой"
+            if viewModel.clockStyle == "Цифровой" {
+                // Извлекаем компоненты времени
+                let hour = calendar.component(.hour, from: viewModel.currentDate)
+                let minute = calendar.component(.minute, from: viewModel.currentDate)
+                
+                // Отображаем сначала круглый фон
+                Circle()
+                    .fill(themeManager.currentClockFaceColor)
+                    .frame(width: UIScreen.main.bounds.width * 0.3)
+                
+                // Отображаем цифровое время
+                DigitalTimeDisplay(
+                    hour: hour, 
+                    minute: minute, 
+                    color: themeManager.currentMarkersColor,
+                    markersViewModel: markersViewModel
                 )
-                .rotationEffect(.degrees(angle))
-                .frame(
-                    width: UIScreen.main.bounds.width * 0.7,
-                    height: UIScreen.main.bounds.width * 0.7)
-                // Добавляем идентификатор для принудительной переотрисовки при изменении zeroPosition
-                .id("marker-\(hour)-\(Int(zeroPosition))")
+            }
+
+            // Маркеры часов (24 шт.) и промежуточные маркеры
+            if markersViewModel.showMarkers {
+                // Основные часовые маркеры (24 шт.)
+                ForEach(0..<24, id: \.self) { hour in
+                    let angle = Double(hour) * (360.0 / 24.0)
+                    ClockMarker(
+                        hour: hour,
+                        style: markersViewModel.markerStyle,
+                        viewModel: markersViewModel,
+                        MarkersColor: themeManager.currentMarkersColor,
+                        zeroPosition: zeroPosition,
+                        showNumbers: false,
+                        isMainMarker: true
+                    )
+                    .rotationEffect(.degrees(angle))
+                    .frame(
+                        width: UIScreen.main.bounds.width * 0.7,
+                        height: UIScreen.main.bounds.width * 0.7)
+                    .id("marker-\(hour)-\(Int(zeroPosition))-\(markersViewModel.markerStyle)-main")
+                }
+                
+                // Промежуточные маркеры (4 маркера между каждой парой часов)
+                if markersViewModel.showIntermediateMarkers {
+                    ForEach(0..<96, id: \.self) { minuteMarker in
+                        let angle = Double(minuteMarker) * (360.0 / 96.0)
+                        // Пропускаем позиции, где уже есть часовые маркеры
+                        if minuteMarker % 4 != 0 {
+                            ClockMarker(
+                                hour: minuteMarker / 4, // Сопоставляем с ближайшим часом
+                                minuteIndex: minuteMarker % 4, // Индекс минутного маркера (1, 2, 3)
+                                style: markersViewModel.markerStyle,
+                                viewModel: markersViewModel,
+                                MarkersColor: themeManager.currentMarkersColor,
+                                zeroPosition: zeroPosition,
+                                showNumbers: false,
+                                isMainMarker: false
+                            )
+                            .rotationEffect(.degrees(angle))
+                            .frame(
+                                width: UIScreen.main.bounds.width * 0.7,
+                                height: UIScreen.main.bounds.width * 0.7)
+                            .id("marker-minute-\(minuteMarker)-\(Int(zeroPosition))-\(markersViewModel.markerStyle)")
+                        }
+                    }
+                }
             }
             
-            // Слой с цифрами (отдельно)
-            if markersViewModel.showHourNumbers {
+            // Слой с цифрами (отдельно) - показываем независимо от маркеров
+            if markersViewModel.showHourNumbers && viewModel.clockStyle != "Цифровой" {
                 ForEach(0..<24, id: \.self) { hour in
                     let angle = Double(hour) * (360.0 / 24.0)
                     // Проверяем, нужно ли отображать число в соответствии с интервалом
@@ -78,10 +145,11 @@ struct GlobleClockFaceViewIOS: View {
 
             TaskArcsViewIOS(
                 tasks: viewModel.tasksForSelectedDate(tasks),
-                viewModel: viewModel
+                viewModel: viewModel,
+                arcLineWidth: taskArcLineWidth
             )
 
-            ClockHandViewIOS(currentDate: viewModel.currentDate)
+            ClockHandViewIOS(currentDate: viewModel.currentDate, outerRingLineWidth: outerRingLineWidth)
                 .rotationEffect(.degrees(zeroPosition))
 
             // Показ точки, куда «кидаем» категорию
@@ -96,6 +164,8 @@ struct GlobleClockFaceViewIOS: View {
         .frame(height: UIScreen.main.bounds.width * 0.7)
         .padding()
         .animation(.spring(), value: viewModel.tasksForSelectedDate(tasks))
+        .animation(.spring(), value: markersViewModel.showMarkers)
+        .animation(.spring(), value: markersViewModel.showHourNumbers)
         .onAppear {
             markersViewModel.zeroPosition = zeroPosition
             markersViewModel.isDarkMode = themeManager.isDarkMode
@@ -103,6 +173,7 @@ struct GlobleClockFaceViewIOS: View {
             markersViewModel.markersOffset = markersOffset
             markersViewModel.markersWidth = markersWidth
             markersViewModel.numbersSize = numbersSize
+            markersViewModel.markerStyle = viewModel.markerStyle
             // Принудительно обновляем View
             updateMarkersViewModel()
         }
@@ -125,6 +196,14 @@ struct GlobleClockFaceViewIOS: View {
         }
         .onChange(of: numbersSize) { oldValue, newValue in
             markersViewModel.numbersSize = newValue
+            updateMarkersViewModel()
+        }
+        .onChange(of: markersViewModel.markerStyle) { oldValue, newValue in
+            // Принудительно обновляем View
+            updateMarkersViewModel()
+        }
+        .onChange(of: markersViewModel.showIntermediateMarkers) { oldValue, newValue in
+            // Принудительно обновляем View
             updateMarkersViewModel()
         }
     }
@@ -152,4 +231,54 @@ struct GlobleClockFaceViewIOS: View {
     // MARK: - Вспомогательные методы из ViewModel
     // private var tasksForSelectedDate: [TaskOnRing] { ... } - удалено, используем viewModel.tasksForSelectedDate
     // private func timeForLocation(_ location: CGPoint) -> Date { ... } - удалено, используем viewModel.timeForLocation
+
+    // Выносим отображение времени в отдельный компонент
+    private struct DigitalTimeDisplay: View {
+        let hour: Int
+        let minute: Int
+        let color: Color
+        @ObservedObject private var markersViewModel: ClockMarkersViewModel
+        
+        init(hour: Int, minute: Int, color: Color, markersViewModel: ClockMarkersViewModel = ClockMarkersViewModel.shared) {
+            self.hour = hour
+            self.minute = minute
+            self.color = color
+            self.markersViewModel = markersViewModel
+        }
+        
+        var body: some View {
+            VStack(spacing: 0) {
+                Text("\(hour, specifier: "%02d")")
+                    .font(digitalFont)
+                    .foregroundColor(markersViewModel.currentDigitalFontColor)
+                
+                Text("\(minute, specifier: "%02d")")
+                    .font(digitalFont)
+                    .foregroundColor(markersViewModel.currentDigitalFontColor)
+            }
+        }
+        
+        // Создаем шрифт на основе настроек
+        private var digitalFont: Font {
+            // Получаем размер шрифта из настроек
+            let fontSize: CGFloat = CGFloat(markersViewModel.digitalFontSize)
+            
+            // Для цифрового циферблата используем digitalFont, если он доступен в UserDefaults
+            let digitalFontName = UserDefaults.standard.string(forKey: "digitalFont") ?? markersViewModel.fontName
+            
+            // Сначала пробуем использовать кастомный шрифт
+            if digitalFontName != "SF Pro" {
+                return Font.custom(digitalFontName, size: fontSize)
+                    .weight(.bold)
+            }
+            
+            // По умолчанию используем системный моноширинный шрифт
+            return .system(size: fontSize, weight: .bold, design: .monospaced)
+        }
+    }
+
+    // Определение календаря
+    private var calendar: Calendar {
+        Calendar.current
+    }
 }

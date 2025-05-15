@@ -10,6 +10,8 @@ struct DockBarIOS: View {
     @ObservedObject var viewModel: DockBarViewModel
     @Environment(\.colorScheme) var colorScheme
 
+    @ObservedObject private var themeManager = ThemeManager.shared
+
     var body: some View {
         VStack(spacing: 5) {
             pageIndicator
@@ -27,14 +29,20 @@ struct DockBarIOS: View {
                 HStack {
                     ForEach(0..<viewModel.numberOfPages, id: \.self) { index in
                         Circle()
-                            .fill(viewModel.currentPage == index ? Color.blue : Color.gray.opacity(0.5))
+                            .fill(
+                                viewModel.currentPage == index
+                                    ? themeManager.isDarkMode ? Color.coral1 : Color.red1 : Color.gray.opacity(0.5)
+                            )
                             .frame(width: 7, height: 7)
                     }
                 }
-                .padding(.bottom, 5)
+                .padding(.bottom, 2)
             }
         }
     }
+
+    // Эти методы больше не используются, так как вместо них используются
+    // соответствующие методы из viewModel
 
     // Выносим сетку категорий в отдельное представление
     private var categoryGrid: some View {
@@ -55,7 +63,8 @@ struct DockBarIOS: View {
             categoryWidth: viewModel.categoryWidth,
             selectedCategory: $viewModel.selectedCategory,
             draggedCategory: $viewModel.draggedCategory,
-            moveCategory: viewModel.moveCategory
+            moveCategory: viewModel.moveCategory,
+            themeManager: ThemeManager.shared
         )
     }
 
@@ -63,7 +72,7 @@ struct DockBarIOS: View {
     private var longPressGesture: some Gesture {
         LongPressGesture(minimumDuration: 0.5)
             .onEnded { _ in
-                withAnimation {
+                withAnimation(.easeInOut(duration: 0.2)) {
                     viewModel.toggleEditMode()
                 }
             }

@@ -9,6 +9,7 @@ import SwiftUI
 struct CategoryButton: View {
     let category: TaskCategoryModel
     let isSelected: Bool
+    @ObservedObject var themeManager: ThemeManager
     
     var body: some View {
         VStack(spacing: 5) {
@@ -23,13 +24,47 @@ struct CategoryButton: View {
                 .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                 .overlay(
                     Circle()
-                        .stroke(Color.white, lineWidth: isSelected ? 2.5 : 0)
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.gray.opacity(0.7),
+                                    Color.gray.opacity(0.3)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.2
+                        )
                 )
+                .overlay(
+                    Circle()
+                        .strokeBorder(
+                            isSelected ? 
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.white.opacity(0.9),
+                                        Color.white.opacity(0.5),
+                                        Color.white.opacity(0.3)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ) : LinearGradient(
+                                    gradient: Gradient(colors: [Color.clear]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                            lineWidth: isSelected ? 2.5 : 0
+                        )
+                )
+                .shadow(color: isSelected ? Color.blue.opacity(0.5) : Color.clear, radius: 3)
             
-            Text(category.rawValue)
+            Text(category.rawValue.count > 10 ? 
+                 "\(category.rawValue.prefix(7))..." : 
+                 category.rawValue)
                 .font(.caption)
-                .foregroundColor(.primary)
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
                 .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
     }
 }

@@ -11,6 +11,7 @@ struct CategoryButtonContent: View {
     let category: TaskCategoryModel
     let categories: [TaskCategoryModel]
     let isSelected: Bool
+    @ObservedObject var themeManager: ThemeManager
     let categoryWidth: CGFloat
     @Binding var selectedCategory: TaskCategoryModel?
     @Binding var draggedCategory: TaskCategoryModel?
@@ -19,7 +20,8 @@ struct CategoryButtonContent: View {
     var body: some View {
         CategoryButton(
             category: category,
-            isSelected: isSelected
+            isSelected: isSelected,
+            themeManager: themeManager
         )
         .frame(width: categoryWidth, height: 80)
         .scaleEffect(isSelected ? 1.1 : 1.0)

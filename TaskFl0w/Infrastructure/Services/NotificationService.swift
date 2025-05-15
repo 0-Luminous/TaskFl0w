@@ -10,6 +10,7 @@ protocol NotificationServiceProtocol {
     func cancelNotification(for task: TaskOnRing)
     func playSound(_ soundId: String, volume: Float)
     func vibrate()
+    func sendCategoryStartNotification(category: TaskCategoryModel)
 }
 
 class NotificationService: NotificationServiceProtocol {
@@ -119,21 +120,80 @@ class NotificationService: NotificationServiceProtocol {
     // MARK: - Вспомогательные методы
 
     func sendTestNotification() {
+        // Добавляем отладочную информацию
+        let notificationsEnabledValue = UserDefaults.standard.bool(forKey: "notificationsEnabled")
+        print("DEBUG: Значение notificationsEnabled в UserDefaults: \(notificationsEnabledValue)")
+        
         let content = UNMutableNotificationContent()
         content.title = "Тестовое уведомление"
         content.body = "Уведомления работают корректно"
         content.sound = UNNotificationSound.default
-
+        
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false)
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
             content: content,
             trigger: trigger
         )
+        
+        // Проверяем только статус разрешения системы перед отправкой
+        notificationCenter.getNotificationSettings { settings in
+            print("DEBUG: Статус авторизации уведомлений: \(settings.authorizationStatus.rawValue)")
+            guard settings.authorizationStatus == .authorized else {
+                print("Нет системного разрешения на отправку уведомлений: \(settings.authorizationStatus.rawValue)")
+                return
+            }
+            
+            self.notificationCenter.add(request) { error in
+                if let error = error {
+                    print("Ошибка отправки тестового уведомления: \(error)")
+                } else {
+                    print("Тестовое уведомление успешно отправлено")
+                }
+            }
+        }
+    }
 
-        notificationCenter.add(request) { error in
-            if let error = error {
-                print("Ошибка отправки тестового уведомления: \(error)")
+    // Отправка уведомления о начале категории
+    func sendCategoryStartNotification(category: TaskCategoryModel) {
+        // Добавляем отладочную информацию
+        let notificationsEnabledValue = UserDefaults.standard.bool(forKey: "notificationsEnabled")
+        print("DEBUG: Значение notificationsEnabled в UserDefaults: \(notificationsEnabledValue)")
+        
+        // ВАЖНО: Убираем проверку UserDefaults для диагностики
+        // guard UserDefaults.standard.bool(forKey: "notificationsEnabled") else {
+        //     print("Уведомления отключены в настройках приложения")
+        //     return
+        // }
+        
+        let content = UNMutableNotificationContent()
+        content.title = "Начало категории"
+        content.body = category.rawValue
+        content.sound = UNNotificationSound.default
+        
+        // Создаем уведомление с немедленным триггером (1 секунда)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        
+        let request = UNNotificationRequest(
+            identifier: "category_start_\(category.id.uuidString)_\(Date().timeIntervalSince1970)",
+            content: content,
+            trigger: trigger
+        )
+        
+        // Проверяем статус разрешения перед отправкой
+        notificationCenter.getNotificationSettings { settings in
+            print("DEBUG: Статус авторизации уведомлений: \(settings.authorizationStatus.rawValue)")
+            guard settings.authorizationStatus == .authorized else {
+                print("Нет разрешения на отправку уведомлений")
+                return
+            }
+            
+            self.notificationCenter.add(request) { error in
+                if let error = error {
+                    print("Ошибка отправки уведомления о начале категории: \(error)")
+                } else {
+                    print("Уведомление о начале категории '\(category.rawValue)' успешно отправлено")
+                }
             }
         }
     }

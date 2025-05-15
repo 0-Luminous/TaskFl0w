@@ -9,7 +9,17 @@ import SwiftUI
 struct ClockHandViewIOS: View {
     
     let currentDate: Date
+    let outerRingLineWidth: CGFloat
     @AppStorage("useManualTime") private var useManualTime = false
+    @ObservedObject private var themeManager = ThemeManager.shared
+    
+    // Добавляем параметры для кастомного цвета стрелки
+    var lightModeCustomHandColor: String?
+    var darkModeCustomHandColor: String?
+    
+    // Существующие параметры для цвета стрелки
+    @AppStorage("lightModeHandColor") private var lightModeHandColor: String = Color.blue.toHex()
+    @AppStorage("darkModeHandColor") private var darkModeHandColor: String = Color.blue.toHex()
     
     private var calendar: Calendar {
         Calendar.current
@@ -38,13 +48,25 @@ struct ClockHandViewIOS: View {
         return angle * .pi / 180
     }
     
+    private var handColor: Color {
+        let hexColor: String
+        
+        if themeManager.isDarkMode {
+            hexColor = darkModeCustomHandColor ?? darkModeHandColor
+        } else {
+            hexColor = lightModeCustomHandColor ?? lightModeHandColor
+        }
+        
+        return Color(hex: hexColor) ?? .blue
+    }
+    
     var body: some View {
         GeometryReader { geometry in
             Path { path in
                 let center = CGPoint(x: geometry.size.width / 2,
                                      y: geometry.size.height / 2)
                 let radius = min(geometry.size.width, geometry.size.height) / 2
-                let hourHandLength = radius * 1.22
+                let hourHandLength = radius + (outerRingLineWidth / 2) + 20
                 let angle = hourAngle
                 let endpoint = CGPoint(
                     x: center.x + hourHandLength * CGFloat(cos(angle)),
@@ -54,7 +76,8 @@ struct ClockHandViewIOS: View {
                 path.move(to: center)
                 path.addLine(to: endpoint)
             }
-            .stroke(Color.blue, lineWidth: 3)
+            .stroke(handColor, lineWidth: 3)
+            .shadow(color: .black.opacity(0.5), radius: 2, x: 1, y: 1)
         }
     }
 }

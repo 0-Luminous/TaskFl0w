@@ -12,6 +12,7 @@ import SwiftUI
        @Binding var selectedCategory: TaskCategoryModel?
        @Binding var draggedCategory: TaskCategoryModel?
        let moveCategory: (Int, Int) -> Void
+       @ObservedObject var themeManager: ThemeManager
 
        var body: some View {
            LazyVGrid(columns: [GridItem(.adaptive(minimum: categoryWidth))], spacing: 10) {
@@ -20,6 +21,7 @@ import SwiftUI
                        category: category,
                        categories: categories,
                        isSelected: selectedCategory == category,
+                       themeManager: themeManager,
                        categoryWidth: categoryWidth,
                        selectedCategory: $selectedCategory,
                        draggedCategory: $draggedCategory,

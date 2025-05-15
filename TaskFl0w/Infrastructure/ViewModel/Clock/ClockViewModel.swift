@@ -8,6 +8,7 @@ import CoreData
 //
 import SwiftUI
 import Foundation
+import WidgetKit
 
 final class ClockViewModel: ObservableObject {
     // MARK: - Services
@@ -43,6 +44,12 @@ final class ClockViewModel: ObservableObject {
         didSet {
             // Обновляем selectedDate в TaskManagement при изменении
             (taskManagement as? TaskManagement)?.selectedDate = selectedDate
+            
+            // Обновляем задачи для выбранной даты
+            updateTasksForSelectedDate()
+            
+            // Обновляем состояние clockState
+            clockState.selectedDate = selectedDate
         }
     }
 
@@ -161,6 +168,104 @@ final class ClockViewModel: ObservableObject {
     @AppStorage("lightModeOuterRingColor") var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
     @AppStorage("darkModeOuterRingColor") var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
 
+    // AppStorage for taskArcLineWidth
+    @AppStorage("taskArcLineWidth") var taskArcLineWidthRaw: Double = 20
+
+    var taskArcLineWidth: CGFloat {
+        get { CGFloat(taskArcLineWidthRaw) }
+        set { taskArcLineWidthRaw = Double(newValue) }
+    }
+
+    @AppStorage("outerRingLineWidth") var outerRingLineWidthRaw: Double = 20
+
+    var outerRingLineWidth: CGFloat {
+        get { CGFloat(outerRingLineWidthRaw) }
+        set { outerRingLineWidthRaw = Double(newValue) }
+    }
+
+    // AppStorage for isAnalogArcStyle
+    @AppStorage("isAnalogArcStyle") var isAnalogArcStyle: Bool = false
+
+    @AppStorage("showMarkers") var showMarkers: Bool = true {
+        didSet {
+            markersViewModel.showMarkers = showMarkers
+        }
+    }
+
+    @AppStorage("fontName") var fontName: String = "SF Pro" {
+        didSet {
+            markersViewModel.fontName = fontName
+        }
+    }
+
+    // Добавляем сервис уведомлений
+    private let notificationService: NotificationServiceProtocol = NotificationService.shared
+    
+    // Для отслеживания текущей активной категории
+    private var currentActiveCategory: TaskCategoryModel?
+    
+    // Флаг для проверки, разрешены ли уведомления
+    @AppStorage("notificationsEnabled") private var notificationsEnabled = true
+
+    // Добавляем свойство для хранения стиля часов
+    @Published var clockStyle: String = UserDefaults.standard.string(forKey: "clockStyle") ?? "Классический" {
+        didSet {
+            // Сохраняем значение в UserDefaults при изменении
+            UserDefaults.standard.set(clockStyle, forKey: "clockStyle")
+            objectWillChange.send()
+        }
+    }
+
+    // В ClockViewModel добавить:
+    @AppStorage("showTimeOnlyForActiveTask") var showTimeOnlyForActiveTask: Bool = false
+
+    // В списке свойств AppStorage:
+    @AppStorage("markerStyle") var markerStyleRaw: String = MarkerStyle.lines.rawValue {
+        didSet {
+            if let style = MarkerStyle(rawValue: markerStyleRaw) {
+                markersViewModel.markerStyle = style
+            }
+        }
+    }
+
+    var markerStyle: MarkerStyle {
+        get {
+            MarkerStyle(rawValue: markerStyleRaw) ?? .lines
+        }
+        set {
+            markerStyleRaw = newValue.rawValue
+        }
+    }
+
+    // После свойства showMarkers добавляем:
+    @AppStorage("showIntermediateMarkers") var showIntermediateMarkers: Bool = true {
+        didSet {
+            markersViewModel.showIntermediateMarkers = showIntermediateMarkers
+        }
+    }
+
+    // После других @AppStorage свойств для цветов
+    @AppStorage("lightModeHandColor") var lightModeHandColor: String = Color.blue.toHex()
+    @AppStorage("darkModeHandColor") var darkModeHandColor: String = Color.blue.toHex()
+
+    // Добавляем в список AppStorage свойств
+    @AppStorage("digitalFontSize") var digitalFontSizeRaw: Double = 42.0 {
+        didSet {
+            markersViewModel.digitalFontSize = digitalFontSizeRaw
+        }
+    }
+
+    // Добавляем в список AppStorage свойств для цвета цифр цифрового стиля
+    @AppStorage("lightModeDigitalFontColor") var lightModeDigitalFontColor: String = Color.gray.toHex()
+    @AppStorage("darkModeDigitalFontColor") var darkModeDigitalFontColor: String = Color.white.toHex()
+
+    // Добавим новое свойство в ClockViewModel
+    @AppStorage("digitalFont") var digitalFont: String = "SF Pro" {
+        didSet {
+            // Обновление не требуется, так как digitalFont считывается напрямую в компоненте DigitalTimeDisplay
+        }
+    }
+
     // MARK: - Инициализация
     init(sharedState: SharedStateService = .shared) {
         self.sharedState = sharedState
@@ -209,11 +314,26 @@ final class ClockViewModel: ObservableObject {
         
         // Настраиваем двустороннее связывание с dockBarViewModel
         setupDockBarBindings()
+
+        // Добавляем обработчик для обновления стиля часов
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleClockStyleChange),
+            name: NSNotification.Name("ClockStyleDidChange"),
+            object: nil
+        )
     }
     
     deinit {
         // Отписываемся от уведомлений
         NotificationCenter.default.removeObserver(self)
+        
+        // Отписываемся от уведомления о смене стиля
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSNotification.Name("ClockStyleDidChange"),
+            object: nil
+        )
     }
     
     // MARK: - Обработчики уведомлений
@@ -226,6 +346,19 @@ final class ClockViewModel: ObservableObject {
             self?.markersViewModel.zeroPosition = newPosition
             // Принудительно обновляем UI
             self?.objectWillChange.send()
+        }
+    }
+    
+    // Добавляем метод для обработки уведомления
+    @objc private func handleClockStyleChange(_ notification: Notification) {
+        if let newStyle = notification.userInfo?["clockStyle"] as? String {
+            DispatchQueue.main.async { [weak self] in
+                // Проверяем, что стиль действительно изменился
+                if self?.clockStyle != newStyle {
+                    self?.clockStyle = newStyle
+                    // objectWillChange.send() вызывается автоматически в сеттере clockStyle
+                }
+            }
         }
     }
     
@@ -242,6 +375,13 @@ final class ClockViewModel: ObservableObject {
         markersViewModel.isDarkMode = isDarkMode
         markersViewModel.zeroPosition = zeroPosition
         markersViewModel.numberInterval = numberInterval
+        markersViewModel.showMarkers = showMarkers
+        markersViewModel.fontName = fontName
+        markersViewModel.markerStyle = markerStyle
+        markersViewModel.showIntermediateMarkers = showIntermediateMarkers
+        markersViewModel.digitalFontSize = digitalFontSizeRaw
+        markersViewModel.lightModeDigitalFontColor = lightModeDigitalFontColor
+        markersViewModel.darkModeDigitalFontColor = darkModeDigitalFontColor
     }
     
     // MARK: - Методы форматирования даты
@@ -351,6 +491,48 @@ final class ClockViewModel: ObservableObject {
         // Если выбранная дата совпадает с сегодня, тогда обновляем "currentDate" каждую секунду
         if Calendar.current.isDate(selectedDate, inSameDayAs: Date()) {
             currentDate = Date()
+            
+            // Проверяем, изменилась ли активная категория
+            checkForCategoryChange()
+        }
+    }
+
+    // Проверка изменения активной категории на циферблате
+    private func checkForCategoryChange() {
+        // Проверяем, включены ли уведомления
+        guard notificationsEnabled else { return }
+        
+        // Получаем текущие задачи на сегодня
+        let todayTasks = tasksForSelectedDate(tasks)
+        
+        // Ищем задачу, которая активна в данный момент времени
+        let now = Date()
+        let activeTask = todayTasks.first { task in
+            task.startTime <= now && task.endTime > now
+        }
+        
+        // Получаем категорию текущей активной задачи
+        let newActiveCategory = activeTask?.category
+        
+        // Если категория изменилась, отправляем уведомление
+        if let newCategory = newActiveCategory, newCategory != currentActiveCategory {
+            print("Обнаружена новая активная категория: \(newCategory.rawValue)")
+            
+            // Сохраняем новую активную категорию
+            currentActiveCategory = newCategory
+            
+            // Отправляем уведомление о начале новой категории
+            notificationService.sendCategoryStartNotification(category: newCategory)
+            
+            // Обновляем данные для виджета
+            updateWidgetData()
+        } else if newActiveCategory == nil && currentActiveCategory != nil {
+            print("Больше нет активной категории")
+            // Если больше нет активной категории, сбрасываем текущую
+            currentActiveCategory = nil
+            
+            // Обновляем данные для виджета
+            updateWidgetData()
         }
     }
 
@@ -398,4 +580,95 @@ final class ClockViewModel: ObservableObject {
     
     // Добавляем коллекцию для хранения подписок
     private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - Методы управления задачами и обновления циферблата
+    
+    /// Обновляет задачи для выбранной даты
+    private func updateTasksForSelectedDate() {
+        // Получаем все задачи из SharedState
+        let allTasks = sharedState.tasks
+        
+        // Фильтруем задачи на выбранную дату
+        let tasksOnSelectedDate = allTasks.filter { task in
+            Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
+        }
+        
+        // Получаем незавершенные задачи с предыдущих дней
+        let incompleteTasksFromPreviousDays = allTasks.filter { task in
+            !task.isCompleted && 
+            Calendar.current.compare(task.startTime, to: selectedDate, toGranularity: .day) == .orderedAscending
+        }
+        
+        // Объединяем задачи текущего дня и невыполненные с предыдущих дней
+        tasks = tasksOnSelectedDate + incompleteTasksFromPreviousDays
+        
+        // Принудительно обновляем интерфейс
+        objectWillChange.send()
+        
+        // Обновляем данные для виджета
+        updateWidgetData()
+    }
+
+    // Метод для обновления данных виджета
+    private func updateWidgetData() {
+        guard let defaults = UserDefaults(suiteName: "group.AbstractSoft.TaskFl0w") else {
+            print("Не удалось получить доступ к группе UserDefaults")
+            return
+        }
+        
+        // Получаем текущие задачи на сегодня
+        let todayTasks = tasksForSelectedDate(tasks)
+        
+        // Ищем задачу, которая активна в данный момент времени
+        let now = Date()
+        guard let activeTask = todayTasks.first(where: { $0.startTime <= now && $0.endTime > now }),
+              let category = activeTask.category as? TaskCategoryModel else {
+            // Если нет активной задачи, отправляем пустые данные
+            defaults.set("Отдых", forKey: "widget_current_category")
+            defaults.set(0, forKey: "widget_time_remaining")
+            defaults.set(0, forKey: "widget_total_time")
+            
+            // Запрашиваем обновление виджета
+            WidgetCenter.shared.reloadAllTimelines()
+            return
+        }
+        
+        // Сохраняем данные текущей категории для виджета
+        defaults.set(category.rawValue, forKey: "widget_current_category")
+        defaults.set(activeTask.endTime.timeIntervalSince(now), forKey: "widget_time_remaining")
+        defaults.set(activeTask.endTime.timeIntervalSince(activeTask.startTime), forKey: "widget_total_time")
+        
+        // Сохраняем категории
+        let categoryNames = categories.map { $0.rawValue }
+        if let categoriesData = try? JSONEncoder().encode(categoryNames) {
+            defaults.set(categoriesData, forKey: "widget_categories")
+        }
+        
+        // Сохраняем задачи для виджета
+        // Создаем словари вместо объектов WidgetTodoTask
+        let widgetTasks = todayTasks.map { task -> [String: Any] in
+            return [
+                "id": task.id.uuidString,
+                "title": task.category.rawValue + " (" + formatTimeForTask(task.startTime) + "-" + formatTimeForTask(task.endTime) + ")",
+                "isCompleted": task.isCompleted,
+                "category": category.rawValue
+            ]
+        }
+        
+        // Используем JSONSerialization вместо JSONEncoder
+        if let tasksData = try? JSONSerialization.data(withJSONObject: widgetTasks) {
+            defaults.set(tasksData, forKey: "widget_tasks")
+        }
+        
+        // Запрашиваем обновление виджета
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    // Вспомогательный метод для форматирования времени
+    private func formatTimeForTask(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        return formatter.string(from: date)
+    }
 }

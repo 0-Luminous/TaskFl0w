@@ -22,6 +22,68 @@ final class ClockMarkersViewModel: ObservableObject {
             objectWillChange.send()
         }
     }
+    @Published var showMarkers: Bool = true
+    @Published var showIntermediateMarkers: Bool = true // Новое свойство для промежуточных маркеров
+    @Published var fontName: String = "SF Pro" // или любой дефолтный шрифт
+    @Published var markerStyle: MarkerStyle = .lines // Добавляем стиль маркеров
+    @Published var digitalFontSize: Double = 42.0 {
+        didSet {
+            // Принудительно обновляем UI при изменении размера шрифта
+            objectWillChange.send()
+        }
+    }
+    @Published var lightModeDigitalFontColor: String = Color.gray.toHex()
+    @Published var darkModeDigitalFontColor: String = Color.white.toHex()
+    @Published var digitalFont: String = "SF Pro" // Добавляем шрифт для цифрового циферблата
+    
+    // Список доступных шрифтов с PostScript именами
+    let customFonts: [String] = [
+
+
+ 
+        "SF Pro",
+        "MOSCOW2024",
+        "ForestSmooth",
+        "Brillant",
+        "TDAText",
+        "Hussar3dTwo",
+        "Minstrels",
+        "Letterblocks",
+        "cellblocknbp",
+        "catstack",
+        "Chokokutai-Regular",
+        "ElfarNormalG98",
+        "Brunothg",
+        "pershotravneva55-regular",
+        "Daneehand Regular Cyr",
+        "NovaCut",
+        "UnifrakturCook-Bold",
+        "Banana Brick",
+        "Cakra-Normal",
+        "EternalLent",
+        "Vetka",
+
+        "Georgia",
+        "Georgia-Bold",
+
+        "Verdana",
+        "Verdana-Bold",
+
+        "Trebuchet MS",
+        "TrebuchetMS-Bold",
+        
+        "Futura",
+        "Futura-Bold",
+
+        "Gill Sans",
+        "GillSans-Bold",
+
+        "Palatino",
+        "Palatino-Bold",
+
+        "Menlo",
+        "Menlo-Bold",
+    ]
 
     // MARK: - Environment
     @Environment(\.colorScheme) var colorScheme
@@ -31,6 +93,22 @@ final class ClockMarkersViewModel: ObservableObject {
         let hexColor = isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
         return Color(hex: hexColor) ?? .gray
     }
+
+    var currentDigitalFontColor: Color {
+        let hexColor = isDarkMode ? darkModeDigitalFontColor : lightModeDigitalFontColor
+        return Color(hex: hexColor) ?? (isDarkMode ? .white : .gray)
+    }
+
+    // Названия стилей маркеров для отображения в интерфейсе
+    var markerStyleNames: [MarkerStyle: String] = [
+        .lines: "Линии",
+        .dots: "Точки",
+        .standard: "Стандартные",
+        .classicWatch: "Классические",
+        .thinUniform: "Тонкие",
+        .hourAccent: "Часовые",
+        .uniformDense: "Плотные"
+    ]
 
     // MARK: - Methods
     func startPoint(angle: CGFloat, length: CGFloat, geometry: GeometryProxy) -> CGPoint {
@@ -82,8 +160,13 @@ final class ClockMarkersViewModel: ObservableObject {
 
     // Отдельный метод для отступа цифр, не зависящий от толщины маркеров
     func numberOffset() -> CGFloat {
+        // Если маркеры скрыты, цифры должны быть дальше от центра
+        if !showMarkers {
+            // Например, увеличим смещение на 30 (можно подобрать опытным путем)
+            return markerOffset() + 5
+        }
         // Отступ только на основе markersOffset, без учета толщины
-        markerOffset() + 20
+        return markerOffset() + 21
     }
 
     // Добавляем метод для принудительного обновления представлений при смене темы
@@ -93,4 +176,7 @@ final class ClockMarkersViewModel: ObservableObject {
             self.objectWillChange.send()
         }
     }
+
+    // В начале класса ClockMarkersViewModel добавим статический экземпляр
+    static let shared = ClockMarkersViewModel()
 }

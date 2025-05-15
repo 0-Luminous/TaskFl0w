@@ -1,0 +1,222 @@
+//
+//  LibraryClockFaceView.swift
+//  TaskFl0w
+//
+//  Created by Yan on 7/5/25.
+//
+
+import SwiftUI
+
+// Кастомный компонент для отображения циферблата в библиотеке
+struct LibraryClockFaceView: View {
+    let watchFace: WatchFaceModel
+    let currentDate: Date = Date()
+    @StateObject private var viewModel = ClockViewModel()
+    @StateObject private var markersViewModel = ClockMarkersViewModel()
+    @State private var draggedCategory: TaskCategoryModel? = nil
+    @ObservedObject private var themeManager = ThemeManager.shared
+    
+    var body: some View {
+        ZStack {
+            // Фон циферблата
+            Circle()
+                .fill(clockFaceColor)
+                .stroke(Color.gray, lineWidth: 1)
+                .frame(width: 275, height: 275)
+            
+            // Для цифрового стиля добавляем цифровое отображение
+            if watchFace.style == "digital" {
+                // Извлекаем компоненты времени
+                let hour = Calendar.current.component(.hour, from: currentDate)
+                let minute = Calendar.current.component(.minute, from: currentDate)
+                
+                // Отображаем фон для цифр
+                Circle()
+                    .fill(clockFaceColor)
+                    .frame(width: 200, height: 200)
+                
+                // Цифровое время с использованием настроек шрифта
+                DigitalTimeDisplay(
+                    hour: hour,
+                    minute: minute,
+                    color: digitalFontColor,
+                    fontName: watchFace.digitalFont,
+                    fontSize: watchFace.digitalFontSize
+                )
+            }
+            
+            // Маркеры часов (если включены)
+            if watchFace.showMarkers {
+                // Основные часовые маркеры
+                ForEach(0..<24) { hour in
+                    let angle = Double(hour) * (360.0 / 24.0)
+                    ClockMarker(
+                        hour: hour,
+                        style: markerStyle,
+                        viewModel: markersViewModel,
+                        MarkersColor: markersColor,
+                        zeroPosition: watchFace.zeroPosition,
+                        showNumbers: false,
+                        isMainMarker: true
+                    )
+                    .rotationEffect(.degrees(angle))
+                    .frame(width: 100, height: 100)
+                    .id("marker-hour-\(hour)-\(watchFace.markerStyle)-\(Int(watchFace.markersWidth * 10))")
+                }
+                
+                // Промежуточные маркеры
+                if watchFace.showIntermediateMarkers {
+                    ForEach(0..<96) { minuteMarker in
+                        let angle = Double(minuteMarker) * (360.0 / 96.0)
+                        // Пропускаем позиции, где уже есть часовые маркеры
+                        if minuteMarker % 4 != 0 {
+                            ClockMarker(
+                                hour: minuteMarker / 4, // Сопоставляем с ближайшим часом
+                                minuteIndex: minuteMarker % 4, // Индекс минутного маркера (1, 2, 3)
+                                style: markerStyle,
+                                viewModel: markersViewModel,
+                                MarkersColor: markersColor,
+                                zeroPosition: watchFace.zeroPosition,
+                                showNumbers: false,
+                                isMainMarker: false
+                            )
+                            .rotationEffect(.degrees(angle))
+                            .frame(width: 100, height: 100)
+                            .id("marker-minute-\(minuteMarker)-\(watchFace.markerStyle)")
+                        }
+                    }
+                }
+            }
+            
+            // Цифры на часах (если включены)
+            if watchFace.showHourNumbers {
+                ForEach(0..<24) { hour in
+                    let angle = Double(hour) * (360.0 / 24.0)
+                    if hour % watchFace.numberInterval == 0 {
+                        HourNumberView(
+                            hour: hour,
+                            viewModel: markersViewModel,
+                            color: markersColor,
+                            zeroPosition: watchFace.zeroPosition
+                        )
+                        .rotationEffect(.degrees(angle))
+                        .frame(width: 100, height: 100)
+                    }
+                }
+            }
+            
+            // Стрелка часов
+            ClockHandViewIOS(
+                currentDate: currentDate, 
+                outerRingLineWidth: watchFace.outerRingLineWidth,
+                lightModeCustomHandColor: watchFace.lightModeHandColor,
+                darkModeCustomHandColor: watchFace.darkModeHandColor
+            )
+            .rotationEffect(.degrees(watchFace.zeroPosition))
+        }
+        .onAppear {
+           setupViewModels()
+        }
+    }
+    
+    // Цифровое отображение времени
+    private struct DigitalTimeDisplay: View {
+        let hour: Int
+        let minute: Int
+        let color: Color
+        let fontName: String
+        let fontSize: Double
+        
+        init(hour: Int, minute: Int, color: Color, fontName: String = "SF Pro", fontSize: Double = 40.0) {
+            self.hour = hour
+            self.minute = minute
+            self.color = color
+            self.fontName = fontName
+            self.fontSize = fontSize
+        }
+        
+        var body: some View {
+            VStack(spacing: 0) {
+                Text("\(hour, specifier: "%02d")")
+                    .font(customFont)
+                    .foregroundColor(color)
+                
+                Text("\(minute, specifier: "%02d")")
+                    .font(customFont)
+                    .foregroundColor(color)
+            }
+        }
+        
+        // Создаем шрифт на основе переданных параметров
+        private var customFont: Font {
+            if fontName != "SF Pro" {
+                return Font.custom(fontName, size: fontSize)
+            } else {
+                return .system(size: fontSize, weight: .bold, design: .monospaced)
+            }
+        }
+    }
+    
+    // Устанавливаем настройки для ViewModels
+    private func setupViewModels() {
+        // Настройка markersViewModel
+        markersViewModel.showMarkers = watchFace.showMarkers
+        markersViewModel.showHourNumbers = watchFace.showHourNumbers
+        markersViewModel.numberInterval = watchFace.numberInterval
+        markersViewModel.markersOffset = watchFace.markersOffset
+        markersViewModel.markersWidth = watchFace.markersWidth
+        markersViewModel.numbersSize = watchFace.numbersSize
+        markersViewModel.lightModeMarkersColor = watchFace.lightModeMarkersColor
+        markersViewModel.darkModeMarkersColor = watchFace.darkModeMarkersColor
+        markersViewModel.isDarkMode = themeManager.isDarkMode
+        markersViewModel.fontName = watchFace.fontName
+        markersViewModel.zeroPosition = watchFace.zeroPosition
+        markersViewModel.markerStyle = watchFace.markerStyleEnum // Используем стиль из модели
+        markersViewModel.showIntermediateMarkers = watchFace.showIntermediateMarkers // Настраиваем промежуточные маркеры
+        markersViewModel.digitalFont = watchFace.digitalFont
+        markersViewModel.digitalFontSize = watchFace.digitalFontSize
+        markersViewModel.lightModeDigitalFontColor = watchFace.lightModeDigitalFontColor
+        markersViewModel.darkModeDigitalFontColor = watchFace.darkModeDigitalFontColor
+        
+        // Настройка viewModel
+        viewModel.clockStyle = WatchFaceModel.displayStyleName(for: watchFace.style)
+        viewModel.zeroPosition = watchFace.zeroPosition
+        viewModel.outerRingLineWidth = watchFace.outerRingLineWidth
+        viewModel.taskArcLineWidth = watchFace.taskArcLineWidth
+        viewModel.isAnalogArcStyle = watchFace.isAnalogArcStyle
+        viewModel.showTimeOnlyForActiveTask = watchFace.showTimeOnlyForActiveTask
+        viewModel.lightModeHandColor = watchFace.lightModeHandColor  
+        viewModel.darkModeHandColor = watchFace.darkModeHandColor
+        
+        // Добавляем эти строки в SetupViewModels()
+        if watchFace.style == "digital" {
+            UserDefaults.standard.set(watchFace.digitalFont, forKey: "digitalFont")  
+            UserDefaults.standard.set(watchFace.digitalFontSize, forKey: "digitalFontSize")
+        }
+    }
+    
+    // Вычисляемые свойства для цветов на основе ThemeManager
+    private var clockFaceColor: Color {
+        themeManager.isDarkMode 
+            ? Color(hex: watchFace.darkModeClockFaceColor) ?? .black
+            : Color(hex: watchFace.lightModeClockFaceColor) ?? .white
+    }
+    
+    private var markersColor: Color {
+        themeManager.isDarkMode
+            ? Color(hex: watchFace.darkModeMarkersColor) ?? .white
+            : Color(hex: watchFace.lightModeMarkersColor) ?? .black
+    }
+    
+    // Получаем стиль маркеров из модели циферблата
+    private var markerStyle: MarkerStyle {
+        watchFace.markerStyleEnum
+    }
+    
+    // Добавьте новое вычисляемое свойство для цвета цифрового шрифта
+    private var digitalFontColor: Color {
+        themeManager.isDarkMode
+            ? Color(hex: watchFace.darkModeDigitalFontColor) ?? .white
+            : Color(hex: watchFace.lightModeDigitalFontColor) ?? .black
+    }
+} 

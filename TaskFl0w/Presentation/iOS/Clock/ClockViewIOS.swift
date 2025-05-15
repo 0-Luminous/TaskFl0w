@@ -22,68 +22,127 @@ struct ClockViewIOS: View {
     // Состояние для отслеживания объекта вне часов
     @State private var isOutsideArea: Bool = false
     
+    // 1. Новое состояние
+    @State private var showingNewSettings = false
+    
+    // Состояние для отображения TaskTimeline
+    @State private var showingTaskTimeline = false
+    
+    // Состояние для обработки свайпа
+    @State private var dragOffset: CGSize = .zero
+    @State private var isDragging = false
+    
+    // Состояние для отображения недельного календаря
+    @State private var showingWeekCalendar = false
+    
+    // Состояние для масштабирования циферблата
+    @State private var zoomScale: CGFloat = 1.0
+    
+    // Состояние для смещения циферблата к редактируемой задаче
+    @State private var focusOffset: CGPoint = CGPoint(x: 0, y: 0)
+    
+    @ObservedObject private var themeManager = ThemeManager.shared
+    
     // MARK: - Body
     var body: some View {
         NavigationView {
             ZStack {
                 // Фоновая область для обнаружения перетаскивания за пределы часов
-                Rectangle()
-                    .foregroundColor(.clear)
-                    .contentShape(Rectangle())
-                    .onDrop(of: [.text], isTargeted: $isOutsideArea) { providers, location in
-                        if let task = viewModel.draggedTask {
-                            print("⚠️ [ClockViewIOS] Задача перетащена в зону за пределами часов: \(task.id)")
-                            
-                            // Удаляем задачу после подтверждения, что она находится вне часов
-                            print("Задача находится вне часов и будет удалена")
-                            
-                            DispatchQueue.main.async {
-                                print("⚠️ [ClockViewIOS] Удаляем задачу после подтверждения нахождения вне часов")
-                                viewModel.taskManagement.removeTask(task)
-                                viewModel.stopDragging(didReturnToClock: false)
-                            }
-                            return true
-                        }
-                        return false
-                    }
-                    .onChange(of: isOutsideArea) { oldValue, newValue in
-                        if newValue {
-                            print("⚠️ [ClockViewIOS] Объект перетаскивания обнаружен во внешней зоне")
-                            if let task = viewModel.draggedTask {
-                                print("⚠️ [ClockViewIOS] Это задача \(task.id)")
-                            }
-                        } else {
-                            print("⚠️ [ClockViewIOS] Объект покинул внешнюю зону")
-                        }
-                    }
+                DropZoneView(isTargeted: $isOutsideArea,
+                             onEntered: {
+                                 print("⚠️ [ClockViewIOS] Объект перетаскивания обнаружен во внешней зоне")
+                                 if let task = viewModel.draggedTask {
+                                     print("⚠️ [ClockViewIOS] Это задача \(task.id)")
+                                     viewModel.taskManagement.removeTask(task)
+                                 }
+                             },
+                             onExited: {
+                                 print("⚠️ [ClockViewIOS] Объект покинул внешнюю зону")
+                             }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.clear)
                 
-                VStack {
-                    Spacer()
-
+                VStack(spacing: 0) {
+                    // Удаляем верхнюю панель отсюда и оставляем только WeekCalendarView
+                    if showingWeekCalendar {
+                        // Используем обновленную WeekCalendarView с коллбэком
+                        WeekCalendarView(
+                            selectedDate: $viewModel.selectedDate,
+                            onHideCalendar: {
+                                showingWeekCalendar = false
+                            }
+                        )
+                    }
+                    
                     if viewModel.selectedCategory != nil {
                         // Показываем список задач для выбранной категории
-                        TaskListView(
-                            viewModel: listViewModel,
-                            selectedCategory: viewModel.selectedCategory
+                        VStack(spacing: 0) {
+                            // Верхний Spacer только для режима списка задач
+                            Spacer()
+                                .frame(height: 20)
+                            
+                            TaskListView(
+                                viewModel: listViewModel,
+                                selectedCategory: viewModel.selectedCategory,
+                                selectedDate: $viewModel.selectedDate
+                            )
+                            .onAppear {
+                                // Обновляем выбранную категорию при появлении
+                                listViewModel.selectedCategory = viewModel.selectedCategory
+                            }
+                            .onChange(of: viewModel.selectedCategory) { oldValue, newValue in
+                                // Обновляем выбранную категорию при ее изменении
+                                listViewModel.selectedCategory = newValue
+                            }
+                            
+                            // Добавляем отступ снизу
+                            Spacer()
+                                .frame(height: 50)
+                        }
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .move(edge: .bottom).combined(with: .opacity)
+                        ))
+                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.selectedCategory)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    // Обрабатываем только вертикальное перемещение вниз
+                                    if value.translation.height > 0 && value.startLocation.y < 100 {
+                                        // Начало жеста в верхней части экрана
+                                        isDragging = true
+                                        dragOffset = value.translation
+                                    }
+                                }
+                                .onEnded { value in
+                                    // Если свайп вниз больше 80 пикселей и начался в верхней части экрана
+                                    if value.translation.height > 80 && value.startLocation.y < 100 {
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                            // Закрываем список задач и очищаем выбранную категорию
+                                            viewModel.selectedCategory = nil
+                                        }
+                                    }
+                                    
+                                    // В любом случае сбрасываем смещение
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                        isDragging = false
+                                        dragOffset = .zero
+                                    }
+                                }
                         )
-                        .onAppear {
-                            // Обновляем выбранную категорию при появлении
-                            listViewModel.selectedCategory = viewModel.selectedCategory
-                        }
-                        .onChange(of: viewModel.selectedCategory) { oldValue, newValue in
-                            // Обновляем выбранную категорию при ее изменении
-                            listViewModel.selectedCategory = newValue
-                        }
-                        .transition(.opacity)
                     } else {
-                        // Показываем циферблат
+                        // Показываем циферблат - поднимаем на 20 пикселей выше центра
+                        Spacer()
+                        
                         ZStack {
                             // Заменяем RingPlanner на модифицированную версию без удаления задачи
                             RingPlanner(
                                 color: ThemeManager.shared.currentOuterRingColor,
                                 viewModel: viewModel,
                                 zeroPosition: viewModel.zeroPosition,
-                                shouldDeleteTask: false // Новый параметр, чтобы отключить удаление
+                                shouldDeleteTask: false,
+                                outerRingLineWidth: viewModel.outerRingLineWidth
                             )
 
                             GlobleClockFaceViewIOS(
@@ -92,7 +151,9 @@ struct ClockViewIOS: View {
                                 viewModel: viewModel,
                                 markersViewModel: viewModel.markersViewModel,
                                 draggedCategory: $viewModel.draggedCategory,
-                                zeroPosition: viewModel.zeroPosition
+                                zeroPosition: viewModel.zeroPosition,
+                                taskArcLineWidth: viewModel.isAnalogArcStyle ? viewModel.outerRingLineWidth : viewModel.taskArcLineWidth,
+                                outerRingLineWidth: viewModel.outerRingLineWidth
                             )
 
                             if viewModel.isEditingMode, let editingTask = viewModel.editingTask {
@@ -101,78 +162,130 @@ struct ClockViewIOS: View {
                                     task: editingTask
                                 )
                             }
+                            
+                            // Показываем индикатор приближения
+                            if zoomScale > 1.01 {
+                                VStack {
+                                    Spacer()
+                                    
+                                    // Text("Нажмите на задачу для выхода из режима приближения")
+                                    //     .font(.system(size: 12))
+                                    //     .foregroundColor(.gray)
+                                    //     .padding(8)
+                                    //     .background(
+                                    //         Capsule()
+                                    //             .fill(.ultraThinMaterial)
+                                    //             .overlay(
+                                    //                 Capsule()
+                                    //                     .stroke(
+                                    //                         LinearGradient(
+                                    //                             colors: [.white.opacity(0.5), .clear],
+                                    //                             startPoint: .top,
+                                    //                             endPoint: .bottom
+                                    //                         ),
+                                    //                         lineWidth: 1
+                                    //                     )
+                                    //             )
+                                    //     )
+                                    //     .padding(.bottom, 20)
+                                    //     .transition(.opacity)
+                                }
+                            }
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .offset(y: -50) // Сдвигаем циферблат на 50 пикселей вверх
+                        .offset(x: dragOffset.width < 0 ? dragOffset.width : 0) // Добавляем смещение при свайпе влево
+                        .offset(x: focusOffset.x, y: focusOffset.y) // Добавляем смещение для фокусировки
+                        .scaleEffect(zoomScale) // Применяем масштабирование
+                        .animation(.spring(), value: isDragging) // Анимация при перетаскивании
+                        .animation(.spring(), value: zoomScale) // Анимация при масштабировании
+                        .animation(.spring(), value: focusOffset) // Анимация при смещении фокуса
                     }
-
-                    Spacer()
-
-                    // Набор категорий снизу - скрываем при активном поиске или при создании задачи
-                    if !isSearchActive && !isDockBarHidden {
-                        // Обновлено: используем DockBarIOS с DockBarViewModel
+                }
+                
+                // Набор категорий снизу - скрываем при активном поиске или при создании задачи
+                
+                if !isSearchActive && !isDockBarHidden {
+                    VStack {
+                        Spacer()
                         DockBarIOS(viewModel: viewModel.dockBarViewModel)
-                        .transition(.move(edge: .bottom))
+                            .transition(.move(edge: .bottom))
                     }
+                    
                 }
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .principal) {
-                        VStack {
-                            Text(viewModel.formattedDate)
-                                .font(.headline)
-                            Text(viewModel.formattedWeekday)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                
+                // Добавляем TopBarView поверх всех элементов, если не показан WeekCalendar
+                if !showingWeekCalendar {
+                    VStack {
+                        TopBarView(
+                            viewModel: viewModel,
+                            showSettingsAction: { showingNewSettings = true },
+                            toggleCalendarAction: toggleWeekCalendar,
+                            isCalendarVisible: showingWeekCalendar,
+                            searchAction: { 
+                            // Здесь добавляем логику поиска
                         }
-                    }
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        HStack {
-                            Button(action: { viewModel.showingSettings = true }) {
-                                Image(systemName: "gear")
-                            }
-                        }
-                    }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        HStack {
-                            Button(action: { viewModel.showingCalendar = true }) {
-                                Image(systemName: "calendar")
-                            }
-                        }
+                        )
+                        Spacer()
                     }
                 }
             }
-            .fullScreenCover(isPresented: $viewModel.showingSettings) {
-                SettingsViewIOS()
-            }
-            .fullScreenCover(isPresented: $viewModel.showingCalendar) {
-                CalendarView(viewModel: viewModel)
-            }
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        // Блокируем жест свайпа, если активен режим редактирования задачи
+                        if value.translation.width < 0 && !showingWeekCalendar && !viewModel.isEditingMode {
+                            isDragging = true
+                            dragOffset = value.translation
+                        }
+                    }
+                    .onEnded { value in
+                        // Если свайп влево больше 100 пикселей (по модулю), показываем TaskTimeline,
+                        // только если не активен режим редактирования задачи
+                        if value.translation.width < -100 && !showingWeekCalendar && !viewModel.isEditingMode {
+                            withAnimation {
+                                showingTaskTimeline = true
+                            }
+                        }
+                        
+                        // В любом случае сбрасываем смещение
+                        withAnimation(.spring()) {
+                            isDragging = false
+                            dragOffset = .zero
+                        }
+                    }
+            )
+//            .fullScreenCover(isPresented: $viewModel.showingCalendar) {
+//                CalendarView(viewModel: viewModel)
+//            }
             .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
                 CategoryEditorViewIOS(
                     viewModel: viewModel,
                     isPresented: $viewModel.showingCategoryEditor
                 )
             }
-            .fullScreenCover(isPresented: $viewModel.showingAddTask) {
-                // При открытии формы добавления задачи, передаем выбранную категорию
-                if let selectedCategory = viewModel.selectedCategory {
-                    FormTaskView(viewModel: listViewModel, onDismiss: {
-                        viewModel.showingAddTask = false
-                    })
-                    .onAppear {
-                        // Убедимся, что категория правильно передана
-                        listViewModel.selectedCategory = selectedCategory
-                    }
+            .fullScreenCover(isPresented: $showingNewSettings) {
+                NavigationStack {
+                    PersonalizationViewIOS(viewModel: viewModel)
                 }
             }
-            .background(Color(red: 0.098, green: 0.098, blue: 0.098))
+            .horizontalFullScreenCover(isPresented: $showingTaskTimeline) {
+                TaskTimeline(
+                    selectedDate: viewModel.selectedDate,
+                    tasks: viewModel.tasks,
+                    listViewModel: listViewModel,
+                    categoryManager: viewModel.categoryManagement
+                )
+            }
+            .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95))
         }
-        // .preferredColorScheme(ThemeManager.shared.isDarkMode ? .dark : .light)
+        .navigationViewStyle(StackNavigationViewStyle())
         .onReceive(timer) { _ in
             viewModel.updateCurrentTimeIfNeeded()
         }
         .onAppear {
             // Обновляем интерфейс при первом появлении
-            initializeUI()
+           initializeUI()
             
             // Регистрируем обработчик уведомлений для отслеживания состояния поиска
             NotificationCenter.default.addObserver(
@@ -199,6 +312,17 @@ struct ClockViewIOS: View {
                     }
                 }
             }
+            
+            // Добавляем обработчик для закрытия TaskTimeline по свайпу
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("CloseTaskTimeline"),
+                object: nil,
+                queue: .main
+            ) { _ in
+                withAnimation {
+                    self.showingTaskTimeline = false
+                }
+            }
         }
         .onDisappear {
             // Удаляем обработчики уведомлений
@@ -212,6 +336,30 @@ struct ClockViewIOS: View {
                 name: NSNotification.Name("DockBarVisibilityChanged"),
                 object: nil
             )
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSNotification.Name("CloseTaskTimeline"),
+                object: nil
+            )
+        }
+        .onChange(of: viewModel.isEditingMode) { oldValue, newValue in
+//            updateZoomForEditingTask()
+        }
+        .onChange(of: viewModel.editingTask) { oldValue, newValue in
+//            updateZoomForEditingTask()
+        }
+        .onChange(of: viewModel.previewTime) { oldValue, newValue in
+            // Обновляем масштаб при перетаскивании маркеров задачи (изменение длительности)
+            if viewModel.isEditingMode && (viewModel.isDraggingStart || viewModel.isDraggingEnd) {
+//                updateZoomForEditingTask()
+            }
+        }
+    }
+    
+    // Функция для переключения отображения недельного календаря
+    private func toggleWeekCalendar() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            showingWeekCalendar.toggle()
         }
     }
     
@@ -226,6 +374,69 @@ struct ClockViewIOS: View {
         // Принудительно обновляем представление маркеров
         viewModel.updateMarkersViewModel()
     }
+    
+    // // Обработчик изменения редактируемой задачи
+    // private func updateZoomForEditingTask() {
+    //     if viewModel.isEditingMode, let task = viewModel.editingTask {
+    //         // Проверяем длительность задачи в часах
+    //         let durationHours = task.duration / 3600
+            
+    //         // Если длительность меньше 1 часа, увеличиваем масштаб и фокусируем на задаче
+    //         if durationHours < 1 {
+    //             // Вычисляем масштаб: чем меньше длительность, тем больше масштаб
+    //             // Минимальная длительность (10 минут) -> масштаб 1.8
+    //             // Длительность 1 час -> масштаб 1.0
+    //             let minDuration: Double = 10 * 60 // 10 минут в секундах
+    //             let maxDuration: Double = 1 * 3600 // 1 час в секундах
+    //             let minScale: CGFloat = 1.0
+    //             let maxScale: CGFloat = 1.5
+                
+    //             // Ограничиваем длительность минимальным значением
+    //             let limitedDuration = max(minDuration, task.duration)
+                
+    //             // Рассчитываем относительное положение длительности между минимальной и максимальной
+    //             let normalizedDuration = 1 - ((limitedDuration - minDuration) / (maxDuration - minDuration))
+                
+    //             // Вычисляем итоговый масштаб
+    //             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+    //                 zoomScale = minScale + normalizedDuration * (maxScale - minScale)
+                    
+    //                 // Рассчитываем угол для центра задачи
+    //                 // Находим среднюю точку дуги задачи
+    //                 let startAngle = viewModel.timeToAngle(task.startTime)
+    //                 let endAngle = viewModel.timeToAngle(task.endTime)
+    //                 let midAngle = (startAngle + endAngle) / 2.0
+                    
+    //                 // Конвертируем угол в радианы (SwiftUI использует радианы)
+    //                 let midAngleRadians = midAngle * .pi / 180.0
+                    
+    //                 // Приблизительный радиус циферблата (без использования UIScreen)
+    //                 let approximateRadius: CGFloat = 150
+                    
+    //                 // Рассчитываем смещение в направлении задачи, чтобы центрировать её
+    //                 // Разбиваем вычисление на более простые выражения
+    //                 let scaleFactor = zoomScale - 1.0
+    //                 // Инвертируем направление смещения, убирая знак минус
+    //                 let offsetX = cos(midAngleRadians) * approximateRadius * scaleFactor
+    //                 let offsetY = sin(midAngleRadians) * approximateRadius * scaleFactor
+                    
+    //                 focusOffset = CGPoint(x: offsetX, y: offsetY)
+    //             }
+    //         } else {
+    //             // Длительность больше или равна 1 часу, используем нормальный масштаб
+    //             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+    //                 zoomScale = 1.0
+    //                 focusOffset = CGPoint(x: 0, y: 0)
+    //             }
+    //         }
+    //     } else {
+    //         // Нет редактируемой задачи, используем нормальный масштаб
+    //         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+    //             zoomScale = 1.0
+    //             focusOffset = CGPoint(x: 0, y: 0)
+    //         }
+    //     }
+    // }
 }
 
 #Preview {

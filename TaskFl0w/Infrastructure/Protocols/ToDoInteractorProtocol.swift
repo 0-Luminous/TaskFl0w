@@ -9,17 +9,20 @@ import SwiftUI
 
 protocol ToDoInteractorProtocol: AnyObject {
     func fetchItems()
-    func addItem(title: String, content: String)
-    func addItemWithCategory(title: String, content: String, category: TaskCategoryModel)
+    func addItem(title: String, date: Date)
+    func addItemWithCategory(title: String, category: TaskCategoryModel, date: Date)
     func deleteItem(id: UUID)
     func toggleItem(id: UUID)
     func searchItems(query: String)
     func changePriority(id: UUID, priority: TaskPriority)
 
     // Новые методы
-    func editItem(id: UUID, title: String, content: String)
+    func editItem(id: UUID, title: String)
     func getItem(id: UUID) -> ToDoItem?
     
     // Функционал архива
     func archiveCompletedTasks()
+
+    // Добавляем новый метод
+    func updateTaskDate(id: UUID, newDate: Date)
 }

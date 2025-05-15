@@ -13,33 +13,25 @@ struct RingPlanner: View {
     @ObservedObject var viewModel: ClockViewModel
     let zeroPosition: Double
     let shouldDeleteTask: Bool
+    let outerRingLineWidth: CGFloat
     
     // Инициализатор с параметром shouldDeleteTask, по умолчанию true
-    init(color: Color, viewModel: ClockViewModel, zeroPosition: Double, shouldDeleteTask: Bool = true) {
+    init(color: Color, viewModel: ClockViewModel, zeroPosition: Double, shouldDeleteTask: Bool = true, outerRingLineWidth: CGFloat) {
         self.color = color
         self.viewModel = viewModel
         self.zeroPosition = zeroPosition
         self.shouldDeleteTask = shouldDeleteTask
+        self.outerRingLineWidth = outerRingLineWidth
     }
 
     var body: some View {
         Circle()
-            .stroke(color, lineWidth: 20)
+            .stroke(color, lineWidth: outerRingLineWidth)
             .frame(
                 width: UIScreen.main.bounds.width * 0.8,
                 height: UIScreen.main.bounds.width * 0.8
             )
             .onDrop(of: [.text], isTargeted: nil) { providers, location in
-                if let task = viewModel.draggedTask {
-                    // Обработка удаления задачи только если shouldDeleteTask == true
-                    if shouldDeleteTask {
-                        viewModel.taskManagement.removeTask(task)
-                    }
-                    // Сбрасываем draggedTask независимо от удаления
-                    viewModel.draggedTask = nil
-                    return true
-                }
-
                 if let category = viewModel.draggedCategory {
                     // Обработка создания новой задачи
                     let time = viewModel.clockState.timeForLocation(
@@ -78,6 +70,7 @@ struct RingPlanner: View {
                     return true
                 }
 
+                // Для удаления задачи drop не разрешаем
                 return false
             }
     }

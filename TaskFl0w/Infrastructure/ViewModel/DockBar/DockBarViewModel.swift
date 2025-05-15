@@ -31,15 +31,18 @@ final class DockBarViewModel: ObservableObject {
         categoryManagement.categories
     }
     
+    var visibleCategories: [TaskCategoryModel] {
+        categories.filter { !$0.isHidden }
+    }
+    
     var numberOfPages: Int {
-        let count = categories.count
-        // Просто делим количество категорий на categoriesPerPage и округляем вверх
+        let count = visibleCategories.count
         return max((count + categoriesPerPage - 1) / categoriesPerPage, 1)
     }
     
     var pageWithAddButton: Int {
         // Если у нас ровно 4 категории или больше, кнопка добавления должна быть на второй странице
-        return categories.count >= categoriesPerPage ? 1 : 0
+        return visibleCategories.count >= categoriesPerPage ? 1 : 0
     }
     
     // MARK: - Initialization
@@ -50,21 +53,16 @@ final class DockBarViewModel: ObservableObject {
     // MARK: - Category methods
     func categoriesForPage(_ page: Int) -> [TaskCategoryModel] {
         let startIndex = page * categoriesPerPage
-        
-        // Проверяем, что startIndex не выходит за пределы массива
-        guard startIndex < categories.count else {
-            return []
-        }
-        
-        let endIndex = min(startIndex + categoriesPerPage, categories.count)
-        return Array(categories[startIndex..<endIndex])
+        guard startIndex < visibleCategories.count else { return [] }
+        let endIndex = min(startIndex + categoriesPerPage, visibleCategories.count)
+        return Array(visibleCategories[startIndex..<endIndex])
     }
     
     func shouldShowAddButton(on page: Int) -> Bool {
         if !isEditMode { return false }
         
         // Для 4 или более категорий показываем кнопку на второй странице
-        if categories.count >= categoriesPerPage {
+        if visibleCategories.count >= categoriesPerPage {
             return page == 1
         }
         

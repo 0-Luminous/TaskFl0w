@@ -20,7 +20,6 @@ class ToDoInteractor: ToDoInteractorProtocol {
     private func convertToToDoItem(_ entity: NSManagedObject) -> ToDoItem {
         let id = entity.value(forKey: "id") as! UUID
         let title = entity.value(forKey: "title") as! String
-        let content = entity.value(forKey: "content") as! String
         let date = entity.value(forKey: "date") as! Date
         let isCompleted = entity.value(forKey: "isCompleted") as! Bool
         let categoryID = entity.value(forKey: "categoryID") as? UUID
@@ -29,7 +28,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         let priority = TaskPriority(rawValue: priorityRaw) ?? .none
 
         return ToDoItem(
-            id: id, title: title, content: content, date: date, 
+            id: id, title: title, date: date, 
             isCompleted: isCompleted, categoryID: categoryID, categoryName: categoryName,
             priority: priority)
     }
@@ -47,7 +46,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         }
     }
 
-    func addItem(title: String, content: String) {
+    func addItem(title: String, date: Date = Date()) {
         print("📝 Попытка добавить новый элемент: \(title)")
 
         // Проверка наличия сущности
@@ -63,19 +62,18 @@ class ToDoInteractor: ToDoInteractorProtocol {
         let newID = UUID()
         newItem.setValue(newID, forKey: "id")
         newItem.setValue(title, forKey: "title")
-        newItem.setValue(content, forKey: "content")
-        newItem.setValue(Date(), forKey: "date")
+        newItem.setValue(date, forKey: "date")
         newItem.setValue(false, forKey: "isCompleted")
         newItem.setValue(0, forKey: "priority")
 
-        print("📝 Созданный элемент: ID=\(newID), title=\(title)")
+        print("📝 Созданный элемент: ID=\(newID), title=\(title), date=\(date)")
 
         saveContext()
         print("🔄 Уведомляем презентер о добавлении элемента")
         presenter?.didAddItem()
     }
 
-    func addItemWithCategory(title: String, content: String, category: TaskCategoryModel) {
+    func addItemWithCategory(title: String, category: TaskCategoryModel, date: Date = Date()) {
         print("📝 Добавление новой задачи: \"\(title)\" в категорию: \"\(category.rawValue)\"")
 
         // Проверка наличия сущности
@@ -90,8 +88,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         let newID = UUID()
         newItem.setValue(newID, forKey: "id")
         newItem.setValue(title, forKey: "title")
-        newItem.setValue(content, forKey: "content")
-        newItem.setValue(Date(), forKey: "date")
+        newItem.setValue(date, forKey: "date")
         newItem.setValue(false, forKey: "isCompleted")
         newItem.setValue(0, forKey: "priority")
         
@@ -158,7 +155,7 @@ class ToDoInteractor: ToDoInteractorProtocol {
         }
     }
 
-    func editItem(id: UUID, title: String, content: String) {
+    func editItem(id: UUID, title: String) {
         let request = NSFetchRequest<NSManagedObject>(entityName: "CDToDoItem")
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
 
@@ -171,7 +168,6 @@ class ToDoInteractor: ToDoInteractorProtocol {
                 
                 // Обновляем основные поля
                 item.setValue(title, forKey: "title")
-                item.setValue(content, forKey: "content")
                 
                 // Если есть выбранная категория в viewModel, используем её
                 if let presenter = presenter as? ToDoPresenter,
@@ -254,6 +250,32 @@ class ToDoInteractor: ToDoInteractorProtocol {
             presenter?.didArchiveTasks()
         } catch {
             print("❌ Ошибка при архивации задач: \(error)")
+        }
+    }
+
+    func updateTaskDate(id: UUID, newDate: Date) {
+        print("📅 Обновление даты задачи: ID=\(id), Новая дата=\(newDate)")
+        
+        let request = NSFetchRequest<NSManagedObject>(entityName: "CDToDoItem")
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+
+        do {
+            let items = try viewContext.fetch(request)
+            if let item = items.first {
+                let oldDate = item.value(forKey: "date") as? Date
+                print("📅 Старая дата задачи: \(oldDate?.description ?? "неизвестно")")
+                
+                // Проверяем, что новая дата действительно отличается
+                if oldDate != newDate {
+                    item.setValue(newDate, forKey: "date")
+                    saveContext()
+                    // Обновляем только эту конкретную задачу
+                    let updatedItem = convertToToDoItem(item)
+                    presenter?.didFetchItems(ToDoItem: [updatedItem])
+                }
+            }
+        } catch {
+            print("❌ Ошибка при обновлении даты задачи: \(error)")
         }
     }
 

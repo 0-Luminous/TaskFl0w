@@ -36,7 +36,7 @@ struct HourNumberView: View {
     
     var body: some View {
         Text("\(adjustedHour)")
-            .font(.system(size: viewModel.numbersSize.isNaN ? 16.0 : viewModel.numbersSize))
+            .font(.custom(viewModel.fontName, size: viewModel.numbersSize.isNaN ? 16.0 : viewModel.numbersSize))
             .foregroundColor(color)
             // Удаляем применение zeroPosition в rotationEffect,
             // так как цифра уже скорректирована в adjustedHour

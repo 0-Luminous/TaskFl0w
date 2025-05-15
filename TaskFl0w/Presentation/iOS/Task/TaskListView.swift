@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  TaskListView.swift
 //  ToDoList
 //
 //  Created by Yan on 19/3/25.
@@ -7,6 +7,7 @@
 
 import CoreData
 import SwiftUI
+import UIKit
 
 struct TaskListView: View {
     @ObservedObject var viewModel: ListViewModel
@@ -17,199 +18,249 @@ struct TaskListView: View {
     @State private var isAddingNewTask = false
     @State private var isKeyboardVisible = false
     @FocusState private var isNewTaskFocused: Bool
-    @State private var isSelectionMode = false
-    @State private var selectedTasks: Set<UUID> = []
     @State private var showingPrioritySheet = false
+    @State private var newTaskPriority: TaskPriority = .none
+    @Binding var selectedDate: Date
+    
+    // Заменяем локальные состояния на ObservedObject
+    @ObservedObject private var calendarState = CalendarState.shared
+
+    @ObservedObject private var themeManager = ThemeManager.shared
+   
+    
+    private let topID = "top_of_list"
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                SearchBar(text: $viewModel.searchText, isActive: $isSearchActive)
-                
-                // Добавляем индикатор режима архива
-                if viewModel.showCompletedTasksOnly {
-                    VStack(spacing: 0) {
-                        Rectangle()
-                            .fill(Color.clear)
-                            .frame(height: 8) // Небольшой отступ сверху
-                        
-                        HStack {
-                            Image(systemName: "archivebox.fill")
-                                .foregroundColor(.blue)
-                                .font(.system(size: 16))
+            ZStack(alignment: .top) {
+                VStack(spacing: 0) {
+                    Spacer()
+                        .frame(height: 10)
+                    
+                    ScrollViewReader { scrollProxy in
+                        List {
+                            EmptyView()
+                                .id(topID)
+                                .frame(width: 0, height: 0)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                             
-                            Text("Архив выполненных задач")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.white)
+                            if viewModel.showCompletedTasksOnly {
+                                Color.clear
+                                .frame(height: 20)
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                            }
+
+                             // Заменяем локальные состояния на свойства CalendarState
+                            if calendarState.isWeekCalendarVisible {
+                                Color.clear
+                                    .frame(height: 70)
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                            }
+
+                            if calendarState.isMonthCalendarVisible {
+                                Color.clear
+                                    .frame(height: 300)
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                            }
                             
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(.darkGray).opacity(0.6))
-                        )
-                        .padding(.horizontal, 16)
-                    }
-                }
-                
-                List {
-                    // Показываем поле для новой задачи, если isAddingNewTask = true
-                    if isAddingNewTask {
-                        HStack {
-                            TextField("Новая задача", text: $newTaskTitle, axis: .vertical)
-                                .foregroundColor(.white)
-                                .lineLimit(3) // Разрешить до 3 строк
-                                .onSubmit {
-                                    saveNewTask()
-                                }
-                                .submitLabel(.done)
-                                .focused($isNewTaskFocused)
-                                .keyboardType(.default)
-                                .autocapitalization(.sentences)
-                                .disableAutocorrection(false)
-                                // Специальный модификатор для обработки ввода
-                                .onChange(of: newTaskTitle) { oldValue, newValue in
-                                    // Если в тексте есть символ новой строки, значит была нажата кнопка Return
-                                    if newValue.contains("\n") {
-                                        // Удаляем символ новой строки
-                                        newTaskTitle = newValue.replacingOccurrences(of: "\n", with: "")
-                                        // Сохраняем задачу
-                                        saveNewTask()
+                            let items = viewModel.showCompletedTasksOnly 
+                                ? viewModel.getAllArchivedItems()
+                                : viewModel.getFilteredItems()
+                            
+                            if viewModel.showCompletedTasksOnly {
+                                ArchivedTasksGroupView(
+                                    items: items,
+                                    categoryColor: viewModel.selectedCategory?.color ?? .blue,
+                                    isSelectionMode: viewModel.isSelectionMode,
+                                    selectedTasks: $viewModel.selectedTasks,
+                                    onToggle: { taskId in
+                                        viewModel.presenter?.toggleItem(id: taskId)
+                                    },
+                                    onEdit: { item in
+                                        viewModel.editingItem = item
+                                    },
+                                    onDelete: { taskId in
+                                        viewModel.presenter?.deleteItem(id: taskId)
+                                    },
+                                    onShare: { taskId in
+                                        viewModel.presenter?.shareItem(id: taskId)
                                     }
-                                }
-                        }
-                        .padding(.horizontal, 10)
-                        .listRowBackground(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color(.darkGray))
-                                .padding(.vertical, 5)
-                                .padding(.horizontal, 8)
-                        )
-                        .listRowSeparator(.hidden)
-                    }
-                    
-                    // Используем вычисляемое свойство для фильтрации
-                    let items = getFilteredItems()
-                    
-                    // Отображаем все задачи в одном списке без группировки по приоритету
-                    ForEach(items) { item in
-                        TaskRow(
-                            item: item,
-                            onToggle: {
-                                viewModel.presenter?.toggleItem(id: item.id)
-                            },
-                            onEdit: {
-                                viewModel.editingItem = item
-                            },
-                            onDelete: {
-                                viewModel.presenter?.deleteItem(id: item.id)
-                            },
-                            onShare: {
-                                viewModel.presenter?.shareItem(id: item.id)
-                            },
-                            categoryColor: viewModel.selectedCategory?.color ?? .blue,
-                            isSelectionMode: isSelectionMode,
-                            isInArchiveMode: viewModel.showCompletedTasksOnly,
-                            selectedTasks: $selectedTasks
-                        )
-                        .padding(.horizontal, 10)
-                        .listRowBackground(
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color(.darkGray))
-                                
-                                // Добавляем внешний бордер для задач с приоритетом
-                                if item.priority != .none {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(getPriorityColor(for: item.priority), lineWidth: 1.5)
-                                        .opacity(item.isCompleted && !isSelectionMode && !viewModel.showCompletedTasksOnly ? 0.5 : 1.0)
-                                }
-                            }
-                            .padding(.vertical, 5)
-                            .padding(.horizontal, 8)
-                        )
-                        .contentShape(Rectangle())  // Добавляем форму для регистрации нажатий
-                        .onTapGesture {
-                            if isSelectionMode {
-                                // В режиме выбора, нажатие выбирает/снимает выбор задачи
-                                if selectedTasks.contains(item.id) {
-                                    selectedTasks.remove(item.id)
-                                } else {
-                                    selectedTasks.insert(item.id)
-                                }
+                                )
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                             } else {
-                                // В обычном режиме, нажатие делает задачу завершенной
-                                viewModel.presenter?.toggleItem(id: item.id)
+                                ForEach(items) { item in
+                                    TaskRow(
+                                        item: item,
+                                        onToggle: {
+                                            viewModel.presenter?.toggleItem(id: item.id)
+                                        },
+                                        onEdit: {
+                                            viewModel.editingItem = item
+                                        },
+                                        onDelete: {
+                                            viewModel.presenter?.deleteItem(id: item.id)
+                                        },
+                                        onShare: {
+                                            viewModel.presenter?.shareItem(id: item.id)
+                                        },
+                                        categoryColor: viewModel.selectedCategory?.color ?? .blue,
+                                        isSelectionMode: viewModel.isSelectionMode,
+                                        isInArchiveMode: viewModel.showCompletedTasksOnly,
+                                        selectedTasks: $viewModel.selectedTasks
+                                    )
+                                    .padding(.trailing, 5)
+                                    .listRowBackground(
+                                        ZStack {
+                                            RoundedRectangle(cornerRadius: 10)
+                                                .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
+                                                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                                            if item.priority != .none {
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
+                                                    .opacity(item.isCompleted && !viewModel.isSelectionMode && !viewModel.showCompletedTasksOnly ? 0.5 : 1.0)
+                                            }
+                                        }
+                                        .padding(.vertical, 5)
+                                        .padding(.horizontal, 12)
+                                    )
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        if viewModel.isSelectionMode {
+                                            viewModel.toggleTaskSelection(taskId: item.id)
+                                        } else {
+                                            viewModel.presenter?.toggleItem(id: item.id)
+                                        }
+                                    }
+                                    .listRowSeparator(.hidden)
+                                }
                             }
+                            
+                            // Перемещаем добавление новой задачи сюда, в конец списка
+                            if isAddingNewTask {
+                                // Spacer()
+                                //     .frame(height: 40)
+                                //     .listRowSeparator(.hidden)
+                                //     .listRowBackground(Color.clear)
+                                //     .id("new_task_spacer")
+                                
+                                NewTaskInput(
+                                    newTaskTitle: $newTaskTitle,
+                                    isNewTaskFocused: _isNewTaskFocused,
+                                    selectedPriority: $newTaskPriority,
+                                    onSave: {
+                                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                                        newTaskTitle = ""
+                                        newTaskPriority = .none
+                                        isAddingNewTask = false
+                                        isNewTaskFocused = false
+                                    }
+                                )
+                                .id("new_task_input")
+                            }
+                            
+                            Color.clear
+                                .frame(height: 160)
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                            
                         }
-                        .listRowSeparator(.hidden)
-                    }
-                }
-                .listStyle(GroupedListStyle())
-                .onAppear {
-                    // При появлении обновляем выбранную категорию из пропса и обновляем данные
-                    if let selectedCategory = selectedCategory {
-                        viewModel.selectedCategory = selectedCategory
-                    }
-                    viewModel.refreshData()
-                }
-                
-                // Показываем BottomBar только если поиск не активен, не создается новая задача и клавиатура не видна
-                if !isSearchActive && !isAddingNewTask && !isKeyboardVisible {
-                    BottomBar(
-                        onAddTap: {
-                            // Убедимся, что выбранная категория установлена перед открытием формы
+                        .listStyle(GroupedListStyle())
+                        .onAppear {
                             if let selectedCategory = selectedCategory {
                                 viewModel.selectedCategory = selectedCategory
                             }
-                            // Вместо открытия формы, показываем строку для новой задачи
-                            isAddingNewTask = true
-                            // Устанавливаем фокус с небольшой задержкой
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                isNewTaskFocused = true
+                            viewModel.refreshData()
+                        }
+                        .onChange(of: isAddingNewTask) { oldValue, newValue in
+                            if newValue == true {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    scrollProxy.scrollTo("new_task_input", anchor: .bottom)
+                                }
                             }
-                        },
-                        isSelectionMode: $isSelectionMode,
-                        selectedTasks: $selectedTasks,
-                        onDeleteSelectedTasks: {
-                            // Удаляем все выбранные задачи
-                            for taskId in selectedTasks {
-                                viewModel.presenter?.deleteItem(id: taskId)
+                        }
+                    }
+                }
+                
+                if viewModel.showCompletedTasksOnly {
+                    VStack {
+                        ArchiveView()
+                        Spacer()
+                    }
+                }
+                
+                if !isSearchActive && !isKeyboardVisible {
+                    if !isAddingNewTask {
+                        VStack {
+                            Spacer()
+                            BottomBar(
+                                onAddTap: {
+                                    if let selectedCategory = selectedCategory {
+                                        viewModel.selectedCategory = selectedCategory
+                                    }
+                                    isAddingNewTask = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        isNewTaskFocused = true
+                                    }
+                                },
+                                isSelectionMode: $viewModel.isSelectionMode,
+                                selectedTasks: $viewModel.selectedTasks,
+                                onDeleteSelectedTasks: {
+                                    viewModel.deleteSelectedTasks()
+                                },
+                                onChangePriorityForSelectedTasks: {
+                                    showingPrioritySheet = true
+                                },
+                                onArchiveTapped: {
+                                    viewModel.showCompletedTasksOnly.toggle()
+                                },
+                                onUnarchiveSelectedTasks: {
+                                    viewModel.unarchiveSelectedTasks()
+                                },
+                                showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
+                            )
+                            .transition(.move(edge: .bottom))
+                            .padding(.bottom, 60)
+                        }
+                    }
+                }
+
+                if isAddingNewTask {
+                    VStack {
+                        Spacer().frame(height: UIScreen.main.bounds.height * 0.32)
+                        // Изменяем расположение панели приоритетов
+                        NewTaskPriorityBar(
+                            selectedPriority: $newTaskPriority,
+                            onSave: {
+                                if !newTaskTitle.isEmpty {
+                                    viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                                    newTaskTitle = ""
+                                    newTaskPriority = .none
+                                    isAddingNewTask = false
+                                    isNewTaskFocused = false
+                                }
+                            },
+                            onCancel: {
+                                newTaskTitle = ""
+                                newTaskPriority = .none
+                                isAddingNewTask = false
+                                isNewTaskFocused = false
                             }
-                            // Очищаем множество выбранных задач
-                            selectedTasks.removeAll()
-                        },
-                        onChangePriorityForSelectedTasks: {
-                            // Отображаем меню выбора приоритета и применяем выбранный приоритет
-                            showPriorityActionSheet()
-                        },
-                        onArchiveTapped: {
-                            // Переключаем режим отображения выполненных задач
-                            viewModel.showCompletedTasksOnly.toggle()
-                        },
-                        onUnarchiveSelectedTasks: {
-                            // Возвращаем выбранные задачи из архива
-                            for taskId in selectedTasks {
-                                viewModel.presenter?.toggleItem(id: taskId) // Меняем статус isCompleted на false
-                            }
-                            // Очищаем множество выбранных задач
-                            selectedTasks.removeAll()
-                        },
-                        showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
-                    )
-                    .transition(.move(edge: .bottom))
+                        )
+                        .transition(.scale)
+                        .padding(.bottom, 20) // Добавляем небольшой отступ снизу
+                    }
+                    .padding(.horizontal, 20)
                 }
             }
             .scrollContentBackground(.hidden)
             .background{
-                Color(red: 0.098, green: 0.098, blue: 0.098)
-            }
-            .fullScreenCover(item: $viewModel.editingItem) { item in
-                FormTaskView(viewModel: viewModel, item: item, onDismiss: {
-                    viewModel.editingItem = nil
-                })
+               themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95)
             }
             .actionSheet(isPresented: $showingPrioritySheet) {
                 ActionSheet(
@@ -217,16 +268,16 @@ struct TaskListView: View {
                     message: Text("Установить приоритет для выбранных задач"),
                     buttons: [
                         .default(Text("Высокий")) { 
-                            setPriorityForSelectedTasks(.high) 
+                            viewModel.setPriorityForSelectedTasks(.high) 
                         },
                         .default(Text("Средний")) { 
-                            setPriorityForSelectedTasks(.medium) 
+                            viewModel.setPriorityForSelectedTasks(.medium) 
                         },
                         .default(Text("Низкий")) { 
-                            setPriorityForSelectedTasks(.low) 
+                            viewModel.setPriorityForSelectedTasks(.low) 
                         },
                         .default(Text("Нет")) { 
-                            setPriorityForSelectedTasks(.none) 
+                            viewModel.setPriorityForSelectedTasks(.none) 
                         },
                         .cancel(Text("Отмена"))
                     ]
@@ -234,160 +285,46 @@ struct TaskListView: View {
             }
         }
         
-        // Отслеживаем появление клавиатуры
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             isKeyboardVisible = true
         }
-        // Отслеживаем скрытие клавиатуры
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             isKeyboardVisible = false
         }
         
-        // Обновленный синтаксис onChange для iOS 17
         .onChange(of: isSearchActive) { oldValue, newValue in
-            // Здесь можно выполнить дополнительные действия при изменении состояния поиска
             NotificationCenter.default.post(
                 name: NSNotification.Name("SearchActiveStateChanged"),
                 object: nil,
                 userInfo: ["isActive": newValue]
             )
         }
-        // Добавляем обработчик изменения состояния создания новой задачи
         .onChange(of: isAddingNewTask) { oldValue, newValue in
-            // Если режим создания новой задачи активирован,
-            // то отправляем уведомление для скрытия докбара
             NotificationCenter.default.post(
                 name: NSNotification.Name("AddingTaskStateChanged"),
                 object: nil,
                 userInfo: ["isAddingTask": newValue]
             )
         }
-    }
-    
-    // Функция для сохранения новой задачи
-    private func saveNewTask() {
-        if !newTaskTitle.isEmpty {
-            if let category = viewModel.selectedCategory {
-                viewModel.presenter?.addItemWithCategory(
-                    title: newTaskTitle,
-                    content: "",
-                    category: category
-                )
-            } else {
-                viewModel.presenter?.addItem(
-                    title: newTaskTitle,
-                    content: ""
-                )
-            }
-            newTaskTitle = ""
+        .onChange(of: selectedDate) { oldValue, newValue in
+            viewModel.selectedDate = newValue
+            viewModel.refreshData()
         }
-        // Закрываем форму ввода независимо от того, пуст ли ввод
-        isAddingNewTask = false
-        isNewTaskFocused = false
-    }
-    
-    // Обновляем функцию фильтрации задач для отображения выполненных задач
-    private func getFilteredItems() -> [ToDoItem] {
-        var filteredItems: [ToDoItem]
-        
-        // Сначала фильтруем по категории, если она выбрана
-        if let selectedCategory = viewModel.selectedCategory {
-            filteredItems = viewModel.items.filter { item in
-                item.categoryID == selectedCategory.id
-            }
-        } else {
-            filteredItems = viewModel.items
-        }
-        
-        // Если включен режим просмотра выполненных задач, отфильтровываем только их
-        if viewModel.showCompletedTasksOnly {
-            filteredItems = filteredItems.filter { item in
-                item.isCompleted
+        .onChange(of: calendarState.isWeekCalendarVisible) { oldValue, newValue in
+            print("isWeekCalendarVisible изменилось: \(oldValue) -> \(newValue)")
+            withAnimation {
+                // Можно добавить принудительное обновление
             }
         }
-        
-        // Сортируем задачи
-        return filteredItems.sorted { (item1, item2) -> Bool in
-            // Если мы в режиме выполненных задач
-            if viewModel.showCompletedTasksOnly {
-                // Сначала сортируем по приоритету
-                if item1.priority != item2.priority {
-                    return item1.priority.rawValue > item2.priority.rawValue
-                }
-                
-                // Если приоритеты одинаковые, сортируем по дате завершения
-                // (от новых к старым)
-                return item1.date > item2.date
-            } else {
-                // Стандартная сортировка
-                // Если статус завершения разный, незавершенные идут вначале
-                if item1.isCompleted != item2.isCompleted {
-                    return !item1.isCompleted
-                }
-                
-                // Если статус завершения одинаковый, сортируем по приоритету
-                return item1.priority.rawValue > item2.priority.rawValue
+        .onChange(of: calendarState.isMonthCalendarVisible) { oldValue, newValue in
+            withAnimation {
+                // Дополнительная логика обновления при необходимости
             }
-        }
-    }
-    
-    private func showPriorityActionSheet() {
-        showingPrioritySheet = true
-    }
-    
-    private func setPriorityForSelectedTasks(_ priority: TaskPriority) {
-        for taskId in selectedTasks {
-            viewModel.presenter?.changePriority(id: taskId, priority: priority)
-        }
-        // Выходим из режима выбора после установки приоритета
-        isSelectionMode = false
-    }
-    
-    // Вспомогательные методы для приоритетов
-    private func getPriorityColor(for priority: TaskPriority) -> Color {
-        switch priority {
-        case .high:
-            return Color.red
-        case .medium:
-            return Color.orange
-        case .low:
-            return Color.green
-        case .none:
-            return Color.gray
-        }
-    }
-
-    private func priorityIcon(for priority: TaskPriority) -> some View {
-        let systemName: String
-        
-        switch priority {
-        case .high:
-            systemName = "exclamationmark.triangle.fill"
-        case .medium:
-            systemName = "exclamationmark.circle.fill"
-        case .low:
-            systemName = "arrow.up.circle.fill"
-        case .none:
-            systemName = "list.bullet"
-        }
-        
-        return Image(systemName: systemName)
-    }
-
-    private func getPriorityText(for priority: TaskPriority) -> String {
-        switch priority {
-        case .high:
-            return "Высокий приоритет"
-        case .medium:
-            return "Средний приоритет"
-        case .low:
-            return "Низкий приоритет"
-        case .none:
-            return "Без приоритета"
         }
     }
 }
 
+
 #Preview {
-    TaskListView(viewModel: ListViewModel(), selectedCategory: nil)
+    TaskListView(viewModel: ListViewModel(), selectedCategory: nil, selectedDate: .constant(Date()))
 }

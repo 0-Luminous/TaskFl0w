@@ -58,16 +58,8 @@ class ToDoPresenter: ToDoPresenterProtocol {
         interactor?.deleteItem(id: id)
     }
 
-    func addItem(title: String, content: String) {
-        interactor?.addItem(title: title, content: content)
-    }
-
-    func addItemWithCategory(title: String, content: String, category: TaskCategoryModel) {
-        interactor?.addItemWithCategory(title: title, content: content, category: category)
-    }
-
-    func editItem(id: UUID, title: String, content: String) {
-        interactor?.editItem(id: id, title: title, content: content)
+    func editItem(id: UUID, title: String) {
+        interactor?.editItem(id: id, title: title)
     }
 
     func shareItem(id: UUID) {
@@ -91,5 +83,19 @@ class ToDoPresenter: ToDoPresenterProtocol {
     func didArchiveTasks() {
         // После архивации обновляем список задач
         refreshItems()
+    }
+
+    func addItem(title: String, priority: TaskPriority, date: Date) {
+        interactor?.addItem(title: title, date: date)
+    }
+
+    func addItemWithCategory(title: String, category: TaskCategoryModel, priority: TaskPriority, date: Date) {
+        interactor?.addItemWithCategory(title: title, category: category, date: date)
+    }
+
+    func updateTaskDate(id: UUID, newDate: Date) {
+        // Обновляем дату задачи в репозитории
+        interactor?.updateTaskDate(id: id, newDate: newDate)
+        // Не вызываем refreshItems() здесь, так как это может привести к нежелательному поведению
     }
 }
