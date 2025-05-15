@@ -17,6 +17,9 @@ struct ClockHandViewIOS: View {
     var lightModeCustomHandColor: String?
     var darkModeCustomHandColor: String?
     
+    // Добавляем параметр масштаба для адаптации длины стрелки
+    var scale: CGFloat = 1.0
+    
     // Существующие параметры для цвета стрелки
     @AppStorage("lightModeHandColor") private var lightModeHandColor: String = Color.blue.toHex()
     @AppStorage("darkModeHandColor") private var darkModeHandColor: String = Color.blue.toHex()
@@ -66,7 +69,8 @@ struct ClockHandViewIOS: View {
                 let center = CGPoint(x: geometry.size.width / 2,
                                      y: geometry.size.height / 2)
                 let radius = min(geometry.size.width, geometry.size.height) / 2
-                let hourHandLength = radius + (outerRingLineWidth / 2) + 20
+                // Используем параметр scale для адаптации длины стрелки
+                let hourHandLength = (radius + (outerRingLineWidth / 2) + 20) * scale
                 let angle = hourAngle
                 let endpoint = CGPoint(
                     x: center.x + hourHandLength * CGFloat(cos(angle)),
@@ -76,8 +80,8 @@ struct ClockHandViewIOS: View {
                 path.move(to: center)
                 path.addLine(to: endpoint)
             }
-            .stroke(handColor, lineWidth: 3)
-            .shadow(color: .black.opacity(0.5), radius: 2, x: 1, y: 1)
+            .stroke(handColor, lineWidth: max(1.5, 3 * scale)) // Также адаптируем толщину стрелки
+            .shadow(color: .black.opacity(0.5), radius: max(1, 2 * scale), x: 1, y: 1)
         }
     }
 }
