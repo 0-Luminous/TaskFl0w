@@ -12,7 +12,7 @@ struct FirstView: View {
     @State private var showButton = false
     @State private var selectedWatchFace: WatchFaceModel?
     @State private var navigateToLibrary = false
-    @State private var navigateToSelectCategory = false
+    @State private var navigateToSelectWatch = false
     
     // Массив предустановленных циферблатов
     private let watchFaces = WatchFaceModel.defaultWatchFaces
@@ -36,9 +36,9 @@ struct FirstView: View {
                     
                     if showButton {
                         Button(action: {
-                            navigateToSelectCategory = true
+                            navigateToSelectWatch = true
                         }) {
-                            Text("Выбрать стартовые категории")
+                            Text("Выбрать стартовый циферблат")
                                 .font(.headline)
                                 .foregroundColor(.white)
                                 .padding()
@@ -92,8 +92,8 @@ struct FirstView: View {
             .navigationDestination(isPresented: $navigateToLibrary) {
                 LibraryOfWatchFaces()
             }
-            .navigationDestination(isPresented: $navigateToSelectCategory) {
-                SelectCategory()
+            .navigationDestination(isPresented: $navigateToSelectWatch) {
+                SelectWatch()
             }
             .onAppear {
                 // Запускаем анимацию при появлении
