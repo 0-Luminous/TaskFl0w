@@ -34,11 +34,21 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 struct TaskFl0wApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     let persistenceController = PersistenceController.shared
+    @AppStorage("isAppAlreadyLaunchedOnce") private var isAppAlreadyLaunchedOnce: Bool = false
 
     var body: some Scene {
         WindowGroup {
-            ClockViewIOS()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            if !isAppAlreadyLaunchedOnce {
+                FirstView()
+                    .onDisappear {
+                        // Обновляем флаг после исчезновения FirstView
+                        isAppAlreadyLaunchedOnce = true
+                    }
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            } else {
+                ClockViewIOS()
+                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            }
         }
     }
 }

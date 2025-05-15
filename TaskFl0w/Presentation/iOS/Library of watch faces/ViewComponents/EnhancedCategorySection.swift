@@ -12,6 +12,7 @@ struct EnhancedCategorySection: View {
     let category: WatchFaceCategory
     let watchFaces: [WatchFaceModel]
     let libraryManager: WatchFaceLibraryManager
+    var selectedFaceID: UUID? = nil
     let onWatchFaceSelected: (WatchFaceModel) -> Void
     let onEdit: (WatchFaceModel) -> Void
     let onDelete: (WatchFaceModel) -> Void
@@ -44,7 +45,7 @@ struct EnhancedCategorySection: View {
                         ForEach(watchFaces) { face in
                             EnhancedWatchFacePreviewCard(
                                 watchFace: face, 
-                                isSelected: libraryManager.selectedFaceID == face.id
+                                isSelected: selectedFaceID == face.id
                             )
                             .onTapGesture {
                                 onWatchFaceSelected(face)

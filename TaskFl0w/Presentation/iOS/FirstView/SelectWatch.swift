@@ -14,6 +14,8 @@ struct SelectWatch: View {
     @ObservedObject private var themeManager = ThemeManager.shared
 
     @State private var selectedWatchFace: WatchFaceModel?
+    @State private var localSelectedFaceID: UUID?
+    @State private var navigateToSelectCategory = false
 
     // Модификатор для стилизации кнопок (такой же, как в библиотеке)
     private struct ButtonModifier: ViewModifier {
@@ -94,12 +96,11 @@ struct SelectWatch: View {
                                     category: category,
                                     watchFaces: libraryManager.watchFaces(for: category),
                                     libraryManager: libraryManager,
+                                    selectedFaceID: localSelectedFaceID,
                                     onWatchFaceSelected: { face in
-                                        libraryManager.selectWatchFace(face.id)
-                                        // Сохраняем ID выбранного циферблата в UserDefaults
-                                        UserDefaults.standard.set(
-                                            face.id.uuidString, forKey: "startupWatchFaceID")
-                                        dismiss()
+                                        localSelectedFaceID = face.id
+                                        selectedWatchFace = face
+                                        // Не вызываем dismiss() и не сохраняем пока в UserDefaults
                                     },
                                     onEdit: { _ in },  // Пустая функция вместо nil
                                     onDelete: { _ in }  // Пустая функция вместо nil
@@ -146,10 +147,20 @@ struct SelectWatch: View {
                 // Кнопка внизу для продолжения
                 VStack {
                     Spacer()
+                    NavigationLink(destination: SelectCategory(), isActive: $navigateToSelectCategory) {
+                        EmptyView()
+                    }
+                    .hidden()
+                    
                     Button(action: {
-                        // Проверяем, есть ли текущий выбранный циферблат
-                        if libraryManager.currentWatchFace == nil {
-                            // Проходим по всем категориям, пока не найдем первый циферблат
+                        // Проверяем, был ли выбран циферблат
+                        if let selectedID = localSelectedFaceID {
+                            libraryManager.selectWatchFace(selectedID)
+                            // Сохраняем ID выбранного циферблата в UserDefaults
+                            UserDefaults.standard.set(
+                                selectedID.uuidString, forKey: "startupWatchFaceID")
+                        } else {
+                            // Если пользователь не выбрал циферблат, используем первый доступный
                             for category in WatchFaceCategory.allCases {
                                 let faces = libraryManager.watchFaces(for: category)
                                 if let firstFace = faces.first {
@@ -161,7 +172,7 @@ struct SelectWatch: View {
                                 }
                             }
                         }
-                        dismiss()
+                        navigateToSelectCategory = true
                     }) {
                         Text("Продолжить")
                             .font(.headline)

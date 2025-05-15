@@ -12,32 +12,61 @@ struct SelectCategory: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) var colorScheme
     @ObservedObject private var themeManager = ThemeManager.shared
+    @State private var navigateToMainApp = false
     
     private let columns = [
         GridItem(.adaptive(minimum: 160), spacing: 20)
     ]
     
     var body: some View {
-        VStack(spacing: 0) {
-            headerView
-            
-            ScrollView {
-                VStack(spacing: 30) {
-                    introText
-                    categoriesGrid
+        ZStack {
+            VStack(spacing: 0) {
+                headerView
+                
+                ScrollView {
+                    VStack(spacing: 30) {
+                        introText
+                        categoriesGrid
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 10)
+                    .padding(.bottom, 100)
                 }
-                .padding(.horizontal)
-                .padding(.top, 10)
-                .padding(.bottom, 100)
             }
+            .background(backgroundColor)
             
-            bottomButtons
+            // Кнопка внизу для продолжения
+            VStack {
+                Spacer()
+                
+                Button(action: {
+                    withAnimation {
+                        viewModel.saveSelectedCategories {
+                            // После сохранения категорий активируем переход
+                            navigateToMainApp = true
+                        }
+                    }
+                }) {
+                    Text("Продолжить")
+                        .font(.headline)
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        .padding(.horizontal, 20)
+                }
+                .disabled(viewModel.selectedCategories.isEmpty)
+                .opacity(viewModel.selectedCategories.isEmpty ? 0.7 : 1)
+                .padding(.bottom, 20)
+            }
         }
-        .background(backgroundColor)
-        .overlay(
-            loadingOverlay
-        )
+        .overlay(loadingOverlay)
         .navigationBarBackButtonHidden(true)
+        .fullScreenCover(isPresented: $navigateToMainApp) {
+            // Полноэкранный переход на основной экран приложения
+            ClockViewIOS()
+        }
     }
     
     // MARK: - UI Components
@@ -114,47 +143,6 @@ struct SelectCategory: View {
                 .transition(.scale.combined(with: .opacity))
             }
         }
-    }
-    
-    private var bottomButtons: some View {
-        VStack {
-            Button(action: {
-                withAnimation {
-                    viewModel.saveSelectedCategories()
-                }
-            }) {
-                Text("Продолжить")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(viewModel.selectedCategories.isEmpty ? Color.gray : Color.Blue1)
-                    )
-                    .padding(.horizontal)
-            }
-            .disabled(viewModel.selectedCategories.isEmpty)
-            .opacity(viewModel.selectedCategories.isEmpty ? 0.7 : 1)
-            
-            Button(action: {
-                withAnimation {
-                    viewModel.selectAllCategories()
-                }
-            }) {
-                Text("Выбрать все категории")
-                    .font(.subheadline)
-                    .foregroundColor(themeManager.isDarkMode ? Color.white.opacity(0.8) : Color.black.opacity(0.7))
-                    .padding(.vertical, 10)
-            }
-        }
-        .padding(.bottom, 20)
-        .background(
-            Rectangle()
-                .fill(backgroundColor)
-                .shadow(color: themeManager.isDarkMode ? .black : .gray.opacity(0.3), 
-                        radius: 10, x: 0, y: -5)
-        )
     }
     
     private var loadingOverlay: some View {
@@ -335,7 +323,7 @@ final class SelectCategoryViewModel: ObservableObject {
         selectedCategories = startCategories
     }
     
-    func saveSelectedCategories() {
+    func saveSelectedCategories(completion: @escaping () -> Void = {}) {
         isLoading = true
         
         // Имитируем задержку для анимации загрузки
@@ -348,8 +336,11 @@ final class SelectCategoryViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self.isLoading = false
                 
-                // Переходим к основному экрану приложения
-                NotificationCenter.default.post(name: NSNotification.Name("CategoriesSetupCompleted"), object: nil)
+                // Устанавливаем флаг в UserDefaults, что настройка завершена
+                UserDefaults.standard.set(true, forKey: "isAppSetupCompleted")
+                
+                // Вызываем замыкание для перехода к основному экрану
+                completion()
             }
         }
     }
