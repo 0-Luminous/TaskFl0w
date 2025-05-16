@@ -323,6 +323,26 @@ struct ClockViewIOS: View {
                     self.showingTaskTimeline = false
                 }
             }
+            
+            // Регистрируем обработчик для обновления при смене циферблата
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("ClockStyleDidChange"),
+                object: nil,
+                queue: .main
+            ) { _ in
+                // Полностью применяем настройки циферблата из UserDefaults
+                self.viewModel.applyWatchFaceSettings()
+            }
+            
+            // Добавляем обработчик для применения настроек циферблата
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("WatchFaceApplied"),
+                object: nil,
+                queue: .main
+            ) { _ in
+                // Полностью применяем настройки циферблата из UserDefaults
+                self.viewModel.applyWatchFaceSettings()
+            }
         }
         .onDisappear {
             // Удаляем обработчики уведомлений
@@ -339,6 +359,16 @@ struct ClockViewIOS: View {
             NotificationCenter.default.removeObserver(
                 self,
                 name: NSNotification.Name("CloseTaskTimeline"),
+                object: nil
+            )
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSNotification.Name("ClockStyleDidChange"),
+                object: nil
+            )
+            NotificationCenter.default.removeObserver(
+                self,
+                name: NSNotification.Name("WatchFaceApplied"),
                 object: nil
             )
         }

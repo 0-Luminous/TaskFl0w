@@ -671,4 +671,114 @@ final class ClockViewModel: ObservableObject {
         formatter.dateStyle = .none
         return formatter.string(from: date)
     }
+
+    // Модифицируем метод applyWatchFaceSettings() для обновления ThemeManager
+    func applyWatchFaceSettings() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Получаем ThemeManager
+            let themeManager = ThemeManager.shared
+            
+            // Перезагружаем основные настройки
+            self.showHourNumbers = UserDefaults.standard.bool(forKey: "showHourNumbers")
+            self.markersWidth = UserDefaults.standard.double(forKey: "markersWidth")
+            self.markersOffset = UserDefaults.standard.double(forKey: "markersOffset")
+            self.numbersSize = UserDefaults.standard.double(forKey: "numbersSize")
+            self.zeroPosition = UserDefaults.standard.double(forKey: "zeroPosition")
+            self.numberInterval = UserDefaults.standard.integer(forKey: "numberInterval")
+            self.showMarkers = UserDefaults.standard.bool(forKey: "showMarkers")
+            self.fontName = UserDefaults.standard.string(forKey: "fontName") ?? "SF Pro"
+            self.outerRingLineWidthRaw = UserDefaults.standard.double(forKey: "outerRingLineWidth")
+            self.taskArcLineWidthRaw = UserDefaults.standard.double(forKey: "taskArcLineWidth")
+            self.isAnalogArcStyle = UserDefaults.standard.bool(forKey: "isAnalogArcStyle")
+            self.showTimeOnlyForActiveTask = UserDefaults.standard.bool(forKey: "showTimeOnlyForActiveTask")
+            self.digitalFont = UserDefaults.standard.string(forKey: "digitalFont") ?? "SF Pro"
+            self.digitalFontSizeRaw = UserDefaults.standard.double(forKey: "digitalFontSize")
+            
+            // Обновляем цвета в ThemeManager
+            if let lightFaceColorHex = UserDefaults.standard.string(forKey: "lightModeClockFaceColor"),
+               let lightFaceColor = Color(hex: lightFaceColorHex) {
+                self.lightModeClockFaceColor = lightFaceColorHex
+                themeManager.updateColor(lightFaceColor, for: ThemeManager.Constants.lightModeClockFaceColorKey)
+            }
+            
+            if let darkFaceColorHex = UserDefaults.standard.string(forKey: "darkModeClockFaceColor"),
+               let darkFaceColor = Color(hex: darkFaceColorHex) {
+                self.darkModeClockFaceColor = darkFaceColorHex
+                themeManager.updateColor(darkFaceColor, for: ThemeManager.Constants.darkModeClockFaceColorKey)
+            }
+            
+            if let lightRingColorHex = UserDefaults.standard.string(forKey: "lightModeOuterRingColor"),
+               let lightRingColor = Color(hex: lightRingColorHex) {
+                self.lightModeOuterRingColor = lightRingColorHex
+                themeManager.updateColor(lightRingColor, for: ThemeManager.Constants.lightModeOuterRingColorKey)
+            }
+            
+            if let darkRingColorHex = UserDefaults.standard.string(forKey: "darkModeOuterRingColor"),
+               let darkRingColor = Color(hex: darkRingColorHex) {
+                self.darkModeOuterRingColor = darkRingColorHex
+                themeManager.updateColor(darkRingColor, for: ThemeManager.Constants.darkModeOuterRingColorKey)
+            }
+            
+            if let lightMarkersColorHex = UserDefaults.standard.string(forKey: "lightModeMarkersColor"),
+               let lightMarkersColor = Color(hex: lightMarkersColorHex) {
+                self.lightModeMarkersColor = lightMarkersColorHex
+                themeManager.updateColor(lightMarkersColor, for: ThemeManager.Constants.lightModeMarkersColorKey)
+            }
+            
+            if let darkMarkersColorHex = UserDefaults.standard.string(forKey: "darkModeMarkersColor"),
+               let darkMarkersColor = Color(hex: darkMarkersColorHex) {
+                self.darkModeMarkersColor = darkMarkersColorHex
+                themeManager.updateColor(darkMarkersColor, for: ThemeManager.Constants.darkModeMarkersColorKey)
+            }
+            
+            // Обновляем цвета для цифрового шрифта
+            if let lightDigitalFontColorHex = UserDefaults.standard.string(forKey: "lightModeDigitalFontColor") {
+                self.lightModeDigitalFontColor = lightDigitalFontColorHex
+            }
+            
+            if let darkDigitalFontColorHex = UserDefaults.standard.string(forKey: "darkModeDigitalFontColor") {
+                self.darkModeDigitalFontColor = darkDigitalFontColorHex
+            }
+            
+            // Обновляем цвета стрелки
+            if let lightHandColorHex = UserDefaults.standard.string(forKey: "lightModeHandColor") {
+                self.lightModeHandColor = lightHandColorHex
+            }
+            
+            if let darkHandColorHex = UserDefaults.standard.string(forKey: "darkModeHandColor") {
+                self.darkModeHandColor = darkHandColorHex
+            }
+            
+            // Получаем стиль часов
+            if let savedStyle = UserDefaults.standard.string(forKey: "clockStyle") {
+                self.clockStyle = savedStyle
+            }
+            
+            // Считываем стиль маркеров
+            if let rawStyle = UserDefaults.standard.string(forKey: "markerStyle"),
+               let style = MarkerStyle(rawValue: rawStyle) {
+                self.markerStyle = style
+            }
+            
+            // Обновляем промежуточные маркеры
+            self.showIntermediateMarkers = UserDefaults.standard.bool(forKey: "showIntermediateMarkers")
+            
+            // Обновляем настройки в markersViewModel
+            self.initializeMarkersViewModel()
+            
+            // Принудительно обновляем ThemeManager, чтобы инициировать обновление UI
+            DispatchQueue.main.async {
+                themeManager.objectWillChange.send()
+            }
+            
+            // Уведомляем об изменениях
+            self.objectWillChange.send()
+            self.markersViewModel.objectWillChange.send()
+            
+            // Вызываем специальный метод для обновления UI
+            self.updateMarkersViewModel()
+        }
+    }
 }

@@ -406,6 +406,10 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
         UserDefaults.standard.set(showIntermediateMarkers, forKey: "showIntermediateMarkers")
         UserDefaults.standard.set(digitalFontSize, forKey: "digitalFontSize")
         
+        // Добавляем сохранение цветов стрелки перед отправкой уведомления
+        UserDefaults.standard.set(lightModeHandColor, forKey: "lightModeHandColor")
+        UserDefaults.standard.set(darkModeHandColor, forKey: "darkModeHandColor")
+        
         // Принудительно обновляем представление ThemeManager
         // Вызываем публичные методы вместо приватного updateColorsForCurrentTheme()
         let _ = themeManager.currentClockFaceColor
@@ -443,6 +447,14 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             
             markersViewModel.objectWillChange.send()
         }
+        
+        // После всех сохранений и обновлений отправляем дополнительное уведомление
+        // для полной синхронизации экрана часов
+        NotificationCenter.default.post(
+            name: NSNotification.Name("WatchFaceApplied"),
+            object: nil,
+            userInfo: ["watchFaceID": id.uuidString]
+        )
     }
     
     // Метод для преобразования внутреннего значения в отображаемое

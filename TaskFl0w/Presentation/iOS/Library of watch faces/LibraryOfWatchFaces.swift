@@ -82,6 +82,11 @@ struct LibraryOfWatchFaces: View {
                                     libraryManager: libraryManager,
                                     onWatchFaceSelected: { face in
                                         libraryManager.selectWatchFace(face.id)
+                                        // Отправляем уведомление о выборе циферблата
+                                        NotificationCenter.default.post(
+                                            name: NSNotification.Name("WatchFaceApplied"),
+                                            object: nil
+                                        )
                                         dismiss()
                                     },
                                     onEdit: { face in
