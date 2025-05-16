@@ -24,7 +24,12 @@ struct EnhancedAddWatchFaceView: View {
     @State private var taskArcLineWidth: CGFloat = 2
     @State private var outerRingLineWidth: CGFloat = 20
 
-    
+    // Добавляем функцию для генерации виброотдачи
+    private func generateHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.prepare()
+        generator.impactOccurred()
+    }
         
     var body: some View {
         NavigationStack {
@@ -93,6 +98,7 @@ struct EnhancedAddWatchFaceView: View {
                     
                     Button {
                         if !watchFaceName.isEmpty {
+                            generateHapticFeedback()
                             libraryManager.createCustomWatchFace(name: watchFaceName)
                             dismiss()
                         }
@@ -127,6 +133,7 @@ struct EnhancedAddWatchFaceView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
+                        generateHapticFeedback()
                         dismiss()
                     }) {
                         HStack {

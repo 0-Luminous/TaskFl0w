@@ -21,6 +21,13 @@ struct EnhancedEditWatchFaceView: View {
         _editedName = State(initialValue: watchFace.name)
     }
     
+    // Добавляем функцию для генерации виброотдачи
+    private func generateHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.prepare()
+        generator.impactOccurred()
+    }
+    
     // Модификатор для текстового поля
     private struct TextFieldModifier: ViewModifier {
         func body(content: Content) -> some View {
@@ -69,6 +76,7 @@ struct EnhancedEditWatchFaceView: View {
                     
                     // Кнопка удаления
                     Button {
+                        generateHapticFeedback(style: .rigid)
                         showingDeleteAlert = true
                     } label: {
                         HStack {
@@ -92,6 +100,7 @@ struct EnhancedEditWatchFaceView: View {
                     // Кнопка сохранения
                     Button {
                         if !editedName.isEmpty {
+                            generateHapticFeedback()
                             var updatedFace = watchFace
                             updatedFace.name = editedName
                             libraryManager.updateWatchFace(updatedFace)
@@ -128,6 +137,7 @@ struct EnhancedEditWatchFaceView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
+                        generateHapticFeedback()
                         dismiss()
                     }) {
                         HStack {
@@ -139,8 +149,11 @@ struct EnhancedEditWatchFaceView: View {
                 }
             }
             .alert("Удалить циферблат?", isPresented: $showingDeleteAlert) {
-                Button("Отмена", role: .cancel) { }
+                Button("Отмена", role: .cancel) { 
+                    generateHapticFeedback()
+                }
                 Button("Удалить", role: .destructive) {
+                    generateHapticFeedback(style: .rigid)
                     libraryManager.deleteWatchFace(watchFace.id)
                     dismiss()
                 }

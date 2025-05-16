@@ -9,9 +9,19 @@ struct DockBarView: View {
     @Binding var showZeroPositionControls: Bool
     @ObservedObject private var themeManager = ThemeManager.shared
     
+    // Добавляем функцию для генерации виброотдачи
+    private func generateHapticFeedback() {
+        #if os(iOS)
+        let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
+        feedbackGenerator.prepare()
+        feedbackGenerator.impactOccurred()
+        #endif
+    }
+    
     var body: some View {
         HStack(spacing: 20) {
             Button(action: {
+                generateHapticFeedback()
                 withAnimation {
                     showClockControls.toggle()
                     if showClockControls {
@@ -28,6 +38,7 @@ struct DockBarView: View {
             }
 
             Button(action: {
+                generateHapticFeedback()
                 withAnimation {
                     showMarkersControls.toggle()
                     if showMarkersControls {
@@ -44,6 +55,7 @@ struct DockBarView: View {
             }
 
             Button(action: {
+                generateHapticFeedback()
                 withAnimation {
                     showColorControls.toggle()
                     if showColorControls {
@@ -60,6 +72,7 @@ struct DockBarView: View {
             }
 
             Button(action: {
+                generateHapticFeedback()
                 withAnimation {
                     showOuterRingWidthControls.toggle()
                     if showOuterRingWidthControls {
@@ -92,6 +105,7 @@ struct DockBarView: View {
             // }
 
             Button(action: {
+                generateHapticFeedback()
                 withAnimation {
                     showArcAnalogToggle.toggle()
                     if showArcAnalogToggle {
