@@ -36,50 +36,56 @@ struct ArcStyleControlsView: View {
             }
             .padding(.bottom, 8)
             
-            Text("Отображение времени")
-                .font(.subheadline)
-                .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            // Вторая строка: Отображение времени
-            HStack(spacing: 10) {
-                Button(action: {
-                    withAnimation {
-                        viewModel.showTimeOnlyForActiveTask = false
-                        showTimeOnlyForActiveTask = false
-                    }
-                }) {
-                    HStack {
-                        Text("Всегда")
-                            .font(.caption)
-                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                        Image(systemName: "clock")
-                            .font(.caption)
-                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
-                    }
-                    .buttonStyle(isSelected: !viewModel.showTimeOnlyForActiveTask)
-                }
-                .buttonStyle(PlainButtonStyle())
+            if !viewModel.isAnalogArcStyle {
+                Text("Отображение времени")
+                    .font(.subheadline)
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 
-                Button(action: {
-                    withAnimation {
-                        viewModel.showTimeOnlyForActiveTask = true
-                        showTimeOnlyForActiveTask = true
+                // Вторая строка: Отображение времени
+                HStack(spacing: 10) {
+                    Button(action: {
+                        withAnimation {
+                            viewModel.showTimeOnlyForActiveTask = false
+                            showTimeOnlyForActiveTask = false
+                        }
+                    }) {
+                        HStack {
+                            Text("Всегда")
+                                .font(.caption)
+                                .foregroundColor(!viewModel.showTimeOnlyForActiveTask ? 
+                                    (themeManager.isDarkMode ? .yellow : .red1) : 
+                                    (themeManager.isDarkMode ? .white : .black))
+                            Image(systemName: "clock")
+                                .font(.caption)
+                                .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                        }
+                        .buttonStyle(isSelected: !viewModel.showTimeOnlyForActiveTask)
                     }
-                }) {
-                    HStack {
-                        Text("Активная задача")
-                            .font(.caption)
-                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                        Image(systemName: "clock.badge")
-                            .font(.caption)
-                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    Button(action: {
+                        withAnimation {
+                            viewModel.showTimeOnlyForActiveTask = true
+                            showTimeOnlyForActiveTask = true
+                        }
+                    }) {
+                        HStack {
+                            Text("Активная задача")
+                                .font(.caption)
+                                .foregroundColor(viewModel.showTimeOnlyForActiveTask ? 
+                                    (themeManager.isDarkMode ? .yellow : .red1) : 
+                                    (themeManager.isDarkMode ? .white : .black))
+                            Image(systemName: "clock.badge")
+                                .font(.caption)
+                                .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
+                        }
+                        .buttonStyle(isSelected: viewModel.showTimeOnlyForActiveTask)
                     }
-                    .buttonStyle(isSelected: viewModel.showTimeOnlyForActiveTask)
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .buttonStyle(PlainButtonStyle())
+                .padding(.bottom, 8)
             }
-            .padding(.bottom, 8)
             
             // Дополнительная информация
             Text("Аналоговый стиль дуги гармонирует с внешним кольцом. Выбор времени влияет на отображение времени начала и конца задач.")

@@ -31,6 +31,9 @@ struct ColorControlsView: View {
     @Binding var lightModeDigitalFontColor: String
     @Binding var darkModeDigitalFontColor: String
     
+    @State private var selectedMarkersColorIndex: Int?
+    @State private var selectedHandColorIndex: Int?
+    
     var body: some View {
         VStack(spacing: 16) {
 
@@ -88,16 +91,18 @@ struct ColorControlsView: View {
                 // Отображение цветов для выбора
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 16) {
-                        handColorButton(color: .blue)
-                        handColorButton(color: .red1)
-                        handColorButton(color: .yellow)
-                        handColorButton(color: .green1)
-                        handColorButton(color: .Purple1)
-                        handColorButton(color: .Orange1)
-                        handColorButton(color: .LightBlue1)
-                        handColorButton(color: .Pink1)
-                        handColorButton(color: .Teal1)
-                        handColorButton(color: .Indigo1)
+                        handColorButton(color: .black, index: 0)
+                        handColorButton(color: .gray, index: 1)
+                        handColorButton(color: .Pink1, index: 2)
+                        handColorButton(color: .red1, index: 3)
+                        handColorButton(color: .Orange1, index: 4)
+                        handColorButton(color: .yellow, index: 5)
+                        handColorButton(color: .green1, index: 6)
+                        handColorButton(color: .LightBlue1, index: 7)
+                        handColorButton(color: .Teal1, index: 8)
+                        handColorButton(color: .blue, index: 9)
+                        handColorButton(color: .Indigo1, index: 10)
+                        handColorButton(color: .Purple1, index: 11)
                     }
                     .padding(.vertical, 8)
                     .padding(.horizontal, 4)
@@ -199,9 +204,31 @@ struct ColorControlsView: View {
                                                         markersViewModel.lightModeMarkersColor = newColorHex
                                                     }
                                                     markersViewModel.updateCurrentThemeColors()
+                                                case "outerRing":
+                                                    if themeManager.isDarkMode {
+                                                        darkModeOuterRingColor = newColorHex
+                                                        viewModel.darkModeOuterRingColor = newColorHex
+                                                    } else {
+                                                        lightModeOuterRingColor = newColorHex
+                                                        viewModel.lightModeOuterRingColor = newColorHex
+                                                    }
+                                                case "digitalFontColor":
+                                                    if themeManager.isDarkMode {
+                                                        darkModeDigitalFontColor = newColorHex
+                                                        viewModel.darkModeDigitalFontColor = newColorHex
+                                                        markersViewModel.darkModeDigitalFontColor = newColorHex
+                                                    } else {
+                                                        lightModeDigitalFontColor = newColorHex
+                                                        viewModel.lightModeDigitalFontColor = newColorHex
+                                                        markersViewModel.lightModeDigitalFontColor = newColorHex
+                                                    }
+                                                    markersViewModel.updateCurrentThemeColors()
                                                 default:
                                                     break
                                                 }
+                                                
+                                                // Обновляем выбранный цвет в hex для всех типов
+                                                selectedColorHex = newColorHex
                                             }
                                     )
                             }
@@ -236,15 +263,23 @@ struct ColorControlsView: View {
                                     colorButton(color: standardColors[index], forType: selectedColorType, index: index)
                                 }
                             } else {
-                                // Для внешнего кольца - дополнительные прозрачные варианты
-                                colorButton(color: Color.black, forType: selectedColorType, index: 0)
-                                colorButton(color: Color.black.opacity(0.2), forType: selectedColorType, index: 1)
-                                colorButton(color: Color.black.opacity(0.1), forType: selectedColorType, index: 2)
-                                colorButton(color: Color.white.opacity(0.1), forType: selectedColorType, index: 3)
-                                colorButton(color: Color.white.opacity(0.2), forType: selectedColorType, index: 4)
-                                colorButton(color: Color.white.opacity(0.3), forType: selectedColorType, index: 5)
-                                colorButton(color: Color.white.opacity(0.5), forType: selectedColorType, index: 6)
-                                colorButton(color: Color.white.opacity(0.7), forType: selectedColorType, index: 7)
+                                // Для внешнего кольца - разные цвета для разных тем
+                                if themeManager.isDarkMode {
+                                    // Темные цвета для темной темы
+                                    colorButton(color: Color(red: 0.15, green: 0.15, blue: 0.15), forType: selectedColorType, index: 7) // Очень темно-серый
+                                    colorButton(color: Color(red: 0.2, green: 0.2, blue: 0.2), forType: selectedColorType, index: 8) // Темно-серый
+                                    colorButton(color: Color(red: 0.25, green: 0.25, blue: 0.25), forType: selectedColorType, index: 9) // Серый
+                                    colorButton(color: Color(red: 0.3, green: 0.3, blue: 0.3), forType: selectedColorType, index: 10) // Средне-серый
+                                    colorButton(color: Color(red: 0.4, green: 0.4, blue: 0.4), forType: selectedColorType, index: 11) // Светло-серый
+                                } else {
+                                    // Светлые цвета для светлой темы
+                                    colorButton(color: Color(red: 0.7, green: 0.7, blue: 0.7), forType: selectedColorType, index: 1) // Светло-серый
+                                    colorButton(color: Color(red: 0.75, green: 0.75, blue: 0.75), forType: selectedColorType, index: 2) // Светло-серый
+                                    colorButton(color: Color(red: 0.8, green: 0.8, blue: 0.8), forType: selectedColorType, index: 3) // Очень светло-серый
+                                    colorButton(color: Color(red: 0.85, green: 0.85, blue: 0.85), forType: selectedColorType, index: 4) // Очень светло-серый
+                                    colorButton(color: Color(red: 0.9, green: 0.9, blue: 0.9), forType: selectedColorType, index: 5) // Почти белый
+                                    // colorButton(color: Color(red: 0.95, green: 0.95, blue: 0.95), forType: selectedColorType, index: 5) // Светло-белый
+                                }
                             }
                         }
                         .padding(.vertical, 8)
@@ -458,19 +493,21 @@ struct ColorControlsView: View {
         switch type {
         case "clockFace":
             currentHex = themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
+            // Для типа clockFace проверяем как по индексу, так и по цвету
+            isSelected = (index != nil && selectedColorIndex == index) || (index == nil && currentHex == color.toHex())
         case "markers":
             currentHex = themeManager.isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
+            isSelected = (index != nil && selectedMarkersColorIndex == index) || (index == nil && currentHex == color.toHex())
         case "outerRing":
             currentHex = themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
+            isSelected = currentHex == color.toHex()
         case "digitalFontColor":
             currentHex = themeManager.isDarkMode ? darkModeDigitalFontColor : lightModeDigitalFontColor
+            isSelected = currentHex == color.toHex()
         default:
             currentHex = ""
+            isSelected = false
         }
-        
-        // Проверяем, выбран ли цвет
-        let colorHex = color.toHex()
-        isSelected = currentHex == colorHex
         
         return Button(action: {
             // Устанавливаем индекс для текущего типа
@@ -479,7 +516,8 @@ struct ColorControlsView: View {
             case "clockFace":
                 selectedColorIndex = index
             case "markers":
-                // Сохраняем отдельный индекс для маркеров - не используем общий selectedColorIndex
+                // Сохраняем индекс для маркеров
+                selectedMarkersColorIndex = index
                 if themeManager.isDarkMode {
                     darkModeMarkersColor = color.toHex()
                     viewModel.darkModeMarkersColor = color.toHex()
@@ -489,14 +527,11 @@ struct ColorControlsView: View {
                     viewModel.lightModeMarkersColor = color.toHex()
                     markersViewModel.lightModeMarkersColor = color.toHex()
                 }
-                // Не трогаем selectedColorIndex
                 selectedColorType = type
                 selectedColorHex = color.toHex()
                 initializeSliderPositionWithoutUpdatingSelection()
                 markersViewModel.updateCurrentThemeColors()
-                return
             case "outerRing":
-                // Аналогично для внешнего кольца
                 if themeManager.isDarkMode {
                     darkModeOuterRingColor = color.toHex()
                     viewModel.darkModeOuterRingColor = color.toHex()
@@ -504,12 +539,7 @@ struct ColorControlsView: View {
                     lightModeOuterRingColor = color.toHex()
                     viewModel.lightModeOuterRingColor = color.toHex()
                 }
-                // Не трогаем selectedColorIndex
-                selectedColorType = type
-                selectedColorHex = color.toHex()
-                return
             case "digitalFontColor":
-                // Обработка цвета цифрового шрифта
                 if themeManager.isDarkMode {
                     darkModeDigitalFontColor = color.toHex()
                     viewModel.darkModeDigitalFontColor = color.toHex()
@@ -523,7 +553,6 @@ struct ColorControlsView: View {
                 selectedColorHex = color.toHex()
                 initializeSliderPositionWithoutUpdatingSelection()
                 markersViewModel.updateCurrentThemeColors()
-                return
             default:
                 break
             }
@@ -548,9 +577,9 @@ struct ColorControlsView: View {
                         .frame(width: 42, height: 42)
                         .overlay(
                             Circle()
-                                .stroke(Color.yellow, lineWidth: 2)
+                                .stroke(themeManager.isDarkMode ? Color.yellow : Color.red1, lineWidth: 2)
                         )
-                        .shadow(color: Color.yellow.opacity(0.6), radius: 4, x: 0, y: 0)
+                        .shadow(color: themeManager.isDarkMode ? Color.yellow.opacity(0.6) : Color.red1.opacity(0.6), radius: 4, x: 0, y: 0)
                 }
                 
                 Circle()
@@ -714,8 +743,9 @@ struct ColorControlsView: View {
     }
     
     // Добавляем функцию для кнопки выбора цвета стрелки
-    private func handColorButton(color: Color) -> some View {
+    private func handColorButton(color: Color, index: Int? = nil) -> some View {
         Button(action: {
+            selectedHandColorIndex = index
             if themeManager.isDarkMode {
                 darkModeHandColor = color.toHex()
                 viewModel.darkModeHandColor = color.toHex()
@@ -725,7 +755,7 @@ struct ColorControlsView: View {
             }
         }) {
             ZStack {
-                let isSelected = currentHandColor == color
+                let isSelected = (index != nil && selectedHandColorIndex == index) || (index == nil && currentHandColor == color)
                 
                 if isSelected {
                     Circle()
@@ -733,9 +763,9 @@ struct ColorControlsView: View {
                         .frame(width: 42, height: 42)
                         .overlay(
                             Circle()
-                                .stroke(Color.yellow, lineWidth: 2)
+                                .stroke(themeManager.isDarkMode ? Color.yellow : Color.red1, lineWidth: 2)
                         )
-                        .shadow(color: Color.yellow.opacity(0.6), radius: 4, x: 0, y: 0)
+                        .shadow(color: themeManager.isDarkMode ? Color.yellow.opacity(0.6) : Color.red1.opacity(0.6), radius: 4, x: 0, y: 0)
                 }
                 
                 Circle()

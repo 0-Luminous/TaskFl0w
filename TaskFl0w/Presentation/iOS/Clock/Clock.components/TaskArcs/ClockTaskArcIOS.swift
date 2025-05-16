@@ -33,8 +33,8 @@ struct ClockTaskArcIOS: View {
     private let minIconOffset: CGFloat = 0
     private let minAnalogIconOffset: CGFloat = -16
     private let maxAnalogIconOffset: CGFloat = -4
-    private let baseIconSize: CGFloat = 22
-    private let minIconFontSize: CGFloat = 11
+    private let baseIconSize: CGFloat = 20
+    private let minIconFontSize: CGFloat = 10
     private let maxIconFontSize: CGFloat = 19
     private let timeFontSize: CGFloat = 10
     private let timeTextOffset: CGFloat = -8
@@ -168,6 +168,7 @@ struct ClockTaskArcIOS: View {
                                 .fill(task.category.color)
                                 .frame(width: iconSize, height: iconSize)
                         )
+                        .scaleEffect(shortTaskScale)
                         .position(
                             x: center.x + iconRadius * cos(midAngle.radians),
                             y: center.y + iconRadius * sin(midAngle.radians)
