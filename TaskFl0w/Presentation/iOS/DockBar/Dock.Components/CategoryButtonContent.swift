@@ -5,6 +5,7 @@
 //  Created by Yan on 14/4/25.
 //
 import SwiftUI
+import UIKit
 
 // Новая структура для содержимого кнопки категории
 struct CategoryButtonContent: View {
@@ -16,6 +17,9 @@ struct CategoryButtonContent: View {
     @Binding var selectedCategory: TaskCategoryModel?
     @Binding var draggedCategory: TaskCategoryModel?
     let moveCategory: (Int, Int) -> Void
+    
+    // Добавляем генератор виброотдачи
+    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
 
     var body: some View {
         CategoryButton(
@@ -27,6 +31,9 @@ struct CategoryButtonContent: View {
         .scaleEffect(isSelected ? 1.1 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: isSelected)
         .onTapGesture {
+            // Добавляем виброотдачу при нажатии
+            feedbackGenerator.impactOccurred()
+            
             withAnimation {
                 // Если выбрана та же категория - убираем её
                 if selectedCategory?.id == category.id {

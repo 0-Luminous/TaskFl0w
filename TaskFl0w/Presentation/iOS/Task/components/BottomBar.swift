@@ -5,6 +5,7 @@
 // Created by Yan on 21/3/25.
 
 import SwiftUI
+import UIKit
 
 struct BottomBar: View {
     // MARK: - Properties
@@ -21,6 +22,9 @@ struct BottomBar: View {
     
     // Добавляем состояние для отслеживания нажатий
     @State private var isAddButtonPressed = false
+    
+    // Генератор обратной связи для виброотдачи
+    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
     
     // MARK: - Body
     var body: some View {
@@ -125,14 +129,20 @@ struct BottomBar: View {
     // MARK: - UI Components
     
     private var archiveButton: some View {
-        Button(action: onArchiveTapped) {
+        Button(action: {
+            feedbackGenerator.impactOccurred()
+            onArchiveTapped()
+        }) {
             toolbarIcon(systemName: "archivebox", 
                         color: themeManager.isDarkMode ? showCompletedTasksOnly ? .coral1 : .gray : showCompletedTasksOnly ? .red1 : .black)
         }
     }
     
     private var selectionModeToggleButton: some View {
-        Button(action: toggleSelectionMode) {
+        Button(action: {
+            feedbackGenerator.impactOccurred()
+            toggleSelectionMode()
+        }) {
             toolbarIcon(systemName: "checkmark.circle", color: themeManager.isDarkMode ? .gray : .black)
         }
     }
@@ -140,6 +150,7 @@ struct BottomBar: View {
     
     private var deleteButton: some View {
         Button(action: {
+            feedbackGenerator.impactOccurred()
             onDeleteSelectedTasks()
             toggleSelectionMode()
         }) {
@@ -152,23 +163,28 @@ struct BottomBar: View {
     private var priorityButton: some View {
         Button(action: {
             if !selectedTasks.isEmpty {
+                feedbackGenerator.impactOccurred()
                 onChangePriorityForSelectedTasks()
             }
         }) {
-            toolbarIcon(systemName: "arrow.up.arrow.down", color: .gray)
+            toolbarIcon(systemName: "arrow.up.arrow.down", color: .green)
         }
         .disabled(selectedTasks.isEmpty)
         .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
     }
     
     private var exitSelectionModeButton: some View {
-        Button(action: toggleSelectionMode) {
+        Button(action: {
+            feedbackGenerator.impactOccurred()
+            toggleSelectionMode()
+        }) {
             toolbarIcon(systemName: "checkmark.circle", color: themeManager.isDarkMode ? .coral1 : .red1)
         }
     }
     
     private var unarchiveButton: some View {
         Button(action: {
+            feedbackGenerator.impactOccurred()
             onUnarchiveSelectedTasks()
             toggleSelectionMode()
         }) {
@@ -180,6 +196,7 @@ struct BottomBar: View {
     
     private var archiveActionButton: some View {
         Button(action: {
+            feedbackGenerator.impactOccurred()
             onArchiveTapped()
             toggleSelectionMode()
         }) {
@@ -190,6 +207,7 @@ struct BottomBar: View {
     private var addButton: some View {
         Button(action: {
             if !showCompletedTasksOnly {
+                feedbackGenerator.impactOccurred()
                 onAddTap()
             }
         }) {

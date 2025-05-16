@@ -29,13 +29,26 @@ struct TaskListView: View {
    
     
     private let topID = "top_of_list"
+    
+    // Функция для генерации виброотдачи
+    private func generateHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.prepare()
+        generator.impactOccurred()
+    }
 
     var body: some View {
         NavigationView {
             ZStack(alignment: .top) {
+                // Добавляем явный фоновый цвет на весь экран для устранения черного мерцания
+                themeManager.isDarkMode 
+                    ? Color(red: 0.098, green: 0.098, blue: 0.098).ignoresSafeArea()
+                    : Color(red: 0.95, green: 0.95, blue: 0.95).ignoresSafeArea()
+                
                 VStack(spacing: 0) {
                     Spacer()
                         .frame(height: 10)
+                        .background(Color.clear)
                     
                     ScrollViewReader { scrollProxy in
                         List {
@@ -131,6 +144,7 @@ struct TaskListView: View {
                                     )
                                     .contentShape(Rectangle())
                                     .onTapGesture {
+                                        generateHapticFeedback()
                                         if viewModel.isSelectionMode {
                                             viewModel.toggleTaskSelection(taskId: item.id)
                                         } else {
@@ -217,6 +231,7 @@ struct TaskListView: View {
                                     showingPrioritySheet = true
                                 },
                                 onArchiveTapped: {
+                                    generateHapticFeedback()
                                     viewModel.showCompletedTasksOnly.toggle()
                                 },
                                 onUnarchiveSelectedTasks: {
@@ -224,7 +239,7 @@ struct TaskListView: View {
                                 },
                                 showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
                             )
-                            .transition(.move(edge: .bottom))
+                            .transition(AnyTransition.opacity.animation(.easeInOut(duration: 2.2)))
                             .padding(.bottom, 60)
                         }
                     }
@@ -258,10 +273,8 @@ struct TaskListView: View {
                     .padding(.horizontal, 20)
                 }
             }
+            
             .scrollContentBackground(.hidden)
-            .background{
-               themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95)
-            }
             .actionSheet(isPresented: $showingPrioritySheet) {
                 ActionSheet(
                     title: Text("Выберите приоритет"),

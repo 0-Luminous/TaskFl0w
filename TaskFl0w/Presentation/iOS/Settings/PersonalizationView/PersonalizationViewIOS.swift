@@ -10,6 +10,15 @@ struct PersonalizationViewIOS: View {
     @State private var showingWatchFaceLibrary = false
     @State private var showingFirstView = false
     @State private var showingTaskSettings = false
+    
+    // Добавляем генератор виброотдачи
+    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .soft)
+    
+    // Функция для генерации виброотдачи
+    private func generateHapticFeedback() {
+        feedbackGenerator.prepare()
+        feedbackGenerator.impactOccurred()
+    }
 
     var body: some View {
         ZStack {
@@ -24,6 +33,7 @@ struct PersonalizationViewIOS: View {
 
                 // Уведомления
                 Button {
+                    generateHapticFeedback()
                     showingClockEditor = true
                 } label: {
                     HStack {
@@ -83,6 +93,7 @@ struct PersonalizationViewIOS: View {
 
                 // Новая кнопка Задачи
                 Button {
+                    generateHapticFeedback()
                     showingTaskSettings = true
                 } label: {
                     HStack {
@@ -142,6 +153,7 @@ struct PersonalizationViewIOS: View {
 
                 // Библиотека циферблатов (новая кнопка)
                 Button {
+                    generateHapticFeedback()
                     showingWatchFaceLibrary = true
                 } label: {
                     HStack {
@@ -201,6 +213,7 @@ struct PersonalizationViewIOS: View {
 
                 // Циферблат
                 Button {
+                    generateHapticFeedback()
                     showingClockFaceEditor = true
                 } label: {
                     HStack {
@@ -260,6 +273,7 @@ struct PersonalizationViewIOS: View {
 
                 // Категории
                 Button {
+                    generateHapticFeedback()
                     showingCategoryEditor = true
                 } label: {
                     HStack {
@@ -393,7 +407,10 @@ struct PersonalizationViewIOS: View {
         .toolbarColorScheme(themeManager.isDarkMode ? .dark : .light, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: { dismiss() }) {
+                Button(action: { 
+                    generateHapticFeedback()
+                    dismiss() 
+                }) {
                     Image(systemName: "chevron.backward")
                         .foregroundColor(.red1)
                     Text("Назад")

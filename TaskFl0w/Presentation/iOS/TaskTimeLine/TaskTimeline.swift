@@ -22,7 +22,7 @@ struct TimeBlock: Identifiable {
     // Вычисляемые свойства для удобства использования
     var hourString: String {
         if hour == 24 {
-            return "23:00"
+            return "00:00"
         }
         return String(format: "%02d:00", hour % 24)
     }
@@ -383,7 +383,7 @@ struct TaskTimeline: View {
     }
 
     // Визуализация индикатора текущего времени
-    private func timeIndicatorView(in geometry: GeometryProxy) -> some View {
+    private func timeIndicatorView(in geometry: GeometryProxy) -> AnyView {
         let isToday = Calendar.current.isDateInToday(selectedDate)
         
         if isToday {
@@ -393,28 +393,30 @@ struct TaskTimeline: View {
                 timeBlocks: timeBlocks
             )
             
-            return HStack(alignment: .center, spacing: 4) {
-                // Метка времени
-                Text(formatTime(timelineManager.currentTime))
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.pink)
-                
-                // Линия с индикатором
-                ZStack(alignment: .leading) {
-                    Rectangle()
-                        .fill(Color.pink)
-                        .frame(height: 1.5)
+            return AnyView(
+                HStack(alignment: .center, spacing: 4) {
+                    // Метка времени
+                    Text(formatTime(timelineManager.currentTime))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.pink)
                     
-                    Circle()
-                        .fill(Color.pink)
-                        .frame(width: 6, height: 6)
+                    // Линия с индикатором
+                    ZStack(alignment: .leading) {
+                        Rectangle()
+                            .fill(Color.pink)
+                            .frame(height: 1.5)
+                        
+                        Circle()
+                            .fill(Color.pink)
+                            .frame(width: 6, height: 6)
+                    }
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .offset(y: yPosition - 10)
-            .padding(.leading, -15)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .offset(y: yPosition - 10)
+                .padding(.leading, -15)
+            )
         } else {
-            return Color.clear.frame(height: 0)
+            return AnyView(Color.clear.frame(height: 0))
         }
     }
     
@@ -494,7 +496,7 @@ struct TaskTimeline: View {
             // Метка часа (если нужно показать)
             if timeBlock.showHourLabel {
                 ZStack {
-                    Text(timeBlock.hour == 24 ? "23" : String(format: "%02d", timeBlock.hour % 24))
+                    Text(timeBlock.hour == 24 ? "00" : String(format: "%02d", timeBlock.hour % 24))
                         .font(.system(size: 40, weight: .bold))
                         .foregroundColor(themeManager.isDarkMode ? .gray.opacity(0.3) : .black.opacity(0.3))
                         .frame(maxWidth: .infinity, alignment: .leading)

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct TopBarView: View {
     let viewModel: ClockViewModel
@@ -30,6 +31,13 @@ struct TopBarView: View {
         self.isCalendarVisible = isCalendarVisible
         self.searchAction = searchAction
         _calendarSelectedDate = State(initialValue: viewModel.selectedDate)
+    }
+
+    // Добавляем функцию для виброотдачи
+    private func hapticFeedback() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.prepare()
+        generator.impactOccurred()
     }
 
     var body: some View {
@@ -77,26 +85,27 @@ struct TopBarView: View {
                     Button(action: searchAction) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 20))
-                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
+                            .foregroundColor(themeManager.isDarkMode ? .coral1.opacity(0.5) : .red1.opacity(0.5))
                             .padding(4)
                     }
                     .background(
                         Circle()
-                            .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
+                            .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184).opacity(0.7) : Color(red: 0.95, green: 0.95, blue: 0.95).opacity(0.7))
                     )
                     .overlay(
                         Circle()
                             .stroke(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
+                                    gradient: Gradient(colors: [Color.gray.opacity(0.4), Color.gray.opacity(0.2)]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
-                                lineWidth: 1.0
+                                lineWidth: 0.5
                             )
                     )
                     .padding(.leading, 16)
-                    .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 0)
+                    .opacity(0.8)
 
                     Spacer()
 
@@ -127,7 +136,10 @@ struct TopBarView: View {
 
                     // Кнопка настроек перенесена направо
                     if !isCalendarVisible {
-                        Button(action: showSettingsAction) {
+                        Button(action: {
+                            hapticFeedback()
+                            showSettingsAction()
+                        }) {
                             Image(systemName: "gear")
                                 .font(.system(size: 20))
                                 .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)

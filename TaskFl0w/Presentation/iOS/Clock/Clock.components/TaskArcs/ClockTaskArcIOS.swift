@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 //
 //  ClockTaskArcIOS.swift
@@ -54,6 +55,13 @@ struct ClockTaskArcIOS: View {
         let tIconOffset = (arcLineWidth - minArcWidth) / (maxArcWidth - minArcWidth)
         
         return (shortTaskScale, tArcOffset, tRing, tIconOffset)
+    }
+
+    // Функция для выполнения виброотдачи
+    private func triggerHapticFeedback() {
+        let feedbackGenerator = UIImpactFeedbackGenerator(style: .soft)
+        feedbackGenerator.prepare()
+        feedbackGenerator.impactOccurred()
     }
 
     var body: some View {
@@ -134,6 +142,9 @@ struct ClockTaskArcIOS: View {
                         .gesture(
                             TapGesture()
                                 .onEnded {
+                                    // Добавляем виброотдачу при входе в режим редактирования
+                                    triggerHapticFeedback()
+                                    
                                     withAnimation {
                                         if viewModel.isEditingMode, viewModel.editingTask?.id == task.id
                                         {
@@ -177,6 +188,9 @@ struct ClockTaskArcIOS: View {
                         .gesture(
                             TapGesture()
                                 .onEnded {
+                                    // Добавляем виброотдачу и для иконки
+                                    triggerHapticFeedback()
+                                    
                                     withAnimation {
                                         if viewModel.isEditingMode, viewModel.editingTask?.id == task.id
                                         {
