@@ -15,6 +15,7 @@ struct ClockTaskArcIOS: View {
 
     @State private var isDragging: Bool = false
     @State private var isVisible: Bool = true
+    @State private var lastHourComponent: Int = -1
     
     // Кэшируем форматтер, чтобы не создавать его каждый раз
     private let timeFormatter = {
@@ -62,6 +63,20 @@ struct ClockTaskArcIOS: View {
         let feedbackGenerator = UIImpactFeedbackGenerator(style: .soft)
         feedbackGenerator.prepare()
         feedbackGenerator.impactOccurred()
+    }
+
+    // Функция для выполнения сильной виброотдачи для часовых делений
+    private func triggerSelectionHapticFeedback() {
+        let feedbackGenerator = UIImpactFeedbackGenerator(style: .rigid)
+        feedbackGenerator.prepare()
+        feedbackGenerator.impactOccurred()
+    }
+
+    // Функция для выполнения мягкой виброотдачи при перетаскивании
+    private func triggerDragHapticFeedback() {
+        let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
+        feedbackGenerator.prepare()
+        feedbackGenerator.impactOccurred(intensity: 0.5)
     }
 
     var body: some View {
@@ -320,6 +335,11 @@ struct ClockTaskArcIOS: View {
                             viewModel.isDraggingEnd = true
                         }
                         
+                        // Виброотдача при начале перетаскивания
+                        if lastHourComponent == -1 {
+                            triggerDragHapticFeedback()
+                        }
+                        
                         // Вычисляем вектор от центра к точке перетаскивания
                         let vector = CGVector(dx: value.location.x - center.x, dy: value.location.y - center.y)
                         
@@ -340,6 +360,21 @@ struct ClockTaskArcIOS: View {
                         let hours = adjustedDegrees / 15 // 15 градусов = 1 час
                         let hourComponent = Int(hours)
                         let minuteComponent = Int((hours - Double(hourComponent)) * 60)
+                        
+                        // Проверяем, пересекли ли мы новое часовое деление
+                        if hourComponent != lastHourComponent {
+                            // Если это не первый вызов (-1) и если значение изменилось - делаем виброотдачу
+                            if lastHourComponent != -1 {
+                                triggerSelectionHapticFeedback()
+                            }
+                            lastHourComponent = hourComponent
+                        }
+                        
+                        // Мягкая виброотдача при каждом значительном изменении минут (каждые 5 минут)
+                        let currentMinuteBucket = minuteComponent / 5
+                        if currentMinuteBucket != (minuteComponent - 1) / 5 && lastHourComponent != -1 {
+                            triggerDragHapticFeedback()
+                        }
                         
                         // Используем компоненты из выбранной даты
                         var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
@@ -403,6 +438,12 @@ struct ClockTaskArcIOS: View {
                             viewModel.isDraggingEnd = false
                         }
                         viewModel.previewTime = nil
+                        
+                        // Сбрасываем последний часовой компонент
+                        lastHourComponent = -1
+                        
+                        // Виброотдача при завершении перетаскивания
+                        triggerHapticFeedback()
                     }
             )
     }

@@ -46,9 +46,6 @@ struct TaskListView: View {
                     : Color(red: 0.95, green: 0.95, blue: 0.95).ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    Spacer()
-                        .frame(height: 10)
-                        .background(Color.clear)
                     
                     ScrollViewReader { scrollProxy in
                         List {
