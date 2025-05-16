@@ -21,7 +21,10 @@ struct TimeBlock: Identifiable {
     
     // Вычисляемые свойства для удобства использования
     var hourString: String {
-        String(format: "%02d:00", hour % 24)
+        if hour == 24 {
+            return "23:00"
+        }
+        return String(format: "%02d:00", hour % 24)
     }
     
     var hasActiveTasks: Bool {
@@ -73,6 +76,8 @@ class TimelineManager: ObservableObject {
         var tasksByHour: [Int: [TaskOnRing]] = [:]
         var startHours: Set<Int> = []
         var endHours: Set<Int> = []
+        var processedTasks = Set<UUID>() // Добавляем множество для отслеживания обработанных задач
+        var processedTasksAt0Hour = Set<UUID>() // Добавляем отслеживание задач для 0-го часа
         
         // Анализируем задачи и создаем временные диапазоны
         for task in tasks {
@@ -96,7 +101,17 @@ class TimelineManager: ObservableObject {
                 adjustedEndHour = endHour
             }
             
-            // Аккуратно обрабатываем граничные случаи
+            // Аккуратно обрабатываем граничные случаи с 0 часами
+            // Если задача начинается в 0 часов и она уже была обработана для 24 часов (или наоборот)
+            // то пропускаем её, чтобы избежать дублирования
+            if (startHour == 0 || adjustedEndHour == 0) && processedTasks.contains(task.id) {
+                continue
+            }
+            
+            // Отмечаем задачу как обработанную
+            processedTasks.insert(task.id)
+            
+            // Добавляем задачу в соответствующий час
             if tasksByHour[startHour] == nil {
                 tasksByHour[startHour] = []
             }
@@ -115,7 +130,35 @@ class TimelineManager: ObservableObject {
         // Показываем полные сутки и еще час для наглядности
         for hour in 0...24 {
             let hourMod24 = hour % 24
-            let tasksAtHour = tasksByHour[hourMod24] ?? []
+            
+            // Получаем задачи для текущего часа
+            var tasksAtHour = tasksByHour[hourMod24] ?? []
+            
+            // Специальная обработка для 24-го часа (полночь следующего дня)
+            if hour == 24 {
+                // Фильтруем задачи, исключая те, которые уже были в 0-м часу
+                tasksAtHour = tasksAtHour.filter { !processedTasksAt0Hour.contains($0.id) }
+            } else if hourMod24 == 0 {
+                // Запоминаем ID задач 0-го часа для исключения их при обработке 24-го часа
+                processedTasksAt0Hour = Set(tasksAtHour.map { $0.id })
+            }
+            
+            // Если это 0-й или другие часы, проверяем на дубликаты внутри текущего блока
+            if tasksAtHour.count > 1 {
+                // Фильтруем дубликаты внутри текущего блока
+                let uniqueTaskIds = Set(tasksAtHour.map { $0.id })
+                if uniqueTaskIds.count != tasksAtHour.count {
+                    // Оставляем только уникальные задачи
+                    var seenIds = Set<UUID>()
+                    tasksAtHour = tasksAtHour.filter { task in
+                        if seenIds.contains(task.id) {
+                            return false
+                        }
+                        seenIds.insert(task.id)
+                        return true
+                    }
+                }
+            }
             
             // Определяем статус часа для визуализации
             let isInsideTask = taskRanges.contains { $0.contains(hourMod24) }
@@ -451,7 +494,7 @@ struct TaskTimeline: View {
             // Метка часа (если нужно показать)
             if timeBlock.showHourLabel {
                 ZStack {
-                    Text(String(format: "%02d", timeBlock.hour % 24))
+                    Text(timeBlock.hour == 24 ? "23" : String(format: "%02d", timeBlock.hour % 24))
                         .font(.system(size: 40, weight: .bold))
                         .foregroundColor(themeManager.isDarkMode ? .gray.opacity(0.3) : .black.opacity(0.3))
                         .frame(maxWidth: .infinity, alignment: .leading)

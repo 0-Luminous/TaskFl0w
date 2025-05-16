@@ -15,13 +15,46 @@ struct ClockTaskArcIOS: View {
     @State private var isDragging: Bool = false
     @State private var isVisible: Bool = true
     
-    // Форматтер для отображения времени
-    private let timeFormatter: DateFormatter = {
+    // Кэшируем форматтер, чтобы не создавать его каждый раз
+    private let timeFormatter = {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         formatter.dateStyle = .none
         return formatter
     }()
+    
+    // Вынесите константы на уровень структуры, а не внутрь body
+    private let minOuterRingWidth: CGFloat = 20
+    private let maxOuterRingWidth: CGFloat = 38
+    private let minArcWidth: CGFloat = 20
+    private let maxArcWidth: CGFloat = 32
+    private let minOffset: CGFloat = 10
+    private let maxOffset: CGFloat = 0
+    private let minIconOffset: CGFloat = 0
+    private let minAnalogIconOffset: CGFloat = -16
+    private let maxAnalogIconOffset: CGFloat = -4
+    private let baseIconSize: CGFloat = 22
+    private let minIconFontSize: CGFloat = 11
+    private let maxIconFontSize: CGFloat = 19
+    private let timeFontSize: CGFloat = 10
+    private let timeTextOffset: CGFloat = -8
+    
+    // Предварительные вычисления для избежания их повторения внутри body
+    private var isAnalog: Bool { viewModel.isAnalogArcStyle }
+    
+    // Подготовка параметров для визуализации задачи - вынесено за пределы body
+    private func prepareTaskVisualization(taskDurationMinutes: Double) -> (shortTaskScale: CGFloat, tArcOffset: CGFloat, tRing: CGFloat, tIconOffset: CGFloat) {
+        // Коэффициент масштаба для коротких задач (менее часа)
+        let isShortTask = taskDurationMinutes < 60
+        let shortTaskScale: CGFloat = isShortTask ? max(0.6, taskDurationMinutes / 60) : 1.0
+        
+        // Расчеты для отступов
+        let tArcOffset = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
+        let tRing = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
+        let tIconOffset = (arcLineWidth - minArcWidth) / (maxArcWidth - minArcWidth)
+        
+        return (shortTaskScale, tArcOffset, tRing, tIconOffset)
+    }
 
     var body: some View {
         if !isVisible {
@@ -33,120 +66,97 @@ struct ClockTaskArcIOS: View {
                 let (startAngle, endAngle) = RingTimeCalculator.calculateAngles(for: task)
                 let midAngle = RingTimeCalculator.calculateMidAngle(start: startAngle, end: endAngle)
                 
-                // Вычисляем коэффициент масштаба для коротких задач (менее часа)
                 let taskDurationMinutes = task.duration / 60
-                let isShortTask = taskDurationMinutes < 60
-                let shortTaskScale: CGFloat = isShortTask ? max(0.6, taskDurationMinutes / 60) : 1.0
+                let (shortTaskScale, tArcOffset, tRing, tIconOffset) = prepareTaskVisualization(taskDurationMinutes: taskDurationMinutes)
                 
-                // Базовый размер иконки с учетом масштаба для коротких задач
-                let baseIconSize: CGFloat = 22
+                // Размеры иконки с учетом масштаба для коротких задач
                 let iconSize: CGFloat = baseIconSize * shortTaskScale
                 
-                let isAnalog = viewModel.isAnalogArcStyle
-                let minOuterRingWidth: CGFloat = 20
-                let maxOuterRingWidth: CGFloat = 38
-                let minOffset: CGFloat = 10
-                let maxOffset: CGFloat = 0
-                let tArcOffset = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
+                // Отступы для аналогового режима
                 let analogOffset = minOffset + (maxOffset - minOffset) * tArcOffset
+                
+                // Радиус дуги
                 let arcRadius: CGFloat = isAnalog
                     ? radius + (viewModel.outerRingLineWidth / 2) + analogOffset
                     : radius + arcLineWidth / 2
-
-                let minArcWidth: CGFloat = 20
-                let maxArcWidth: CGFloat = 32
-                let minIconOffset: CGFloat = 0
-
-                // Для аналогового режима — иконка ближе к циферблату при min толщине кольца
-                let minAnalogIconOffset: CGFloat = -16
-                let maxAnalogIconOffset: CGFloat = -4
-                let tRing = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
+                
+                // Расчет смещения иконки
                 let analogIconOffset = minAnalogIconOffset + (maxAnalogIconOffset - minAnalogIconOffset) * tRing
-
                 let maxIconOffset: CGFloat = isAnalog ? analogIconOffset : 6
-
-                let tIconOffset = (arcLineWidth - minArcWidth) / (maxArcWidth - minArcWidth)
                 let iconOffset = minIconOffset + (maxIconOffset - minIconOffset) * tIconOffset
+                
+                // Расчет радиуса для размещения иконки
                 let iconRadius: CGFloat = isAnalog
                     ? arcRadius
                     : arcRadius + iconSize / 2 + iconOffset
-
-                let minIconFontSize: CGFloat = 11
-                let maxIconFontSize: CGFloat = 19
-                let t = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
+                
                 // Размер шрифта иконки с учетом короткой задачи
                 let baseIconFontSize: CGFloat = isAnalog
-                    ? minIconFontSize + (maxIconFontSize - minIconFontSize) * t
+                    ? minIconFontSize + (maxIconFontSize - minIconFontSize) * tRing
                     : minIconFontSize
                 let iconFontSize: CGFloat = baseIconFontSize * shortTaskScale
                 
-                // Определение размера и отступа для текста времени
-                let timeFontSize: CGFloat = 10 * shortTaskScale
-                // Смещение текста внутрь циферблата
-                let timeTextOffset: CGFloat = -8
-
+                // Создаем только один Path для дуги задачи, используемый и для отрисовки, и для распознавания жестов
+                let taskArcPath = Path { path in
+                    path.addArc(
+                        center: center,
+                        radius: arcRadius,
+                        startAngle: startAngle,
+                        endAngle: endAngle,
+                        clockwise: false)
+                }
+                
+                // Контент-шейп для распознавания жестов
+                let taskTapArea = Path { path in
+                    path.addArc(
+                        center: center,
+                        radius: radius + 30,
+                        startAngle: startAngle,
+                        endAngle: endAngle,
+                        clockwise: false
+                    )
+                    path.addArc(
+                        center: center,
+                        radius: radius - 40,
+                        startAngle: endAngle,
+                        endAngle: startAngle,
+                        clockwise: true
+                    )
+                    path.closeSubpath()
+                }
+                
                 ZStack {
                     // Дуга задачи
-                    Path { path in
-                        path.addArc(
-                            center: center,
-                            radius: arcRadius,
-                            startAngle: startAngle,
-                            endAngle: endAngle,
-                            clockwise: false)
-                    }
-                    .stroke(task.category.color, lineWidth: arcLineWidth)
-                    .contentShape(
-                        Path { path in
-                            path.addArc(
-                                center: center,
-                                radius: radius + 30,
-                                startAngle: startAngle,
-                                endAngle: endAngle,
-                                clockwise: false
-                            )
-                            path.addArc(
-                                center: center,
-                                radius: radius - 40,
-                                startAngle: endAngle,
-                                endAngle: startAngle,
-                                clockwise: true
-                            )
-                            path.closeSubpath()
-                        }
-                    )
-                    .contentShape(.dragPreview, Circle().scale(1.2))
-                    .gesture(
-                        TapGesture()
-                            .onEnded {
-                                withAnimation {
-                                    if viewModel.isEditingMode, viewModel.editingTask?.id == task.id
-                                    {
-                                        viewModel.isEditingMode = false
-                                        viewModel.editingTask = nil
-                                    } else {
-                                        viewModel.isEditingMode = true
-                                        viewModel.editingTask = task
+                    taskArcPath
+                        .stroke(task.category.color, lineWidth: arcLineWidth)
+                        .contentShape(taskTapArea)
+                        .contentShape(.dragPreview, Circle().scale(1.2))
+                        .gesture(
+                            TapGesture()
+                                .onEnded {
+                                    withAnimation {
+                                        if viewModel.isEditingMode, viewModel.editingTask?.id == task.id
+                                        {
+                                            viewModel.isEditingMode = false
+                                            viewModel.editingTask = nil
+                                        } else {
+                                            viewModel.isEditingMode = true
+                                            viewModel.editingTask = task
+                                        }
                                     }
                                 }
+                        )
+                        .onDrag {
+                            if !viewModel.isEditingMode && viewModel.editingTask == nil && !isDragging {
+                                // Начинаем перетаскивание
+                                viewModel.startDragging(task)
+                                isDragging = true
+                                return NSItemProvider(object: task.id.uuidString as NSString)
                             }
-                    )
-                    .onDrag {
-                        if !viewModel.isEditingMode && viewModel.editingTask == nil && !isDragging {
-                            print("onDrag: начало перетаскивания \(task.category.rawValue)")
-
-                            // Начинаем перетаскивание
-                            viewModel.startDragging(task)
-                            isDragging = true
-                            return NSItemProvider(object: task.id.uuidString as NSString)
+                            return NSItemProvider()
+                        } preview: {
+                            CategoryDragPreview(task: task)
                         }
-                        return NSItemProvider()
-                    } preview: {
-                        CategoryDragPreview(task: task)
-                            .onAppear {
-                                print("preview: \(task.category.rawValue)")
-                            }
-                    }
 
                     // Иконка категории на середине дуги
                     Image(systemName: task.category.iconName)
@@ -179,7 +189,7 @@ struct ClockTaskArcIOS: View {
                                 }
                         )
                     
-                    // Если текущая задача в режиме редактирования — показываем маркеры (после иконки, чтобы они были выше по Z-порядку)
+                    // Если текущая задача в режиме редактирования — показываем маркеры
                     if viewModel.isEditingMode && task.id == viewModel.editingTask?.id {
                         // Маркер начала
                         createDragHandle(
@@ -206,64 +216,19 @@ struct ClockTaskArcIOS: View {
                         )
                     }
                     
-                    // Добавляем отображение времени начала задачи только для цифрового стиля
-                    // Скрываем цифры, когда активны маркеры редактирования
-                    // или когда задача не активна и включена опция "Время только у активной задачи"
-                    if !isAnalog && 
-                       !(viewModel.isEditingMode && task.id == viewModel.editingTask?.id) {
-                        // Проверяем, является ли задача текущей по времени или выбранной пользователем
-                        let now = Date()
-                        let isActiveTask = (task.startTime <= now && task.endTime > now) || viewModel.editingTask?.id == task.id
-                        
-                        // Показываем время, если мы не в режиме "только для активной задачи" 
-                        // или если мы в этом режиме и задача активна
-                        if !viewModel.showTimeOnlyForActiveTask || (viewModel.showTimeOnlyForActiveTask && isActiveTask) {
-                            // Проверяем, находится ли текст в левой части циферблата
-                            let isStartInLeftHalf = isAngleInLeftHalf(startAngle)
-                            let isEndInLeftHalf = isAngleInLeftHalf(endAngle)
-                            
-                            // Текст времени начала задачи с корректной капсулой
-                            let startTimeText = timeFormatter.string(from: task.startTime)
-                            let endTimeText = timeFormatter.string(from: task.endTime)
-
-                            ZStack {
-                                // Фон в виде капсулы с фиксированной шириной, уменьшаем для коротких задач
-                                Capsule()
-                                    .fill(task.category.color)
-                                    .frame(width: (CGFloat(startTimeText.count) * 6 + 6) * shortTaskScale, height: 16 * shortTaskScale)
-                                
-                                // Текст времени
-                                Text(startTimeText)
-                                    .font(.system(size: timeFontSize))
-                                    .foregroundColor(.white)
-                                    .shadow(color: .black.opacity(0.3), radius: 1)
-                            }
-                            .rotationEffect(isStartInLeftHalf ? startAngle + .degrees(180) : startAngle)
-                            .position(
-                                x: center.x + (arcRadius + timeTextOffset) * cos(startAngle.radians),
-                                y: center.y + (arcRadius + timeTextOffset) * sin(startAngle.radians)
-                            )
-                            
-                            // Текст времени окончания задачи с корректной капсулой
-                            ZStack {
-                                // Фон в виде капсулы с фиксированной шириной, уменьшаем для коротких задач
-                                Capsule()
-                                    .fill(task.category.color)
-                                    .frame(width: (CGFloat(endTimeText.count) * 6 + 6) * shortTaskScale, height: 16 * shortTaskScale)
-                                
-                                // Текст времени
-                                Text(endTimeText)
-                                    .font(.system(size: timeFontSize))
-                                    .foregroundColor(.white)
-                                    .shadow(color: .black.opacity(0.3), radius: 1)
-                            }
-                            .rotationEffect(isEndInLeftHalf ? endAngle + .degrees(180) : endAngle)
-                            .position(
-                                x: center.x + (arcRadius + timeTextOffset) * cos(endAngle.radians),
-                                y: center.y + (arcRadius + timeTextOffset) * sin(endAngle.radians)
-                            )
-                        }
-                    }
+                    // Отображение времени (оптимизированное условие)
+                    TaskTimeLabels(
+                        task: task,
+                        isAnalog: isAnalog, 
+                        viewModel: viewModel,
+                        startAngle: startAngle,
+                        endAngle: endAngle,
+                        center: center,
+                        arcRadius: arcRadius,
+                        timeTextOffset: timeTextOffset,
+                        shortTaskScale: shortTaskScale,
+                        timeFormatter: timeFormatter
+                    )
                 }
             }
             .onChange(of: isDragging) { oldValue, newValue in
@@ -486,12 +451,101 @@ struct ClockTaskArcIOS: View {
             }
         }
     }
+}
 
-    // Проверяет, находится ли угол в левой половине циферблата
+// Выносим отображение времени в отдельный компонент
+struct TaskTimeLabels: View {
+    let task: TaskOnRing
+    let isAnalog: Bool
+    let viewModel: ClockViewModel
+    let startAngle: Angle
+    let endAngle: Angle
+    let center: CGPoint
+    let arcRadius: CGFloat
+    let timeTextOffset: CGFloat
+    let shortTaskScale: CGFloat
+    let timeFormatter: DateFormatter
+    
+    // Вынесено в отдельные методы для улучшения читаемости и оптимизации
     private func isAngleInLeftHalf(_ angle: Angle) -> Bool {
-        // Преобразуем угол в градусы в диапазоне 0-360
         let degrees = (angle.degrees.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
-        // Левая половина циферблата: 90-270 градусов
         return degrees > 90 && degrees < 270
+    }
+    
+    // Проверка активности задачи
+    private var isActiveTask: Bool {
+        let now = Date()
+        return (task.startTime <= now && task.endTime > now) || viewModel.editingTask?.id == task.id
+    }
+    
+    // Проверка условий для отображения времени
+    private var shouldShowTime: Bool {
+        !isAnalog && 
+        !(viewModel.isEditingMode && task.id == viewModel.editingTask?.id) && 
+        (!viewModel.showTimeOnlyForActiveTask || (viewModel.showTimeOnlyForActiveTask && isActiveTask))
+    }
+    
+    var body: some View {
+        if shouldShowTime {
+            // Текст времени начала задачи
+            let startTimeText = timeFormatter.string(from: task.startTime)
+            let endTimeText = timeFormatter.string(from: task.endTime)
+            let isStartInLeftHalf = isAngleInLeftHalf(startAngle)
+            let isEndInLeftHalf = isAngleInLeftHalf(endAngle)
+
+            // Отображаем метку времени начала
+            TimeLabel(
+                timeText: startTimeText,
+                angle: startAngle,
+                isLeftHalf: isStartInLeftHalf,
+                color: task.category.color,
+                center: center,
+                radius: arcRadius,
+                offset: timeTextOffset,
+                scale: shortTaskScale
+            )
+            
+            // Отображаем метку времени окончания
+            TimeLabel(
+                timeText: endTimeText,
+                angle: endAngle,
+                isLeftHalf: isEndInLeftHalf,
+                color: task.category.color,
+                center: center,
+                radius: arcRadius,
+                offset: timeTextOffset,
+                scale: shortTaskScale
+            )
+        }
+    }
+}
+
+// Выносим отдельную метку времени в свой компонент для еще большей модуляризации
+struct TimeLabel: View {
+    let timeText: String
+    let angle: Angle
+    let isLeftHalf: Bool
+    let color: Color
+    let center: CGPoint
+    let radius: CGFloat
+    let offset: CGFloat
+    let scale: CGFloat
+    
+    var body: some View {
+        ZStack {
+            Capsule()
+                .fill(color)
+                .frame(width: (CGFloat(timeText.count) * 6 + 6) * scale, height: 16 * scale)
+            
+            Text(timeText)
+                .font(.system(size: 10 * scale))
+                .foregroundColor(.white)
+                .shadow(color: .black.opacity(0.3), radius: 1)
+        }
+        .rotationEffect(isLeftHalf ? angle + .degrees(180) : angle)
+        .position(
+            x: center.x + (radius + offset) * cos(angle.radians),
+            y: center.y + (radius + offset) * sin(angle.radians)
+        )
     }
 }

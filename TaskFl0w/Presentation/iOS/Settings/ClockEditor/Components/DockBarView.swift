@@ -75,21 +75,21 @@ struct DockBarView: View {
                     .dockButtonStyle(isSelected: showOuterRingWidthControls)
             }
 
-            Button(action: {
-                withAnimation {
-                    showZeroPositionControls.toggle()
-                    if showZeroPositionControls {
-                        showClockControls = false
-                        showColorControls = false
-                        showOuterRingWidthControls = false
-                        showMarkersControls = false
-                        showArcAnalogToggle = false
-                    }
-                }
-            }) {
-                Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
-                    .dockButtonStyle(isSelected: showZeroPositionControls)
-            }
+            // Button(action: {
+            //     withAnimation {
+            //         showZeroPositionControls.toggle()
+            //         if showZeroPositionControls {
+            //             showClockControls = false
+            //             showColorControls = false
+            //             showOuterRingWidthControls = false
+            //             showMarkersControls = false
+            //             showArcAnalogToggle = false
+            //         }
+            //     }
+            // }) {
+            //     Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+            //         .dockButtonStyle(isSelected: showZeroPositionControls)
+            // }
 
             Button(action: {
                 withAnimation {
