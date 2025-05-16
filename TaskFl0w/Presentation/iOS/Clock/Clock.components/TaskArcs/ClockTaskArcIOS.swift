@@ -466,6 +466,11 @@ struct TaskTimeLabels: View {
     let shortTaskScale: CGFloat
     let timeFormatter: DateFormatter
     
+    // Добавляем доступ к толщине дуги
+    var arcLineWidth: CGFloat {
+        return isAnalog ? viewModel.outerRingLineWidth : viewModel.taskArcLineWidth
+    }
+    
     // Вынесено в отдельные методы для улучшения читаемости и оптимизации
     private func isAngleInLeftHalf(_ angle: Angle) -> Bool {
         let degrees = (angle.degrees.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
@@ -492,7 +497,12 @@ struct TaskTimeLabels: View {
             let endTimeText = timeFormatter.string(from: task.endTime)
             let isStartInLeftHalf = isAngleInLeftHalf(startAngle)
             let isEndInLeftHalf = isAngleInLeftHalf(endAngle)
-
+            
+            // Расчет масштаба для меток времени в зависимости от толщины дуги
+            let minArcWidth: CGFloat = 20
+            let maxArcWidth: CGFloat = 32
+            let arcWidthScale = 1.0 + ((arcLineWidth - minArcWidth) / (maxArcWidth - minArcWidth)) * 0.5
+            
             // Отображаем метку времени начала
             TimeLabel(
                 timeText: startTimeText,
@@ -502,7 +512,7 @@ struct TaskTimeLabels: View {
                 center: center,
                 radius: arcRadius,
                 offset: timeTextOffset,
-                scale: shortTaskScale
+                scale: shortTaskScale * arcWidthScale
             )
             
             // Отображаем метку времени окончания
@@ -514,13 +524,13 @@ struct TaskTimeLabels: View {
                 center: center,
                 radius: arcRadius,
                 offset: timeTextOffset,
-                scale: shortTaskScale
+                scale: shortTaskScale * arcWidthScale
             )
         }
     }
 }
 
-// Выносим отдельную метку времени в свой компонент для еще большей модуляризации
+// Модифицируем структуру TimeLabel, убирая зависимость от Environment
 struct TimeLabel: View {
     let timeText: String
     let angle: Angle
