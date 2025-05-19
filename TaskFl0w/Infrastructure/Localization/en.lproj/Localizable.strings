@@ -1,0 +1,25 @@
+// Localizable.strings (Russian)
+
+"navigation.settings" = "Настройки";
+"navigation.back" = "Назад";
+"settings.notifications" = "Уведомления";
+"settings.tasks" = "Задачи";
+"settings.watchFaceLibrary" = "Библиотека циферблатов";
+"settings.watchFace" = "Циферблат";
+"settings.categories" = "Категории";
+
+"notifications.title" = "Уведомления";
+"notifications.reminderTime" = "Напоминать за";
+"notifications.footer" = "Важные уведомления будут проигрываться даже в режиме «Не беспокоить»";
+"notifications.time.oneMinute" = "1 минута";
+"notifications.time.fiveMinutes" = "5 минут";
+"notifications.time.tenMinutes" = "10 минут";
+"notifications.time.fifteenMinutes" = "15 минут";
+"notifications.time.thirtyMinutes" = "30 минут";
+"notifications.time.oneHour" = "1 час";
+"notifications.testing.title" = "Тестирование";
+"notifications.testing.testButton" = "Проверить уведомление";
+"notifications.alert.title" = "Требуется разрешение";
+"notifications.alert.settings" = "Настройки";
+"notifications.alert.cancel" = "Отмена";
+"notifications.alert.message" = "Для отправки уведомлений необходимо разрешение. Пожалуйста, откройте настройки приложения и включите уведомления.";

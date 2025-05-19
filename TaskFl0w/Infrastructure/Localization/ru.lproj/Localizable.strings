@@ -1,0 +1,25 @@
+// Localizable.strings (English)
+
+"navigation.settings" = "Settings";
+"navigation.back" = "Back";
+"settings.notifications" = "Notifications";
+"settings.tasks" = "Tasks";
+"settings.watchFaceLibrary" = "Watch Face Library";
+"settings.watchFace" = "Watch Face";
+"settings.categories" = "Categories";
+
+"notifications.title" = "Notifications";
+"notifications.reminderTime" = "Remind before";
+"notifications.footer" = "Important notifications will play even in Do Not Disturb mode";
+"notifications.time.oneMinute" = "1 minute";
+"notifications.time.fiveMinutes" = "5 minutes";
+"notifications.time.tenMinutes" = "10 minutes";
+"notifications.time.fifteenMinutes" = "15 minutes";
+"notifications.time.thirtyMinutes" = "30 minutes";
+"notifications.time.oneHour" = "1 hour";
+"notifications.testing.title" = "Testing";
+"notifications.testing.testButton" = "Test notification";
+"notifications.alert.title" = "Permission Required";
+"notifications.alert.settings" = "Settings";
+"notifications.alert.cancel" = "Cancel";
+"notifications.alert.message" = "Permission is required to send notifications. Please open the app settings and enable notifications.";

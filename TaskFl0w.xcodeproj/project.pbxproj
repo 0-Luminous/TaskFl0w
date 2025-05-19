@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		2C9D00532DC1552200B6724A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C9D00522DC1552200B6724A /* WidgetKit.framework */; };
 		2C9D00552DC1552200B6724A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C9D00542DC1552200B6724A /* SwiftUI.framework */; };
-		2C9D00662DC1552700B6724A /* TaskFlowWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2C9D00512DC1552200B6724A /* TaskFlowWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2CDF440B2D1AC2C000149A0B /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CDF440A2D1AC2C000149A0B /* UIKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -28,28 +27,7 @@
 			remoteGlobalIDString = 2C1DB3892D1AB92000C768B1;
 			remoteInfo = TaskFl0w;
 		};
-		2C9D00642DC1552700B6724A /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 2C1DB3822D1AB92000C768B1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 2C9D00502DC1552200B6724A;
-			remoteInfo = TaskFlowWidgetsExtension;
-		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		2C9D006B2DC1552700B6724A /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				2C9D00662DC1552700B6724A /* TaskFlowWidgetsExtension.appex in Embed Foundation Extensions */,
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2C1DB38A2D1AB92000C768B1 /* TaskFl0w.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TaskFl0w.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -187,12 +165,10 @@
 				2C1DB3862D1AB92000C768B1 /* Sources */,
 				2C1DB3872D1AB92000C768B1 /* Frameworks */,
 				2C1DB3882D1AB92000C768B1 /* Resources */,
-				2C9D006B2DC1552700B6724A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				2C9D00652DC1552700B6724A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				2C1DB38C2D1AB92000C768B1 /* TaskFl0w */,
@@ -302,9 +278,8 @@
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
 				ru,
-				Base,
+				en,
 			);
 			mainGroup = 2C1DB3812D1AB92000C768B1;
 			minimizedProjectReferenceProxies = 1;
@@ -393,11 +368,6 @@
 			isa = PBXTargetDependency;
 			target = 2C1DB3892D1AB92000C768B1 /* TaskFl0w */;
 			targetProxy = 2C1DB3AA2D1AB92400C768B1 /* PBXContainerItemProxy */;
-		};
-		2C9D00652DC1552700B6724A /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 2C9D00502DC1552200B6724A /* TaskFlowWidgetsExtension */;
-			targetProxy = 2C9D00642DC1552700B6724A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -555,7 +525,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -593,7 +563,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

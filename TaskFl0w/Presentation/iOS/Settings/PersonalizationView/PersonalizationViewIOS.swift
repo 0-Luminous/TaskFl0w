@@ -66,7 +66,7 @@ struct PersonalizationViewIOS: View {
                                 radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
-                        Text("Уведомления")
+                        Text("settings.notifications".localized)
                             .font(.system(size: 18))
                             .foregroundColor(themeManager.isDarkMode ? .primary : .black)
                             .padding(.leading, 12)
@@ -126,7 +126,7 @@ struct PersonalizationViewIOS: View {
                                 radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
-                        Text("Задачи")
+                        Text("settings.tasks".localized)
                             .font(.system(size: 18))
                             .foregroundColor(themeManager.isDarkMode ? .primary : .black)
                             .padding(.leading, 12)
@@ -186,7 +186,7 @@ struct PersonalizationViewIOS: View {
                                 radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
-                        Text("Библиотека циферблатов")
+                        Text("settings.watchFaceLibrary".localized)
                             .font(.system(size: 18))
                             .foregroundColor(themeManager.isDarkMode ? .primary : .black)
                             .padding(.leading, 12)
@@ -246,7 +246,7 @@ struct PersonalizationViewIOS: View {
                                 radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
-                        Text("Циферблат")
+                        Text("settings.watchFace".localized)
                             .font(.system(size: 18))
                             .foregroundColor(themeManager.isDarkMode ? .primary : .black)
                             .padding(.leading, 12)
@@ -306,7 +306,7 @@ struct PersonalizationViewIOS: View {
                                 radius: 3, x: 0, y: 1)
                             .padding(.leading, 16)
 
-                        Text("Категории")
+                        Text("settings.categories".localized)
                             .font(.system(size: 18))
                             .foregroundColor(themeManager.isDarkMode ? .primary : .black)
                             .padding(.leading, 12)
@@ -400,7 +400,7 @@ struct PersonalizationViewIOS: View {
 
             }
         }
-        .navigationTitle("Настройки")
+        .navigationTitle("navigation.settings".localized)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95), for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -413,7 +413,7 @@ struct PersonalizationViewIOS: View {
                 }) {
                     Image(systemName: "chevron.backward")
                         .foregroundColor(.red1)
-                    Text("Назад")
+                    Text("navigation.back".localized)
                         .foregroundColor(.red1)
                 }
             }

@@ -14,18 +14,18 @@ struct SoundAndNotification: View {
     private let notificationService = NotificationService.shared
 
     private let reminderTimeOptions = [
-        (1, "1 минута"),
-        (5, "5 минут"),
-        (10, "10 минут"),
-        (15, "15 минут"),
-        (30, "30 минут"),
-        (60, "1 час"),
+        (1, "notifications.time.oneMinute".localized),
+        (5, "notifications.time.fiveMinutes".localized),
+        (10, "notifications.time.tenMinutes".localized),
+        (15, "notifications.time.fifteenMinutes".localized),
+        (30, "notifications.time.thirtyMinutes".localized),
+        (60, "notifications.time.oneHour".localized),
     ]
 
     var body: some View {
         Form {
             Section {
-                Toggle("Уведомления", isOn: $notificationsEnabled)
+                Toggle("notifications.title".localized, isOn: $notificationsEnabled)
                     .onChange(of: notificationsEnabled) { oldValue, newValue in
                         if newValue {
                             requestNotificationPermission()
@@ -33,47 +33,47 @@ struct SoundAndNotification: View {
                     }
 
                 if notificationsEnabled {
-                    Picker("Напоминать за", selection: $reminderTime) {
+                    Picker("notifications.reminderTime".localized, selection: $reminderTime) {
                         ForEach(reminderTimeOptions, id: \.0) { option in
                             Text(option.1).tag(option.0)
                         }
                     }
                 }
             } header: {
-                Text("Уведомления")
+                Text("notifications.title".localized)
             } footer: {
-                Text("Важные уведомления будут проигрываться даже в режиме «Не беспокоить»")
+                Text("notifications.footer".localized)
             }
 
             Section {
-                Button("Проверить уведомление") {
+                Button("notifications.testing.testButton".localized) {
                     sendTestNotification()
                 }
                 .disabled(!notificationsEnabled)
             } header: {
-                Text("Тестирование")
+                Text("notifications.testing.title".localized)
             }
         }
-        .navigationTitle("Уведомления")
+        .navigationTitle("notifications.title".localized)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.backward")
                         .foregroundColor(.red1)
-                    Text("Назад")
+                    Text("navigation.back".localized)
                     .foregroundColor(.red1)
                 }
             }
         }
-        .alert("Требуется разрешение", isPresented: $showingPermissionAlert) {
-            Button("Настройки") {
+        .alert("notifications.alert.title".localized, isPresented: $showingPermissionAlert) {
+            Button("notifications.alert.settings".localized) {
                 openSettings()
             }
-            Button("Отмена", role: .cancel) {}
+            Button("notifications.alert.cancel".localized, role: .cancel) {}
         } message: {
             Text(
-                "Для отправки уведомлений необходимо разрешение. Пожалуйста, откройте настройки приложения и включите уведомления."
+                "notifications.alert.message".localized
             )
         }
         .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)

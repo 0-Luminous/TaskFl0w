@@ -1,0 +1,46 @@
+// Ключи для локализации
+
+enum LocalizationKey {
+    // Навигация
+    enum Navigation {
+        static let settings = "navigation.settings"
+        static let back = "navigation.back"
+    }
+    
+    // Настройки
+    enum Settings {
+        static let notifications = "settings.notifications"
+        static let tasks = "settings.tasks"
+        static let watchFaceLibrary = "settings.watchFaceLibrary"
+        static let watchFace = "settings.watchFace"
+        static let categories = "settings.categories"
+    }
+    
+    // Уведомления
+    enum Notifications {
+        static let title = "notifications.title"
+        static let reminderTime = "notifications.reminderTime"
+        static let footer = "notifications.footer"
+        
+        enum Time {
+            static let oneMinute = "notifications.time.oneMinute"
+            static let fiveMinutes = "notifications.time.fiveMinutes"
+            static let tenMinutes = "notifications.time.tenMinutes"
+            static let fifteenMinutes = "notifications.time.fifteenMinutes"
+            static let thirtyMinutes = "notifications.time.thirtyMinutes"
+            static let oneHour = "notifications.time.oneHour"
+        }
+        
+        enum Testing {
+            static let title = "notifications.testing.title"
+            static let testButton = "notifications.testing.testButton"
+        }
+        
+        enum Alert {
+            static let title = "notifications.alert.title"
+            static let settings = "notifications.alert.settings"
+            static let cancel = "notifications.alert.cancel"
+            static let message = "notifications.alert.message"
+        }
+    }
+}
