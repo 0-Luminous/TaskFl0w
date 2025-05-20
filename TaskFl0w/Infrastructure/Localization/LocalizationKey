@@ -106,5 +106,33 @@ enum LocalizationKey {
         static let categoryNotFound = "taskTimeLine.categoryNotFound"
     }
 
+    enum LibraryOfWatchFaces {
+        static let title = "libraryOfWatchFaces.title"
+
+
+        enum Category{
+            static let classics = "libraryOfWatchFaces.category.classics"
+            static let digital = "libraryOfWatchFaces.category.digital"
+            static let analog = "libraryOfWatchFaces.category.analog"
+        }
+
+        enum Model{
+            static let classic = "libraryOfWatchFaces.model.classic"
+            static let grafitti = "libraryOfWatchFaces.model.grafitti"
+            static let crimsonCore = "libraryOfWatchFaces.model.crimsonCore"
+            static let forest = "libraryOfWatchFaces.model.forest"
+            static let inferno = "libraryOfWatchFaces.model.inferno"
+            static let bluePixel = "libraryOfWatchFaces.model.bluePixel"
+            static let lines = "libraryOfWatchFaces.model.lines"
+            static let coral = "libraryOfWatchFaces.model.coral"
+            static let happyBeat = "libraryOfWatchFaces.model.happyBeat"
+            static let technoRhythm = "libraryOfWatchFaces.model.technoRhythm"
+            static let redPixel = "libraryOfWatchFaces.model.redPixel"
+            static let green = "libraryOfWatchFaces.model.green"
+            static let yellowBits = "libraryOfWatchFaces.model.yellowBits"
+            static let diamond = "libraryOfWatchFaces.model.diamond"
+        }
+    }
+
 
 }

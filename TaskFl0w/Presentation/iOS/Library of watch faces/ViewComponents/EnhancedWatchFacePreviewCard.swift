@@ -55,11 +55,11 @@ struct EnhancedWatchFacePreviewCard: View {
                             .foregroundColor(themeManager.isDarkMode ? .white : .black)
                             .lineLimit(1)
                         
-                        if watchFace.isCustom {
-                            Text("Пользовательский")
-                                .font(.caption)
-                                .foregroundColor(themeManager.isDarkMode ? .gray : .gray.opacity(0.7))
-                        }
+                        // if watchFace.isCustom {
+                        //     Text("Пользовательский")
+                        //         .font(.caption)
+                        //         .foregroundColor(themeManager.isDarkMode ? .gray : .gray.opacity(0.7))
+                        // }
                     }
                     .padding(.vertical, 8)
                 }

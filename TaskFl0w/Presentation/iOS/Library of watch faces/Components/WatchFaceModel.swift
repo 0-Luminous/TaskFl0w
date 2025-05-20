@@ -62,7 +62,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
         [
             // Классический светлый циферблат
             WatchFaceModel(
-                name: "Классический",
+                name: "libraryOfWatchFaces.model.classic".localized,
                 style: "classic",
                 isCustom: false,
                 category: WatchFaceCategory.classic.rawValue,
@@ -81,7 +81,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),
             // Добавляем еще один классический циферблат
             WatchFaceModel(
-                name: "Граффити",
+                name: "libraryOfWatchFaces.model.grafitti".localized,
                 style: "classic",
                 isCustom: false,
                 category: WatchFaceCategory.classic.rawValue,
@@ -100,7 +100,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),
             // Добавляем кастомные циферблаты с разными шрифтами и стилями маркеров
             WatchFaceModel(
-                name: "Багровое ядро",
+                name: "libraryOfWatchFaces.model.crimsonCore".localized,
                 style: "classic",
                 isCustom: false,
                 category: WatchFaceCategory.classic.rawValue,
@@ -118,7 +118,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.red1.toHex()
             ),
             WatchFaceModel(
-                name: "Лесной",
+                name: "libraryOfWatchFaces.model.forest".localized,
                 style: "classic",
                 isCustom: false,
                 category: WatchFaceCategory.classic.rawValue,
@@ -136,7 +136,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.gray.toHex()
             ),
             WatchFaceModel(
-                name: "Инферно",
+                name: "libraryOfWatchFaces.model.inferno".localized,
                 style: "classic",
                 isCustom: false,
                 category: WatchFaceCategory.classic.rawValue,
@@ -155,7 +155,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),       
             // Необычные стили
             WatchFaceModel(
-                name: "Синий пиксель",
+                name: "libraryOfWatchFaces.model.bluePixel".localized,
                 style: "classic",
                 isCustom: false,
                 category: WatchFaceCategory.classic.rawValue,
@@ -173,7 +173,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color(red: 0.361, green: 0.686, blue: 0.773).toHex()
             ),
             WatchFaceModel(
-                name: "Линии",
+                name: "libraryOfWatchFaces.model.lines".localized,
                 style: "digital",
                 isCustom: false,
                 category: WatchFaceCategory.digital.rawValue,
@@ -194,7 +194,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.gray.toHex()
             ), 
             WatchFaceModel(
-                name: "Кораловый",
+                name: "libraryOfWatchFaces.model.coral".localized,
                 style: "digital",
                 isCustom: false,
                 category: WatchFaceCategory.digital.rawValue,
@@ -215,7 +215,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.gray.toHex()
             ), 
             WatchFaceModel(
-                name: "Хэппи-бит",
+                name: "libraryOfWatchFaces.model.happyBeat".localized,
                 style: "digital",
                 isCustom: false,
                 category: WatchFaceCategory.digital.rawValue,
@@ -236,7 +236,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.gray.toHex()
             ), 
             WatchFaceModel(
-                name: "Техно-ритм",
+                name: "libraryOfWatchFaces.model.technoRhythm".localized,
                 style: "digital",
                 isCustom: false,
                 category: WatchFaceCategory.digital.rawValue,
@@ -257,7 +257,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.gray.toHex()
             ),
             WatchFaceModel(
-                name: "Красный пиксель",
+                name: "libraryOfWatchFaces.model.redPixel".localized,
                 style: "digital",
                 isCustom: false,
                 category: WatchFaceCategory.digital.rawValue,
@@ -278,7 +278,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.gray.toHex()
             ),
             WatchFaceModel(
-                name: "Зеленый",
+                name: "libraryOfWatchFaces.model.green".localized,
                 style: "digital",
                 isCustom: false,
                 category: WatchFaceCategory.digital.rawValue,
@@ -300,7 +300,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),     
             // Классический светлый циферблат
             WatchFaceModel(
-                name: "Классический",
+                name: "libraryOfWatchFaces.model.classic".localized,
                 style: "classic",
                 isCustom: false,
                 category: WatchFaceCategory.minimal.rawValue,
@@ -320,7 +320,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),
             // Минималистичный стиль с необычными маркерами
             WatchFaceModel(
-                name: "Жёлтые биты",
+                name: "libraryOfWatchFaces.model.yellowBits".localized,
                 style: "minimal",
                 isCustom: false,
                 category: WatchFaceCategory.minimal.rawValue,
@@ -340,7 +340,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),
             // Минималистичный стиль с необычными маркерами
             WatchFaceModel(
-                name: "Бриллиант",
+                name: "libraryOfWatchFaces.model.diamond".localized,
                 style: "minimal",
                 isCustom: false,
                 category: WatchFaceCategory.minimal.rawValue,

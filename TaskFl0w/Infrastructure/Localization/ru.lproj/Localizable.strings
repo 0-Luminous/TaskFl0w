@@ -76,3 +76,23 @@
 
 "taskTimeLine.title" = "Нет задач на этот день";
 "taskTimeLine.categoryNotFound" = "Категория не найдена";
+
+"libraryOfWatchFaces.title" = "Библиотека циферблатов";
+"libraryOfWatchFaces.category.classics" = "Классический";
+"libraryOfWatchFaces.category.digital" = "Цифровой";
+"libraryOfWatchFaces.category.minimal" = "Минимализм";
+
+"libraryOfWatchFaces.model.classic" = "Стандартный";
+"libraryOfWatchFaces.model.grafitti" = "Граффити";
+"libraryOfWatchFaces.model.crimsonCore" = "Багровое ядро";
+"libraryOfWatchFaces.model.forest" = "Лесной";
+"libraryOfWatchFaces.model.inferno" = "Инферно";
+"libraryOfWatchFaces.model.bluePixel" = "Синий пиксель";
+"libraryOfWatchFaces.model.lines" = "Линии";
+"libraryOfWatchFaces.model.coral" = "Кораловый";
+"libraryOfWatchFaces.model.happyBeat" = "Хэппи-бит";
+"libraryOfWatchFaces.model.technoRhythm" = "Техно-ритм";
+"libraryOfWatchFaces.model.redPixel" = "Красный пиксель";
+"libraryOfWatchFaces.model.green" = "Зелёный";
+"libraryOfWatchFaces.model.yellowBits" = "Жёлтые биты";
+"libraryOfWatchFaces.model.diamond" = "Бриллиант";

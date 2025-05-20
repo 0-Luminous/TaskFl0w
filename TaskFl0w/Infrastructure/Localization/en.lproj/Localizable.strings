@@ -75,3 +75,23 @@
 
 "taskTimeLine.title" = "No tasks for this day";
 "taskTimeLine.categoryNotFound" = "Category not found";
+
+"libraryOfWatchFaces.title" = "Library of watch faces";
+"libraryOfWatchFaces.category.classics" = "Сlassic";
+"libraryOfWatchFaces.category.digital" = "Digital";
+"libraryOfWatchFaces.category.minimal" = "Minimal";
+
+"libraryOfWatchFaces.model.classic" = "Standard";
+"libraryOfWatchFaces.model.grafitti" = "Graffiti";
+"libraryOfWatchFaces.model.crimsonCore" = "Crimson Core";
+"libraryOfWatchFaces.model.forest" = "Forest";
+"libraryOfWatchFaces.model.inferno" = "Inferno";
+"libraryOfWatchFaces.model.bluePixel" = "Blue Pixel";
+"libraryOfWatchFaces.model.lines" = "Lines";
+"libraryOfWatchFaces.model.coral" = "Coral";
+"libraryOfWatchFaces.model.happyBeat" = "Happy Beat";
+"libraryOfWatchFaces.model.technoRhythm" = "Techno Rhythm";
+"libraryOfWatchFaces.model.redPixel" = "Red Pixel";
+"libraryOfWatchFaces.model.green" = "Green";
+"libraryOfWatchFaces.model.yellowBits" = "Yellow Bits";
+"libraryOfWatchFaces.model.diamond" = "Diamond";

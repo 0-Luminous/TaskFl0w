@@ -128,7 +128,7 @@ struct LibraryOfWatchFaces: View {
                     .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
                 }
             }
-            .navigationTitle("Библиотека циферблатов")
+            .navigationTitle("libraryOfWatchFaces.title".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(themeManager.isDarkMode ? .dark : .light, for: .navigationBar)
@@ -144,16 +144,16 @@ struct LibraryOfWatchFaces: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingAddSheet) {
-               EnhancedAddWatchFaceView()
-            }
-            .sheet(isPresented: $showingEditSheet, onDismiss: {
-                selectedWatchFace = nil
-            }) {
-                if let face = selectedWatchFace {
-                    EnhancedEditWatchFaceView(watchFace: face)
-                }
-            }
+//            .sheet(isPresented: $showingAddSheet) {
+//               EnhancedAddWatchFaceView()
+//            }
+//            .sheet(isPresented: $showingEditSheet, onDismiss: {
+//                selectedWatchFace = nil
+//            }) {
+//                if let face = selectedWatchFace {
+//                    EnhancedEditWatchFaceView(watchFace: face)
+//                }
+//            }
             .alert("Сбросить библиотеку?", isPresented: $showDeleteAllAlert) {
                 Button("Отмена", role: .cancel) { }
                 Button("Сбросить", role: .destructive) {

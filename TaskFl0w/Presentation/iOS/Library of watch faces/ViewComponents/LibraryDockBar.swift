@@ -35,7 +35,7 @@ struct LibraryDockBar: View {
                             //     .font(.system(size: 20))
                             //     .foregroundColor(themeManager.isDarkMode ? .gray : .gray.opacity(0.7))
                             
-                            Text("Сбросить")
+                            Text("Добавить")
                                 .font(.caption)
                                 .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                         }
@@ -87,7 +87,7 @@ struct LibraryDockBar: View {
                             //     .font(.system(size: 20))
                             //     .foregroundColor(themeManager.isDarkMode ? .gray : .gray.opacity(0.7))
                             
-                            Text("Добавить")
+                            Text("Сбросить")
                                 .font(.caption)
                                 .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                         }

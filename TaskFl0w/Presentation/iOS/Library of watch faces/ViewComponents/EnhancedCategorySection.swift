@@ -50,21 +50,6 @@ struct EnhancedCategorySection: View {
                             .onTapGesture {
                                 onWatchFaceSelected(face)
                             }
-                            // .contextMenu {
-                            //     if face.isCustom {
-                            //         Button {
-                            //             onEdit(face)
-                            //         } label: {
-                            //             Label("Редактировать", systemImage: "pencil")
-                            //         }
-                                    
-                            //         Button(role: .destructive) {
-                            //             onDelete(face)
-                            //         } label: {
-                            //             Label("Удалить", systemImage: "trash")
-                            //         }
-                            //     }
-                            // }
                         }
                     }
                     .padding(.horizontal)
