@@ -247,7 +247,7 @@ struct CategoryPageView: View {
                                 )
                                 .shadow(color: .black.opacity(themeManager.isDarkMode ? 0.25 : 0.10), radius: 4, y: 2)
                             
-                            Text("Добавить")
+                            Text("categoryEditor.add".localized)
                                 .font(.caption)
                                 .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 .lineLimit(1)

@@ -26,17 +26,18 @@ struct IconPickerView: View {
     
     // Определяем перечисление для категорий
     enum IconCategory: String, CaseIterable, Identifiable {
-        case all = "Все"
-        case workAndEducation = "Работа и учёба"
-        case homeAndFamily = "Дом и семья"
-        case creativityAndHobbies = "Творчество"
-        case shoppingAndFinance = "Покупки"
-        case travelAndTransport = "Транспорт"
-        case timeAndPlanning = "Планирование"
-        case communicationAndTech = "Связь"
-        case toolsAndSettings = "Инструменты"
+        case all = "categoryEditor.dockBar.all"
+        case workAndEducation = "categoryEditor.dockBar.workAndEducation"
+        case homeAndFamily = "categoryEditor.dockBar.homeAndFamily"
+        case creativityAndHobbies = "categoryEditor.dockBar.creativity"
+        case shoppingAndFinance = "categoryEditor.dockBar.shopping"
+        case travelAndTransport = "categoryEditor.dockBar.travel"
+        case timeAndPlanning = "categoryEditor.dockBar.planning"
+        case communicationAndTech = "categoryEditor.dockBar.communication"
+        case toolsAndSettings = "categoryEditor.dockBar.tools"
         
         var id: String { rawValue }
+        var localizedName: String { rawValue.localized }
         
         var systemName: String {
             switch self {
@@ -181,14 +182,14 @@ struct IconPickerView: View {
                     IconPickerDockBar(selectedCategory: $selectedCategory)
                 }
             }
-            .navigationTitle("Выбор иконки")
+            .navigationTitle("categoryEditor.iconPicker.iconSelection".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(themeManager.isDarkMode ? .dark : .light, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Готово") {
+                    Button("navigation.done".localized) {
                         feedbackGenerator.impactOccurred()
                         isPresented = false
                     }
@@ -197,7 +198,7 @@ struct IconPickerView: View {
                 }
 
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Отмена") {
+                    Button("navigation.cancel".localized) {
                         feedbackGenerator.impactOccurred()
                         isPresented = false
                     }
@@ -336,7 +337,7 @@ struct IconPickerDockBar: View {
                 }
                 
                 // Название категории
-                Text(category.rawValue)
+                Text(category.localizedName)
                     .font(.system(size: 12, weight: selectedCategory == category ? .semibold : .regular))
                     .foregroundColor(
                         selectedCategory == category
@@ -420,7 +421,7 @@ struct IconSearchBar: View {
                 // Текстовое поле
                 TextField("",
                     text: $text,
-                    prompt: Text("Поиск иконки")
+                    prompt: Text("categoryEditor.iconPicker.searchIcon".localized)
                         .foregroundColor(themeManager.isDarkMode ? .white.opacity(0.7) : .black.opacity(0.7))
                     )
                     .focused($isTextFieldFocused)

@@ -75,7 +75,7 @@ struct CategoryEditorViewIOS: View {
     private var previewCategory: TaskCategoryModel {
         TaskCategoryModel(
             id: editingCategory?.id ?? UUID(),
-            rawValue: categoryName.isEmpty ? "Название" : categoryName,
+            rawValue: categoryName.isEmpty ? "categoryEditor.name".localized : categoryName,
             iconName: selectedIcon,
             color: selectedColor,
             isHidden: isHidden
@@ -214,7 +214,7 @@ struct CategoryEditorViewIOS: View {
                 // Название категории
                 TextField("",
                     text: $categoryName,
-                    prompt: Text("Название категории")
+                    prompt: Text("categoryEditor.categoryNamePlaceholder".localized)
                         .foregroundColor(themeManager.isDarkMode ? .gray : .gray.opacity(0.7))
                 )
                     .font(.system(size: 18, weight: .medium))
@@ -266,7 +266,7 @@ struct CategoryEditorViewIOS: View {
                             Image(systemName: "square.grid.2x2")
                                 .modifier(IconButtonModifier(color: Color.blue))
 
-                            Text("Изменить иконку")
+                            Text("categoryEditor.changeIcon".localized)
                                 .font(.system(size: 16))
                                 .foregroundColor(themeManager.isDarkMode ? .white : .black)
 
@@ -296,7 +296,7 @@ struct CategoryEditorViewIOS: View {
                             Image(systemName: "paintpalette")
                                 .modifier(IconButtonModifier(color: Color.Apricot1))
 
-                            Text("Изменить цвет")
+                            Text("categoryEditor.changeColor".localized)
                                 .font(.system(size: 16))
                                 .foregroundColor(themeManager.isDarkMode ? .white : .black)
 
@@ -337,13 +337,13 @@ struct CategoryEditorViewIOS: View {
                             Image(systemName: isHidden ? "eye.slash" : "eye")
                                 .modifier(IconButtonModifier(color: Color.teal))
 
-                            Text(isHidden ? "Категория скрыта" : "Категория видима")
+                            Text(isHidden ? "categoryEditor.categoryHidden".localized : "categoryEditor.categoryVisible".localized)
                                 .font(.system(size: 16))
                                 .foregroundColor(themeManager.isDarkMode ? .white : .black)
 
                             Spacer()
 
-                            Text(isHidden ? "Показать" : "Скрыть")
+                            Text(isHidden ? "categoryEditor.show".localized : "categoryEditor.hide".localized)
                                 .font(.system(size: 14))
                                 .foregroundColor(
                                     isHidden
@@ -376,7 +376,7 @@ struct CategoryEditorViewIOS: View {
                             HStack {
                                 Image(systemName: "plus.circle.fill")
                                     .font(.system(size: 18))
-                                Text("Добавить категорию")
+                                Text("categoryEditor.addCategory".localized)
                                     .font(.system(size: 16, weight: .medium))
                             }
                         }
@@ -392,7 +392,7 @@ struct CategoryEditorViewIOS: View {
                             HStack {
                                 Image(systemName: "trash.fill")
                                     .font(.system(size: 18))
-                                Text("Удалить категорию")
+                                Text("categoryEditor.deleteCategory".localized)
                                     .font(.system(size: 16, weight: .medium))
                             }
                         }
@@ -407,7 +407,7 @@ struct CategoryEditorViewIOS: View {
             if showingInlineColorPicker {
                 VStack(spacing: 16) {
                     HStack {
-                        Text("Выбор цвета")
+                        Text("categoryEditor.colorPickerTitle".localized)
                             .font(.headline)
                             .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         
@@ -416,7 +416,7 @@ struct CategoryEditorViewIOS: View {
                         Button(action: {
                             showingInlineColorPicker = false
                         }) {
-                            Text("Готово")
+                            Text("categoryEditor.done".localized)
                                 .font(.caption)
                                 .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                                 .fontWeight(.medium)
@@ -603,7 +603,7 @@ struct CategoryEditorViewIOS: View {
                         : Color(red: 0.98, green: 0.98, blue: 0.98)
                 )
                 .navigationTitle(
-                    editingCategory == nil ? "Новая категория" : "Редактирование категории"
+                    editingCategory == nil ? "categoryEditor.newCategory".localized : "categoryEditor.editCategory".localized
                 )
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbarBackground(
@@ -615,7 +615,7 @@ struct CategoryEditorViewIOS: View {
                 .toolbarColorScheme(themeManager.isDarkMode ? .dark : .light, for: .navigationBar)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Отмена") {
+                        Button("categoryEditor.cancel".localized) {
                             feedbackGenerator.impactOccurred()
                             isPresented = false
                         }
@@ -623,7 +623,7 @@ struct CategoryEditorViewIOS: View {
                     }
 
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Готово") {
+                        Button("categoryEditor.done".localized) {
                             feedbackGenerator.impactOccurred()
                             saveCategory(autoClose: true)
                         }
@@ -632,7 +632,7 @@ struct CategoryEditorViewIOS: View {
 
                     // Добавляем кнопку для скрытия клавиатуры, если поле в фокусе
                     ToolbarItem(placement: .keyboard) {
-                        Button("Готово") {
+                        Button("categoryEditor.done".localized) {
                             isTextFieldFocused = false
                         }
                         .foregroundColor(.coral1)
@@ -664,7 +664,7 @@ struct CategoryEditorViewIOS: View {
                                 .Peony1, .Rose1,
                             ]
 
-                            ColorPicker("Выберите цвет", selection: $selectedColor)
+                            ColorPicker("categoryEditor.selectColor".localized, selection: $selectedColor)
                                 .labelsHidden()
                                 .padding()
 
@@ -690,10 +690,10 @@ struct CategoryEditorViewIOS: View {
                     }
                 }
                 .padding()
-                .navigationTitle("Выбор цвета")
+                .navigationTitle("categoryEditor.colorPickerTitle".localized)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Готово") {
+                        Button("categoryEditor.done".localized) {
                             feedbackGenerator.impactOccurred()
                             showingColorPicker = false
                         }
@@ -704,9 +704,9 @@ struct CategoryEditorViewIOS: View {
             .presentationDetents([.height(400)])
             .presentationDragIndicator(.visible)
         }
-        .alert("Удалить категорию?", isPresented: $showingDeleteAlert) {
-            Button("Отмена", role: .cancel) {}
-            Button("Удалить", role: .destructive) {
+        .alert("categoryEditor.deleteAlertTitle".localized, isPresented: $showingDeleteAlert) {
+            Button("categoryEditor.cancel".localized, role: .cancel) {}
+            Button("categoryEditor.deleteCategory".localized, role: .destructive) {
                 if let category = editingCategory {
                     viewModel.categoryManagement.removeCategory(category)
                     // Удаляем строку isPresented = false
@@ -720,7 +720,7 @@ struct CategoryEditorViewIOS: View {
                 }
             }
         } message: {
-            Text("Все задачи в этой категории также будут удалены")
+            Text("categoryEditor.deleteAlertMessage".localized)
         }
     }
 

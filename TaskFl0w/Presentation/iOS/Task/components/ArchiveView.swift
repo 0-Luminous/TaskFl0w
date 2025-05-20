@@ -21,7 +21,7 @@ struct ArchiveView: View {
                     .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                     .font(.system(size: 16))
                 
-                Text("Архив выполненных задач")
+                Text("archive.title".localized)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
             }

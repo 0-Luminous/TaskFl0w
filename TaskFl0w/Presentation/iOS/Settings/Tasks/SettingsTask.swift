@@ -17,16 +17,16 @@ struct SettingsTask: View {
     @AppStorage("priorityIncreaseFrequency") private var priorityIncreaseFrequency = 0 // 0 - каждый день, 1 - раз в два дня, 2 - раз в три дня
     
     private let frequencyOptions = [
-        (0, "Каждый день"),
-        (1, "Раз в два дня"),
-        (2, "Раз в три дня")
+        (0, "settingsTask.frequencyEveryDay".localized),
+        (1, "settingsTask.frequencyEveryTwoDays".localized),
+        (2, "settingsTask.frequencyEveryThreeDays".localized)
     ]
     
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    Toggle("Переносить невыполненные задачи", isOn: $moveUnfinishedTasks)
+                    Toggle("settingsTask.moveUnfinished".localized, isOn: $moveUnfinishedTasks)
                         .onChange(of: moveUnfinishedTasks) { _, newValue in
                             if !newValue {
                                 // Если отключили перенос задач, отключаем и повышение приоритета
@@ -35,7 +35,7 @@ struct SettingsTask: View {
                         }
                     
                     if moveUnfinishedTasks {
-                        Toggle("Повышать приоритет при переносе", isOn: $increasePriority)
+                        Toggle("settingsTask.increasePriority".localized, isOn: $increasePriority)
                             .onChange(of: increasePriority) { _, newValue in
                                 // При отключении повышения приоритета сбрасываем частоту
                                 if !newValue {
@@ -44,7 +44,7 @@ struct SettingsTask: View {
                             }
                         
                         if increasePriority {
-                            Picker("Частота повышения приоритета", selection: $priorityIncreaseFrequency) {
+                            Picker("settingsTask.priorityFrequency".localized, selection: $priorityIncreaseFrequency) {
                                 ForEach(frequencyOptions, id: \.0) { option in
                                     Text(option.1).tag(option.0)
                                 }
@@ -52,12 +52,12 @@ struct SettingsTask: View {
                         }
                     }
                 } header: {
-                    Text("Перенос задач")
+                    Text("settingsTask.sectionHeader".localized)
                 } footer: {
-                    Text("Невыполненные задачи будут автоматически переноситься на текущий день при смене даты. При включении повышения приоритета задачи будут повышать свой приоритет согласно выбранной частоте.")
+                    Text("settingsTask.sectionFooter".localized)
                 }
             }
-            .navigationTitle("Настройки задач")
+            .navigationTitle("settingsTask.navTitle".localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -65,7 +65,7 @@ struct SettingsTask: View {
                         HStack(spacing: 2) {
                             Image(systemName: "chevron.backward")
                                 .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
-                            Text("Назад")
+                            Text("navigation.back".localized)
                                 .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                         }
                     }
@@ -76,7 +76,7 @@ struct SettingsTask: View {
                         saveSettings()
                         dismiss()
                     }) {
-                        Text("Готово")
+                        Text("navigation.done".localized)
                             .fontWeight(.medium)
                             .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                     }

@@ -5,6 +5,7 @@ enum LocalizationKey {
     enum Navigation {
         static let settings = "navigation.settings"
         static let back = "navigation.back"
+        static let done = "navigation.done"
     }
     
     // Настройки
@@ -43,4 +44,67 @@ enum LocalizationKey {
             static let message = "notifications.alert.message"
         }
     }
+    
+    // Настройки задач
+    enum SettingsTask {
+        static let moveUnfinished = "settingsTask.moveUnfinished"
+        static let increasePriority = "settingsTask.increasePriority"
+        static let priorityFrequency = "settingsTask.priorityFrequency"
+        static let sectionHeader = "settingsTask.sectionHeader"
+        static let sectionFooter = "settingsTask.sectionFooter"
+        static let navTitle = "settingsTask.navTitle"
+        static let frequencyEveryDay = "settingsTask.frequencyEveryDay"
+        static let frequencyEveryTwoDays = "settingsTask.frequencyEveryTwoDays"
+        static let frequencyEveryThreeDays = "settingsTask.frequencyEveryThreeDays"
+    }
+    
+    enum CategoryEditor {
+        static let name = "categoryEditor.name"
+        static let newCategory = "categoryEditor.newCategory"
+        static let editCategory = "categoryEditor.editCategory"
+        static let changeIcon = "categoryEditor.changeIcon"
+        static let changeColor = "categoryEditor.changeColor"
+        static let categoryHidden = "categoryEditor.categoryHidden"
+        static let categoryVisible = "categoryEditor.categoryVisible"
+        static let show = "categoryEditor.show"
+        static let hide = "categoryEditor.hide"
+        static let addCategory = "categoryEditor.addCategory"
+        static let deleteCategory = "categoryEditor.deleteCategory"
+        static let deleteAlertTitle = "categoryEditor.deleteAlertTitle"
+        static let deleteAlertMessage = "categoryEditor.deleteAlertMessage"
+        static let cancel = "categoryEditor.cancel"
+        static let done = "categoryEditor.done"
+        static let colorPickerTitle = "categoryEditor.colorPickerTitle"
+        static let ready = "categoryEditor.ready"
+        static let categoryNamePlaceholder = "categoryEditor.categoryNamePlaceholder"
+        static let selectColor = "categoryEditor.selectColor"
+        static let add = "categoryEditor.add"
+
+        enum IconPicker {
+            static let iconSelection = "categoryEditor.iconPicker.iconSelection"
+            static let searchIcon = "categoryEditor.iconPicker.searchIcon"
+        }
+
+        enum DockBar {
+            static let all = "categoryEditor.dockBar.all"
+            static let workAndEducation = "categoryEditor.dockBar.workAndEducation"
+            static let homeAndFamily = "categoryEditor.dockBar.homeAndFamily"
+            static let creativity = "categoryEditor.dockBar.creativity"
+            static let shopping = "categoryEditor.dockBar.shopping"
+            static let travel = "categoryEditor.dockBar.travel"
+            static let planning = "categoryEditor.dockBar.planning"
+            static let communication = "categoryEditor.dockBar.communication"
+            static let tools = "categoryEditor.dockBar.tools"
+        }
+
+    enum Archive {
+            static let title = "archive.title"
+        }
+    
+    enum TaskTimeLine {
+        static let title = "taskTimeLine.title"
+        static let categoryNotFound = "taskTimeLine.categoryNotFound"
+    }
+
+
 }

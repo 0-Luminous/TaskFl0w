@@ -1,25 +1,77 @@
-// Localizable.strings (Russian)
+// Localizable.strings (English)
 
-"navigation.settings" = "Настройки";
-"navigation.back" = "Назад";
-"settings.notifications" = "Уведомления";
-"settings.tasks" = "Задачи";
-"settings.watchFaceLibrary" = "Библиотека циферблатов";
-"settings.watchFace" = "Циферблат";
-"settings.categories" = "Категории";
+"navigation.settings" = "Settings";
+"navigation.back" = "Back";
+"navigation.done" = "Done";
+"navigation.cancel" = "Cancel";
 
-"notifications.title" = "Уведомления";
-"notifications.reminderTime" = "Напоминать за";
-"notifications.footer" = "Важные уведомления будут проигрываться даже в режиме «Не беспокоить»";
-"notifications.time.oneMinute" = "1 минута";
-"notifications.time.fiveMinutes" = "5 минут";
-"notifications.time.tenMinutes" = "10 минут";
-"notifications.time.fifteenMinutes" = "15 минут";
-"notifications.time.thirtyMinutes" = "30 минут";
-"notifications.time.oneHour" = "1 час";
-"notifications.testing.title" = "Тестирование";
-"notifications.testing.testButton" = "Проверить уведомление";
-"notifications.alert.title" = "Требуется разрешение";
-"notifications.alert.settings" = "Настройки";
-"notifications.alert.cancel" = "Отмена";
-"notifications.alert.message" = "Для отправки уведомлений необходимо разрешение. Пожалуйста, откройте настройки приложения и включите уведомления.";
+"settings.notifications" = "Notifications";
+"settings.tasks" = "Tasks";
+"settings.watchFaceLibrary" = "Watch Face Library";
+"settings.watchFace" = "Watch Face";
+"settings.categories" = "Categories";
+
+"notifications.title" = "Notifications";
+"notifications.reminderTime" = "Remind before";
+"notifications.footer" = "Important notifications will play even in Do Not Disturb mode";
+"notifications.time.oneMinute" = "1 minute";
+"notifications.time.fiveMinutes" = "5 minutes";
+"notifications.time.tenMinutes" = "10 minutes";
+"notifications.time.fifteenMinutes" = "15 minutes";
+"notifications.time.thirtyMinutes" = "30 minutes";
+"notifications.time.oneHour" = "1 hour";
+"notifications.testing.title" = "Testing";
+"notifications.testing.testButton" = "Test notification";
+"notifications.alert.title" = "Permission Required";
+"notifications.alert.settings" = "Settings";
+"notifications.alert.cancel" = "Cancel";
+"notifications.alert.message" = "Permission is required to send notifications. Please open the app settings and enable notifications.";
+
+"settingsTask.moveUnfinished" = "Move unfinished tasks";
+"settingsTask.increasePriority" = "Increase priority when moving";
+"settingsTask.priorityFrequency" = "Priority increase frequency";
+"settingsTask.sectionHeader" = "Task transfer";
+"settingsTask.sectionFooter" = "Unfinished tasks will be automatically moved to the current day when the date changes. If priority increase is enabled, tasks will increase their priority according to the selected frequency.";
+"settingsTask.navTitle" = "Task Settings";
+"settingsTask.frequencyEveryDay" = "Every day";
+"settingsTask.frequencyEveryTwoDays" = "Every two days";
+"settingsTask.frequencyEveryThreeDays" = "Every three days";
+
+"categoryEditor.name" = "Name";
+"categoryEditor.newCategory" = "New Category";
+"categoryEditor.editCategory" = "Edit Category";
+"categoryEditor.changeIcon" = "Change icon";
+"categoryEditor.changeColor" = "Change color";
+"categoryEditor.categoryHidden" = "Category is hidden";
+"categoryEditor.categoryVisible" = "Category is visible";
+"categoryEditor.show" = "Show";
+"categoryEditor.hide" = "Hide";
+"categoryEditor.addCategory" = "Add category";
+"categoryEditor.deleteCategory" = "Delete category";
+"categoryEditor.deleteAlertTitle" = "Delete category?";
+"categoryEditor.deleteAlertMessage" = "All tasks in this category will also be deleted";
+"categoryEditor.cancel" = "Cancel";
+"categoryEditor.done" = "Done";
+"categoryEditor.colorPickerTitle" = "Color Picker";
+"categoryEditor.ready" = "Ready";
+"categoryEditor.categoryNamePlaceholder" = "Category name";
+"categoryEditor.selectColor" = "Select color";
+"categoryEditor.add" = "Add";
+
+"categoryEditor.iconPicker.iconSelection" = "Icon selection";
+"categoryEditor.iconPicker.searchIcon" = "Icon search";
+
+"categoryEditor.dockBar.all" = "All";
+"categoryEditor.dockBar.workAndEducation" = "Work";
+"categoryEditor.dockBar.homeAndFamily" = "Home";
+"categoryEditor.dockBar.creativity" = "Creativity";
+"categoryEditor.dockBar.shopping" = "Shopping";
+"categoryEditor.dockBar.travel" = "Travel";
+"categoryEditor.dockBar.planning" = "Planning"; 
+"categoryEditor.dockBar.communication" = "Communication";
+"categoryEditor.dockBar.tools" = "Tools";
+
+"archive.title" = "Archive of completed tasks";
+
+"taskTimeLine.title" = "No tasks for this day";
+"taskTimeLine.categoryNotFound" = "Category not found";

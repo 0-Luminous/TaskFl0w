@@ -18,6 +18,7 @@ struct ArchivedTasksGroupView: View {
     let onDelete: (UUID) -> Void
     let onShare: (UUID) -> Void
 
+    @ObservedObject private var viewModel = ClockViewModel()
     @ObservedObject private var themeManager = ThemeManager.shared
 
     // Группировка задач по датам завершения
@@ -33,13 +34,6 @@ struct ArchivedTasksGroupView: View {
         groupedTasks.keys.sorted(by: >)
     }
     
-    // Форматтер для отображения даты
-    private let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d MMMM yyyy"
-        formatter.locale = Locale(identifier: "ru_RU")
-        return formatter
-    }()
     
     var body: some View {
         ForEach(sortedDates, id: \.self) { date in
@@ -47,7 +41,7 @@ struct ArchivedTasksGroupView: View {
                 VStack(spacing: 0) {
                     // Заголовок группы с датой
                     HStack {
-                        Text(dateFormatter.string(from: date))
+                        Text(date.formattedForClockDateLocalized())
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         
@@ -81,7 +75,7 @@ struct ArchivedTasksGroupView: View {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 10)
                                         .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
-                                        .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
+                                        .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
                                     // Добавляем внешний бордер для задач с приоритетом
                                     if item.priority != .none {
                                         RoundedRectangle(cornerRadius: 10)

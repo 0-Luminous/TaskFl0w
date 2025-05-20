@@ -387,11 +387,19 @@ final class ClockViewModel: ObservableObject {
     // MARK: - Методы форматирования даты
     
     var formattedDate: String {
-        return selectedDate.formattedForClockDate()
+        if Locale.current.languageCode == "ru" {
+            return selectedDate.formattedForClockDate()
+        } else {
+            return selectedDate.formattedForClockDateEn()
+        }
     }
     
     var formattedWeekday: String {
-        return selectedDate.formattedWeekday()
+        if Locale.current.languageCode == "ru" {
+            return selectedDate.formattedWeekday()
+        } else {
+            return selectedDate.formattedWeekdayEn()
+        }
     }
     
     // MARK: - Методы обновления UI

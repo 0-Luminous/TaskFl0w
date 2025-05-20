@@ -31,7 +31,7 @@ struct TasksFromView: View {
                 let category = TaskCategoryModel(id: selectedCategoryID, rawValue: categoryName, iconName: icon, color: color)
                 
                 if categoryTasks.isEmpty {
-                    Text("Нет задач на этот день")
+                    Text("taskTimeLine.title".localized)
                         .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 15)
@@ -70,7 +70,7 @@ struct TasksFromView: View {
                 )
             } else {
                 // Если категория вообще не найдена
-                Text("Категория не найдена")
+                Text("categoryNotFound".localized)
                     .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 15)
@@ -87,6 +87,18 @@ struct TasksFromView: View {
         let showFullTasks: Bool // Новый параметр
         var onToggleTask: ((UUID) -> Void)? = nil
         @ObservedObject private var themeManager = ThemeManager.shared
+        
+        // Добавляем локализованный форматтер продолжительности
+        private static let durationFormatter: DateComponentsFormatter = {
+            let formatter = DateComponentsFormatter()
+            formatter.unitsStyle = .brief
+            formatter.allowedUnits = [.hour, .minute]
+            formatter.zeroFormattingBehavior = .dropAll
+            // Автоматически возьмёт локаль устройства
+            formatter.calendar = Calendar.current
+            formatter.calendar?.locale = Locale.current
+            return formatter
+        }()
         
         var body: some View {
             VStack(alignment: .leading, spacing: 8) {
@@ -183,7 +195,7 @@ struct TasksFromView: View {
                 
                 // Если нет задач в категории, показываем информационное сообщение
                 if todoTasks.isEmpty {
-                    Text("Нет задач на этот день")
+                    Text("taskTimeLine.title".localized)
                         .font(.caption)
                         .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                         .padding(.horizontal, 10)
@@ -210,15 +222,8 @@ struct TasksFromView: View {
         
         // Форматирование продолжительности
         private func formatDuration(_ interval: TimeInterval) -> String {
-            let totalMinutes = Int(interval / 60)
-            let hours = totalMinutes / 60
-            let minutes = totalMinutes % 60
-            
-            if hours > 0 {
-                return "\(hours) ч \(minutes) мин"
-            } else {
-                return "\(minutes) мин"
-            }
+            // Автоматическая локализация через DateComponentsFormatter
+            return Self.durationFormatter.string(from: interval) ?? ""
         }
     }
     
