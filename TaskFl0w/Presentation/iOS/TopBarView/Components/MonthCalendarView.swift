@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // Компонент для отображения месячного календаря
 struct MonthCalendarView: View {
@@ -259,6 +260,9 @@ struct MonthGrid: View {
                         }
                         .frame(width: 38, height: 38)
                         .onTapGesture {
+                            // Виброотдача при нажатии
+                            let impactMed = UIImpactFeedbackGenerator(style: .medium)
+                            impactMed.impactOccurred()
                             onDateSelected(day.date)
                         }
                     } else {

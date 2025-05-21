@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // Компонент для отображения заголовка с месяцем и годом в виде кнопки
 struct MonthYearHeaderButton: View {
@@ -15,7 +16,13 @@ struct MonthYearHeaderButton: View {
     @ObservedObject private var themeManager = ThemeManager.shared
 
     var body: some View {
-        Button(action: onTap) {
+        Button(action: {
+            // Виброотдача
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+            // Ваш обработчик
+            onTap()
+        }) {
             HStack {
                 Text(formattedDate)
                     .font(.title2)
@@ -177,6 +184,9 @@ struct MonthYearPickerView: View {
             HStack(spacing: 20) {
                 // Кнопка отмены
                 Button(action: {
+                    // Виброотдача
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
                     withAnimation(.spring(response: 0.3)) {
                         onDateSelected(selectedDate)
                     }
@@ -214,6 +224,9 @@ struct MonthYearPickerView: View {
                 
                 // Кнопка подтверждения
                 Button(action: {
+                    // Виброотдача
+                    let generator = UIImpactFeedbackGenerator(style: .heavy)
+                    generator.impactOccurred()
                     var components = DateComponents()
                     components.year = selectedYear
                     components.month = selectedMonth + 1 // +1 потому что месяцы в Calendar начинаются с 1

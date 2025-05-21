@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 // Компонент для отображения недельного календаря
 struct WeekCalendarView: View {
@@ -161,6 +162,9 @@ struct WeekCalendarView: View {
                                     dayName: dayNames[dayIndex]
                                 )
                                 .onTapGesture {
+                                    // Виброотдача при нажатии
+                                    let impactMed = UIImpactFeedbackGenerator(style: .medium)
+                                    impactMed.impactOccurred()
                                     withAnimation(.spring(response: 0.3)) {
                                         selectedDate = date
                                     }
