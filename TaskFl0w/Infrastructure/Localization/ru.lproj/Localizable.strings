@@ -96,3 +96,28 @@
 "libraryOfWatchFaces.model.green" = "Зелёный";
 "libraryOfWatchFaces.model.yellowBits" = "Жёлтые биты";
 "libraryOfWatchFaces.model.diamond" = "Бриллиант";
+
+"monthYearPicker.title" = "Выберите месяц и год";
+"monthYearPicker.month" = "Месяц";
+"monthYearPicker.year" = "Год";
+"monthYearPicker.select" = "Выбрать";
+"month.january" = "Январь";
+"month.february" = "Февраль";
+"month.march" = "Март";
+"month.april" = "Апрель";
+"month.may" = "Май";
+"month.june" = "Июнь";
+"month.july" = "Июль";
+"month.august" = "Август";
+"month.september" = "Сентябрь";
+"month.october" = "Октябрь";
+"month.november" = "Ноябрь";
+"month.december" = "Декабрь";
+
+"week.monday" = "Пн";
+"week.tuesday" = "Вт";
+"week.wednesday" = "Ср";
+"week.thursday" = "Чт";
+"week.friday" = "Пт";
+"week.saturday" = "Сб";
+"week.sunday" = "Вс";

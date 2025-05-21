@@ -229,12 +229,20 @@ struct WeekCalendarView: View {
     private var monthYearFormatter: DateFormatter {
         let formatter = DateFormatter()
         formatter.dateFormat = "LLLL yyyy"
-        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.locale = Locale.current
         return formatter
     }
     
     private var dayNames: [String] {
-        ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+        [
+            NSLocalizedString("week.monday", comment: ""),
+            NSLocalizedString("week.tuesday", comment: ""),
+            NSLocalizedString("week.wednesday", comment: ""),
+            NSLocalizedString("week.thursday", comment: ""),
+            NSLocalizedString("week.friday", comment: ""),
+            NSLocalizedString("week.saturday", comment: ""),
+            NSLocalizedString("week.sunday", comment: ""),
+        ]
     }
     
     private func updateWeekStartDate() {

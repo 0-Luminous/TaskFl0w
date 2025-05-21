@@ -134,5 +134,35 @@ enum LocalizationKey {
         }
     }
 
+    enum MonthYearPicker {
+    static let title = "monthYearPicker.title"
+    static let month = "monthYearPicker.month"
+    static let year = "monthYearPicker.year"
+    static let select = "monthYearPicker.select"
+    }
 
+    enum Month {
+        static let january = "month.january"
+        static let february = "month.february"
+        static let march = "month.march"
+        static let april = "month.april"
+        static let may = "month.may"
+        static let june = "month.june"
+        static let july = "month.july"
+        static let august = "month.august"
+        static let september = "month.september"
+        static let october = "month.october"
+        static let november = "month.november"
+        static let december = "month.december"
+    }
+
+    enum Week {
+        static let monday = "week.monday"
+        static let tuesday = "week.tuesday"
+        static let wednesday = "week.wednesday"
+        static let thursday = "week.thursday"
+        static let friday = "week.friday"
+        static let saturday = "week.saturday"
+        static let sunday = "week.sunday"
+    }
 }

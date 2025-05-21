@@ -95,3 +95,29 @@
 "libraryOfWatchFaces.model.green" = "Green";
 "libraryOfWatchFaces.model.yellowBits" = "Yellow Bits";
 "libraryOfWatchFaces.model.diamond" = "Diamond";
+
+
+"monthYearPicker.title" = "Select month and year";
+"monthYearPicker.month" = "Month";
+"monthYearPicker.year" = "Year";
+"monthYearPicker.select" = "Select";
+"month.january" = "January";
+"month.february" = "February";
+"month.march" = "March";
+"month.april" = "April";
+"month.may" = "May";
+"month.june" = "June";
+"month.july" = "July";
+"month.august" = "August";
+"month.september" = "September";
+"month.october" = "October";
+"month.november" = "November";
+"month.december" = "December";
+
+"week.monday" = "Mon";
+"week.tuesday" = "Tue";
+"week.wednesday" = "Wed";
+"week.thursday" = "Thu";
+"week.friday" = "Fri";
+"week.saturday" = "Sat";
+"week.sunday" = "Sun";
