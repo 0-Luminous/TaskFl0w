@@ -35,9 +35,9 @@ struct ClockTaskArcIOS: View {
     private let minIconOffset: CGFloat = 0
     private let minAnalogIconOffset: CGFloat = -16
     private let maxAnalogIconOffset: CGFloat = -4
-    private let baseIconSize: CGFloat = 20
-    private let minIconFontSize: CGFloat = 10
-    private let maxIconFontSize: CGFloat = 19
+    private let baseIconSize: CGFloat = 22
+    private let minIconFontSize: CGFloat = 12
+    private let maxIconFontSize: CGFloat = 20
     private let timeFontSize: CGFloat = 10
     private let timeTextOffset: CGFloat = -8
     
@@ -79,6 +79,12 @@ struct ClockTaskArcIOS: View {
         feedbackGenerator.impactOccurred(intensity: 0.5)
     }
 
+    // Вынесите функцию isAngleInLeftHalf выше, чтобы она была доступна
+    private func isAngleInLeftHalf(_ angle: Angle) -> Bool {
+        let degrees = (angle.degrees.truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
+        return degrees > 90 && degrees < 270
+    }
+
     var body: some View {
         if !isVisible {
             EmptyView()
@@ -92,8 +98,8 @@ struct ClockTaskArcIOS: View {
                 let taskDurationMinutes = task.duration / 60
                 let (shortTaskScale, tArcOffset, tRing, tIconOffset) = prepareTaskVisualization(taskDurationMinutes: taskDurationMinutes)
                 
-                // Размеры иконки с учетом масштаба для коротких задач
-                let iconSize: CGFloat = baseIconSize * shortTaskScale
+                // Размеры иконки — всегда одинаковые, не зависят от shortTaskScale
+                let iconSize: CGFloat = baseIconSize
                 
                 // Отступы для аналогового режима
                 let analogOffset = minOffset + (maxOffset - minOffset) * tArcOffset
@@ -113,11 +119,11 @@ struct ClockTaskArcIOS: View {
                     ? arcRadius
                     : arcRadius + iconSize / 2 + iconOffset
                 
-                // Размер шрифта иконки с учетом короткой задачи
+                // Размер шрифта иконки — всегда одинаковый
                 let baseIconFontSize: CGFloat = isAnalog
                     ? minIconFontSize + (maxIconFontSize - minIconFontSize) * tRing
                     : minIconFontSize
-                let iconFontSize: CGFloat = baseIconFontSize * shortTaskScale
+                let iconFontSize: CGFloat = baseIconFontSize
                 
                 // Создаем только один Path для дуги задачи, используемый и для отрисовки, и для распознавания жестов
                 let taskArcPath = Path { path in
@@ -194,7 +200,6 @@ struct ClockTaskArcIOS: View {
                                 .fill(task.category.color)
                                 .frame(width: iconSize, height: iconSize)
                         )
-                        .scaleEffect(shortTaskScale)
                         .position(
                             x: center.x + iconRadius * cos(midAngle.radians),
                             y: center.y + iconRadius * sin(midAngle.radians)
@@ -292,8 +297,8 @@ struct ClockTaskArcIOS: View {
     ) -> some View {
         let minOuterRingWidth: CGFloat = 20
         let maxOuterRingWidth: CGFloat = 38
-        let minHandleSize: CGFloat = 24
-        let maxHandleSize: CGFloat = 36
+        let minHandleSize: CGFloat = 20
+        let maxHandleSize: CGFloat = 30
 
         // Интерполяция размера маркера
         let t = (viewModel.outerRingLineWidth - minOuterRingWidth) / (maxOuterRingWidth - minOuterRingWidth)
@@ -301,26 +306,24 @@ struct ClockTaskArcIOS: View {
         let baseHandleSize: CGFloat = viewModel.isAnalogArcStyle
             ? minHandleSize + (maxHandleSize - minHandleSize) * t
             : minHandleSize
-        let handleSize: CGFloat = baseHandleSize * shortTaskScale
+        let baseHandleWidth: CGFloat = baseHandleSize // ширина всегда постоянная
+        let handleHeight: CGFloat = baseHandleSize * pow(shortTaskScale, 2) // уменьшение высоты ускорено
 
         let arcRadius: CGFloat = viewModel.isAnalogArcStyle
             ? radius + (viewModel.outerRingLineWidth / 2) + analogOffset
             : radius + arcLineWidth / 2
-
-        // Определяем разные радиусы для маркеров начала и конца
-        // Смещаем маркеры только для коротких задач (когда shortTaskScale < 1.0)
-        let isSmallTask = shortTaskScale < 1.0
-        let startHandleOffset: CGFloat = (isDraggingStart && isSmallTask) ? -4 * (1.0 - shortTaskScale) * 2 : 0
-        let endHandleOffset: CGFloat = (!isDraggingStart && isSmallTask) ? 4 * (1.0 - shortTaskScale) * 2 : 0
-        
+ 
         let handleRadius: CGFloat = viewModel.isAnalogArcStyle
-            ? arcRadius + (isDraggingStart ? startHandleOffset : endHandleOffset)
-            : radius + arcLineWidth / 2 + (isDraggingStart ? startHandleOffset : endHandleOffset)
+            ? arcRadius
+            : radius + arcLineWidth / 2
 
-        Circle()
+        let isLeftHalf = isAngleInLeftHalf(angle)
+
+        Capsule()
             .fill(color)
-            .frame(width: handleSize, height: handleSize)
-            .overlay(Circle().stroke(Color.gray, lineWidth: 2 * shortTaskScale))
+            .frame(width: baseHandleWidth, height: handleHeight)
+            .overlay(Capsule().stroke(Color.gray, lineWidth: 2 * shortTaskScale))
+            .rotationEffect(isLeftHalf ? angle + .degrees(180) : angle)
             .position(
                 x: center.x + handleRadius * cos(angle.radians),
                 y: center.y + handleRadius * sin(angle.radians)
@@ -601,10 +604,9 @@ struct TimeLabel: View {
         ZStack {
             Capsule()
                 .fill(color)
-                .frame(width: (CGFloat(timeText.count) * 6 + 6) * scale, height: 16 * scale)
-            
+                .frame(width: CGFloat(timeText.count) * 6 + 6, height: 16)
             Text(timeText)
-                .font(.system(size: 10 * scale))
+                .font(.system(size: 10))
                 .foregroundColor(.white)
                 .shadow(color: .black.opacity(0.3), radius: 1)
         }

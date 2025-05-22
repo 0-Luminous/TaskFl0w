@@ -425,7 +425,7 @@ struct ClockViewIOS: View {
                 let minDuration: Double = 10 * 60 // 10 минут в секундах
                 let maxDuration: Double = 1 * 3600 // 1 час в секундах
                 let minScale: CGFloat = 1.0
-                let maxScale: CGFloat = 1.5
+                let maxScale: CGFloat = 1.7
                 
                 // Ограничиваем длительность минимальным значением
                 let limitedDuration = max(minDuration, task.duration)
