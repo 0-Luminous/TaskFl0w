@@ -59,10 +59,6 @@ struct ToDoTaskRow: View {
                 .strikethrough(task.isCompleted)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
-            
-            // Text("\(task.title.count) символов")
-            //     .font(.caption)
-            //     .foregroundColor(.gray)
         }
     }
     
@@ -78,7 +74,7 @@ struct ToDoTaskRow: View {
     
     private var taskBackground: some View {
         RoundedRectangle(cornerRadius: 10)
-            .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
+            .fill(themeManager.isDarkMode ? Color(red: 0.25, green: 0.25, blue: 0.25) : Color(red: 0.9, green: 0.9, blue: 0.9))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
                     .strokeBorder(priorityBorderColor, lineWidth: task.priority != .none ? 1.5 : 0)

@@ -116,13 +116,32 @@ struct TasksFromView: View {
                         
                         Spacer()
                         
-                        // Показываем общее количество задач
+                        // Улучшенный индикатор количества задач
                         let totalCount = todoTasks.count
+                        let completedCount = todoTasks.filter { $0.isCompleted }.count
+                        
                         if totalCount > 0 {
-                            Text("\(totalCount)")
-                                .font(.caption)
-                                .padding(6)
-                                .background(Circle().fill(category.color.opacity(0.3)))
+                            HStack(spacing: 4) {
+                                // Индикатор прогресса
+                                ZStack {
+                                    // Фоновая капсула
+                                    Capsule()
+                                        .stroke(category.color.opacity(0.2), lineWidth: 2)
+                                        .frame(width: 60, height: 24)
+                                    
+                                    // Капсула прогресса
+                                    Capsule()
+                                        .trim(from: 0, to: CGFloat(completedCount) / CGFloat(totalCount))
+                                        .stroke(category.color, lineWidth: 2)
+                                        .frame(width: 60, height: 24)
+                                    
+                                    // Добавляем текст внутрь капсулы
+                                    Text("\(completedCount)/\(totalCount)")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(themeManager.isDarkMode ? .gray : .black)
+                                }
+                            }
+                            .padding(.trailing, 4)
                         }
                     }
                     
@@ -205,7 +224,8 @@ struct TasksFromView: View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.black.opacity(0.2))
+                    .fill(.ultraThinMaterial)
+                    .opacity(0.9)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .strokeBorder(category.color.opacity(0.3), lineWidth: 1)

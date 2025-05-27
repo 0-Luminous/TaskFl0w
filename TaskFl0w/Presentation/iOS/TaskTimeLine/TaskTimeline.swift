@@ -509,19 +509,28 @@ struct TaskTimeline: View {
             if !timeBlock.tasks.isEmpty {
                 HStack(alignment: .top, spacing: 0) {
                     // Левая колонка с индикаторами
-                    VStack(spacing: 0) {
-                        ForEach(timeBlock.tasks, id: \.id) { task in
-                            ZStack {
+                    ZStack {
+                        // Фоновые прямоугольники
+                        VStack(spacing: 0) {
+                            ForEach(timeBlock.tasks, id: \.id) { task in
                                 Rectangle()
                                     .fill(task.category.color)
                                     .frame(width: 30, height: getTaskHeight(for: task))
                                     .cornerRadius(5)
-                                
+                            }
+                        }
+                        .zIndex(1) // Нижний слой
+                        
+                        // Иконки поверх прямоугольников
+                        VStack(spacing: 0) {
+                            ForEach(timeBlock.tasks, id: \.id) { task in
                                 Image(systemName: task.icon)
                                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                     .font(.system(size: 14))
+                                    .frame(width: 30, height: getTaskHeight(for: task))
                             }
                         }
+                        .zIndex(2) // Верхний слой
                     }
                     
                     // Правая колонка с задачами по категориям
