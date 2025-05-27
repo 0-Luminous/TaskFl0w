@@ -173,28 +173,6 @@ struct ClockViewIOS: View {
                             if zoomScale > 1.01 {
                                 VStack {
                                     Spacer()
-                                    
-                                    // Text("Нажмите на задачу для выхода из режима приближения")
-                                    //     .font(.system(size: 12))
-                                    //     .foregroundColor(.gray)
-                                    //     .padding(8)
-                                    //     .background(
-                                    //         Capsule()
-                                    //             .fill(.ultraThinMaterial)
-                                    //             .overlay(
-                                    //                 Capsule()
-                                    //                     .stroke(
-                                    //                         LinearGradient(
-                                    //                             colors: [.white.opacity(0.5), .clear],
-                                    //                             startPoint: .top,
-                                    //                             endPoint: .bottom
-                                    //                         ),
-                                    //                         lineWidth: 1
-                                    //                     )
-                                    //             )
-                                    //     )
-                                    //     .padding(.bottom, 20)
-                                    //     .transition(.opacity)
                                 }
                             }
                         }

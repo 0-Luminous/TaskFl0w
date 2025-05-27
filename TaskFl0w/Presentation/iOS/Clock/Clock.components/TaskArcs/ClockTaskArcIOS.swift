@@ -159,7 +159,7 @@ struct ClockTaskArcIOS: View {
                     taskArcPath
                         .stroke(task.category.color, lineWidth: arcLineWidth)
                         .contentShape(taskTapArea)
-                        .contentShape(.dragPreview, Circle().scale(1.2))
+                        .contentShape(.dragPreview, Circle().scale(1.174))
                         .gesture(
                             TapGesture()
                                 .onEnded {
@@ -190,7 +190,21 @@ struct ClockTaskArcIOS: View {
                             CategoryDragPreview(task: task)
                         }
 
-                    // Иконка категории на середине дуги
+                    // Подписи времени
+                    TaskTimeLabels(
+                        task: task,
+                        isAnalog: isAnalog, 
+                        viewModel: viewModel,
+                        startAngle: startAngle,
+                        endAngle: endAngle,
+                        center: center,
+                        arcRadius: arcRadius,
+                        timeTextOffset: timeTextOffset,
+                        shortTaskScale: shortTaskScale,
+                        timeFormatter: timeFormatter
+                    )
+
+                    // Иконка категории — всегда
                     Image(systemName: task.category.iconName)
                         .font(.system(size: iconFontSize))
                         .foregroundColor(.white)
@@ -223,10 +237,9 @@ struct ClockTaskArcIOS: View {
                                     }
                                 }
                         )
-                    
-                    // Если текущая задача в режиме редактирования — показываем маркеры
+
+                    // Маркеры редактирования (если редактируется) — всегда выше иконки
                     if viewModel.isEditingMode && task.id == viewModel.editingTask?.id {
-                        // Маркер начала
                         createDragHandle(
                             color: task.category.color,
                             center: center,
@@ -238,7 +251,6 @@ struct ClockTaskArcIOS: View {
                             shortTaskScale: shortTaskScale
                         )
 
-                        // Маркер конца
                         createDragHandle(
                             color: task.category.color,
                             center: center,
@@ -250,20 +262,6 @@ struct ClockTaskArcIOS: View {
                             shortTaskScale: shortTaskScale
                         )
                     }
-                    
-                    // Отображение времени (оптимизированное условие)
-                    TaskTimeLabels(
-                        task: task,
-                        isAnalog: isAnalog, 
-                        viewModel: viewModel,
-                        startAngle: startAngle,
-                        endAngle: endAngle,
-                        center: center,
-                        arcRadius: arcRadius,
-                        timeTextOffset: timeTextOffset,
-                        shortTaskScale: shortTaskScale,
-                        timeFormatter: timeFormatter
-                    )
                 }
             }
             .onChange(of: isDragging) { oldValue, newValue in
@@ -525,6 +523,11 @@ struct TaskTimeLabels: View {
     let shortTaskScale: CGFloat
     let timeFormatter: DateFormatter
     
+    // Добавим вычисление длительности задачи в минутах
+    private var taskDurationMinutes: Double {
+        return task.duration / 60
+    }
+    
     // Добавляем доступ к толщине дуги
     var arcLineWidth: CGFloat {
         return isAnalog ? viewModel.outerRingLineWidth : viewModel.taskArcLineWidth
@@ -550,41 +553,68 @@ struct TaskTimeLabels: View {
     }
     
     var body: some View {
+        let startTimeText = timeFormatter.string(from: task.startTime)
+        let endTimeText = timeFormatter.string(from: task.endTime)
+        let isStartInLeftHalf = isAngleInLeftHalf(startAngle)
+        let isEndInLeftHalf = isAngleInLeftHalf(endAngle)
+        let minArcWidth: CGFloat = 20
+        let maxArcWidth: CGFloat = 32
+        let arcWidthScale = 1.0 + ((arcLineWidth - minArcWidth) / (maxArcWidth - minArcWidth)) * 0.5
+
         if shouldShowTime {
-            // Текст времени начала задачи
-            let startTimeText = timeFormatter.string(from: task.startTime)
-            let endTimeText = timeFormatter.string(from: task.endTime)
-            let isStartInLeftHalf = isAngleInLeftHalf(startAngle)
-            let isEndInLeftHalf = isAngleInLeftHalf(endAngle)
-            
-            // Расчет масштаба для меток времени в зависимости от толщины дуги
-            let minArcWidth: CGFloat = 20
-            let maxArcWidth: CGFloat = 32
-            let arcWidthScale = 1.0 + ((arcLineWidth - minArcWidth) / (maxArcWidth - minArcWidth)) * 0.5
-            
-            // Отображаем метку времени начала
-            TimeLabel(
-                timeText: startTimeText,
-                angle: startAngle,
-                isLeftHalf: isStartInLeftHalf,
-                color: task.category.color,
-                center: center,
-                radius: arcRadius,
-                offset: timeTextOffset,
-                scale: shortTaskScale * arcWidthScale
-            )
-            
-            // Отображаем метку времени окончания
-            TimeLabel(
-                timeText: endTimeText,
-                angle: endAngle,
-                isLeftHalf: isEndInLeftHalf,
-                color: task.category.color,
-                center: center,
-                radius: arcRadius,
-                offset: timeTextOffset,
-                scale: shortTaskScale * arcWidthScale
-            )
+            // Для задач >= 40 минут — Capsule с текстом
+            if taskDurationMinutes >= 40 {
+                TimeLabel(
+                    timeText: startTimeText,
+                    angle: startAngle,
+                    isLeftHalf: isStartInLeftHalf,
+                    color: task.category.color,
+                    center: center,
+                    radius: arcRadius,
+                    offset: timeTextOffset,
+                    scale: shortTaskScale * arcWidthScale,
+                    isThin: false,
+                    showText: true
+                )
+                TimeLabel(
+                    timeText: endTimeText,
+                    angle: endAngle,
+                    isLeftHalf: isEndInLeftHalf,
+                    color: task.category.color,
+                    center: center,
+                    radius: arcRadius,
+                    offset: timeTextOffset,
+                    scale: shortTaskScale * arcWidthScale,
+                    isThin: false,
+                    showText: true
+                )
+            } else {
+                // Для задач < 40 минут — тонкий Capsule без текста
+                TimeLabel(
+                    timeText: "",
+                    angle: startAngle,
+                    isLeftHalf: isStartInLeftHalf,
+                    color: task.category.color,
+                    center: center,
+                    radius: arcRadius,
+                    offset: timeTextOffset,
+                    scale: shortTaskScale * arcWidthScale,
+                    isThin: true,
+                    showText: false
+                )
+                TimeLabel(
+                    timeText: "",
+                    angle: endAngle,
+                    isLeftHalf: isEndInLeftHalf,
+                    color: task.category.color,
+                    center: center,
+                    radius: arcRadius,
+                    offset: timeTextOffset,
+                    scale: shortTaskScale * arcWidthScale,
+                    isThin: true,
+                    showText: false
+                )
+            }
         }
     }
 }
@@ -599,16 +629,23 @@ struct TimeLabel: View {
     let radius: CGFloat
     let offset: CGFloat
     let scale: CGFloat
-    
+    let isThin: Bool
+    let showText: Bool
+
     var body: some View {
         ZStack {
             Capsule()
                 .fill(color)
-                .frame(width: CGFloat(timeText.count) * 6 + 6, height: 16)
-            Text(timeText)
-                .font(.system(size: 10))
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.3), radius: 1)
+                .frame(
+                    width: isThin ? 35 : CGFloat(timeText.count) * 6 + 6,
+                    height: isThin ? 8 : 16
+                )
+            if showText {
+                Text(timeText)
+                    .font(.system(size: 10))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.3), radius: 1)
+            }
         }
         .rotationEffect(isLeftHalf ? angle + .degrees(180) : angle)
         .position(

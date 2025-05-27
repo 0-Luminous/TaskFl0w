@@ -16,6 +16,7 @@ struct TopBarView: View {
     let searchAction: () -> Void
 
     @ObservedObject private var themeManager = ThemeManager.shared
+    @State private var isSearchViewPresented = false
 
     @State private var dragOffset: CGFloat = 0
     @State private var expandedCalendar = false
@@ -82,29 +83,32 @@ struct TopBarView: View {
             if isBarVisible {
                 HStack {
                     // Кнопка поиска слева
-                    Button(action: searchAction) {
+                    Button(action: {
+                        hapticFeedback()
+                        isSearchViewPresented = true
+                    }) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 20))
-                            .foregroundColor(themeManager.isDarkMode ? .coral1.opacity(0.5) : .red1.opacity(0.5))
+                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                             .padding(4)
                     }
                     .background(
                         Circle()
-                            .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184).opacity(0.7) : Color(red: 0.95, green: 0.95, blue: 0.95).opacity(0.7))
+                            .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
                     )
                     .overlay(
                         Circle()
                             .stroke(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [Color.gray.opacity(0.4), Color.gray.opacity(0.2)]),
+                                    gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
-                                lineWidth: 0.5
+                                lineWidth: 1.0
                             )
                     )
                     .padding(.leading, 16)
-                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 0)
+                    .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
                     .opacity(0.8)
 
                     Spacer()
@@ -212,6 +216,36 @@ struct TopBarView: View {
                 .zIndex(2)
                 .transition(.opacity)
             }
+        }
+        .fullScreenCover(isPresented: $isSearchViewPresented) {
+            SearchView(
+                items: viewModel.tasks.map { task in
+                    ToDoItem(
+                        id: task.id,
+                        title: "",
+                        date: task.startTime,
+                        isCompleted: task.isCompleted,
+                        priority: .none
+                    )
+                },
+                categoryColor: .blue,
+                isSelectionMode: false,
+                selectedTasks: .constant([]),
+                onToggle: { taskId in
+                    if let task = viewModel.tasks.first(where: { $0.id == taskId }) {
+                        // Здесь логика переключения задачи
+                    }
+                },
+                onEdit: { task in
+                    // Обработка редактирования задачи
+                },
+                onDelete: { taskId in
+                    // Обработка удаления задачи
+                },
+                onShare: { taskId in
+                    // Обработка шаринга задачи
+                }
+            )
         }
     }
 }

@@ -11,11 +11,12 @@ struct SearchBar: View {
     @Binding var isActive: Bool
     
     @FocusState private var isFocused: Bool
+    @ObservedObject private var themeManager = ThemeManager.shared
 
     var body: some View {
         HStack {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
+                .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                 .padding(.leading, 6)
             
             ZStack(alignment: .trailing) {
@@ -59,9 +60,14 @@ struct SearchBar: View {
                 .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-        .background(Color(red: 0.2, green: 0.2, blue: 0.2))
-        .cornerRadius(10)
         .padding(.horizontal, 10)
+        .frame(height: 50)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(themeManager.isDarkMode ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.95, green: 0.95, blue: 0.95))
+                .shadow(color: .black.opacity(0.2), radius: 3, y: 1)
+                .padding(.horizontal, 0)
+        )
         .onAppear {
             // При появлении проверяем, есть ли текст
             if !text.isEmpty {
