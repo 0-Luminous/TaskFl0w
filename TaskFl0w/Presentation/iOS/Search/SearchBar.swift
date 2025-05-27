@@ -20,7 +20,7 @@ struct SearchBar: View {
                 .padding(.leading, 6)
             
             ZStack(alignment: .trailing) {
-                TextField("Search", text: $text)
+                TextField("search.search".localized, text: $text)
                     .padding(.vertical, 10)
                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                     .font(.system(size: 17))
@@ -50,7 +50,7 @@ struct SearchBar: View {
             
             // Показываем кнопку "Отмена", когда поле активно
             if isActive {
-                Button("Отмена") {
+                Button("search.cancel".localized) {
                     text = ""
                     isFocused = false
                     withAnimation(.easeInOut(duration: 0.2)) {

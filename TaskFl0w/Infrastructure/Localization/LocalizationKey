@@ -165,4 +165,10 @@ enum LocalizationKey {
         static let saturday = "week.saturday"
         static let sunday = "week.sunday"
     }
+
+    enum Search {
+        static let search = "search.search"
+        static let cancel = "search.cancel"
+        static let tasksNotFound = "search.tasksNotFound"
+    }
 }

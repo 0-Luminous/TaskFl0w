@@ -121,3 +121,7 @@
 "week.friday" = "Fri";
 "week.saturday" = "Sat";
 "week.sunday" = "Sun";
+
+"search.search" = "Search";
+"search.cancel" = "Cancel";
+"search.tasksNotFound" = "Tasks not found";

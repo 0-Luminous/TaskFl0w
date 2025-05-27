@@ -121,3 +121,7 @@
 "week.friday" = "Пт";
 "week.saturday" = "Сб";
 "week.sunday" = "Вс";
+
+"search.search" = "Поиск";
+"search.cancel" = "Отмена";
+"search.tasksNotFound" = "Задачи не найдены";
