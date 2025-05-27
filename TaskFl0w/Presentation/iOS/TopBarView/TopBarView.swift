@@ -17,6 +17,7 @@ struct TopBarView: View {
 
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var isSearchViewPresented = false
+    @StateObject private var listViewModel = ListViewModel()
 
     @State private var dragOffset: CGFloat = 0
     @State private var expandedCalendar = false
@@ -219,33 +220,26 @@ struct TopBarView: View {
         }
         .fullScreenCover(isPresented: $isSearchViewPresented) {
             SearchView(
-                items: viewModel.tasks.map { task in
-                    ToDoItem(
-                        id: task.id,
-                        title: "",
-                        date: task.startTime,
-                        isCompleted: task.isCompleted,
-                        priority: .none
-                    )
-                },
+                items: listViewModel.items,
                 categoryColor: .blue,
                 isSelectionMode: false,
                 selectedTasks: .constant([]),
                 onToggle: { taskId in
-                    if let task = viewModel.tasks.first(where: { $0.id == taskId }) {
-                        // Здесь логика переключения задачи
-                    }
+                    listViewModel.presenter?.toggleItem(id: taskId)
                 },
                 onEdit: { task in
-                    // Обработка редактирования задачи
+                    listViewModel.presenter?.editItem(id: task.id, title: task.title)
                 },
                 onDelete: { taskId in
-                    // Обработка удаления задачи
+                    listViewModel.presenter?.deleteItem(id: taskId)
                 },
                 onShare: { taskId in
-                    // Обработка шаринга задачи
+                    listViewModel.presenter?.shareItem(id: taskId)
                 }
             )
+            .onAppear {
+                listViewModel.onViewDidLoad()
+            }
         }
     }
 }
