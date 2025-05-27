@@ -316,8 +316,8 @@ struct TaskTimeline: View {
                         TopBarView(
                             viewModel: clockViewModel,
                             showSettingsAction: { showSettings = true },
-                            toggleCalendarAction: toggleWeekCalendar,
-                            isCalendarVisible: false,
+                            toggleCalendarAction: { toggleWeekCalendar() },
+                            isCalendarVisible: showWeekCalendar,
                             searchAction: { /* Логика поиска */ }
                         )
                         .zIndex(100)
@@ -571,7 +571,13 @@ struct TaskTimeline: View {
         } else {
             let baseHeight: CGFloat = 60
             let taskRowHeight: CGFloat = 45
-            let tasksHeight = CGFloat(todoTasks.count) * taskRowHeight
+            let tasksHeight = todoTasks.reduce(0) { total, task in
+                // Вычисляем количество строк (каждые 24 символа = новая строка)
+                let lines = Int(ceil(Double(task.title.count) / 24.0))
+                // Увеличиваем высоту на 20 для каждой дополнительной строки
+                let additionalHeight = CGFloat(max(0, lines - 1)) * 20
+                return total + taskRowHeight + additionalHeight
+            }
             let padding: CGFloat = 10
             
             return baseHeight + tasksHeight + padding
