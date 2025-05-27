@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct NewTaskPriorityBar: View {
     @Binding var selectedPriority: TaskPriority
@@ -23,18 +24,6 @@ struct NewTaskPriorityBar: View {
                 
                 // Используем фиксированные фреймы для гарантии стабильного положения
                 HStack {
-                    // Левая кнопка - без приоритета
-                    ZStack {
-                        // Контейнер фиксированного размера
-                        Color.clear
-                            .frame(width: 38, height: 38)
-                        
-                        priorityButtonNone
-                    }
-                    .frame(width: 38, height: 38)
-                    
-                    Spacer()
-                        .frame(width: 25) // Уменьшенное расстояние между кнопками
                     
                     // Центральная кнопка - низкий приоритет
                     ZStack {
@@ -110,18 +99,14 @@ struct NewTaskPriorityBar: View {
     
     // MARK: - UI Components
     
-    private var priorityButtonNone: some View {
-        Button(action: {
-            selectedPriority = .none
-            onSave()
-        }) {
-            toolbarIcon(systemName: "circle.dashed", color: selectedPriority == .none ? .white : .gray)
-        }
-    }
-    
     private var priorityButtonLow: some View {
         Button(action: {
-            selectedPriority = .low
+            generateFeedback()
+            if selectedPriority == .low {
+                selectedPriority = .none
+            } else {
+                selectedPriority = .low
+            }
             onSave()
         }) {
             priorityIconView(priority: .low)
@@ -130,7 +115,12 @@ struct NewTaskPriorityBar: View {
     
     private var priorityButtonMedium: some View {
         Button(action: {
-            selectedPriority = .medium
+            generateFeedback()
+            if selectedPriority == .medium {
+                selectedPriority = .none
+            } else {
+                selectedPriority = .medium
+            }
             onSave()
         }) {
             priorityIconView(priority: .medium)
@@ -139,7 +129,12 @@ struct NewTaskPriorityBar: View {
     
     private var priorityButtonHigh: some View {
         Button(action: {
-            selectedPriority = .high
+            generateFeedback()
+            if selectedPriority == .high {
+                selectedPriority = .none
+            } else {
+                selectedPriority = .high
+            }
             onSave()
         }) {
             priorityIconView(priority: .high)
@@ -150,47 +145,24 @@ struct NewTaskPriorityBar: View {
     
     private func priorityIconView(priority: TaskPriority) -> some View {
         let color = getPriorityColor(for: priority)
+        let isSelected = selectedPriority == priority
         
         return toolbarIcon(content: {
             VStack(spacing: 2) {
                 ForEach(0..<priority.rawValue, id: \.self) { _ in
                     Rectangle()
-                        .fill(selectedPriority == priority ? color : Color.gray)
+                        .fill(isSelected ? color : Color.gray)
                         .frame(width: 12, height: 3)
                 }
             }
-            .frame(width: 20, height: 20) // Фиксированный размер для содержимого
-        }, color: selectedPriority == priority ? color : .gray)
+            .frame(width: 20, height: 20)
+        }, color: isSelected ? color : .gray, isSelected: isSelected)
     }
     
-    private func toolbarIcon(systemName: String, color: Color) -> some View {
-        Image(systemName: systemName)
-            .font(.system(size: 20))
-            .foregroundColor(color)
-            .frame(width: 20, height: 20) // Фиксированный размер для иконки
-            .padding(6)
-            .background(
-                Circle()
-                    .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
-            )
-            .overlay(
-                Circle()
-                    .stroke(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: 1.0
-                    )
-            )
-            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
-    }
-    
-    private func toolbarIcon<Content: View>(content: @escaping () -> Content, color: Color) -> some View {
+    private func toolbarIcon<Content: View>(content: @escaping () -> Content, color: Color, isSelected: Bool = false) -> some View {
         content()
             .foregroundColor(color)
-            .frame(width: 20, height: 20) // Фиксированный размер для содержимого
+            .frame(width: 20, height: 20)
             .padding(6)
             .background(
                 Circle()
@@ -207,7 +179,7 @@ struct NewTaskPriorityBar: View {
                         lineWidth: 1.0
                     )
             )
-            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+            .shadow(color: isSelected ? color.opacity(0.5) : .black.opacity(0.3), radius: isSelected ? 5 : 3, x: 0, y: 1)
     }
     
     private func getPriorityColor(for priority: TaskPriority) -> Color {
@@ -221,6 +193,11 @@ struct NewTaskPriorityBar: View {
         case .none:
             return .gray
         }
+    }
+    
+    private func generateFeedback() {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
     }
 }
 
