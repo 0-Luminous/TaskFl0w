@@ -16,17 +16,24 @@ struct SearchView: View {
     let onEdit: (ToDoItem) -> Void
     let onDelete: (UUID) -> Void
     let onShare: (UUID) -> Void
+    let categoryManagement: CategoryManagementProtocol
 
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var searchText: String = ""
     @State private var isSearchActive: Bool = false
+    @State private var selectedDate: Date? = nil
+    @Environment(\.dismiss) private var dismiss
 
-    // Фильтрация задач по поисковому тексту
+    // Фильтрация задач по поисковому тексту и дате
     private var filteredItems: [ToDoItem] {
+        let dateFiltered = selectedDate == nil ? items : items.filter { 
+            Calendar.current.isDate($0.date, inSameDayAs: selectedDate!)
+        }
+        
         if searchText.isEmpty {
-            return items
+            return dateFiltered
         } else {
-            return items.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+            return dateFiltered.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
         }
     }
 
@@ -41,8 +48,13 @@ struct SearchView: View {
         groupedTasks.keys.sorted()
     }
 
-    // Получаем уникальные даты из задач
-    private var uniqueDates: [Date] {
+    // Получаем уникальные даты из всех задач (независимо от фильтра)
+    private var allUniqueDates: [Date] {
+        Array(Set(items.map { Calendar.current.startOfDay(for: $0.date) })).sorted(by: >)
+    }
+
+    // Получаем уникальные даты из отфильтрованных задач
+    private var filteredUniqueDates: [Date] {
         Array(Set(filteredItems.map { Calendar.current.startOfDay(for: $0.date) })).sorted(by: >)
     }
 
@@ -52,26 +64,42 @@ struct SearchView: View {
                 // Левая панель с датами
                 ScrollView {
                     Spacer()
-                            .frame(height: 60)
+                        .frame(height: 60)
                     VStack(spacing: 12) {
-                        ForEach(uniqueDates, id: \.self) { date in
+                        ForEach(allUniqueDates, id: \.self) { date in
                             Button(action: {
-                                // Здесь можно добавить фильтрацию по дате
+                                if selectedDate == date {
+                                    selectedDate = nil
+                                } else {
+                                    selectedDate = date
+                                }
                             }) {
                                 VStack(spacing: 4) {
                                     Text(date.formatted(.dateTime.day()))
                                         .font(.system(size: 20, weight: .bold))
+                                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                     Text(date.formatted(.dateTime.month(.abbreviated)))
                                         .font(.system(size: 14))
+                                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                 }
                                 .frame(width: 60)
-                                .padding(.vertical, 12)
+                                .padding(.vertical, 8)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(themeManager.isDarkMode ? 
-                                            Color(red: 0.18, green: 0.18, blue: 0.18) : 
-                                            Color(red: 0.9, green: 0.9, blue: 0.9))
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(themeManager.isDarkMode ? 
+                                                Color(red: 0.18, green: 0.18, blue: 0.18) : 
+                                                Color(red: 0.9, green: 0.9, blue: 0.9))
+                                        
+                                        // Синий бордер для выбранной даты
+                                        if Calendar.current.isDate(date, inSameDayAs: selectedDate ?? Date.distantPast) {
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.blue, lineWidth: 1)
+                                        }
+                                    }
                                 )
+                                .padding(.horizontal, 2)
+                                .opacity(filteredUniqueDates.contains(date) ? 1.0 : 0.2) // Затемняем неактивные даты
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
@@ -82,7 +110,7 @@ struct SearchView: View {
                 .background(
                     themeManager.isDarkMode ? 
                         Color(red: 0.13, green: 0.13, blue: 0.13) : 
-                        Color(red: 0.95, green: 0.95, blue: 0.95)
+                        Color(red: 0.8, green: 0.8, blue: 0.8)
                 )
 
                 // Основной контент
@@ -176,7 +204,7 @@ struct SearchView: View {
                                             .stroke(
                                                 LinearGradient(
                                                     gradient: Gradient(colors: [
-                                                        categoryColor.opacity(0.7),
+                                                        getCategoryColor(for: category),
                                                         Color.gray.opacity(0.6),
                                                     ]),
                                                     startPoint: .topLeading,
@@ -200,11 +228,31 @@ struct SearchView: View {
                 )
             }
 
-            // SearchBar поверх всего контента
-            SearchBar(text: $searchText, isActive: $isSearchActive)
-                .padding(.top, 8)
-                .padding(.horizontal, 12)
-                .zIndex(1)
+            // Верхняя панель с кнопкой выхода и поиском
+            HStack(spacing: 8) {
+                // Кнопка выхода
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.backward")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
+                        .frame(width: 40, height: 40)
+                        .background(
+                            Circle()
+                                .fill(themeManager.isDarkMode ? 
+                                    Color(red: 0.18, green: 0.18, blue: 0.18) : 
+                                    Color(red: 0.9, green: 0.9, blue: 0.9))
+                        )
+                }
+                .padding(.leading, 10)
+
+                SearchBar(text: $searchText, isActive: $isSearchActive)
+                .padding(.leading, 20)
+            }
+            .padding(.top, 8)
+            .padding(.horizontal, 10)
+            .zIndex(1)
         }
     }
 
@@ -215,5 +263,12 @@ struct SearchView: View {
         case .low: return .green
         case .none: return .clear
         }
+    }
+
+    private func getCategoryColor(for categoryName: String) -> Color {
+        if let category = categoryManagement.categories.first(where: { $0.rawValue == categoryName }) {
+            return category.color
+        }
+        return categoryColor // Используем переданный цвет как запасной вариант
     }
 }

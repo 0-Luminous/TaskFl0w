@@ -235,7 +235,8 @@ struct TopBarView: View {
                 },
                 onShare: { taskId in
                     listViewModel.presenter?.shareItem(id: taskId)
-                }
+                },
+                categoryManagement: viewModel.categoryManagement
             )
             .onAppear {
                 listViewModel.onViewDidLoad()

@@ -22,6 +22,7 @@ struct SearchBar: View {
             ZStack(alignment: .trailing) {
                 TextField("Search", text: $text)
                     .padding(.vertical, 10)
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
                     .font(.system(size: 17))
                     .focused($isFocused)
                     .onChange(of: isFocused) { oldValue, newValue in
