@@ -243,6 +243,17 @@ class TimelineManager: ObservableObject {
     }
 }
 
+protocol CategoryHeightProvider {
+    func getHeight(for categoryId: UUID, date: Date) -> CGFloat
+}
+
+extension TaskTimeline: CategoryHeightProvider {
+    func getHeight(for categoryId: UUID, date: Date) -> CGFloat {
+        let categoryIdentifier = "\(categoryId)-\(date.timeIntervalSince1970)"
+        return categoryHeights[categoryIdentifier] ?? 100
+    }
+}
+
 struct TaskTimeline: View {
     @State var selectedDate: Date
     let tasks: [TaskOnRing]
@@ -257,6 +268,9 @@ struct TaskTimeline: View {
     // Состояние интерфейса
     @State private var showSettings = false
     @State private var showWeekCalendar = false
+    
+    // Добавляем состояние для хранения высот категорий
+    @State private var categoryHeights: [String: CGFloat] = [:]
 
     // Вычисляемые свойства для фильтрации задач
     private var filteredTasks: [TaskOnRing] {
@@ -379,6 +393,8 @@ struct TaskTimeline: View {
         }
         .onChange(of: clockViewModel.selectedDate) { newValue in
             selectedDate = newValue
+            // Очищаем кэш высот при смене даты
+            categoryHeights.removeAll()
         }
     }
 
@@ -545,6 +561,21 @@ struct TaskTimeline: View {
                                     startTime: getEarliestStartTime(for: tasksInCategory),
                                     endTime: getLatestEndTime(for: tasksInCategory)
                                 )
+                                .background(
+                                    GeometryReader { geometry in
+                                        Color.clear
+                                            .onAppear {
+                                                let categoryIdentifier = "\(firstTask.category.id)-\(selectedDate.timeIntervalSince1970)"
+                                                categoryHeights[categoryIdentifier] = geometry.size.height
+                                                print("Category height updated: \(categoryIdentifier) = \(geometry.size.height)")
+                                            }
+                                            .onChange(of: geometry.size) { newSize in
+                                                let categoryIdentifier = "\(firstTask.category.id)-\(selectedDate.timeIntervalSince1970)"
+                                                categoryHeights[categoryIdentifier] = newSize.height
+                                                print("Category height changed: \(categoryIdentifier) = \(newSize.height)")
+                                            }
+                                    }
+                                )
                             }
                         }
                     }
@@ -568,7 +599,6 @@ struct TaskTimeline: View {
         return formatter.string(from: date)
     }
     
-    
     private func getTaskHeight(for task: TaskOnRing) -> CGFloat {
         let todoTasks = listViewModel.items.filter { item in
             Calendar.current.isDate(item.date, inSameDayAs: selectedDate) && 
@@ -576,20 +606,12 @@ struct TaskTimeline: View {
         }
         
         if todoTasks.isEmpty {
-            return 100
+            return 100 // Базовая высота для пустого блока
         } else {
-            let baseHeight: CGFloat = 60
-            let taskRowHeight: CGFloat = 45
-            let tasksHeight = todoTasks.reduce(0) { total, task in
-                // Вычисляем количество строк (каждые 24 символа = новая строка)
-                let lines = Int(ceil(Double(task.title.count) / 24.0))
-                // Увеличиваем высоту на 20 для каждой дополнительной строки
-                let additionalHeight = CGFloat(max(0, lines - 1)) * 20
-                return total + taskRowHeight + additionalHeight
-            }
-            let padding: CGFloat = 10
-            
-            return baseHeight + tasksHeight + padding
+            let categoryIdentifier = "\(task.category.id)-\(selectedDate.timeIntervalSince1970)"
+            let height = categoryHeights[categoryIdentifier] ?? 100
+            print("Getting height for \(categoryIdentifier): \(height)")
+            return height
         }
     }
     

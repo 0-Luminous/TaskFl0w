@@ -7,6 +7,15 @@
 
 import SwiftUI
 
+// Сначала добавим PreferenceKey в начало файла
+struct CategoryHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 100
+    
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 // Компонент для отображения задач из ToDoList
 struct TasksFromView: View {
     @ObservedObject var listViewModel: ListViewModel
@@ -19,13 +28,29 @@ struct TasksFromView: View {
     var isNearestCategory: Bool = true // Новый параметр: ближайшая ли это категория
     var specificTasks: [ToDoItem]? = nil // Добавляем параметр для передачи конкретных задач
     
+    // Добавляем состояние для хранения высоты
+    @State private var categoryHeight: CGFloat = 0
+    
+    // Добавляем идентификатор для уникальной идентификации категории
+    private let categoryIdentifier: String
+    
+    init(listViewModel: ListViewModel, selectedDate: Date, categoryManager: CategoryManagementProtocol, selectedCategoryID: UUID, startTime: Date? = nil, endTime: Date? = nil, isNearestCategory: Bool = true, specificTasks: [ToDoItem]? = nil) {
+        self.listViewModel = listViewModel
+        self.selectedDate = selectedDate
+        self.categoryManager = categoryManager
+        self.selectedCategoryID = selectedCategoryID
+        self.startTime = startTime
+        self.endTime = endTime
+        self.isNearestCategory = isNearestCategory
+        self.specificTasks = specificTasks
+        // Создаем уникальный идентификатор для категории
+        self.categoryIdentifier = "\(selectedCategoryID)-\(selectedDate.timeIntervalSince1970)"
+    }
+    
     var body: some View {
-        // Оборачиваем весь контент в VStack
         VStack(alignment: .leading, spacing: 12) {
-            // Используем specificTasks, если они переданы, иначе фильтруем из списка
             let categoryTasks: [ToDoItem] = specificTasks ?? getFilteredItemsForDate(selectedDate).filter { $0.categoryID == selectedCategoryID }
             
-            // Проверяем, можем ли извлечь информацию о категории из задач или из менеджера категорий
             if let categoryItem = categoryTasks.first, let categoryName = categoryItem.categoryName {
                 let (color, icon) = getCategoryInfo(for: selectedCategoryID, categoryManager: categoryManager)
                 let category = TaskCategoryModel(id: selectedCategoryID, rawValue: categoryName, iconName: icon, color: color)
@@ -43,7 +68,6 @@ struct TasksFromView: View {
                         endTime: endTime,
                         showFullTasks: isNearestCategory,
                         onToggleTask: { taskId in
-                            // Используем presenter из ListViewModel для переключения статуса задачи
                             listViewModel.presenter?.toggleItem(id: taskId)
                         }
                     )
