@@ -41,6 +41,9 @@ struct ClockTaskArcIOS: View {
     private let timeFontSize: CGFloat = 10
     private let timeTextOffset: CGFloat = -8
     
+    // Добавляем константу для минимальной длительности
+    private let minimumDuration: TimeInterval = 20 * 60
+    
     // Предварительные вычисления для избежания их повторения внутри body
     private var isAnalog: Bool { viewModel.isAnalogArcStyle }
     
@@ -85,6 +88,19 @@ struct ClockTaskArcIOS: View {
         return degrees > 90 && degrees < 270
     }
 
+    // Выносим геометрические вычисления в отдельные методы
+    private func calculateArcRadius(radius: CGFloat, analogOffset: CGFloat) -> CGFloat {
+        isAnalog ? radius + (viewModel.outerRingLineWidth / 2) + analogOffset : radius + arcLineWidth / 2
+    }
+    
+    private func calculateIconRadius(arcRadius: CGFloat, iconSize: CGFloat, iconOffset: CGFloat) -> CGFloat {
+        isAnalog ? arcRadius : arcRadius + iconSize / 2 + iconOffset
+    }
+    
+    private func calculateIconFontSize(tRing: CGFloat) -> CGFloat {
+        isAnalog ? minIconFontSize + (maxIconFontSize - minIconFontSize) * tRing : minIconFontSize
+    }
+
     var body: some View {
         if !isVisible {
             EmptyView()
@@ -105,9 +121,7 @@ struct ClockTaskArcIOS: View {
                 let analogOffset = minOffset + (maxOffset - minOffset) * tArcOffset
                 
                 // Радиус дуги
-                let arcRadius: CGFloat = isAnalog
-                    ? radius + (viewModel.outerRingLineWidth / 2) + analogOffset
-                    : radius + arcLineWidth / 2
+                let arcRadius: CGFloat = calculateArcRadius(radius: radius, analogOffset: analogOffset)
                 
                 // Расчет смещения иконки
                 let analogIconOffset = minAnalogIconOffset + (maxAnalogIconOffset - minAnalogIconOffset) * tRing
@@ -115,15 +129,10 @@ struct ClockTaskArcIOS: View {
                 let iconOffset = minIconOffset + (maxIconOffset - minIconOffset) * tIconOffset
                 
                 // Расчет радиуса для размещения иконки
-                let iconRadius: CGFloat = isAnalog
-                    ? arcRadius
-                    : arcRadius + iconSize / 2 + iconOffset
+                let iconRadius: CGFloat = calculateIconRadius(arcRadius: arcRadius, iconSize: iconSize, iconOffset: iconOffset)
                 
                 // Размер шрифта иконки — всегда одинаковый
-                let baseIconFontSize: CGFloat = isAnalog
-                    ? minIconFontSize + (maxIconFontSize - minIconFontSize) * tRing
-                    : minIconFontSize
-                let iconFontSize: CGFloat = baseIconFontSize
+                let iconFontSize: CGFloat = calculateIconFontSize(tRing: tRing)
                 
                 // Создаем только один Path для дуги задачи, используемый и для отрисовки, и для распознавания жестов
                 let taskArcPath = Path { path in
@@ -307,13 +316,10 @@ struct ClockTaskArcIOS: View {
         let baseHandleWidth: CGFloat = baseHandleSize // ширина всегда постоянная
         let handleHeight: CGFloat = baseHandleSize * pow(shortTaskScale, 2) // уменьшение высоты ускорено
 
-        let arcRadius: CGFloat = viewModel.isAnalogArcStyle
-            ? radius + (viewModel.outerRingLineWidth / 2) + analogOffset
-            : radius + arcLineWidth / 2
+        let arcRadius: CGFloat = calculateArcRadius(radius: radius, analogOffset: analogOffset)
  
-        let handleRadius: CGFloat = viewModel.isAnalogArcStyle
-            ? arcRadius
-            : radius + arcLineWidth / 2
+        // Используем arcRadius вместо handleRadius, так как нам не нужен дополнительный отступ для маркера
+        let handleRadius: CGFloat = arcRadius
 
         let isLeftHalf = isAngleInLeftHalf(angle)
 
@@ -341,88 +347,8 @@ struct ClockTaskArcIOS: View {
                             triggerDragHapticFeedback()
                         }
                         
-                        // Вычисляем вектор от центра к точке перетаскивания
-                        let vector = CGVector(dx: value.location.x - center.x, dy: value.location.y - center.y)
-                        
-                        // Рассчитываем угол в радианах от центра к текущей позиции
-                        let angle = atan2(vector.dy, vector.dx)
-                        
-                        // Конвертируем в градусы
-                        var degrees = angle * 180 / .pi
-                        
-                        // Нормализуем значение от 0 до 360 градусов (0 градусов - это направление вправо)
-                        degrees = (degrees + 360).truncatingRemainder(dividingBy: 360)
-                        
-                        // Корректируем с учетом zeroPosition, где 270 градусов - 12 часов (верх циферблата)
-                        let adjustedDegrees = (degrees - 270 - viewModel.zeroPosition + 360).truncatingRemainder(dividingBy: 360)
-                        
-                        // Вычисляем часы и минуты из градусов
-                        // 360 градусов соответствуют 24 часам
-                        let hours = adjustedDegrees / 15 // 15 градусов = 1 час
-                        let hourComponent = Int(hours)
-                        let minuteComponent = Int((hours - Double(hourComponent)) * 60)
-                        
-                        // Проверяем, пересекли ли мы новое часовое деление
-                        if hourComponent != lastHourComponent {
-                            // Если это не первый вызов (-1) и если значение изменилось - делаем виброотдачу
-                            if lastHourComponent != -1 {
-                                triggerSelectionHapticFeedback()
-                            }
-                            lastHourComponent = hourComponent
-                        }
-                        
-                        // Мягкая виброотдача при каждом значительном изменении минут (каждые 5 минут)
-                        let currentMinuteBucket = minuteComponent / 5
-                        if currentMinuteBucket != (minuteComponent - 1) / 5 && lastHourComponent != -1 {
-                            triggerDragHapticFeedback()
-                        }
-                        
-                        // Используем компоненты из выбранной даты
-                        var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
-                        components.hour = hourComponent
-                        components.minute = minuteComponent
-                        components.timeZone = TimeZone.current
-                        
-                        if let newTime = Calendar.current.date(from: components) {
-                            // Получаем текущие время начала и окончания задачи
-                            let startCalendarComponents = Calendar.current.dateComponents([.hour, .minute], from: task.startTime)
-                            let endCalendarComponents = Calendar.current.dateComponents([.hour, .minute], from: task.endTime)
-                            
-                            // Проверка минимальной длительности (20 минут)
-                            let minimumDuration: TimeInterval = 20 * 60
-                            
-                            if isDraggingStart {
-                                // Проверяем, не является ли новое время начала равным 0 часов 0 минут
-                                if hourComponent == 0 && minuteComponent == 0 {
-                                    // Блокируем маркер на отметке 0 - не делаем ничего
-                                    return
-                                }
-                                
-                                // Проверяем, не приведет ли изменение к нарушению минимальной длительности
-                                if task.endTime.timeIntervalSince(newTime) >= minimumDuration {
-                                    viewModel.previewTime = newTime
-                                    adjustTask(task, newTime)
-                                } else {
-                                    // Блокируем маркер на минимальной длительности без его перемещения
-                                    return
-                                }
-                            } else { // Маркер конца
-                                // Проверяем, не является ли новое время окончания равным 0 часов 0 минут
-                                if hourComponent == 0 && minuteComponent == 0 {
-                                    // Блокируем маркер на отметке 0 - не делаем ничего
-                                    return
-                                }
-                                
-                                // Проверяем, не приведет ли изменение к нарушению минимальной длительности
-                                if newTime.timeIntervalSince(task.startTime) >= minimumDuration {
-                                    viewModel.previewTime = newTime
-                                    adjustTask(task, newTime)
-                                } else {
-                                    // Блокируем маркер на минимальной длительности без его перемещения
-                                    return
-                                }
-                            }
-                        }
+                        // Выносим логику обработки жестов в отдельные методы
+                        handleDragGesture(value: value, center: center, isDraggingStart: isDraggingStart)
                     }
                     .onEnded { _ in
                         if let updatedTask = viewModel.editingTask,
@@ -447,6 +373,39 @@ struct ClockTaskArcIOS: View {
                         triggerHapticFeedback()
                     }
             )
+    }
+
+    // Выносим логику обработки жестов в отдельные методы
+    private func handleDragGesture(value: DragGesture.Value, center: CGPoint, isDraggingStart: Bool) {
+        let vector = CGVector(dx: value.location.x - center.x, dy: value.location.y - center.y)
+        let angle = atan2(vector.dy, vector.dx)
+        let degrees = (angle * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
+        let adjustedDegrees = (degrees - 270 - viewModel.zeroPosition + 360).truncatingRemainder(dividingBy: 360)
+        
+        let hours = adjustedDegrees / 15
+        let hourComponent = Int(hours)
+        let minuteComponent = Int((hours - Double(hourComponent)) * 60)
+        
+        handleHourChange(hourComponent)
+        handleMinuteChange(minuteComponent)
+        
+        updateTaskTime(hourComponent: hourComponent, minuteComponent: minuteComponent, isDraggingStart: isDraggingStart)
+    }
+    
+    private func handleHourChange(_ hourComponent: Int) {
+        if hourComponent != lastHourComponent {
+            if lastHourComponent != -1 {
+                triggerSelectionHapticFeedback()
+            }
+            lastHourComponent = hourComponent
+        }
+    }
+    
+    private func handleMinuteChange(_ minuteComponent: Int) {
+        let currentMinuteBucket = minuteComponent / 5
+        if currentMinuteBucket != (minuteComponent - 1) / 5 && lastHourComponent != -1 {
+            triggerDragHapticFeedback()
+        }
     }
 
     func adjustTaskStartTimesForOverlap(_ currentTask: TaskOnRing, newStartTime: Date) {
@@ -508,6 +467,37 @@ struct ClockTaskArcIOS: View {
             }
         }
     }
+
+    private func updateTaskTime(hourComponent: Int, minuteComponent: Int, isDraggingStart: Bool) {
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
+        components.hour = hourComponent
+        components.minute = minuteComponent
+        components.timeZone = TimeZone.current
+        
+        guard let newTime = Calendar.current.date(from: components) else { return }
+        
+        if isDraggingStart {
+            handleStartTimeUpdate(newTime, hourComponent: hourComponent, minuteComponent: minuteComponent)
+        } else {
+            handleEndTimeUpdate(newTime, hourComponent: hourComponent, minuteComponent: minuteComponent)
+        }
+    }
+    
+    private func handleStartTimeUpdate(_ newTime: Date, hourComponent: Int, minuteComponent: Int) {
+        guard hourComponent != 0 || minuteComponent != 0 else { return }
+        guard task.endTime.timeIntervalSince(newTime) >= minimumDuration else { return }
+        
+        viewModel.previewTime = newTime
+        adjustTaskStartTimesForOverlap(task, newStartTime: newTime)
+    }
+    
+    private func handleEndTimeUpdate(_ newTime: Date, hourComponent: Int, minuteComponent: Int) {
+        guard hourComponent != 0 || minuteComponent != 0 else { return }
+        guard newTime.timeIntervalSince(task.startTime) >= minimumDuration else { return }
+        
+        viewModel.previewTime = newTime
+        adjustTaskEndTimesForOverlap(task, newEndTime: newTime)
+    }
 }
 
 // Выносим отображение времени в отдельный компонент
@@ -552,69 +542,54 @@ struct TaskTimeLabels: View {
         (!viewModel.showTimeOnlyForActiveTask || (viewModel.showTimeOnlyForActiveTask && isActiveTask))
     }
     
-    var body: some View {
+    // Кэшируем вычисления для отображения времени
+    private var timeLabels: (start: TimeLabel, end: TimeLabel)? {
+        guard shouldShowTime else { return nil }
+        
         let startTimeText = timeFormatter.string(from: task.startTime)
         let endTimeText = timeFormatter.string(from: task.endTime)
         let isStartInLeftHalf = isAngleInLeftHalf(startAngle)
         let isEndInLeftHalf = isAngleInLeftHalf(endAngle)
+        let arcWidthScale = calculateArcWidthScale()
+        
+        if taskDurationMinutes >= 40 {
+            return (
+                createTimeLabel(text: startTimeText, angle: startAngle, isLeftHalf: isStartInLeftHalf, isThin: false),
+                createTimeLabel(text: endTimeText, angle: endAngle, isLeftHalf: isEndInLeftHalf, isThin: false)
+            )
+        } else {
+            return (
+                createTimeLabel(text: "", angle: startAngle, isLeftHalf: isStartInLeftHalf, isThin: true),
+                createTimeLabel(text: "", angle: endAngle, isLeftHalf: isEndInLeftHalf, isThin: true)
+            )
+        }
+    }
+    
+    private func calculateArcWidthScale() -> CGFloat {
         let minArcWidth: CGFloat = 20
         let maxArcWidth: CGFloat = 32
-        let arcWidthScale = 1.0 + ((arcLineWidth - minArcWidth) / (maxArcWidth - minArcWidth)) * 0.5
-
-        if shouldShowTime {
-            // Для задач >= 40 минут — Capsule с текстом
-            if taskDurationMinutes >= 40 {
-                TimeLabel(
-                    timeText: startTimeText,
-                    angle: startAngle,
-                    isLeftHalf: isStartInLeftHalf,
-                    color: task.category.color,
-                    center: center,
-                    radius: arcRadius,
-                    offset: timeTextOffset,
-                    scale: shortTaskScale * arcWidthScale,
-                    isThin: false,
-                    showText: true
-                )
-                TimeLabel(
-                    timeText: endTimeText,
-                    angle: endAngle,
-                    isLeftHalf: isEndInLeftHalf,
-                    color: task.category.color,
-                    center: center,
-                    radius: arcRadius,
-                    offset: timeTextOffset,
-                    scale: shortTaskScale * arcWidthScale,
-                    isThin: false,
-                    showText: true
-                )
-            } else {
-                // Для задач < 40 минут — тонкий Capsule без текста
-                TimeLabel(
-                    timeText: "",
-                    angle: startAngle,
-                    isLeftHalf: isStartInLeftHalf,
-                    color: task.category.color,
-                    center: center,
-                    radius: arcRadius,
-                    offset: timeTextOffset,
-                    scale: shortTaskScale * arcWidthScale,
-                    isThin: true,
-                    showText: false
-                )
-                TimeLabel(
-                    timeText: "",
-                    angle: endAngle,
-                    isLeftHalf: isEndInLeftHalf,
-                    color: task.category.color,
-                    center: center,
-                    radius: arcRadius,
-                    offset: timeTextOffset,
-                    scale: shortTaskScale * arcWidthScale,
-                    isThin: true,
-                    showText: false
-                )
-            }
+        return 1.0 + ((arcLineWidth - minArcWidth) / (maxArcWidth - minArcWidth)) * 0.5
+    }
+    
+    private func createTimeLabel(text: String, angle: Angle, isLeftHalf: Bool, isThin: Bool) -> TimeLabel {
+        TimeLabel(
+            timeText: text,
+            angle: angle,
+            isLeftHalf: isLeftHalf,
+            color: task.category.color,
+            center: center,
+            radius: arcRadius,
+            offset: timeTextOffset,
+            scale: shortTaskScale * calculateArcWidthScale(),
+            isThin: isThin,
+            showText: !isThin
+        )
+    }
+    
+    var body: some View {
+        if let (startLabel, endLabel) = timeLabels {
+            startLabel
+            endLabel
         }
     }
 }
