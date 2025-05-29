@@ -5,6 +5,27 @@
 //  Created by Yan on 24/12/24.
 //
 import SwiftUI
+import Combine
+
+// Группируем связанные состояния в структуры
+struct ClockViewState {
+    var isSearchActive = false
+    var isDockBarHidden = false
+    var isOutsideArea = false
+    var showingNewSettings = false
+    var showingTaskTimeline = false
+    var showingWeekCalendar = false
+}
+
+struct DragState {
+    var offset: CGSize = .zero
+    var isDragging = false
+}
+
+struct ZoomState {
+    var scale: CGFloat = 1.0
+    var focusOffset: CGPoint = .zero
+}
 
 struct ClockViewIOS: View {
     @StateObject var viewModel = ClockViewModel()
@@ -42,6 +63,9 @@ struct ClockViewIOS: View {
     @State private var focusOffset: CGPoint = CGPoint(x: 0, y: 0)
     
     @ObservedObject private var themeManager = ThemeManager.shared
+    
+    // Добавляем свойство для хранения подписок
+    @State private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Body
     var body: some View {
@@ -217,31 +241,12 @@ struct ClockViewIOS: View {
             .gesture(
                 DragGesture()
                     .onChanged { value in
-                        // Блокируем жест свайпа, если активен режим редактирования задачи
-                        if value.translation.width < 0 && !showingWeekCalendar && !viewModel.isEditingMode {
-                            isDragging = true
-                            dragOffset = value.translation
-                        }
+                        handleDragGesture(value)
                     }
                     .onEnded { value in
-                        // Если свайп влево больше 100 пикселей (по модулю), показываем TaskTimeline,
-                        // только если не активен режим редактирования задачи
-                        if value.translation.width < -100 && !showingWeekCalendar && !viewModel.isEditingMode {
-                            withAnimation {
-                                showingTaskTimeline = true
-                            }
-                        }
-                        
-                        // В любом случае сбрасываем смещение
-                        withAnimation(.spring()) {
-                            isDragging = false
-                            dragOffset = .zero
-                        }
+                        handleDragGestureEnd(value)
                     }
             )
-//            .fullScreenCover(isPresented: $viewModel.showingCalendar) {
-//                CalendarView(viewModel: viewModel)
-//            }
             .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
                 CategoryEditorViewIOS(
                     viewModel: viewModel,
@@ -272,100 +277,22 @@ struct ClockViewIOS: View {
             initializeUI()
             
             // Регистрируем обработчик уведомлений для отслеживания состояния поиска
-            NotificationCenter.default.addObserver(
-                forName: NSNotification.Name("SearchActiveStateChanged"),
-                object: nil,
-                queue: .main
-            ) { notification in
-                if let isActive = notification.userInfo?["isActive"] as? Bool {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        self.isSearchActive = isActive
-                    }
-                }
-            }
-            
-            // Добавляем обработчик для видимости докбара
-            NotificationCenter.default.addObserver(
-                forName: NSNotification.Name("DockBarVisibilityChanged"),
-                object: nil,
-                queue: .main
-            ) { notification in
-                if let isVisible = notification.userInfo?["isVisible"] as? Bool {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        self.isDockBarHidden = !isVisible
-                    }
-                }
-            }
-            
-            // Добавляем обработчик для закрытия TaskTimeline по свайпу
-            NotificationCenter.default.addObserver(
-                forName: NSNotification.Name("CloseTaskTimeline"),
-                object: nil,
-                queue: .main
-            ) { _ in
-                withAnimation {
-                    self.showingTaskTimeline = false
-                }
-            }
-            
-            // Регистрируем обработчик для обновления при смене циферблата
-            NotificationCenter.default.addObserver(
-                forName: NSNotification.Name("ClockStyleDidChange"),
-                object: nil,
-                queue: .main
-            ) { _ in
-                // Полностью применяем настройки циферблата из UserDefaults
-                self.viewModel.applyWatchFaceSettings()
-            }
-            
-            // Добавляем обработчик для применения настроек циферблата
-            NotificationCenter.default.addObserver(
-                forName: NSNotification.Name("WatchFaceApplied"),
-                object: nil,
-                queue: .main
-            ) { _ in
-                // Полностью применяем настройки циферблата из UserDefaults
-                self.viewModel.applyWatchFaceSettings()
-            }
+            registerNotifications()
         }
         .onDisappear {
             // Удаляем обработчики уведомлений
-            NotificationCenter.default.removeObserver(
-                self,
-                name: NSNotification.Name("SearchActiveStateChanged"),
-                object: nil
-            )
-            NotificationCenter.default.removeObserver(
-                self,
-                name: NSNotification.Name("DockBarVisibilityChanged"),
-                object: nil
-            )
-            NotificationCenter.default.removeObserver(
-                self,
-                name: NSNotification.Name("CloseTaskTimeline"),
-                object: nil
-            )
-            NotificationCenter.default.removeObserver(
-                self,
-                name: NSNotification.Name("ClockStyleDidChange"),
-                object: nil
-            )
-            NotificationCenter.default.removeObserver(
-                self,
-                name: NSNotification.Name("WatchFaceApplied"),
-                object: nil
-            )
+            unregisterNotifications()
         }
         .onChange(of: viewModel.isEditingMode) { oldValue, newValue in
-            updateZoomForEditingTask()
+            updateUI()
         }
         .onChange(of: viewModel.editingTask) { oldValue, newValue in
-            updateZoomForEditingTask()
+            updateUI()
         }
         .onChange(of: viewModel.previewTime) { oldValue, newValue in
             // Обновляем масштаб при перетаскивании маркеров задачи (изменение длительности)
             if viewModel.isEditingMode && (viewModel.isDraggingStart || viewModel.isDraggingEnd) {
-                updateZoomForEditingTask()
+                updateUI()
             }
         }
     }
@@ -379,76 +306,137 @@ struct ClockViewIOS: View {
     
     // MARK: - Инициализация при первом появлении
     private func initializeUI() {
-        // Убедимся, что размер цифр правильно инициализирован
         viewModel.markersViewModel.numbersSize = viewModel.numbersSize
-        
-        // Обновляем интерфейс при первом появлении
         viewModel.updateUIForThemeChange()
-        
-        // Принудительно обновляем представление маркеров
         viewModel.updateMarkersViewModel()
     }
     
     // Обработчик изменения редактируемой задачи
-    private func updateZoomForEditingTask() {
-        if viewModel.isEditingMode, let task = viewModel.editingTask {
-            // Проверяем длительность задачи в часах
-            let durationHours = task.duration / 3600
-            
-            // Если длительность меньше 1 часа, увеличиваем масштаб и фокусируем на задаче
-            if durationHours < 1 {
-                // Вычисляем масштаб: чем меньше длительность, тем больше масштаб
-                // Минимальная длительность (10 минут) -> масштаб 1.8
-                // Длительность 1 час -> масштаб 1.0
-                let minDuration: Double = 10 * 60 // 10 минут в секундах
-                let maxDuration: Double = 1 * 3600 // 1 час в секундах
-                let minScale: CGFloat = 1.0
-                let maxScale: CGFloat = 1.7
-                
-                // Ограничиваем длительность минимальным значением
-                let limitedDuration = max(minDuration, task.duration)
-                
-                // Рассчитываем относительное положение длительности между минимальной и максимальной
-                let normalizedDuration = 1 - ((limitedDuration - minDuration) / (maxDuration - minDuration))
-                
-                // Вычисляем итоговый масштаб
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    zoomScale = minScale + normalizedDuration * (maxScale - minScale)
-                    
-                    // Рассчитываем угол для центра задачи
-                    // Находим среднюю точку дуги задачи
-                    let startAngle = viewModel.timeToAngle(task.startTime)
-                    let endAngle = viewModel.timeToAngle(task.endTime)
-                    let midAngle = (startAngle + endAngle) / 2.0
-                    
-                    // Конвертируем угол в радианы (SwiftUI использует радианы)
-                    let midAngleRadians = midAngle * .pi / 180.0
-                    
-                    // Приблизительный радиус циферблата (без использования UIScreen)
-                    let approximateRadius: CGFloat = 150
-                    
-                    // Рассчитываем смещение в направлении задачи, чтобы центрировать её
-                    // Разбиваем вычисление на более простые выражения
-                    let scaleFactor = zoomScale - 1.0
-                    // Инвертируем направление смещения, убирая знак минус
-                    let offsetX = cos(midAngleRadians) * approximateRadius * scaleFactor
-                    let offsetY = sin(midAngleRadians) * approximateRadius * scaleFactor
-                    
-                    focusOffset = CGPoint(x: offsetX, y: offsetY)
-                }
+    private func updateUI() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            if viewModel.isEditingMode, let task = viewModel.editingTask {
+                let (scale, offset) = calculateZoomScale(for: task)
+                zoomScale = scale
+                focusOffset = offset
             } else {
-                // Длительность больше или равна 1 часу, используем нормальный масштаб
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    zoomScale = 1.0
-                    focusOffset = CGPoint(x: 0, y: 0)
+                zoomScale = 1.0
+                focusOffset = .zero
+            }
+        }
+    }
+    
+    // Заменяем метод registerNotifications на новый
+    private func registerNotifications() {
+        // Обработка состояния поиска
+        NotificationCenter.default.publisher(for: NSNotification.Name("SearchActiveStateChanged"))
+            .compactMap { notification -> Bool? in
+                notification.userInfo?["isActive"] as? Bool
+            }
+            .receive(on: DispatchQueue.main)
+            .sink { isActive in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    self.isSearchActive = isActive
                 }
             }
-        } else {
-            // Нет редактируемой задачи, используем нормальный масштаб
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                zoomScale = 1.0
-                focusOffset = CGPoint(x: 0, y: 0)
+            .store(in: &cancellables)
+        
+        // Обработка видимости докбара
+        NotificationCenter.default.publisher(for: NSNotification.Name("DockBarVisibilityChanged"))
+            .compactMap { notification -> Bool? in
+                notification.userInfo?["isVisible"] as? Bool
             }
+            .receive(on: DispatchQueue.main)
+            .sink { isVisible in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    self.isDockBarHidden = !isVisible
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Обработка закрытия временной шкалы
+        NotificationCenter.default.publisher(for: NSNotification.Name("CloseTaskTimeline"))
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                withAnimation {
+                    self.showingTaskTimeline = false
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Обработка изменения стиля часов
+        NotificationCenter.default.publisher(for: NSNotification.Name("ClockStyleDidChange"))
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                self.viewModel.applyWatchFaceSettings()
+            }
+            .store(in: &cancellables)
+        
+        // Обработка применения циферблата
+        NotificationCenter.default.publisher(for: NSNotification.Name("WatchFaceApplied"))
+            .receive(on: DispatchQueue.main)
+            .sink { _ in
+                self.viewModel.applyWatchFaceSettings()
+            }
+            .store(in: &cancellables)
+    }
+    
+    // Заменяем метод unregisterNotifications на новый
+    private func unregisterNotifications() {
+        cancellables.removeAll()
+    }
+    
+    private func calculateZoomScale(for task: TaskOnRing) -> (scale: CGFloat, offset: CGPoint) {
+        let durationHours = task.duration / 3600
+        
+        if durationHours >= 1 {
+            return (1.0, .zero)
+        }
+        
+        let minDuration: Double = 10 * 60
+        let maxDuration: Double = 1 * 3600
+        let minScale: CGFloat = 1.0
+        let maxScale: CGFloat = 1.7
+        
+        let limitedDuration = max(minDuration, task.duration)
+        let normalizedDuration = 1 - ((limitedDuration - minDuration) / (maxDuration - minDuration))
+        let scale = minScale + normalizedDuration * (maxScale - minScale)
+        
+        let startAngle = viewModel.timeToAngle(task.startTime)
+        let endAngle = viewModel.timeToAngle(task.endTime)
+        let midAngle = (startAngle + endAngle) / 2.0
+        let midAngleRadians = midAngle * .pi / 180.0
+        
+        let approximateRadius: CGFloat = 150
+        let scaleFactor = scale - 1.0
+        let offsetX = cos(midAngleRadians) * approximateRadius * scaleFactor
+        let offsetY = sin(midAngleRadians) * approximateRadius * scaleFactor
+        
+        return (scale, CGPoint(x: offsetX, y: offsetY))
+    }
+    
+    private func handleDragGesture(_ value: DragGesture.Value) {
+        if value.translation.width < 0 && !showingWeekCalendar && !viewModel.isEditingMode {
+            isDragging = true
+            dragOffset = value.translation
+        }
+    }
+    
+    private func handleDragGestureEnd(_ value: DragGesture.Value) {
+        if value.translation.width < -100 && !showingWeekCalendar && !viewModel.isEditingMode {
+            withAnimation {
+                showingTaskTimeline = true
+            }
+        }
+        
+        withAnimation(.spring()) {
+            isDragging = false
+            dragOffset = .zero
+        }
+    }
+    
+    private func updateState() {
+        if viewModel.isEditingMode {
+            updateUI()
         }
     }
 }
