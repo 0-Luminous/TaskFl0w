@@ -7,47 +7,41 @@
 import SwiftUI
 
 struct GlobleClockFaceViewIOS: View {
+    // MARK: - Properties
     let currentDate: Date
     let tasks: [TaskOnRing]
     @ObservedObject var viewModel: ClockViewModel
     @ObservedObject var markersViewModel: ClockMarkersViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
-
     @Binding var draggedCategory: TaskCategoryModel?
+    
+    // MARK: - Constants
     let zeroPosition: Double
     let taskArcLineWidth: CGFloat
     let outerRingLineWidth: CGFloat
-
-    // Добавляем новый параметр
     var isNavigationOverlayVisible: Bool = false
-
+    
+    // MARK: - Environment
     @Environment(\.colorScheme) var colorScheme
-    // Удаляем @AppStorage и используем свойство из viewModel
-    // @AppStorage("clockStyle") private var clockStyle: ClockStyle = .classic
+    
+    // MARK: - AppStorage Properties
     @AppStorage("markersOffset") private var markersOffset: Double = 0.0
     @AppStorage("numberInterval") private var numberInterval: Int = 1
     @AppStorage("markersWidth") private var markersWidth: Double = 2.0
     @AppStorage("numbersSize") private var numbersSize: Double = 16.0
-
-    // Вычисляемое свойство для получения ClockStyle из строки
+    
+    // MARK: - Computed Properties
     private var clockStyleEnum: ClockStyle {
         switch viewModel.clockStyle {
-        case "Классический":
-            return .classic
-        case "Минимализм":
-            return .minimal
-        case "Цифровой":
-            return .digital
-        case "Контур":
-            return .modern
-        default:
-            return .classic
+        case "Классический": return .classic
+        case "Минимализм": return .minimal
+        case "Цифровой": return .digital
+        case "Контур": return .modern
+        default: return .classic
         }
     }
-
-    // Локальные состояния убраны и перенесены в ViewModel
-    // Используем состояния из ViewModel через viewModel
-
+    
+    // MARK: - Body
     var body: some View {
         ZStack {
             Circle()
@@ -208,77 +202,72 @@ struct GlobleClockFaceViewIOS: View {
         }
     }
 
-    // Метод для принудительного обновления представления маркеров
+    // MARK: - Private Methods
     private func updateMarkersViewModel() {
         let tempWidth = markersViewModel.markersWidth
         DispatchQueue.main.async {
-            // Создаем небольшое временное изменение, чтобы View обновилось
             markersViewModel.markersWidth = tempWidth + 0.01
             DispatchQueue.main.async {
                 markersViewModel.markersWidth = tempWidth
             }
         }
     }
-
-    // Вспомогательная функция для определения, нужно ли показывать число
+    
     private func shouldShowHourNumber(hour: Int) -> Bool {
-        // Вычисляем скорректированный час с учетом zeroPosition
         let hourShift = Int(zeroPosition / 15.0)
         let adjustedHour = (hour - hourShift + 24) % 24
         return adjustedHour % numberInterval == 0
     }
+}
 
-    // MARK: - Вспомогательные методы из ViewModel
-    // private var tasksForSelectedDate: [TaskOnRing] { ... } - удалено, используем viewModel.tasksForSelectedDate
-    // private func timeForLocation(_ location: CGPoint) -> Date { ... } - удалено, используем viewModel.timeForLocation
-
-    // Выносим отображение времени в отдельный компонент
-    private struct DigitalTimeDisplay: View {
-        let hour: Int
-        let minute: Int
-        let color: Color
-        @ObservedObject private var markersViewModel: ClockMarkersViewModel
-        
-        init(hour: Int, minute: Int, color: Color, markersViewModel: ClockMarkersViewModel = ClockMarkersViewModel.shared) {
-            self.hour = hour
-            self.minute = minute
-            self.color = color
-            self.markersViewModel = markersViewModel
-        }
-        
-        var body: some View {
-            VStack(spacing: 0) {
-                Text("\(hour, specifier: "%02d")")
-                    .font(digitalFont)
-                    .foregroundColor(markersViewModel.currentDigitalFontColor)
-                
-                Text("\(minute, specifier: "%02d")")
-                    .font(digitalFont)
-                    .foregroundColor(markersViewModel.currentDigitalFontColor)
-            }
-        }
-        
-        // Создаем шрифт на основе настроек
-        private var digitalFont: Font {
-            // Получаем размер шрифта из настроек
-            let fontSize: CGFloat = CGFloat(markersViewModel.digitalFontSize)
+// MARK: - Supporting Views
+private struct DigitalTimeDisplay: View {
+    let hour: Int
+    let minute: Int
+    let color: Color
+    @ObservedObject private var markersViewModel: ClockMarkersViewModel
+    
+    init(hour: Int, minute: Int, color: Color, markersViewModel: ClockMarkersViewModel = ClockMarkersViewModel.shared) {
+        self.hour = hour
+        self.minute = minute
+        self.color = color
+        self.markersViewModel = markersViewModel
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Text("\(hour, specifier: "%02d")")
+                .font(digitalFont)
+                .foregroundColor(markersViewModel.currentDigitalFontColor)
             
-            // Для цифрового циферблата используем digitalFont, если он доступен в UserDefaults
-            let digitalFontName = UserDefaults.standard.string(forKey: "digitalFont") ?? markersViewModel.fontName
-            
-            // Сначала пробуем использовать кастомный шрифт
-            if digitalFontName != "SF Pro" {
-                return Font.custom(digitalFontName, size: fontSize)
-                    .weight(.bold)
-            }
-            
-            // По умолчанию используем системный моноширинный шрифт
-            return .system(size: fontSize, weight: .bold, design: .monospaced)
+            Text("\(minute, specifier: "%02d")")
+                .font(digitalFont)
+                .foregroundColor(markersViewModel.currentDigitalFontColor)
         }
     }
+    
+    // Создаем шрифт на основе настроек
+    private var digitalFont: Font {
+        // Получаем размер шрифта из настроек
+        let fontSize: CGFloat = CGFloat(markersViewModel.digitalFontSize)
+        
+        // Для цифрового циферблата используем digitalFont, если он доступен в UserDefaults
+        let digitalFontName = UserDefaults.standard.string(forKey: "digitalFont") ?? markersViewModel.fontName
+        
+        // Сначала пробуем использовать кастомный шрифт
+        if digitalFontName != "SF Pro" {
+            return Font.custom(digitalFontName, size: fontSize)
+                .weight(.bold)
+        }
+        
+        // По умолчанию используем системный моноширинный шрифт
+        return .system(size: fontSize, weight: .bold, design: .monospaced)
+    }
+}
 
-    // Определение календаря
-    private var calendar: Calendar {
+// MARK: - Calendar Extension
+private extension GlobleClockFaceViewIOS {
+    var calendar: Calendar {
         Calendar.current
     }
 }
