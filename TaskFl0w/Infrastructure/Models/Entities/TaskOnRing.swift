@@ -32,6 +32,4 @@ struct TaskOnRing: Identifiable, Hashable, Equatable {
         hasher.combine(isCompleted)
         hasher.combine(category.id)
     }
-
-    // Можно добавлять дополнительные поля, методы и т.д.
 }
