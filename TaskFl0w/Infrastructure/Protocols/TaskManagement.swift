@@ -59,28 +59,8 @@ class TaskManagement: TaskManagementProtocol {
         operationQueue.async { [weak self] in
             guard let self = self else { return }
             
-            // Проверяем валидность задачи
-            guard self.validateTask(task) else {
-                print("❌ Задача не прошла валидацию")
-                return 
-            }
-
-            // Проверяем, что задача с таким ID еще не существует
-            let checkRequest = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
-            checkRequest.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
-            
-            do {
-                let existingTasks = try self.context.fetch(checkRequest)
-                if !existingTasks.isEmpty {
-                    print("⚠️ Задача с ID \(task.id) уже существует в базе данных")
-                    return
-                }
-            } catch {
-                print("❌ Ошибка проверки существования задачи: \(error)")
-                return
-            }
-
-            // Нормализуем задачу
+            // Убираем все проверки валидации и дублирования
+            // Просто нормализуем и добавляем задачу
             let normalizedTask = self.normalizeTask(task)
             
             // Создаем TaskEntity
@@ -89,13 +69,10 @@ class TaskManagement: TaskManagementProtocol {
             // Сохраняем контекст сначала
             self.saveContext()
             
-            // Только после успешного сохранения обновляем память
+            // Обновляем память
             DispatchQueue.main.async {
-                // Проверяем еще раз, что задача не дублируется в памяти
-                if !self.sharedState.tasks.contains(where: { $0.id == normalizedTask.id }) {
-                    self.sharedState.tasks.append(normalizedTask)
-                    print("✅ Задача добавлена в память после сохранения в БД")
-                }
+                self.sharedState.tasks.append(normalizedTask)
+                print("✅ Задача добавлена без проверок")
             }
         }
     }
@@ -189,46 +166,8 @@ class TaskManagement: TaskManagementProtocol {
 
         guard let newStart = calendar.date(from: components) else { return }
         
-        // Проверяем минимальную длительность (20 минут)
-        let minimumDuration: TimeInterval = 20 * 60
-        if task.endTime.timeIntervalSince(newStart) < minimumDuration {
-            // Если новое время начала приводит к длительности меньше 20 минут,
-            // устанавливаем время начала так, чтобы длительность была ровно 20 минут
-            let adjustedStart = task.endTime.addingTimeInterval(-minimumDuration)
-            
-            // Нормализуем скорректированное время
-            let adjustedComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: adjustedStart)
-            components.hour = adjustedComponents.hour
-            components.minute = adjustedComponents.minute
-            
-            if let adjustedStartTime = calendar.date(from: components) {
-                // Обновляем задачу с скорректированным временем начала
-                var updatedTask = task
-                updatedTask.startTime = adjustedStartTime
-
-                // Обновляем в CoreData
-                let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
-                request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
-
-                do {
-                    if let existingTask = try self.context.fetch(request).first {
-                        existingTask.startTime = adjustedStartTime
-
-                        // Обновляем в памяти
-                        sharedState.tasks[index] = updatedTask
-
-                        // Сохраняем изменения
-                        self.saveContext()
-                    }
-                } catch {
-                    print("Ошибка при обновлении времени начала задачи: \(error)")
-                }
-            }
-            return
-        }
-
-        // Стандартное обновление, если длительность ≥ 20 минут
-        // Обновляем задачу с новым временем начала, сохраняя время окончания
+        // Убираем все проверки минимальной длительности
+        // Просто обновляем задачу с новым временем начала
         var updatedTask = task
         updatedTask.startTime = newStart
 
@@ -309,46 +248,8 @@ class TaskManagement: TaskManagementProtocol {
 
         guard let newEnd = calendar.date(from: components) else { return }
         
-        // Проверяем минимальную длительность (20 минут)
-        let minimumDuration: TimeInterval = 20 * 60
-        if newEnd.timeIntervalSince(task.startTime) < minimumDuration {
-            // Если новое время окончания приводит к длительности меньше 20 минут,
-            // устанавливаем время окончания так, чтобы длительность была ровно 20 минут
-            let adjustedEnd = task.startTime.addingTimeInterval(minimumDuration)
-            
-            // Нормализуем скорректированное время
-            let adjustedComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: adjustedEnd)
-            components.hour = adjustedComponents.hour
-            components.minute = adjustedComponents.minute
-            
-            if let adjustedEndTime = calendar.date(from: components) {
-                // Обновляем задачу с скорректированным временем окончания
-                var updatedTask = task
-                updatedTask.endTime = adjustedEndTime
-
-                // Обновляем в CoreData
-                let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
-                request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
-
-                do {
-                    if let existingTask = try self.context.fetch(request).first {
-                        existingTask.endTime = adjustedEndTime
-
-                        // Обновляем в памяти
-                        sharedState.tasks[index] = updatedTask
-
-                        // Сохраняем изменения
-                        self.saveContext()
-                    }
-                } catch {
-                    print("Ошибка при обновлении времени окончания задачи: \(error)")
-                }
-            }
-            return
-        }
-
-        // Стандартное обновление, если длительность ≥ 20 минут
-        // Обновляем задачу с новым временем окончания
+        // Убираем все проверки минимальной длительности
+        // Просто обновляем задачу с новым временем окончания
         var updatedTask = task
         updatedTask.endTime = newEnd
 
@@ -377,31 +278,12 @@ class TaskManagement: TaskManagementProtocol {
     }
 
     private func validateTask(_ task: TaskOnRing) -> Bool {
-        // Минимальная длительность задачи - 20 минут
-        let minimumDuration: TimeInterval = 20 * 60
-        return !task.category.rawValue.isEmpty && task.endTime.timeIntervalSince(task.startTime) >= minimumDuration
+        // Убираем все проверки - всегда возвращаем true
+        return true
     }
 
     func createTask(startTime: Date, endTime: Date, category: TaskCategoryModel) async throws {
-        // Проверяем корректность времени
-        guard startTime < endTime else {
-            throw NSError(
-                domain: "TaskErrorDomain", code: 1,
-                userInfo: [
-                    NSLocalizedDescriptionKey: "Время начала должно быть раньше времени окончания"
-                ])
-        }
-        
-        // Проверяем минимальную длительность
-        let minimumDuration: TimeInterval = 20 * 60
-        guard endTime.timeIntervalSince(startTime) >= minimumDuration else {
-            throw NSError(
-                domain: "TaskErrorDomain", code: 4,
-                userInfo: [
-                    NSLocalizedDescriptionKey: "Минимальная длительность задачи должна быть не менее 20 минут"
-                ])
-        }
-
+        // Убираем все проверки корректности и минимальной длительности
         let calendar = Calendar.current
 
         // Нормализуем время начала
@@ -432,13 +314,9 @@ class TaskManagement: TaskManagementProtocol {
         normalizedEndComponents.minute = endComponents.minute
         normalizedEndComponents.timeZone = TimeZone.current
 
-        guard let normalizedStartTime = calendar.date(from: normalizedStartComponents),
-            let normalizedEndTime = calendar.date(from: normalizedEndComponents)
-        else {
-            throw NSError(
-                domain: "TaskErrorDomain", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Ошибка нормализации времени"])
-        }
+        // Убираем проверку на ошибку нормализации
+        let normalizedStartTime = calendar.date(from: normalizedStartComponents) ?? startTime
+        let normalizedEndTime = calendar.date(from: normalizedEndComponents) ?? endTime
 
         let newTask = TaskOnRing(
             id: UUID(),
@@ -479,20 +357,7 @@ class TaskManagement: TaskManagementProtocol {
             }
         }
 
-        // Проверяем валидность времени
-        if updatedTask.endTime.timeIntervalSince(updatedTask.startTime) <= 0 {
-            throw NSError(
-                domain: "TaskErrorDomain", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Некорректный интервал времени"])
-        }
-        
-        // Проверяем минимальную длительность задачи (20 минут)
-        let minimumDuration: TimeInterval = 20 * 60
-        if updatedTask.endTime.timeIntervalSince(updatedTask.startTime) < minimumDuration {
-            throw NSError(
-                domain: "TaskErrorDomain", code: 4,
-                userInfo: [NSLocalizedDescriptionKey: "Минимальная длительность задачи - 20 минут"])
-        }
+        // Убираем все проверки валидности времени и минимальной длительности
 
         // Обновляем задачу в CoreData
         let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
@@ -520,12 +385,8 @@ class TaskManagement: TaskManagementProtocol {
                 saveContext()
             }
         } catch {
-            throw NSError(
-                domain: "TaskErrorDomain", code: 3,
-                userInfo: [
-                    NSLocalizedDescriptionKey:
-                        "Ошибка обновления задачи: \(error.localizedDescription)"
-                ])
+            // Убираем выбрасывание ошибки, просто логируем
+            print("Ошибка обновления задачи: \(error.localizedDescription)")
         }
     }
 

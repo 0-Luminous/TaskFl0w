@@ -25,13 +25,10 @@ final class DragAndDropManager: ObservableObject {
     }
 
     func stopDragging(didReturnToClock: Bool) {
-        if let task = draggedTask {
-            if !didReturnToClock {
-                taskManagement.removeTask(task)
-            }
-        }
         draggedTask = nil
         isDraggingOutside = false
+        
+        print("✅ Перетаскивание завершено, задача сохранена")
     }
 
     func updateDragPosition(isOutsideClock: Bool) {
