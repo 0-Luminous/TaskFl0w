@@ -17,13 +17,16 @@ protocol TaskManagementProtocol {
 class TaskManagement: TaskManagementProtocol {
     private let context: NSManagedObjectContext
     private let sharedState: SharedStateService
-
+    
     // Делаем selectedDate изменяемым свойством
     var selectedDate: Date {
         didSet {
             // При необходимости можно добавить дополнительную логику при изменении даты
         }
     }
+
+    // Добавляем мьютекс для синхронизации операций
+    private let operationQueue = DispatchQueue(label: "taskManagement.queue", qos: .userInitiated)
 
     init(sharedState: SharedStateService, selectedDate: Date) {
         self.sharedState = sharedState
@@ -33,129 +36,142 @@ class TaskManagement: TaskManagementProtocol {
     }
 
     func fetchTasks() {
-        let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
-
-        do {
-            let taskEntities = try context.fetch(request)
-            sharedState.tasks = taskEntities.map { $0.taskModel }
-        } catch {
-            print("Ошибка при загрузке задач: \(error)")
+        operationQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
+            
+            do {
+                let taskEntities = try self.context.fetch(request)
+                let fetchedTasks = taskEntities.map { $0.taskModel }
+                
+                DispatchQueue.main.async {
+                    self.sharedState.tasks = fetchedTasks
+                    print("✅ Загружено \(fetchedTasks.count) задач из базы данных")
+                }
+            } catch {
+                print("❌ Ошибка при загрузке задач: \(error)")
+            }
         }
     }
 
     func addTask(_ task: TaskOnRing) {
-        guard validateTask(task) else { return }
+        operationQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            // Проверяем валидность задачи
+            guard self.validateTask(task) else {
+                print("❌ Задача не прошла валидацию")
+                return 
+            }
 
-        // Нужно убедиться, что сохраняем правильную дату
-        let calendar = Calendar.current
-        let components = calendar.dateComponents(
-            [.year, .month, .day, .hour, .minute], from: task.startTime)
-        let normalizedDate = calendar.date(from: components) ?? task.startTime
+            // Проверяем, что задача с таким ID еще не существует
+            let checkRequest = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
+            checkRequest.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
+            
+            do {
+                let existingTasks = try self.context.fetch(checkRequest)
+                if !existingTasks.isEmpty {
+                    print("⚠️ Задача с ID \(task.id) уже существует в базе данных")
+                    return
+                }
+            } catch {
+                print("❌ Ошибка проверки существования задачи: \(error)")
+                return
+            }
 
-        var normalizedTask = task
-        normalizedTask.startTime = normalizedDate
-
-        let _ = TaskEntity.from(normalizedTask, context: context)
-        sharedState.tasks.append(normalizedTask)
-
-        saveContext()
+            // Нормализуем задачу
+            let normalizedTask = self.normalizeTask(task)
+            
+            // Создаем TaskEntity
+            let taskEntity = TaskEntity.from(normalizedTask, context: self.context)
+            
+            // Сохраняем контекст сначала
+            self.saveContext()
+            
+            // Только после успешного сохранения обновляем память
+            DispatchQueue.main.async {
+                // Проверяем еще раз, что задача не дублируется в памяти
+                if !self.sharedState.tasks.contains(where: { $0.id == normalizedTask.id }) {
+                    self.sharedState.tasks.append(normalizedTask)
+                    print("✅ Задача добавлена в память после сохранения в БД")
+                }
+            }
+        }
     }
 
     func updateTask(_ task: TaskOnRing) {
-        let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
-        request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
+        operationQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
+            request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
 
-        do {
-            if let existingTask = try context.fetch(request).first {
-                let calendar = Calendar.current
+            do {
+                if let existingTask = try self.context.fetch(request).first {
+                    let normalizedTask = self.normalizeTask(task)
+                    
+                    // Обновляем данные в CoreData
+                    existingTask.startTime = normalizedTask.startTime
+                    existingTask.endTime = normalizedTask.endTime
+                    existingTask.isCompleted = normalizedTask.isCompleted
 
-                // Нормализуем время начала
-                let startComponents = calendar.dateComponents(
-                    [.year, .month, .day, .hour, .minute],
-                    from: task.startTime
-                )
-
-                var normalizedStartComponents = DateComponents()
-                normalizedStartComponents.year = startComponents.year
-                normalizedStartComponents.month = startComponents.month
-                normalizedStartComponents.day = startComponents.day
-                normalizedStartComponents.hour = startComponents.hour
-                normalizedStartComponents.minute = startComponents.minute
-                normalizedStartComponents.timeZone = TimeZone.current
-
-                // Нормализуем время окончания
-                let endComponents = calendar.dateComponents(
-                    [.year, .month, .day, .hour, .minute],
-                    from: task.endTime
-                )
-
-                var normalizedEndComponents = DateComponents()
-                normalizedEndComponents.year = endComponents.year
-                normalizedEndComponents.month = endComponents.month
-                normalizedEndComponents.day = endComponents.day
-                normalizedEndComponents.hour = endComponents.hour
-                normalizedEndComponents.minute = endComponents.minute
-                normalizedEndComponents.timeZone = TimeZone.current
-
-                if let normalizedStartTime = calendar.date(from: normalizedStartComponents),
-                    let normalizedEndTime = calendar.date(from: normalizedEndComponents)
-                {
-                    existingTask.startTime = normalizedStartTime
-                    existingTask.endTime = normalizedEndTime
+                    // Обновляем категорию
+                    self.updateTaskCategory(existingTask, with: normalizedTask.category)
+                    
+                    // Сохраняем изменения сначала
+                    self.saveContext()
+                    
+                    // Затем обновляем память
+                    DispatchQueue.main.async {
+                        if let index = self.sharedState.tasks.firstIndex(where: { $0.id == task.id }) {
+                            self.sharedState.tasks[index] = normalizedTask
+                            print("✅ Задача обновлена в памяти")
+                        }
+                    }
+                } else {
+                    print("❌ Задача с ID \(task.id) не найдена для обновления")
                 }
-
-                existingTask.isCompleted = task.isCompleted
-
-                // Обновляем категорию
-                let categoryRequest = NSFetchRequest<CategoryEntity>(entityName: "CategoryEntity")
-                categoryRequest.predicate = NSPredicate(
-                    format: "id == %@", task.category.id as CVarArg)
-                if let category = try context.fetch(categoryRequest).first {
-                    existingTask.category = category
-                }
-
-                if let index = sharedState.tasks.firstIndex(where: { $0.id == task.id }) {
-                    sharedState.tasks[index] = task
-                }
-
-                saveContext()
+            } catch {
+                print("❌ Ошибка при обновлении задачи: \(error)")
             }
-        } catch {
-            print("Ошибка при обновлении задачи: \(error)")
         }
     }
 
     func removeTask(_ task: TaskOnRing) {
-        let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
-        request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
+        operationQueue.async { [weak self] in
+            guard let self = self else { return }
+            
+            let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
+            request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
 
-        do {
-            if let taskToDelete = try context.fetch(request).first {
-                // Добавляем логирование для отладки
-                print("TaskManagement.removeTask: Найдена задача для удаления с ID: \(task.id)")
-                
-                // Удаляем из CoreData
-                context.delete(taskToDelete)
-                
-                // Удаляем из sharedState.tasks напрямую перед вызовом fetchTasks
-                // Это может помочь решить проблему, если задача снова появляется
-                if let index = sharedState.tasks.firstIndex(where: { $0.id == task.id }) {
-                    sharedState.tasks.remove(at: index)
-                    print("TaskManagement.removeTask: Удалена задача из sharedState.tasks с индексом \(index)")
+            do {
+                if let taskToDelete = try self.context.fetch(request).first {
+                    print("✅ Найдена задача для удаления с ID: \(task.id)")
+                    
+                    // Удаляем из CoreData
+                    self.context.delete(taskToDelete)
+                    
+                    // Сохраняем контекст
+                    self.saveContext()
+                    
+                    // Обновляем память только после успешного сохранения
+                    DispatchQueue.main.async {
+                        self.sharedState.tasks.removeAll { $0.id == task.id }
+                        print("✅ Задача удалена из памяти после удаления из БД")
+                    }
+                } else {
+                    print("❌ Задача с ID \(task.id) не найдена в базе данных для удаления")
+                    
+                    // Удаляем из памяти, если она там есть
+                    DispatchQueue.main.async {
+                        self.sharedState.tasks.removeAll { $0.id == task.id }
+                        print("⚠️ Задача удалена только из памяти")
+                    }
                 }
-                
-                // Сохраняем контекст, чтобы применить изменения в базе данных
-                saveContext()
-                
-                // Обновляем список задач после удаления
-                fetchTasks()
-                
-                print("TaskManagement.removeTask: Задача удалена из базы данных и список задач обновлен")
-            } else {
-                print("TaskManagement.removeTask: Задача с ID \(task.id) не найдена в базе данных")
+            } catch {
+                print("❌ Ошибка при удалении задачи: \(error)")
             }
-        } catch {
-            print("Ошибка при удалении задачи: \(error)")
         }
     }
 
@@ -195,14 +211,14 @@ class TaskManagement: TaskManagementProtocol {
                 request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
 
                 do {
-                    if let existingTask = try context.fetch(request).first {
+                    if let existingTask = try self.context.fetch(request).first {
                         existingTask.startTime = adjustedStartTime
 
                         // Обновляем в памяти
                         sharedState.tasks[index] = updatedTask
 
                         // Сохраняем изменения
-                        saveContext()
+                        self.saveContext()
                     }
                 } catch {
                     print("Ошибка при обновлении времени начала задачи: \(error)")
@@ -221,14 +237,14 @@ class TaskManagement: TaskManagementProtocol {
         request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
 
         do {
-            if let existingTask = try context.fetch(request).first {
+            if let existingTask = try self.context.fetch(request).first {
                 existingTask.startTime = newStart
 
                 // Обновляем в памяти
                 sharedState.tasks[index] = updatedTask
 
                 // Сохраняем изменения
-                saveContext()
+                self.saveContext()
             }
         } catch {
             print("Ошибка при обновлении времени начала задачи: \(error)")
@@ -259,7 +275,7 @@ class TaskManagement: TaskManagementProtocol {
             request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
 
             do {
-                if let existingTask = try context.fetch(request).first {
+                if let existingTask = try self.context.fetch(request).first {
                     // Обновляем существующую задачу вместо создания новой
                     existingTask.startTime = normalizedStartTime
 
@@ -271,7 +287,7 @@ class TaskManagement: TaskManagementProtocol {
                     }
 
                     // Сохраняем изменения
-                    saveContext()
+                    self.saveContext()
                 }
             } catch {
                 print("Ошибка при обновлении времени начала задачи: \(error)")
@@ -315,14 +331,14 @@ class TaskManagement: TaskManagementProtocol {
                 request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
 
                 do {
-                    if let existingTask = try context.fetch(request).first {
+                    if let existingTask = try self.context.fetch(request).first {
                         existingTask.endTime = adjustedEndTime
 
                         // Обновляем в памяти
                         sharedState.tasks[index] = updatedTask
 
                         // Сохраняем изменения
-                        saveContext()
+                        self.saveContext()
                     }
                 } catch {
                     print("Ошибка при обновлении времени окончания задачи: \(error)")
@@ -341,14 +357,14 @@ class TaskManagement: TaskManagementProtocol {
         request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
 
         do {
-            if let existingTask = try context.fetch(request).first {
+            if let existingTask = try self.context.fetch(request).first {
                 existingTask.endTime = newEnd
 
                 // Обновляем в памяти
                 sharedState.tasks[index] = updatedTask
 
                 // Сохраняем изменения
-                saveContext()
+                self.saveContext()
             }
         } catch {
             print("Ошибка при обновлении времени окончания задачи: \(error)")
@@ -483,7 +499,7 @@ class TaskManagement: TaskManagementProtocol {
         request.predicate = NSPredicate(format: "id == %@", updatedTask.id as CVarArg)
 
         do {
-            if let existingTask = try context.fetch(request).first {
+            if let existingTask = try self.context.fetch(request).first {
                 existingTask.startTime = updatedTask.startTime
                 existingTask.endTime = updatedTask.endTime
                 existingTask.isCompleted = updatedTask.isCompleted
@@ -492,7 +508,7 @@ class TaskManagement: TaskManagementProtocol {
                 let categoryRequest = NSFetchRequest<CategoryEntity>(entityName: "CategoryEntity")
                 categoryRequest.predicate = NSPredicate(
                     format: "id == %@", updatedTask.category.id as CVarArg)
-                if let category = try context.fetch(categoryRequest).first {
+                if let category = try self.context.fetch(categoryRequest).first {
                     existingTask.category = category
                 }
 
@@ -513,13 +529,65 @@ class TaskManagement: TaskManagementProtocol {
         }
     }
 
-    private func saveContext() {
-        if context.hasChanges {
-            do {
-                try context.save()
-            } catch {
-                print("Ошибка сохранения контекста: \(error)")
+    // MARK: - Private Helper Methods
+    
+    private func normalizeTask(_ task: TaskOnRing) -> TaskOnRing {
+        let calendar = Calendar.current
+        
+        // Нормализуем время начала
+        let startComponents = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute], 
+            from: task.startTime
+        )
+        let normalizedStartTime = calendar.date(from: startComponents) ?? task.startTime
+        
+        // Нормализуем время окончания 
+        let endComponents = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute], 
+            from: task.endTime
+        )
+        let normalizedEndTime = calendar.date(from: endComponents) ?? task.endTime
+        
+        var normalizedTask = task
+        normalizedTask.startTime = normalizedStartTime
+        normalizedTask.endTime = normalizedEndTime
+        
+        return normalizedTask
+    }
+    
+    private func updateTaskCategory(_ taskEntity: TaskEntity, with category: TaskCategoryModel) {
+        let categoryRequest = NSFetchRequest<CategoryEntity>(entityName: "CategoryEntity")
+        categoryRequest.predicate = NSPredicate(format: "id == %@", category.id as CVarArg)
+        
+        do {
+            if let categoryEntity = try self.context.fetch(categoryRequest).first {
+                taskEntity.category = categoryEntity
+            } else {
+                // Создаем категорию, если она не существует
+                let newCategoryEntity = CategoryEntity.from(category, context: self.context)
+                taskEntity.category = newCategoryEntity
+                print("⚠️ Создана новая категория при обновлении задачи")
             }
+        } catch {
+            print("❌ Ошибка при обновлении категории задачи: \(error)")
+        }
+    }
+    
+    private func saveContext() {
+        guard self.context.hasChanges else { 
+            print("💾 Нет изменений для сохранения")
+            return 
+        }
+        
+        do {
+            try self.context.save()
+            print("✅ Контекст успешно сохранен")
+        } catch {
+            print("❌ Ошибка сохранения контекста: \(error)")
+            
+            // Откатываем изменения при ошибке
+            self.context.rollback()
+            print("🔄 Изменения откачены")
         }
     }
 }

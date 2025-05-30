@@ -33,7 +33,6 @@ struct RingPlanner: View {
                 height: UIScreen.main.bounds.width * 0.8
             )
             .onDrop(of: [.text], isTargeted: nil) { providers, location in
-                // Добавляем дополнительные проверки
                 guard let category = viewModel.draggedCategory else { 
                     print("⚠️ DEBUG: draggedCategory is nil")
                     return false 
@@ -41,7 +40,7 @@ struct RingPlanner: View {
                 
                 print("✅ DEBUG: draggedCategory available: \(category.rawValue)")
                 
-                // ДОБАВЛЯЕМ ПРОВЕРКУ КАТЕГОРИИ В COREDATA
+                // Проверяем категорию в CoreData и создаем при необходимости
                 let categoryRequest = NSFetchRequest<CategoryEntity>(entityName: "CategoryEntity")
                 categoryRequest.predicate = NSPredicate(format: "id == %@", category.id as CVarArg)
 
@@ -50,71 +49,79 @@ struct RingPlanner: View {
                     if categoryResults.isEmpty {
                         print("❌ DEBUG: Category NOT found in CoreData! Adding category first...")
                         viewModel.categoryManagement.addCategory(category)
+                        
+                        // Ждем небольшую задержку для сохранения категории
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            createTaskWithValidatedCategory()
+                        }
+                        return true
                     } else {
                         print("✅ DEBUG: Category found in CoreData")
+                        createTaskWithValidatedCategory()
+                        return true
                     }
                 } catch {
                     print("❌ DEBUG: Error checking category in CoreData: \(error)")
-                }
-                
-                // Обработка создания новой задачи
-                let time = viewModel.clockState.timeForLocation(
-                    location,
-                    screenWidth: UIScreen.main.bounds.width
-                )
-                
-                print("✅ DEBUG: calculated time: \(time)")
-                
-                // Создаем новую дату на выбранном дне, а не на текущем
-                let calendar = Calendar.current
-                var dateComponents = calendar.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
-                let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
-                dateComponents.hour = timeComponents.hour
-                dateComponents.minute = timeComponents.minute
-                
-                // Добавляем проверку создания даты
-                guard let adjustedTime = calendar.date(from: dateComponents) else {
-                    print("❌ DEBUG: Failed to create adjustedTime from components")
                     return false
                 }
                 
-                guard let endTime = calendar.date(byAdding: .hour, value: 1, to: adjustedTime) else {
-                    print("❌ DEBUG: Failed to create endTime")
-                    return false
-                }
+                func createTaskWithValidatedCategory() {
+                    let time = viewModel.clockState.timeForLocation(
+                        location,
+                        screenWidth: UIScreen.main.bounds.width
+                    )
+                    
+                    print("✅ DEBUG: calculated time: \(time)")
+                    
+                    let calendar = Calendar.current
+                    var dateComponents = calendar.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
+                    let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
+                    dateComponents.hour = timeComponents.hour
+                    dateComponents.minute = timeComponents.minute
+                    
+                    guard let adjustedTime = calendar.date(from: dateComponents) else {
+                        print("❌ DEBUG: Failed to create adjustedTime from components")
+                        return
+                    }
+                    
+                    guard let endTime = calendar.date(byAdding: .hour, value: 1, to: adjustedTime) else {
+                        print("❌ DEBUG: Failed to create endTime")
+                        return
+                    }
 
-                // Создаём новую задачу
-                let newTask = TaskOnRing(
-                    id: UUID(),
-                    startTime: adjustedTime,
-                    endTime: endTime,
-                    color: category.color,
-                    icon: category.iconName,
-                    category: category,
-                    isCompleted: false
-                )
+                    let newTask = TaskOnRing(
+                        id: UUID(),
+                        startTime: adjustedTime,
+                        endTime: endTime,
+                        color: category.color,
+                        icon: category.iconName,
+                        category: category,
+                        isCompleted: false
+                    )
 
-                print("✅ DEBUG: Created new task: \(newTask.id)")
+                    print("✅ DEBUG: Created new task: \(newTask.id)")
 
-                // Добавляем задачу и проверяем результат
-                viewModel.taskManagement.addTask(newTask)
-                
-                // Проверяем, что задача действительно добавилась
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    let tasksForDate = viewModel.tasksForSelectedDate(viewModel.tasks)
-                    if tasksForDate.contains(where: { $0.id == newTask.id }) {
-                        print("✅ DEBUG: Task successfully added to tasks list")
-                    } else {
-                        print("❌ DEBUG: Task NOT found in tasks list after adding")
+                    // Используем async для надежного добавления
+                    Task {
+                        await MainActor.run {
+                            viewModel.taskManagement.addTask(newTask)
+                            
+                            // Проверяем результат асинхронно
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                let tasksForDate = viewModel.tasksForSelectedDate(viewModel.tasks)
+                                if tasksForDate.contains(where: { $0.id == newTask.id }) {
+                                    print("✅ DEBUG: Task successfully added to tasks list")
+                                    
+                                    // Включаем режим редактирования только после подтверждения
+                                    viewModel.isEditingMode = true
+                                    viewModel.editingTask = newTask
+                                } else {
+                                    print("❌ DEBUG: Task NOT found in tasks list after adding")
+                                }
+                            }
+                        }
                     }
                 }
-
-                // Включаем режим редактирования
-                viewModel.isEditingMode = true
-                viewModel.editingTask = newTask
-                
-                print("✅ DEBUG: Drop operation completed successfully")
-                return true
             }
     }
 }

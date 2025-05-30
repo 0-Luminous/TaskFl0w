@@ -128,7 +128,11 @@ struct ClockTaskArcIOS: View {
                 let iconOffset = minIconOffset + (maxIconOffset - minIconOffset) * tIconOffset
                 
                 // Расчет радиуса для размещения иконки
-                let iconRadius: CGFloat = calculateIconRadius(arcRadius: arcRadius, iconSize: iconSize, iconOffset: iconOffset)
+                let baseIconRadius: CGFloat = calculateIconRadius(arcRadius: arcRadius, iconSize: iconSize, iconOffset: iconOffset)
+                
+                // Добавляем дополнительное смещение для режима редактирования
+                let editingOffset: CGFloat = (viewModel.isEditingMode && task.id == viewModel.editingTask?.id) ? 25 : 0
+                let iconRadius: CGFloat = baseIconRadius + editingOffset
                 
                 // Размер шрифта иконки — всегда одинаковый
                 let iconFontSize: CGFloat = calculateIconFontSize(tRing: tRing)
@@ -226,6 +230,7 @@ struct ClockTaskArcIOS: View {
                             x: center.x + iconRadius * cos(midAngle.radians),
                             y: center.y + iconRadius * sin(midAngle.radians)
                         )
+                        .animation(.easeInOut(duration: 0.3), value: editingOffset)
                         .id("task-icon-\(task.id)-\(viewModel.zeroPosition)")
                         .gesture(
                             TapGesture()
