@@ -56,6 +56,7 @@ final class ClockViewModel: ObservableObject {
     }
     @Published var draggedCategory: TaskCategoryModel? {
         didSet {
+            print("🔥 DEBUG: ClockViewModel.draggedCategory changed from \(oldValue?.rawValue ?? "nil") to \(draggedCategory?.rawValue ?? "nil")")
             dockBarViewModel.draggedCategory = draggedCategory
         }
     }
@@ -422,8 +423,11 @@ final class ClockViewModel: ObservableObject {
             
         dockBarViewModel.$draggedCategory
             .sink { [weak self] newCategory in
+                print("🔄 DEBUG: DockBar draggedCategory changed to: \(newCategory?.rawValue ?? "nil")")
+                print("🔄 DEBUG: Current ClockViewModel draggedCategory: \(self?.draggedCategory?.rawValue ?? "nil")")
                 if self?.draggedCategory != newCategory {
                     self?.draggedCategory = newCategory
+                    print("✅ DEBUG: ClockViewModel draggedCategory updated to: \(newCategory?.rawValue ?? "nil")")
                 }
             }
             .store(in: &cancellables)

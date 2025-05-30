@@ -46,7 +46,9 @@ struct CategoryButtonContent: View {
         }
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
         .onDrag {
+            print("🚀 DEBUG: onDrag started for category: \(category.rawValue)")
             draggedCategory = category
+            print("✅ DEBUG: Set draggedCategory to: \(category.rawValue)")
             return NSItemProvider(object: category.id.uuidString as NSString)
         } preview: {
             CategoryDragPreview(task: TaskOnRing(
@@ -65,7 +67,10 @@ struct CategoryButtonContent: View {
                 item: category,
                 items: categories,
                 draggedItem: draggedCategory,
-                moveAction: moveCategory
+                moveAction: { fromIndex, toIndex in
+                    print("📦 DEBUG: CategoryDropDelegate moveAction - from: \(fromIndex), to: \(toIndex)")
+                    moveCategory(fromIndex, toIndex)
+                }
             )
         )
     }

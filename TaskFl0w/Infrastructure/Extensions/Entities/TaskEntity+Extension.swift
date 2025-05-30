@@ -62,6 +62,8 @@ extension TaskEntity {
     }
 
     static func from(_ model: TaskOnRing, context: NSManagedObjectContext) -> TaskEntity {
+        print("🔥 DEBUG: TaskEntity.from called for task ID: \(model.id)")
+        
         let entity = TaskEntity(context: context)
         entity.id = model.id
 
@@ -82,17 +84,32 @@ extension TaskEntity {
         entity.startTime = calendar.date(from: startComponents)
         entity.endTime = calendar.date(from: endComponents)
         entity.isCompleted = model.isCompleted
+        
+        print("✅ DEBUG: Task basic properties set")
 
         // Находим или создаем категорию
+        print("🔍 DEBUG: Searching for category with ID: \(model.category.id)")
         let request = NSFetchRequest<CategoryEntity>(entityName: "CategoryEntity")
         request.predicate = NSPredicate(format: "id == %@", model.category.id as CVarArg)
 
-        if let existingCategory = try? context.fetch(request).first {
-            entity.category = existingCategory
-        } else {
+        do {
+            let results = try context.fetch(request)
+            if let existingCategory = results.first {
+                print("✅ DEBUG: Found existing category: \(existingCategory.name ?? "unnamed")")
+                entity.category = existingCategory
+            } else {
+                print("⚠️ DEBUG: Category not found, creating new one")
+                let newCategory = CategoryEntity.from(model.category, context: context)
+                entity.category = newCategory
+                print("✅ DEBUG: New category created: \(newCategory.name ?? "unnamed")")
+            }
+        } catch {
+            print("❌ DEBUG: Error searching for category: \(error)")
+            // Fallback - создаем новую категорию
             entity.category = CategoryEntity.from(model.category, context: context)
         }
 
+        print("✅ DEBUG: TaskEntity created successfully")
         return entity
     }
 }

@@ -147,14 +147,14 @@ struct ClockTaskArcIOS: View {
                 let taskTapArea = Path { path in
                     path.addArc(
                         center: center,
-                        radius: radius + 30,
+                        radius: radius + 50,
                         startAngle: startAngle,
                         endAngle: endAngle,
                         clockwise: false
                     )
                     path.addArc(
                         center: center,
-                        radius: radius - 40,
+                        radius: radius - 20,
                         startAngle: endAngle,
                         endAngle: startAngle,
                         clockwise: true
@@ -315,6 +315,10 @@ struct ClockTaskArcIOS: View {
         let baseHandleWidth: CGFloat = baseHandleSize // ширина всегда постоянная
         let handleHeight: CGFloat = baseHandleSize * pow(shortTaskScale, 2) // уменьшение высоты ускорено
 
+        // Увеличенная область касания - особенно когда высота маркера ещё не уменьшилась
+        let touchAreaWidth: CGFloat = max(baseHandleWidth, 35) // минимум 44pt для удобства касания
+        let touchAreaHeight: CGFloat = shortTaskScale > 0.8 ? max(handleHeight, 44) : handleHeight * 1.5
+
         let arcRadius: CGFloat = calculateArcRadius(radius: radius, analogOffset: analogOffset)
  
         // Используем arcRadius вместо handleRadius, так как нам не нужен дополнительный отступ для маркера
@@ -326,6 +330,8 @@ struct ClockTaskArcIOS: View {
             .fill(color)
             .frame(width: baseHandleWidth, height: handleHeight)
             .overlay(Capsule().stroke(Color.gray, lineWidth: 2 * shortTaskScale))
+            .contentShape(Capsule()
+                .size(width: touchAreaWidth, height: touchAreaHeight))
             .rotationEffect(isLeftHalf ? angle + .degrees(180) : angle)
             .position(
                 x: center.x + handleRadius * cos(angle.radians),

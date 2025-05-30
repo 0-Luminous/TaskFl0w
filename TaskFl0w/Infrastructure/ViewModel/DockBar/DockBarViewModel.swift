@@ -81,6 +81,8 @@ final class DockBarViewModel: ObservableObject {
     func moveCategory(from source: Int, to destination: Int) {
         guard let draggedCategory = draggedCategory else { return }
         
+        print("📦 DEBUG: moveCategory called - from: \(source), to: \(destination)")
+        
         // Создаем новую категорию с обновленным порядком
         let updatedCategory = TaskCategoryModel(
             id: draggedCategory.id,
@@ -91,7 +93,14 @@ final class DockBarViewModel: ObservableObject {
         
         categoryManagement.updateCategory(updatedCategory)
         
-        // Сбрасываем состояние перетаскивания
+        // Сбрасываем состояние перетаскивания только если это действительно перемещение между категориями
+        print("🔄 DEBUG: Clearing draggedCategory after category move")
+        self.draggedCategory = nil
+    }
+    
+    // Добавляем новый метод для явного сброса
+    func clearDraggedCategory() {
+        print("🔄 DEBUG: clearDraggedCategory called")
         self.draggedCategory = nil
     }
     
