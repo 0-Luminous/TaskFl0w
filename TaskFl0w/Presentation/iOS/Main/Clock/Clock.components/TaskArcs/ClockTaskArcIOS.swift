@@ -156,18 +156,37 @@ struct ClockTaskArcIOS: View {
                         clockwise: false)
                 }
                 
-                // Контент-шейп для распознавания жестов
-                let taskTapArea = Path { path in
+                // Контент-шейп для распознавания жестов (увеличенная область для удобства)
+                let taskGestureArea = Path { path in
                     path.addArc(
                         center: center,
-                        radius: radius + 50,
+                        radius: radius + 70, // Увеличиваем область для удобства касания
                         startAngle: startAngle,
                         endAngle: endAngle,
                         clockwise: false
                     )
                     path.addArc(
                         center: center,
-                        radius: radius - 20,
+                        radius: radius - 10, // Немного заходим внутрь
+                        startAngle: endAngle,
+                        endAngle: startAngle,
+                        clockwise: true
+                    )
+                    path.closeSubpath()
+                }
+                
+                // Контент-шейп для drag preview (точно соответствует визуальной дуге)
+                let taskDragPreviewArea = Path { path in
+                    path.addArc(
+                        center: center,
+                        radius: arcRadius + arcLineWidth/2,
+                        startAngle: startAngle,
+                        endAngle: endAngle,
+                        clockwise: false
+                    )
+                    path.addArc(
+                        center: center,
+                        radius: arcRadius - arcLineWidth/2,
                         startAngle: endAngle,
                         endAngle: startAngle,
                         clockwise: true
@@ -181,7 +200,8 @@ struct ClockTaskArcIOS: View {
                         // Дуга задачи
                         taskArcPath
                             .stroke(task.category.color, lineWidth: arcLineWidth)
-                            .contentShape(.dragPreview, Circle().scale(1.172))
+                            .contentShape(.interaction, taskGestureArea) // Для жестов используем увеличенную область
+                            .contentShape(.dragPreview, taskDragPreviewArea) // Для drag preview используем точную форму
                             .gesture(
                                 TapGesture()
                                     .onEnded {
