@@ -22,7 +22,6 @@ struct DockBarIOS: View {
         .gesture(longPressGesture)
     }
 
-    // Выносим индикатор страниц в отдельное представление
     private var pageIndicator: some View {
         Group {
             if viewModel.numberOfPages > 1 {
@@ -41,10 +40,6 @@ struct DockBarIOS: View {
         }
     }
 
-    // Эти методы больше не используются, так как вместо них используются
-    // соответствующие методы из viewModel
-
-    // Выносим сетку категорий в отдельное представление
     private var categoryGrid: some View {
         CategoryGridContent(
             currentPage: $viewModel.currentPage,
@@ -56,7 +51,6 @@ struct DockBarIOS: View {
         }
     }
 
-    // Выносим страницу категорий в отдельное представление
     private func categoryPage(for page: Int) -> some View {
         CategoryPageContent(
             categories: viewModel.categoriesForPage(page),
@@ -68,7 +62,6 @@ struct DockBarIOS: View {
         )
     }
 
-    // Выносим жест длительного нажатия в отдельное свойство
     private var longPressGesture: some Gesture {
         LongPressGesture(minimumDuration: 0.5)
             .onEnded { _ in

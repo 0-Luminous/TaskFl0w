@@ -10,7 +10,6 @@ class SharedStateService: ObservableObject {
 
     @Published var tasks: [TaskOnRing] = [] {
         didSet {
-            // Уведомляем подписчиков об изменении
             notifyTasksUpdated()
         }
     }
