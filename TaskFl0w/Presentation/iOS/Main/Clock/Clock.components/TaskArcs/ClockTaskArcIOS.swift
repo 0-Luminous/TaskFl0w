@@ -16,6 +16,12 @@ struct ClockTaskArcIOS: View {
     @State private var isVisible: Bool = true
     @State private var lastHourComponent: Int = -1
     
+    // Добавляем состояния для анимации появления
+    @State private var appearanceScale: CGFloat = 0.6
+    @State private var appearanceOpacity: Double = 1.0
+    @State private var appearanceRotation: Double = 0.0
+    @State private var hasAppeared: Bool = false
+    
     // Кэшируем форматтер, чтобы не создавать его каждый раз
     private let timeFormatter = {
         let formatter = DateFormatter()
@@ -34,9 +40,9 @@ struct ClockTaskArcIOS: View {
     private let minIconOffset: CGFloat = 0
     private let minAnalogIconOffset: CGFloat = -16
     private let maxAnalogIconOffset: CGFloat = -4
-    private let baseIconSize: CGFloat = 22
-    private let minIconFontSize: CGFloat = 12
-    private let maxIconFontSize: CGFloat = 20
+    private let baseIconSize: CGFloat = 18
+    private let minIconFontSize: CGFloat = 10
+    private let maxIconFontSize: CGFloat = 17
     private let timeFontSize: CGFloat = 10
     private let timeTextOffset: CGFloat = -8
     
@@ -122,13 +128,13 @@ struct ClockTaskArcIOS: View {
                 // Радиус дуги
                 let arcRadius: CGFloat = calculateArcRadius(radius: radius, analogOffset: analogOffset)
                 
-                // Расчет смещения иконки
+                // Расчет смещения иконки - минимальный отступ
                 let analogIconOffset = minAnalogIconOffset + (maxAnalogIconOffset - minAnalogIconOffset) * tRing
-                let maxIconOffset: CGFloat = isAnalog ? analogIconOffset : 6
+                let maxIconOffset: CGFloat = isAnalog ? analogIconOffset : 0  // Убираем отступ совсем
                 let iconOffset = minIconOffset + (maxIconOffset - minIconOffset) * tIconOffset
                 
-                // Расчет радиуса для размещения иконки
-                let baseIconRadius: CGFloat = calculateIconRadius(arcRadius: arcRadius, iconSize: iconSize, iconOffset: iconOffset)
+                // Расчет радиуса для размещения иконки - ближе к дуге
+                let baseIconRadius: CGFloat = isAnalog ? arcRadius : arcRadius - 4  // Сдвигаем иконку ближе к центру на 8 пикселей
                 
                 // Добавляем дополнительное смещение для режима редактирования
                 let editingOffset: CGFloat = (viewModel.isEditingMode && task.id == viewModel.editingTask?.id) ? 25 : 0
@@ -167,42 +173,74 @@ struct ClockTaskArcIOS: View {
                 }
                 
                 ZStack {
-                    // Дуга задачи
-                    taskArcPath
-                        .stroke(task.category.color, lineWidth: arcLineWidth)
-                        .contentShape(taskTapArea)
-                        .contentShape(.dragPreview, Circle().scale(1.174))
-                        .gesture(
-                            TapGesture()
-                                .onEnded {
-                                    // Добавляем виброотдачу при входе в режим редактирования
-                                    triggerHapticFeedback()
-                                    
-                                    withAnimation {
-                                        if viewModel.isEditingMode, viewModel.editingTask?.id == task.id
-                                        {
-                                            viewModel.isEditingMode = false
-                                            viewModel.editingTask = nil
-                                        } else {
-                                            viewModel.isEditingMode = true
-                                            viewModel.editingTask = task
+                    // Оборачиваем дугу и маркеры в общий контейнер для анимации
+                    ZStack {
+                        // Дуга задачи
+                        taskArcPath
+                            .stroke(task.category.color, lineWidth: arcLineWidth)
+                            .contentShape(taskTapArea)
+                            .contentShape(.dragPreview, Circle().scale(1.174))
+                            .gesture(
+                                TapGesture()
+                                    .onEnded {
+                                        // Добавляем виброотдачу при входе в режим редактирования
+                                        triggerHapticFeedback()
+                                        
+                                        withAnimation {
+                                            if viewModel.isEditingMode, viewModel.editingTask?.id == task.id
+                                            {
+                                                viewModel.isEditingMode = false
+                                                viewModel.editingTask = nil
+                                            } else {
+                                                viewModel.isEditingMode = true
+                                                viewModel.editingTask = task
+                                            }
                                         }
                                     }
+                            )
+                            .onDrag {
+                                if !viewModel.isEditingMode && viewModel.editingTask == nil && !isDragging {
+                                    // Начинаем перетаскивание
+                                    viewModel.startDragging(task)
+                                    isDragging = true
+                                    return NSItemProvider(object: task.id.uuidString as NSString)
                                 }
-                        )
-                        .onDrag {
-                            if !viewModel.isEditingMode && viewModel.editingTask == nil && !isDragging {
-                                // Начинаем перетаскивание
-                                viewModel.startDragging(task)
-                                isDragging = true
-                                return NSItemProvider(object: task.id.uuidString as NSString)
+                                return NSItemProvider()
+                            } preview: {
+                                CategoryDragPreview(task: task)
                             }
-                            return NSItemProvider()
-                        } preview: {
-                            CategoryDragPreview(task: task)
-                        }
 
-                    // Подписи времени
+                        // Маркеры редактирования (если редактируется) — в том же контейнере что и дуга
+                        if viewModel.isEditingMode && task.id == viewModel.editingTask?.id {
+                            createDragHandle(
+                                color: task.category.color,
+                                center: center,
+                                radius: radius,
+                                angle: startAngle,
+                                isDraggingStart: true,
+                                adjustTask: adjustTaskStartTimesForOverlap,
+                                analogOffset: analogOffset,
+                                shortTaskScale: shortTaskScale
+                            )
+
+                            createDragHandle(
+                                color: task.category.color,
+                                center: center,
+                                radius: radius,
+                                angle: endAngle,
+                                isDraggingStart: false,
+                                adjustTask: adjustTaskEndTimesForOverlap,
+                                analogOffset: analogOffset,
+                                shortTaskScale: shortTaskScale
+                            )
+                        }
+                    }
+                    // Применяем анимационные эффекты ко всему контейнеру (дуга + маркеры)
+                    .scaleEffect(appearanceScale)
+                    .opacity(appearanceOpacity)
+                    .rotationEffect(.degrees(appearanceRotation))
+
+                    // Подписи времени - отдельно, так как они не должны поворачиваться
                     TaskTimeLabels(
                         task: task,
                         isAnalog: isAnalog, 
@@ -215,8 +253,11 @@ struct ClockTaskArcIOS: View {
                         shortTaskScale: shortTaskScale,
                         timeFormatter: timeFormatter
                     )
+                    // Подписи времени только масштабируются и изменяют прозрачность
+                    .scaleEffect(appearanceScale)
+                    .opacity(appearanceOpacity)
 
-                    // Иконка категории — всегда
+                    // Иконка категории — тоже отдельно
                     Image(systemName: task.category.iconName)
                         .font(.system(size: iconFontSize))
                         .foregroundColor(.white)
@@ -230,6 +271,10 @@ struct ClockTaskArcIOS: View {
                             x: center.x + iconRadius * cos(midAngle.radians),
                             y: center.y + iconRadius * sin(midAngle.radians)
                         )
+                        // Иконка имеет свою анимацию с небольшим поворотом
+                        .scaleEffect(appearanceScale * 1.1) // Иконка появляется чуть больше
+                        .opacity(appearanceOpacity)
+                        .rotationEffect(.degrees(appearanceRotation * 0.5)) // Меньшее вращение для иконки
                         .animation(.easeInOut(duration: 0.3), value: editingOffset)
                         .id("task-icon-\(task.id)-\(viewModel.zeroPosition)")
                         .gesture(
@@ -250,31 +295,13 @@ struct ClockTaskArcIOS: View {
                                     }
                                 }
                         )
-
-                    // Маркеры редактирования (если редактируется) — всегда выше иконки
-                    if viewModel.isEditingMode && task.id == viewModel.editingTask?.id {
-                        createDragHandle(
-                            color: task.category.color,
-                            center: center,
-                            radius: radius,
-                            angle: startAngle,
-                            isDraggingStart: true,
-                            adjustTask: adjustTaskStartTimesForOverlap,
-                            analogOffset: analogOffset,
-                            shortTaskScale: shortTaskScale
-                        )
-
-                        createDragHandle(
-                            color: task.category.color,
-                            center: center,
-                            radius: radius,
-                            angle: endAngle,
-                            isDraggingStart: false,
-                            adjustTask: adjustTaskEndTimesForOverlap,
-                            analogOffset: analogOffset,
-                            shortTaskScale: shortTaskScale
-                        )
-                    }
+                }
+            }
+            // Добавляем onAppear для запуска анимации появления
+            .onAppear {
+                if !hasAppeared {
+                    hasAppeared = true
+                    startAppearanceAnimation()
                 }
             }
             .onChange(of: isDragging) { oldValue, newValue in
@@ -286,8 +313,11 @@ struct ClockTaskArcIOS: View {
                         if isDragging && viewModel.draggedTask?.id == task.id && isVisible
                             && viewModel.isDraggingOutside
                         {
-                            viewModel.taskManagement.removeTask(task)
-                            isVisible = false
+                            // Анимация исчезновения перед удалением
+                            startDisappearanceAnimation {
+                                viewModel.taskManagement.removeTask(task)
+                                isVisible = false
+                            }
                         }
                     }
                 }
@@ -507,5 +537,35 @@ struct ClockTaskArcIOS: View {
         
         viewModel.previewTime = newTime
         adjustTaskEndTimesForOverlap(task, newEndTime: newTime)
+    }
+
+    // Обновляем функцию для анимации появления
+    private func startAppearanceAnimation() {
+        // Сначала устанавливаем начальные значения для анимации
+        appearanceScale = 0.0
+        appearanceOpacity = 0.0
+        appearanceRotation = -15.0
+        
+        // Небольшая задержка для более естественного появления
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.interpolatingSpring(stiffness: 300, damping: 20)) {
+                appearanceScale = 1.0
+                appearanceOpacity = 1.0
+                appearanceRotation = 0.0
+            }
+        }
+    }
+    
+    // Обновляем функцию для анимации исчезновения
+    private func startDisappearanceAnimation(completion: @escaping () -> Void) {
+        withAnimation(.easeIn(duration: 0.3)) {
+            appearanceScale = 0.0
+            appearanceOpacity = 0.0
+            appearanceRotation = 15.0
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            completion()
+        }
     }
 }

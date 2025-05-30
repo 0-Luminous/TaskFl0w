@@ -80,7 +80,7 @@ struct ClockHandViewIOS: View {
                 path.move(to: center)
                 path.addLine(to: endpoint)
             }
-            .stroke(handColor, lineWidth: max(1.5, 3 * scale)) // Также адаптируем толщину стрелки
+            .stroke(handColor, style: StrokeStyle(lineWidth: max(1.5, 3 * scale), lineCap: .round))
             .shadow(color: .black.opacity(0.5), radius: max(1, 2 * scale), x: 1, y: 1)
         }
     }
