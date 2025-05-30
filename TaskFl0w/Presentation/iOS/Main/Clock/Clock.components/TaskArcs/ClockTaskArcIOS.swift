@@ -22,6 +22,9 @@ struct ClockTaskArcIOS: View {
     @State private var appearanceRotation: Double = 0.0
     @State private var hasAppeared: Bool = false
     
+    // Добавляем состояние для эффекта нажатия
+    @State private var isPressed: Bool = false
+    
     // Кэшируем форматтер, чтобы не создавать его каждый раз
     private let timeFormatter = {
         let formatter = DateFormatter()
@@ -178,15 +181,19 @@ struct ClockTaskArcIOS: View {
                         // Дуга задачи
                         taskArcPath
                             .stroke(task.category.color, lineWidth: arcLineWidth)
-                            .contentShape(taskTapArea)
-                            .contentShape(.dragPreview, Circle().scale(1.174))
+                            .contentShape(.dragPreview, Circle().scale(1.172))
                             .gesture(
                                 TapGesture()
                                     .onEnded {
                                         // Добавляем виброотдачу при входе в режим редактирования
                                         triggerHapticFeedback()
                                         
-                                        withAnimation {
+                                        // Эффект нажатия
+                                        withAnimation(.easeOut(duration: 0.1)) {
+                                            isPressed = true
+                                        }
+                                        
+                                        withAnimation(.easeInOut(duration: 0.3).delay(0.1)) {
                                             if viewModel.isEditingMode, viewModel.editingTask?.id == task.id
                                             {
                                                 viewModel.isEditingMode = false
@@ -194,6 +201,13 @@ struct ClockTaskArcIOS: View {
                                             } else {
                                                 viewModel.isEditingMode = true
                                                 viewModel.editingTask = task
+                                            }
+                                        }
+                                        
+                                        // Возвращаем обратно после анимации
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                            withAnimation(.easeIn(duration: 0.1)) {
+                                                isPressed = false
                                             }
                                         }
                                     }
@@ -211,7 +225,7 @@ struct ClockTaskArcIOS: View {
                             }
                     }
                     // Применяем анимационные эффекты ко всему контейнеру (дуга + маркеры)
-                    .scaleEffect(appearanceScale)
+                    .scaleEffect(appearanceScale * (isPressed ? 1.05 : 1.0))
                     .opacity(appearanceOpacity)
                     .rotationEffect(.degrees(appearanceRotation))
 
@@ -232,6 +246,7 @@ struct ClockTaskArcIOS: View {
                         analogOffset: analogOffset,
                         tRing: tRing,
                         lastHourComponent: $lastHourComponent,
+                        isPressed: isPressed,
                         adjustTaskStartTimesForOverlap: adjustTaskStartTimesForOverlap,
                         adjustTaskEndTimesForOverlap: adjustTaskEndTimesForOverlap,
                         triggerHapticFeedback: triggerHapticFeedback,
@@ -239,7 +254,18 @@ struct ClockTaskArcIOS: View {
                         triggerDragHapticFeedback: triggerDragHapticFeedback,
                         handleDragGesture: handleDragGesture
                     )
-                    .scaleEffect(appearanceScale)
+                    .onDrag {
+                                if !viewModel.isEditingMode && viewModel.editingTask == nil && !isDragging {
+                                    // Начинаем перетаскивание
+                                    viewModel.startDragging(task)
+                                    isDragging = true
+                                    return NSItemProvider(object: task.id.uuidString as NSString)
+                                }
+                                return NSItemProvider()
+                            } preview: {
+                                CategoryDragPreview(task: task)
+                            }
+                    .scaleEffect(appearanceScale * (isPressed ? 1.05 : 1.0))
                     .opacity(appearanceOpacity)
 
                     // Иконка категории — тоже отдельно
@@ -257,7 +283,7 @@ struct ClockTaskArcIOS: View {
                             y: center.y + iconRadius * sin(midAngle.radians)
                         )
                         // Иконка имеет свою анимацию с небольшим поворотом
-                        .scaleEffect(appearanceScale * 1.1) // Иконка появляется чуть больше
+                        .scaleEffect(appearanceScale * 1.1 * (isPressed ? 1.05 : 1.0)) // Иконка появляется чуть больше и поднимается при нажатии
                         .opacity(appearanceOpacity)
                         .rotationEffect(.degrees(appearanceRotation * 0.5)) // Меньшее вращение для иконки
                         .animation(.easeInOut(duration: 0.3), value: editingOffset)
@@ -268,7 +294,12 @@ struct ClockTaskArcIOS: View {
                                     // Добавляем виброотдачу и для иконки
                                     triggerHapticFeedback()
                                     
-                                    withAnimation {
+                                    // Эффект нажатия для иконки
+                                    withAnimation(.easeOut(duration: 0.1)) {
+                                        isPressed = true
+                                    }
+                                    
+                                    withAnimation(.easeInOut(duration: 0.3).delay(0.1)) {
                                         if viewModel.isEditingMode, viewModel.editingTask?.id == task.id
                                         {
                                             viewModel.isEditingMode = false
@@ -276,6 +307,13 @@ struct ClockTaskArcIOS: View {
                                         } else {
                                             viewModel.isEditingMode = true
                                             viewModel.editingTask = task
+                                        }
+                                    }
+                                    
+                                    // Возвращаем обратно после анимации
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                        withAnimation(.easeIn(duration: 0.1)) {
+                                            isPressed = false
                                         }
                                     }
                                 }

@@ -24,6 +24,9 @@ struct TaskOverlayElements: View {
     let tRing: CGFloat
     @Binding var lastHourComponent: Int
     
+    // Добавляем параметр для состояния нажатия
+    let isPressed: Bool
+    
     // Колбэки для обработки действий
     let adjustTaskStartTimesForOverlap: (TaskOnRing, Date) -> Void
     let adjustTaskEndTimesForOverlap: (TaskOnRing, Date) -> Void
