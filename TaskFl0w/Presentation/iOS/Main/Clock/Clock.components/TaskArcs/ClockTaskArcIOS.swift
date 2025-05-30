@@ -209,51 +209,36 @@ struct ClockTaskArcIOS: View {
                             } preview: {
                                 CategoryDragPreview(task: task)
                             }
-
-                        // Маркеры редактирования (если редактируется) — в том же контейнере что и дуга
-                        if viewModel.isEditingMode && task.id == viewModel.editingTask?.id {
-                            createDragHandle(
-                                color: task.category.color,
-                                center: center,
-                                radius: radius,
-                                angle: startAngle,
-                                isDraggingStart: true,
-                                adjustTask: adjustTaskStartTimesForOverlap,
-                                analogOffset: analogOffset,
-                                shortTaskScale: shortTaskScale
-                            )
-
-                            createDragHandle(
-                                color: task.category.color,
-                                center: center,
-                                radius: radius,
-                                angle: endAngle,
-                                isDraggingStart: false,
-                                adjustTask: adjustTaskEndTimesForOverlap,
-                                analogOffset: analogOffset,
-                                shortTaskScale: shortTaskScale
-                            )
-                        }
                     }
                     // Применяем анимационные эффекты ко всему контейнеру (дуга + маркеры)
                     .scaleEffect(appearanceScale)
                     .opacity(appearanceOpacity)
                     .rotationEffect(.degrees(appearanceRotation))
 
-                    // Подписи времени - отдельно, так как они не должны поворачиваться
-                    TaskTimeLabels(
+                    // Заменяем отдельные компоненты на единую структуру
+                    TaskOverlayElements(
                         task: task,
-                        isAnalog: isAnalog, 
                         viewModel: viewModel,
+                        isAnalog: isAnalog,
+                        center: center,
+                        radius: radius,
                         startAngle: startAngle,
                         endAngle: endAngle,
-                        center: center,
                         arcRadius: arcRadius,
+                        arcLineWidth: arcLineWidth,
                         timeTextOffset: timeTextOffset,
                         shortTaskScale: shortTaskScale,
-                        timeFormatter: timeFormatter
+                        timeFormatter: timeFormatter,
+                        analogOffset: analogOffset,
+                        tRing: tRing,
+                        lastHourComponent: $lastHourComponent,
+                        adjustTaskStartTimesForOverlap: adjustTaskStartTimesForOverlap,
+                        adjustTaskEndTimesForOverlap: adjustTaskEndTimesForOverlap,
+                        triggerHapticFeedback: triggerHapticFeedback,
+                        triggerSelectionHapticFeedback: triggerSelectionHapticFeedback,
+                        triggerDragHapticFeedback: triggerDragHapticFeedback,
+                        handleDragGesture: handleDragGesture
                     )
-                    // Подписи времени только масштабируются и изменяют прозрачность
                     .scaleEffect(appearanceScale)
                     .opacity(appearanceOpacity)
 

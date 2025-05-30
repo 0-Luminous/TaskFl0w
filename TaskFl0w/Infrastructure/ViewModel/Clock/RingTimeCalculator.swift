@@ -9,124 +9,142 @@ import Foundation
 import SwiftUI
 
 struct RingTimeCalculator {
+    // MARK: - Константы для оптимизации производительности
+    private static let calendar = Calendar.current
+    private static let currentTimeZone = TimeZone.current
+    
+    // Математические константы
+    private static let radiansToDegreesMultiplier = 180.0 / Double.pi
+    private static let degreesToHoursMultiplier = 1.0 / 15.0  // 15 градусов = 1 час
+    private static let minutesToDegreesMultiplier = 1.0 / 4.0 // 4 минуты = 1 градус
+    private static let degreesToMinutesMultiplier = 4.0      // 1 градус = 4 минуты
+    private static let minutesPerHour = 60.0
+    private static let hoursPerDay = 24.0
+    private static let minutesPerDay = 1440.0
+    private static let degreesPerCircle = 360.0
+    private static let topClockPosition = 270.0
+    private static let defaultFallbackAngle = 15.0
+    
+    // Кэшированные компоненты для повторного использования
+    private static let dateComponentsForExtraction: Set<Calendar.Component> = [.hour, .minute]
+    private static let dateComponentsForCreation: Set<Calendar.Component> = [.year, .month, .day]
+    private static let fullDateComponents: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute]
+    
+    // MARK: - Helper методы для проверки NaN
+    @inline(__always)
+    private static func safeguardNaN(_ value: Double, fallback: Double = 0.0) -> Double {
+        return value.isNaN ? fallback : value
+    }
+    
+    @inline(__always)
+    private static func safeguardNaN(_ value: CGFloat, fallback: CGFloat = 0.0) -> CGFloat {
+        return value.isNaN ? fallback : value
+    }
+    
+    // MARK: - Оптимизированные методы извлечения времени
+    private static func extractTimeComponents(from date: Date) -> (hour: Int, minute: Int) {
+        let components = calendar.dateComponents(dateComponentsForExtraction, from: date)
+        return (components.hour ?? 0, components.minute ?? 0)
+    }
+    
     static func timeForLocation(
         _ location: CGPoint,
         center: CGPoint,
         baseDate: Date,
         zeroPosition: Double = 0
     ) -> Date {
-        let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
+        let dx = location.x - center.x
+        let dy = location.y - center.y
         
-        // Убедимся, что zeroPosition - корректное число
-        let safeZeroPosition = zeroPosition.isNaN ? 0.0 : zeroPosition
+        let safeZeroPosition = safeguardNaN(zeroPosition)
         
         // Проверяем, не является ли вектор нулевым (чтобы избежать NaN)
-        if vector.dx == 0 && vector.dy == 0 {
-            // Если вектор нулевой, возвращаем время, соответствующее верху часов
-            // В соответствии с zeroPosition
-            let defaultAngle = 270 + safeZeroPosition  // Верх часов
-            return angleToTime(defaultAngle.truncatingRemainder(dividingBy: 360), baseDate: baseDate, zeroPosition: safeZeroPosition)
+        if dx == 0 && dy == 0 {
+            let defaultAngle = (topClockPosition + safeZeroPosition).truncatingRemainder(dividingBy: degreesPerCircle)
+            return angleToTime(defaultAngle, baseDate: baseDate, zeroPosition: safeZeroPosition)
         }
         
-        let angle = atan2(vector.dy, vector.dx)
-
-        // Переводим в градусы и учитываем zeroPosition
-        var degrees = angle * 180 / .pi
-        degrees = (degrees - 270 - safeZeroPosition + 360).truncatingRemainder(dividingBy: 360)
-
-        // 24 часа = 360 градусов => 1 час = 15 градусов
-        let hours = degrees / 15
+        let angle = atan2(dy, dx)
+        
+        // Переводим в градусы и учитываем zeroPosition - оптимизированная версия
+        let degrees = ((angle * radiansToDegreesMultiplier - topClockPosition - safeZeroPosition + degreesPerCircle)
+                      .truncatingRemainder(dividingBy: degreesPerCircle))
+        
+        // Конвертируем в часы и минуты
+        let hours = degrees * degreesToHoursMultiplier
         let hourComponent = Int(hours)
-        let minuteComponent = Int((hours - Double(hourComponent)) * 60)
-
-        var components = Calendar.current.dateComponents([.year, .month, .day], from: baseDate)
+        let minuteComponent = Int((hours - Double(hourComponent)) * minutesPerHour)
+        
+        // Создаем дату более эффективно
+        var components = calendar.dateComponents(dateComponentsForCreation, from: baseDate)
         components.hour = hourComponent
         components.minute = minuteComponent
-        components.timeZone = TimeZone.current
-
-        return Calendar.current.date(from: components) ?? baseDate
+        components.timeZone = currentTimeZone
+        
+        return calendar.date(from: components) ?? baseDate
     }
-
+    
     static func calculateAngles(for task: TaskOnRing) -> (start: Angle, end: Angle) {
-        let calendar = Calendar.current
-
-        let startHour = CGFloat(calendar.component(.hour, from: task.startTime))
-        let startMinute = CGFloat(calendar.component(.minute, from: task.startTime))
+        // Извлекаем компоненты времени более эффективно
+        let (startHour, startMinute) = extractTimeComponents(from: task.startTime)
         let endTime = task.startTime.addingTimeInterval(task.duration)
-        let endHour = CGFloat(calendar.component(.hour, from: endTime))
-        let endMinute = CGFloat(calendar.component(.minute, from: endTime))
-
-        // Проверка на NaN
-        let safeStartHour = startHour.isNaN ? 0 : startHour
-        let safeStartMinute = startMinute.isNaN ? 0 : startMinute
-        let safeEndHour = endHour.isNaN ? safeStartHour + 1 : endHour
-        let safeEndMinute = endMinute.isNaN ? 0 : endMinute
-
-        let startMinutes = safeStartHour * 60 + safeStartMinute
-        var endMinutes = safeEndHour * 60 + safeEndMinute
-
+        let (endHour, endMinute) = extractTimeComponents(from: endTime)
+        
+        let startMinutes = Double(startHour * 60 + startMinute)
+        var endMinutes = Double(endHour * 60 + endMinute)
+        
         // Если задача идёт за полночь
         if endMinutes < startMinutes {
-            endMinutes += 24 * 60
+            endMinutes += minutesPerDay
         }
-
-        // 24 часа = 1440 минут => 360 градусов
-        // Здесь метод НЕ учитывает zeroPosition потому что весь циферблат поворачивается
-        // в родительском компоненте. 270 означает, что 12 часов снизу, а 00 сверху
-        let startAngle = Angle(degrees: 270 + Double(startMinutes) / 4)
-        let endAngle = Angle(degrees: 270 + Double(endMinutes) / 4)
-
+        
+        // Оптимизированное вычисление углов
+        let startAngle = Angle(degrees: topClockPosition + startMinutes * minutesToDegreesMultiplier)
+        let endAngle = Angle(degrees: topClockPosition + endMinutes * minutesToDegreesMultiplier)
+        
         return (startAngle, endAngle)
     }
-
+    
     // MARK: - Новый метод для расчета углов с учетом zeroPosition
     static func calculateAnglesWithZeroPosition(for task: TaskOnRing, zeroPosition: Double) -> (start: Angle, end: Angle) {
-        let calendar = Calendar.current
-
-        let startHour = CGFloat(calendar.component(.hour, from: task.startTime))
-        let startMinute = CGFloat(calendar.component(.minute, from: task.startTime))
+        let (startHour, startMinute) = extractTimeComponents(from: task.startTime)
         let endTime = task.startTime.addingTimeInterval(task.duration)
-        let endHour = CGFloat(calendar.component(.hour, from: endTime))
-        let endMinute = CGFloat(calendar.component(.minute, from: endTime))
-
-        // Проверка на NaN
-        let safeStartHour = startHour.isNaN ? 0 : startHour
-        let safeStartMinute = startMinute.isNaN ? 0 : startMinute
-        let safeEndHour = endHour.isNaN ? safeStartHour + 1 : endHour
-        let safeEndMinute = endMinute.isNaN ? 0 : endMinute
-
-        let startMinutes = safeStartHour * 60 + safeStartMinute
-        var endMinutes = safeEndHour * 60 + safeEndMinute
-
+        let (endHour, endMinute) = extractTimeComponents(from: endTime)
+        
+        let startMinutes = Double(startHour * 60 + startMinute)
+        var endMinutes = Double(endHour * 60 + endMinute)
+        
         // Если задача идёт за полночь
         if endMinutes < startMinutes {
-            endMinutes += 24 * 60
+            endMinutes += minutesPerDay
         }
-
-        // Убедимся, что zeroPosition - корректное число
-        let safeZeroPosition = zeroPosition.isNaN ? 0.0 : zeroPosition
-
-        // 24 часа = 1440 минут => 360 градусов
-        // Применяем zeroPosition к углам, 270 означает, что 12 часов снизу, а 00 сверху
-        let startAngle = Angle(degrees: 270 + Double(startMinutes) / 4 + safeZeroPosition)
-        let endAngle = Angle(degrees: 270 + Double(endMinutes) / 4 + safeZeroPosition)
-
+        
+        let safeZeroPosition = safeguardNaN(zeroPosition)
+        
+        // Оптимизированное вычисление углов с zeroPosition
+        let baseAngle = topClockPosition + safeZeroPosition
+        let startAngle = Angle(degrees: baseAngle + startMinutes * minutesToDegreesMultiplier)
+        let endAngle = Angle(degrees: baseAngle + endMinutes * minutesToDegreesMultiplier)
+        
         return (startAngle, endAngle)
     }
-
+    
     static func calculateMidAngle(start: Angle, end: Angle) -> Angle {
-        // Защита от NaN
-        let safeStartDegrees = start.degrees.isNaN ? 0.0 : start.degrees
-        let safeEndDegrees = end.degrees.isNaN ? safeStartDegrees + 15.0 : end.degrees
+        let safeStartDegrees = safeguardNaN(start.degrees)
+        let safeEndDegrees = safeguardNaN(end.degrees, fallback: safeStartDegrees + defaultFallbackAngle)
         
-        var midDegrees = (safeStartDegrees + safeEndDegrees) / 2
+        var midDegrees: Double
+        
         // Если дуга "переходит" через 360
         if safeEndDegrees < safeStartDegrees {
-            midDegrees = (safeStartDegrees + (safeEndDegrees + 360)) / 2
-            if midDegrees >= 360 {
-                midDegrees -= 360
+            midDegrees = (safeStartDegrees + safeEndDegrees + degreesPerCircle) * 0.5
+            if midDegrees >= degreesPerCircle {
+                midDegrees -= degreesPerCircle
             }
+        } else {
+            midDegrees = (safeStartDegrees + safeEndDegrees) * 0.5
         }
+        
         return Angle(degrees: midDegrees)
     }
     
@@ -134,73 +152,58 @@ struct RingTimeCalculator {
     
     /// Корректирует время с учетом смещения нулевой позиции
     static func getTimeWithZeroOffset(_ date: Date, baseDate: Date, zeroPosition: Double, inverse: Bool = false) -> Date {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
-
-        // Получаем часы и минуты
-        let totalMinutes = Double(components.hour! * 60 + components.minute!)
-
-        // Вычисляем смещение в минутах
-        let safeZeroPosition = zeroPosition.isNaN ? 0.0 : zeroPosition
-        let offsetDegrees = inverse ? -safeZeroPosition : safeZeroPosition
-        let offsetHours = offsetDegrees / 15.0  // 15 градусов = 1 час
-        let offsetMinutes = offsetHours * 60
-
-        // Применяем смещение с учетом 24-часового цикла
-        let adjustedMinutes = (totalMinutes - offsetMinutes + 1440).truncatingRemainder(
-            dividingBy: 1440)
-
-        // Конвертируем обратно в часы и минуты
-        components.hour = Int(adjustedMinutes / 60)
-        components.minute = Int(adjustedMinutes.truncatingRemainder(dividingBy: 60))
+        var components = calendar.dateComponents(fullDateComponents, from: date)
         
-        // Используем компоненты даты из baseDate
-        let baseComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
+        // Получаем часы и минуты более эффективно
+        let totalMinutes = Double((components.hour ?? 0) * 60 + (components.minute ?? 0))
+        
+        // Вычисляем смещение в минутах
+        let safeZeroPosition = safeguardNaN(zeroPosition)
+        let offsetDegrees = inverse ? -safeZeroPosition : safeZeroPosition
+        let offsetMinutes = offsetDegrees * degreesToHoursMultiplier * minutesPerHour
+        
+        // Применяем смещение с учетом 24-часового цикла
+        let adjustedMinutes = (totalMinutes - offsetMinutes + minutesPerDay).truncatingRemainder(dividingBy: minutesPerDay)
+        
+        // Конвертируем обратно в часы и минуты
+        components.hour = Int(adjustedMinutes / minutesPerHour)
+        components.minute = Int(adjustedMinutes.truncatingRemainder(dividingBy: minutesPerHour))
+        
+        // Используем компоненты даты из baseDate более эффективно
+        let baseComponents = calendar.dateComponents(dateComponentsForCreation, from: baseDate)
         components.year = baseComponents.year
         components.month = baseComponents.month
         components.day = baseComponents.day
-
+        
         return calendar.date(from: components) ?? date
     }
-
+    
     /// Конвертирует угол в время с учетом zeroPosition
     static func angleToTime(_ angle: Double, baseDate: Date, zeroPosition: Double) -> Date {
-        let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: baseDate)
-
-        // Преобразуем угол в минуты (360 градусов = 24 часа = 1440 минут)
-        var totalMinutes = angle * 4  // angle * (1440 / 360)
-
-        // Учитываем zeroPosition и переводим в 24-часовой формат
-        let safeZeroPosition = zeroPosition.isNaN ? 0.0 : zeroPosition
-        totalMinutes = (totalMinutes + (270 - safeZeroPosition) * 4 + 1440).truncatingRemainder(
-            dividingBy: 1440)
-
-        components.hour = Int(totalMinutes / 60)
-        components.minute = Int(totalMinutes.truncatingRemainder(dividingBy: 60))
-
+        var components = calendar.dateComponents(dateComponentsForCreation, from: baseDate)
+        
+        // Преобразуем угол в минуты - оптимизированная версия
+        let safeZeroPosition = safeguardNaN(zeroPosition)
+        let totalMinutes = (angle * degreesToMinutesMultiplier + (topClockPosition - safeZeroPosition) * degreesToMinutesMultiplier + minutesPerDay)
+            .truncatingRemainder(dividingBy: minutesPerDay)
+        
+        components.hour = Int(totalMinutes / minutesPerHour)
+        components.minute = Int(totalMinutes.truncatingRemainder(dividingBy: minutesPerHour))
+        
         return calendar.date(from: components) ?? baseDate
     }
-
+    
     /// Конвертирует время в угол с учетом zeroPosition
     static func timeToAngle(_ date: Date, zeroPosition: Double) -> Double {
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.hour, .minute], from: date)
-        
-        // Защита от некорректных значений
-        let hour = components.hour ?? 0
-        let minute = components.minute ?? 0
+        let (hour, minute) = extractTimeComponents(from: date)
         let totalMinutes = Double(hour * 60 + minute)
         
-        // Убедимся, что zeroPosition - корректное число
-        let safeZeroPosition = zeroPosition.isNaN ? 0.0 : zeroPosition
-
-        // Преобразуем минуты в угол (1440 минут = 360 градусов)
-        var angle = totalMinutes / 4  // totalMinutes * (360 / 1440)
-
-        // Учитываем zeroPosition и 270-градусное смещение (12 часов снизу, 00 сверху)
-        angle = (angle - (270 - safeZeroPosition) + 360).truncatingRemainder(dividingBy: 360)
-
+        let safeZeroPosition = safeguardNaN(zeroPosition)
+        
+        // Преобразуем минуты в угол - оптимизированная версия
+        let angle = (totalMinutes * minutesToDegreesMultiplier - (topClockPosition - safeZeroPosition) + degreesPerCircle)
+            .truncatingRemainder(dividingBy: degreesPerCircle)
+        
         return angle
     }
 }
