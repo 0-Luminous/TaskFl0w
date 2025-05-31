@@ -7,13 +7,12 @@
 
 import SwiftUI
 
-@Observable
-class TaskArcAnimationManager {
-    var appearanceScale: CGFloat = 0.6
-    var appearanceOpacity: Double = 1.0
-    var appearanceRotation: Double = 0.0
-    var hasAppeared: Bool = false
-    var isPressed: Bool = false
+class TaskArcAnimationManager: ObservableObject {
+    @Published var appearanceScale: CGFloat = 0.6
+    @Published var appearanceOpacity: Double = 1.0
+    @Published var appearanceRotation: Double = 0.0
+    @Published var hasAppeared: Bool = false
+    @Published var isPressed: Bool = false
     
     func startAppearanceAnimation() {
         guard !hasAppeared else { return }
@@ -25,7 +24,7 @@ class TaskArcAnimationManager {
         appearanceRotation = -15.0
         
         // Запускаем анимацию с задержкой
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + TaskArcConstants.appearanceDelay) {
             withAnimation(.interpolatingSpring(stiffness: 300, damping: 20)) {
                 self.appearanceScale = 1.0
                 self.appearanceOpacity = 1.0
@@ -51,7 +50,7 @@ class TaskArcAnimationManager {
             isPressed = true
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + TaskArcConstants.pressAnimationDelay) {
             withAnimation(.easeIn(duration: TaskArcConstants.pressAnimationDuration)) {
                 self.isPressed = false
             }

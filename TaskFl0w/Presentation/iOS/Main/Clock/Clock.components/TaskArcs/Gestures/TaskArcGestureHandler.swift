@@ -7,13 +7,12 @@
 
 import SwiftUI
 
-@Observable
-class TaskArcGestureHandler {
+class TaskArcGestureHandler: ObservableObject {
     private let viewModel: ClockViewModel
     private let task: TaskOnRing
     private let hapticsManager = TaskArcHapticsManager()
     
-    var lastHourComponent: Int = -1
+    @Published var lastHourComponent: Int = -1
     
     init(viewModel: ClockViewModel, task: TaskOnRing) {
         self.viewModel = viewModel

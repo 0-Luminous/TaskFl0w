@@ -12,8 +12,8 @@ struct TaskArcContentView: View {
     @ObservedObject var viewModel: ClockViewModel
     let geometry: TaskArcGeometry
     let configuration: TaskArcConfiguration
-    @Bindable var animationManager: TaskArcAnimationManager
-    let gestureHandler: TaskArcGestureHandler
+    @ObservedObject var animationManager: TaskArcAnimationManager
+    @ObservedObject var gestureHandler: TaskArcGestureHandler
     let hapticsManager: TaskArcHapticsManager
     let timeFormatter: DateFormatter
     @Binding var isDragging: Bool
@@ -21,68 +21,70 @@ struct TaskArcContentView: View {
     var body: some View {
         ZStack {
             // Основная дуга задачи
-            TaskArcShape(
-                task: task,
-                viewModel: viewModel,
-                geometry: geometry,
-                animationManager: animationManager,
-                hapticsManager: hapticsManager,
-                isDragging: $isDragging
-            )
+            TaskArcShape(geometry: geometry)
+                .gesture(createTapGesture())
+                .onDrag {
+                    handleDragStart()
+                    return NSItemProvider(object: task.id.uuidString as NSString)
+                } preview: {
+                    CategoryDragPreview(task: task)
+                }
             
             // Оверлейные элементы (маркеры времени, редактирования)
             TaskOverlayElements(
                 task: task,
                 viewModel: viewModel,
-                isAnalog: configuration.isAnalog,
-                center: geometry.center,
-                radius: geometry.radius,
-                startAngle: geometry.angles.start,
-                endAngle: geometry.angles.end,
-                arcRadius: geometry.arcRadius,
-                arcLineWidth: configuration.arcLineWidth,
-                timeTextOffset: TaskArcConstants.timeTextOffset,
-                shortTaskScale: geometry.shortTaskScale,
-                timeFormatter: timeFormatter,
-                analogOffset: geometry.analogOffset,
-                tRing: configuration.interpolationFactor,
-                lastHourComponent: Binding(
-                    get: { gestureHandler.lastHourComponent },
-                    set: { gestureHandler.lastHourComponent = $0 }
-                ),
-                isPressed: animationManager.isPressed,
-                adjustTaskStartTimesForOverlap: { task, time in
-                    TaskOverlapManager.adjustTaskStartTimesForOverlap(
-                        viewModel: viewModel, 
-                        currentTask: task, 
-                        newStartTime: time
-                    )
-                },
-                adjustTaskEndTimesForOverlap: { task, time in
-                    TaskOverlapManager.adjustTaskEndTimesForOverlap(
-                        viewModel: viewModel, 
-                        currentTask: task, 
-                        newEndTime: time
-                    )
-                },
-                triggerHapticFeedback: hapticsManager.triggerSoftFeedback,
-                triggerSelectionHapticFeedback: hapticsManager.triggerSelectionFeedback,
-                triggerDragHapticFeedback: hapticsManager.triggerDragFeedback,
-                handleDragGesture: gestureHandler.handleDragGesture
+                geometry: geometry,
+                animationManager: animationManager,
+                gestureHandler: gestureHandler,
+                hapticsManager: hapticsManager,
+                timeFormatter: timeFormatter
             )
-            .scaleEffect(animationManager.currentScale)
-            .opacity(animationManager.appearanceOpacity)
             
             // Иконка категории
             TaskIconView(
                 task: task,
                 geometry: geometry,
-                animationManager: animationManager,
-                hapticsManager: hapticsManager
+                animationManager: animationManager
             )
+            .gesture(createTapGesture())
         }
-        .scaleEffect(animationManager.appearanceScale)
+        .scaleEffect(animationManager.currentScale)
         .opacity(animationManager.appearanceOpacity)
         .rotationEffect(.degrees(animationManager.appearanceRotation))
+    }
+    
+    // MARK: - Private Methods
+    
+    private func createTapGesture() -> some Gesture {
+        TapGesture()
+            .onEnded {
+                hapticsManager.triggerSoftFeedback()
+                animationManager.triggerPressAnimation()
+                
+                withAnimation(.easeInOut(duration: 0.3).delay(0.1)) {
+                    toggleEditingMode()
+                }
+            }
+    }
+    
+    private func toggleEditingMode() {
+        if viewModel.isEditingMode, viewModel.editingTask?.id == task.id {
+            viewModel.isEditingMode = false
+            viewModel.editingTask = nil
+        } else {
+            viewModel.isEditingMode = true
+            viewModel.editingTask = task
+        }
+    }
+    
+    private func handleDragStart() -> NSItemProvider {
+        if !viewModel.isEditingMode && viewModel.editingTask == nil && !isDragging {
+            viewModel.startDragging(task)
+            isDragging = true
+            hapticsManager.triggerHardFeedback()
+            return NSItemProvider(object: task.id.uuidString as NSString)
+        }
+        return NSItemProvider()
     }
 } 

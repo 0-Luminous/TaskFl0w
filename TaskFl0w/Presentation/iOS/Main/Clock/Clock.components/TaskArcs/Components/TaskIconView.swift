@@ -10,8 +10,7 @@ import SwiftUI
 struct TaskIconView: View {
     let task: TaskOnRing
     let geometry: TaskArcGeometry
-    @Bindable var animationManager: TaskArcAnimationManager
-    let hapticsManager: TaskArcHapticsManager
+    @ObservedObject var animationManager: TaskArcAnimationManager
     
     var body: some View {
         Image(systemName: task.category.iconName)
@@ -24,17 +23,15 @@ struct TaskIconView: View {
                     .frame(width: geometry.iconSize, height: geometry.iconSize)
             )
             .position(geometry.iconPosition())
-            .scaleEffect(animationManager.currentScale * 1.1)
+            .scaleEffect(iconScale)
             .opacity(animationManager.appearanceOpacity)
             .rotationEffect(.degrees(animationManager.appearanceRotation * 0.5))
-            .onTapGesture {
-                handleTap()
-            }
+            .animation(.easeInOut(duration: TaskArcConstants.appearanceAnimationDuration), value: geometry.configuration.editingOffset)
     }
     
-    private func handleTap() {
-        hapticsManager.triggerSoftFeedback()
-        animationManager.triggerPressAnimation()
-        // Логика переключения режима редактирования будет здесь
+    private var iconScale: CGFloat {
+        animationManager.appearanceScale * 
+        TaskArcConstants.iconScaleMultiplier * 
+        (animationManager.isPressed ? TaskArcConstants.pressScale : 1.0)
     }
 } 

@@ -38,15 +38,35 @@ struct TaskArcConstants {
     // MARK: - Touch Areas
     static let minTouchArea: CGFloat = 35
     static let expandedTouchArea: CGFloat = 44
+    static let gestureAreaExpansion: CGFloat = 70
+    static let gestureAreaInnerReduction: CGFloat = 10
+    
+    // MARK: - Handle Dimensions
+    static let minHandleSize: CGFloat = 20
+    static let maxHandleSize: CGFloat = 30
+    static let handleStrokeWidth: CGFloat = 2
     
     // MARK: - Animation
     static let appearanceAnimationDuration: Double = 0.3
     static let disappearanceAnimationDuration: Double = 0.3
     static let pressAnimationDuration: Double = 0.1
     static let pressScale: CGFloat = 1.05
+    static let iconScaleMultiplier: CGFloat = 1.1
+    static let appearanceDelay: Double = 0.1
+    static let pressAnimationDelay: Double = 0.2
     
     // MARK: - Haptic Feedback Delays
     static let hapticFeedbackDelay: Double = 0.5
+    
+    // MARK: - Time Label Dimensions
+    static let thinTimeMarkerWidth: CGFloat = 25
+    static let thinTimeMarkerHeight: CGFloat = 4
+    static let timeMarkerHeight: CGFloat = 16
+    static let timeMarkerPadding: CGFloat = 6
+    static let timeMarkerCharacterWidth: CGFloat = 6
+    
+    // MARK: - Drag Preview
+    static let dragPreviewOffsetFromArc: CGFloat = 3
 }
 
 struct TaskArcConfiguration {
@@ -59,5 +79,9 @@ struct TaskArcConfiguration {
     var interpolationFactor: CGFloat {
         (outerRingLineWidth - TaskArcConstants.minOuterRingWidth) / 
         (TaskArcConstants.maxOuterRingWidth - TaskArcConstants.minOuterRingWidth)
+    }
+    
+    var editingOffset: CGFloat {
+        isEditingMode ? 25 : 0
     }
 } 
