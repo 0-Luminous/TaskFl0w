@@ -76,6 +76,12 @@ struct ClockTaskArcIOS: View {
         feedbackGenerator.impactOccurred()
     }
 
+     private func triggerHardHapticFeedback() {
+        let feedbackGenerator = UIImpactFeedbackGenerator(style: .heavy)
+        feedbackGenerator.prepare()
+        feedbackGenerator.impactOccurred()
+    }
+
     // Функция для выполнения сильной виброотдачи для часовых делений
     private func triggerSelectionHapticFeedback() {
         let feedbackGenerator = UIImpactFeedbackGenerator(style: .rigid)
@@ -175,8 +181,9 @@ struct ClockTaskArcIOS: View {
                     path.closeSubpath()
                 }
                 
-                // Контент-шейп для drag preview (точно соответствует визуальной дуге)
+                // Контент-шейп для drag preview (включает дугу и визуальные маркеры времени)
                 let taskDragPreviewArea = Path { path in
+                    // Основная дуга
                     path.addArc(
                         center: center,
                         radius: arcRadius + arcLineWidth/2,
@@ -192,6 +199,82 @@ struct ClockTaskArcIOS: View {
                         clockwise: true
                     )
                     path.closeSubpath()
+                    
+                    // Добавляем визуальные маркеры времени, если они отображаются
+                    let shouldShowTimeMarkers = !isAnalog && 
+                        !(viewModel.isEditingMode && task.id == viewModel.editingTask?.id) && 
+                        (!viewModel.showTimeOnlyForActiveTask || ((task.startTime <= Date() && task.endTime > Date()) || viewModel.editingTask?.id == task.id))
+                    
+                    if shouldShowTimeMarkers && taskDurationMinutes >= 40 {
+                        // Маркер начального времени как капсула
+                        let startMarkerRadius = arcRadius + timeTextOffset
+                        let startMarkerX = center.x + startMarkerRadius * cos(startAngle.radians)
+                        let startMarkerY = center.y + startMarkerRadius * sin(startAngle.radians)
+                        let startTimeText = timeFormatter.string(from: task.startTime)
+                        let startMarkerWidth = CGFloat(startTimeText.count) * 6 + 6
+                        let startMarkerHeight: CGFloat = 16
+                        
+                        path.addRoundedRect(
+                            in: CGRect(
+                                x: startMarkerX - startMarkerWidth/2,
+                                y: startMarkerY - startMarkerHeight/2,
+                                width: startMarkerWidth,
+                                height: startMarkerHeight
+                            ),
+                            cornerSize: CGSize(width: startMarkerHeight/2, height: startMarkerHeight/2)
+                        )
+                        
+                        // Маркер конечного времени как капсула
+                        let endMarkerRadius = arcRadius + timeTextOffset
+                        let endMarkerX = center.x + endMarkerRadius * cos(endAngle.radians)
+                        let endMarkerY = center.y + endMarkerRadius * sin(endAngle.radians)
+                        let endTimeText = timeFormatter.string(from: task.endTime)
+                        let endMarkerWidth = CGFloat(endTimeText.count) * 6 + 6
+                        let endMarkerHeight: CGFloat = 16
+                        
+                        path.addRoundedRect(
+                            in: CGRect(
+                                x: endMarkerX - endMarkerWidth/2,
+                                y: endMarkerY - endMarkerHeight/2,
+                                width: endMarkerWidth,
+                                height: endMarkerHeight
+                            ),
+                            cornerSize: CGSize(width: endMarkerHeight/2, height: endMarkerHeight/2)
+                        )
+                    } else if shouldShowTimeMarkers && taskDurationMinutes >= 20 {
+                        // Для коротких задач добавляем тонкие маркеры
+                        let thinMarkerRadius = arcRadius - 3
+                        let thinMarkerWidth: CGFloat = 25
+                        let thinMarkerHeight: CGFloat = 4
+                        
+                        // Тонкий маркер начала
+                        let startMarkerX = center.x + thinMarkerRadius * cos(startAngle.radians)
+                        let startMarkerY = center.y + thinMarkerRadius * sin(startAngle.radians)
+                        
+                        path.addRoundedRect(
+                            in: CGRect(
+                                x: startMarkerX - thinMarkerWidth/2,
+                                y: startMarkerY - thinMarkerHeight/2,
+                                width: thinMarkerWidth,
+                                height: thinMarkerHeight
+                            ),
+                            cornerSize: CGSize(width: thinMarkerHeight/2, height: thinMarkerHeight/2)
+                        )
+                        
+                        // Тонкий маркер конца
+                        let endMarkerX = center.x + thinMarkerRadius * cos(endAngle.radians)
+                        let endMarkerY = center.y + thinMarkerRadius * sin(endAngle.radians)
+                        
+                        path.addRoundedRect(
+                            in: CGRect(
+                                x: endMarkerX - thinMarkerWidth/2,
+                                y: endMarkerY - thinMarkerHeight/2,
+                                width: thinMarkerWidth,
+                                height: thinMarkerHeight
+                            ),
+                            cornerSize: CGSize(width: thinMarkerHeight/2, height: thinMarkerHeight/2)
+                        )
+                    }
                 }
                 
                 ZStack {
@@ -237,6 +320,7 @@ struct ClockTaskArcIOS: View {
                                     // Начинаем перетаскивание
                                     viewModel.startDragging(task)
                                     isDragging = true
+                                    triggerHardHapticFeedback()
                                     return NSItemProvider(object: task.id.uuidString as NSString)
                                 }
                                 return NSItemProvider()
