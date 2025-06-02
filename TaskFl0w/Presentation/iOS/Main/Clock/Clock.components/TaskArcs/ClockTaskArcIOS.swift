@@ -11,7 +11,6 @@ struct ClockTaskArcIOS: View {
     let task: TaskOnRing
     @ObservedObject var viewModel: ClockViewModel
     let arcLineWidth: CGFloat
-
     @State private var isDragging: Bool = false
     @State private var isVisible: Bool = true
     @StateObject private var animationManager = TaskArcAnimationManager()

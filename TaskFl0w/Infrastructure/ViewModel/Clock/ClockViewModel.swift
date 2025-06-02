@@ -30,6 +30,7 @@ final class ClockViewModel: ObservableObject {
     private let notificationService: NotificationServiceProtocol = NotificationService.shared
 
     // MARK: - View State Properties
+    @Published var previewTask: TaskOnRing?
     @Published var currentDate: Date = Date()
     @Published var isDockBarEditingEnabled: Bool = false
     @Published var draggedTask: TaskOnRing?
