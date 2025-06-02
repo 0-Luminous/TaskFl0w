@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2C2BF8D02DEAFF7A00F5723E /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C2BF8CF2DEAFF7900F5723E /* CoreGraphics.framework */; };
-		2C2BF8D22DEAFF9600F5723E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C2BF8D12DEAFF9600F5723E /* Foundation.framework */; };
 		2C9D00532DC1552200B6724A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C9D00522DC1552200B6724A /* WidgetKit.framework */; };
 		2C9D00552DC1552200B6724A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C9D00542DC1552200B6724A /* SwiftUI.framework */; };
 		2CDF440B2D1AC2C000149A0B /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2CDF440A2D1AC2C000149A0B /* UIKit.framework */; };
@@ -35,8 +33,6 @@
 		2C1DB38A2D1AB92000C768B1 /* TaskFl0w.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TaskFl0w.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C1DB39F2D1AB92300C768B1 /* TaskFl0wTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TaskFl0wTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C1DB3A92D1AB92400C768B1 /* TaskFl0wUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TaskFl0wUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		2C2BF8CF2DEAFF7900F5723E /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
-		2C2BF8D12DEAFF9600F5723E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		2C9D00512DC1552200B6724A /* TaskFlowWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TaskFlowWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C9D00522DC1552200B6724A /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		2C9D00542DC1552200B6724A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -95,8 +91,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2C2BF8D02DEAFF7A00F5723E /* CoreGraphics.framework in Frameworks */,
-				2C2BF8D22DEAFF9600F5723E /* Foundation.framework in Frameworks */,
 				2CDF440B2D1AC2C000149A0B /* UIKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -154,8 +148,6 @@
 		2CDF44092D1AC2BF00149A0B /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				2C2BF8D12DEAFF9600F5723E /* Foundation.framework */,
-				2C2BF8CF2DEAFF7900F5723E /* CoreGraphics.framework */,
 				2CDF440A2D1AC2C000149A0B /* UIKit.framework */,
 				2C9D00522DC1552200B6724A /* WidgetKit.framework */,
 				2C9D00542DC1552200B6724A /* SwiftUI.framework */,

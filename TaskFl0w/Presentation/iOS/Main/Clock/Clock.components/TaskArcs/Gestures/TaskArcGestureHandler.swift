@@ -9,7 +9,7 @@ import SwiftUI
 
 class TaskArcGestureHandler: ObservableObject {
     private let viewModel: ClockViewModel
-    private let task: TaskOnRing
+    private var task: TaskOnRing
     private let hapticsManager = TaskArcHapticsManager()
     
     @Published var lastHourComponent: Int = -1
@@ -70,6 +70,8 @@ class TaskArcGestureHandler: ObservableObject {
         guard task.endTime.timeIntervalSince(newTime) >= TaskArcConstants.minimumDuration else { return }
         
         viewModel.previewTime = newTime
+        task.startTime = newTime
+        viewModel.taskManagement.updateTaskStartTimeKeepingEnd(task, newStartTime: newTime)
         TaskOverlapManager.adjustTaskStartTimesForOverlap(viewModel: viewModel, currentTask: task, newStartTime: newTime)
     }
     
@@ -78,6 +80,8 @@ class TaskArcGestureHandler: ObservableObject {
         guard newTime.timeIntervalSince(task.startTime) >= TaskArcConstants.minimumDuration else { return }
         
         viewModel.previewTime = newTime
+        task.endTime = newTime
+        viewModel.taskManagement.updateTaskDuration(task, newEndTime: newTime)
         TaskOverlapManager.adjustTaskEndTimesForOverlap(viewModel: viewModel, currentTask: task, newEndTime: newTime)
     }
     

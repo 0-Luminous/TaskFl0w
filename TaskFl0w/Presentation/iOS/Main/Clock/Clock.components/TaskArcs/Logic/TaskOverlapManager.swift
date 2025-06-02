@@ -9,12 +9,12 @@ import Foundation
 
 struct TaskOverlapManager {
     static func adjustTaskStartTimesForOverlap(viewModel: ClockViewModel, currentTask: TaskOnRing, newStartTime: Date) {
-        // Обновляем задачу с новым временем начала
+        // Создаем обновленную версию задачи
+        var updatedTask = currentTask
+        updatedTask.startTime = newStartTime
+        
+        // Обновляем задачу в базе данных
         viewModel.taskManagement.updateTaskStartTimeKeepingEnd(currentTask, newStartTime: newStartTime)
-
-        guard let updatedTask = viewModel.tasks.first(where: { $0.id == currentTask.id }) else {
-            return
-        }
 
         // Обрабатываем перекрытия с другими задачами
         for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {
@@ -30,12 +30,12 @@ struct TaskOverlapManager {
     }
 
     static func adjustTaskEndTimesForOverlap(viewModel: ClockViewModel, currentTask: TaskOnRing, newEndTime: Date) {
-        // Обновляем задачу с новым временем окончания
+        // Создаем обновленную версию задачи
+        var updatedTask = currentTask
+        updatedTask.endTime = newEndTime
+        
+        // Обновляем задачу в базе данных
         viewModel.taskManagement.updateTaskDuration(currentTask, newEndTime: newEndTime)
-
-        guard let updatedTask = viewModel.tasks.first(where: { $0.id == currentTask.id }) else {
-            return
-        }
 
         // Обрабатываем перекрытия с другими задачами
         for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {

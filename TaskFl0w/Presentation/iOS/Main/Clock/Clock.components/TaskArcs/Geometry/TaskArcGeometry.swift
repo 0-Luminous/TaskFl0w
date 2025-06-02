@@ -175,23 +175,10 @@ struct TaskArcGeometry {
             path.closeSubpath()
             
             // Добавляем маркеры времени если нужно
-            addTimeMarkersToPath(&path, startAngle: startAngle, endAngle: endAngle)
+            // addTimeMarkersToPath(&path, startAngle: startAngle, endAngle: endAngle)
         }
     }
     
-    private func addTimeMarkersToPath(_ path: inout Path, startAngle: Angle, endAngle: Angle) {
-        let shouldShowTimeMarkers = !configuration.isAnalog && 
-            !configuration.isEditingMode && 
-            (!configuration.showTimeOnlyForActiveTask || isActiveTask)
-        
-        guard shouldShowTimeMarkers else { return }
-        
-        if taskDurationMinutes >= 40 {
-            addFullTimeMarkers(&path, startAngle: startAngle, endAngle: endAngle)
-        } else if taskDurationMinutes >= 20 {
-            addThinTimeMarkers(&path, startAngle: startAngle, endAngle: endAngle)
-        }
-    }
     
     private func addFullTimeMarkers(_ path: inout Path, startAngle: Angle, endAngle: Angle) {
         let markerRadius = arcRadius + TaskArcConstants.timeTextOffset
