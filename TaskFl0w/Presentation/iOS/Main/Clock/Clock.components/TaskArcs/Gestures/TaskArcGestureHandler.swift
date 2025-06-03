@@ -99,7 +99,28 @@ class TaskArcGestureHandler: ObservableObject {
         
         handleHourChange(hourComponent)
         handleMinuteChange(minuteComponent)
-        updateWholeTaskTime(hourComponent: hourComponent, minuteComponent: minuteComponent)
+        // Обновляем время без проверки столкновений
+        updateWholeTaskTimeWithoutCollisionCheck(hourComponent: hourComponent, minuteComponent: minuteComponent)
+    }
+    
+    // Новый метод обновления времени без проверки столкновений
+    private func updateWholeTaskTimeWithoutCollisionCheck(hourComponent: Int, minuteComponent: Int) {
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
+        components.hour = hourComponent
+        components.minute = minuteComponent
+        components.timeZone = TimeZone.current
+        
+        guard let newStartTime = Calendar.current.date(from: components) else { return }
+        
+        let duration = task.duration
+        let newEndTime = newStartTime.addingTimeInterval(duration)
+        
+        viewModel.previewTime = newStartTime
+        task.startTime = newStartTime
+        task.endTime = newEndTime
+        
+        // Обновляем только саму задачу, без обработки столкновений
+        viewModel.taskManagement.updateWholeTask(task, newStartTime: newStartTime, newEndTime: newEndTime)
     }
     
     func handleWholeArcDragWithLocation(location: CGPoint, center: CGPoint) {
@@ -193,5 +214,40 @@ class TaskArcGestureHandler: ObservableObject {
         // Сбрасываем переменные смещения
         initialDragLocation = .zero
         initialTaskStartTime = Date()
+    }
+    
+    // Метод для завершения перетаскивания всей дуги с проверкой столкновений
+    func finalizeWholeArcDrag() {
+        // Проверяем, есть ли столкновения с другими задачами
+        let hasCollisions = checkForCollisions()
+        
+        if hasCollisions {
+            // Если есть столкновения, находим ближайшее свободное место
+            let freePlacement = TaskOverlapManager.findFreeTimeSlotForWholeArc(
+                viewModel: viewModel,
+                currentTask: task,
+                preferredStartTime: task.startTime,
+                taskDuration: task.duration
+            )
+            
+            // Перемещаем задачу в свободное место
+            task.startTime = freePlacement.startTime
+            task.endTime = freePlacement.endTime
+            viewModel.taskManagement.updateWholeTask(task, newStartTime: freePlacement.startTime, newEndTime: freePlacement.endTime)
+            
+            // Дополнительная тактильная обратная связь для обозначения перепрыгивания
+            hapticsManager.triggerHardFeedback()
+        }
+    }
+    
+    // Проверка столкновений с другими задачами
+    private func checkForCollisions() -> Bool {
+        for otherTask in viewModel.tasks where otherTask.id != task.id {
+            // Проверяем пересечение временных интервалов
+            if task.startTime < otherTask.endTime && task.endTime > otherTask.startTime {
+                return true
+            }
+        }
+        return false
     }
 } 

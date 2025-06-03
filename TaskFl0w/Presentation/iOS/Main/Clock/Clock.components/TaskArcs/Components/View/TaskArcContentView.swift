@@ -183,6 +183,8 @@ struct WholeArcDragIndicator: View {
                 gestureHandler.handleWholeArcDrag(value: value, center: geometry.center)
             }
             .onEnded { _ in
+                // При завершении перетаскивания проверяем столкновения и корректируем позицию
+                gestureHandler.finalizeWholeArcDrag()
                 gestureHandler.isDraggingWholeArc = false
                 gestureHandler.resetLastHourComponent()
                 hapticsManager.triggerSoftFeedback()
