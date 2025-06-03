@@ -70,10 +70,30 @@ class TaskArcGestureHandler: ObservableObject {
         
         // Вычисляем новое время задачи на основе начального времени и смещения угла
         let timeOffsetInMinutes = angleDifferenceInDegrees * 4 // 1 градус = 4 минуты
-        let newStartTime = initialTaskStartTime.addingTimeInterval(timeOffsetInMinutes * 60)
+        let potentialNewStartTime = initialTaskStartTime.addingTimeInterval(timeOffsetInMinutes * 60)
         
-        // Извлекаем компоненты времени из нового времени
-        let components = Calendar.current.dateComponents([.hour, .minute], from: newStartTime)
+        // Получаем границы дня для текущей выбранной даты
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60) // 23:59
+        
+        // Вычисляем продолжительность задачи
+        let taskDuration = task.duration
+        let potentialNewEndTime = potentialNewStartTime.addingTimeInterval(taskDuration)
+        
+        // Проверяем границы: начало не раньше 00:00, конец не позже 23:59
+        var newStartTime = potentialNewStartTime
+        
+        if potentialNewStartTime < startOfDay {
+            // Если начало задачи пытается уйти раньше 00:00, фиксируем на 00:00
+            newStartTime = startOfDay
+        } else if potentialNewEndTime > endOfDay {
+            // Если конец задачи пытается уйти позже 23:59, фиксируем начало так, чтобы конец был в 23:59
+            newStartTime = endOfDay.addingTimeInterval(-taskDuration)
+        }
+        
+        // Извлекаем компоненты времени из скорректированного времени
+        let components = calendar.dateComponents([.hour, .minute], from: newStartTime)
         let hourComponent = components.hour ?? 0
         let minuteComponent = components.minute ?? 0
         
