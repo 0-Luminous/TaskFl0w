@@ -23,6 +23,7 @@ struct TaskArcContentView: View {
             // Основная дуга задачи
             TaskArcShape(geometry: geometry)
                 .gesture(createTapGesture())
+                .gesture(createWholeArcDragGesture())
                 .onDrag {
                     handleDragStart()
                     return NSItemProvider(object: task.id.uuidString as NSString)
@@ -86,5 +87,20 @@ struct TaskArcContentView: View {
             return NSItemProvider(object: task.id.uuidString as NSString)
         }
         return NSItemProvider()
+    }
+    
+    private func createWholeArcDragGesture() -> some Gesture {
+        DragGesture(minimumDistance: 10)
+            .onChanged { value in
+                if viewModel.isEditingMode && viewModel.editingTask?.id == task.id {
+                    gestureHandler.isDraggingWholeArc = true
+                    gestureHandler.handleWholeArcDrag(value: value, center: geometry.center)
+                }
+            }
+            .onEnded { _ in
+                gestureHandler.isDraggingWholeArc = false
+                gestureHandler.resetLastHourComponent()
+                hapticsManager.triggerSoftFeedback()
+            }
     }
 } 

@@ -13,6 +13,7 @@ class TaskArcGestureHandler: ObservableObject {
     private let hapticsManager = TaskArcHapticsManager()
     
     @Published var lastHourComponent: Int = -1
+    @Published var isDraggingWholeArc: Bool = false
     
     init(viewModel: ClockViewModel, task: TaskOnRing) {
         self.viewModel = viewModel
@@ -32,6 +33,21 @@ class TaskArcGestureHandler: ObservableObject {
         handleHourChange(hourComponent)
         handleMinuteChange(minuteComponent)
         updateTaskTime(hourComponent: hourComponent, minuteComponent: minuteComponent, isDraggingStart: isDraggingStart)
+    }
+    
+    func handleWholeArcDrag(value: DragGesture.Value, center: CGPoint) {
+        let vector = CGVector(dx: value.location.x - center.x, dy: value.location.y - center.y)
+        let angle = atan2(vector.dy, vector.dx)
+        let degrees = (angle * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
+        let adjustedDegrees = (degrees - 270 - viewModel.zeroPosition + 360).truncatingRemainder(dividingBy: 360)
+        
+        let hours = adjustedDegrees / 15
+        let hourComponent = Int(hours)
+        let minuteComponent = Int((hours - Double(hourComponent)) * 60)
+        
+        handleHourChange(hourComponent)
+        handleMinuteChange(minuteComponent)
+        updateWholeTaskTime(hourComponent: hourComponent, minuteComponent: minuteComponent)
     }
     
     private func handleHourChange(_ hourComponent: Int) {
@@ -83,6 +99,26 @@ class TaskArcGestureHandler: ObservableObject {
         task.endTime = newTime
         viewModel.taskManagement.updateTaskDuration(task, newEndTime: newTime)
         TaskOverlapManager.adjustTaskEndTimesForOverlap(viewModel: viewModel, currentTask: task, newEndTime: newTime)
+    }
+    
+    private func updateWholeTaskTime(hourComponent: Int, minuteComponent: Int) {
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
+        components.hour = hourComponent
+        components.minute = minuteComponent
+        components.timeZone = TimeZone.current
+        
+        guard let newStartTime = Calendar.current.date(from: components) else { return }
+        
+        let duration = task.duration
+        let newEndTime = newStartTime.addingTimeInterval(duration)
+        
+        viewModel.previewTime = newStartTime
+        task.startTime = newStartTime
+        task.endTime = newEndTime
+        
+        viewModel.taskManagement.updateWholeTask(task, newStartTime: newStartTime, newEndTime: newEndTime)
+        
+        TaskOverlapManager.adjustTaskTimesForWholeArcMove(viewModel: viewModel, currentTask: task, newStartTime: newStartTime, newEndTime: newEndTime)
     }
     
     func resetLastHourComponent() {

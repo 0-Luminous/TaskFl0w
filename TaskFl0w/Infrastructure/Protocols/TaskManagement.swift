@@ -12,6 +12,7 @@ protocol TaskManagementProtocol {
     func fetchTasks()
     func createTask(startTime: Date, endTime: Date, category: TaskCategoryModel) async throws
     func updateTask(_ task: TaskOnRing, newStartTime: Date?, newEndTime: Date?) async throws
+    func updateWholeTask(_ task: TaskOnRing, newStartTime: Date, newEndTime: Date)
 }
 
 class TaskManagement: TaskManagementProtocol {
@@ -449,6 +450,53 @@ class TaskManagement: TaskManagementProtocol {
             // Откатываем изменения при ошибке
             self.context.rollback()
             print("🔄 Изменения откачены")
+        }
+    }
+
+    // Новый метод для обновления всей задачи
+    func updateWholeTask(_ task: TaskOnRing, newStartTime: Date, newEndTime: Date) {
+        guard let index = sharedState.tasks.firstIndex(where: { $0.id == task.id }) else { return }
+
+        let calendar = Calendar.current
+        
+        // Создаем компоненты для новых времен, сохраняя день из selectedDate
+        var startComponents = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+        let startTimeComponents = calendar.dateComponents([.hour, .minute], from: newStartTime)
+        startComponents.hour = startTimeComponents.hour
+        startComponents.minute = startTimeComponents.minute
+        startComponents.timeZone = TimeZone.current
+
+        var endComponents = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+        let endTimeComponents = calendar.dateComponents([.hour, .minute], from: newEndTime)
+        endComponents.hour = endTimeComponents.hour
+        endComponents.minute = endTimeComponents.minute
+        endComponents.timeZone = TimeZone.current
+
+        guard let newStart = calendar.date(from: startComponents),
+              let newEnd = calendar.date(from: endComponents) else { return }
+        
+        // Обновляем задачу
+        var updatedTask = task
+        updatedTask.startTime = newStart
+        updatedTask.endTime = newEnd
+
+        // Обновляем в CoreData
+        let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
+        request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
+
+        do {
+            if let existingTask = try self.context.fetch(request).first {
+                existingTask.startTime = newStart
+                existingTask.endTime = newEnd
+
+                // Обновляем в памяти
+                sharedState.tasks[index] = updatedTask
+
+                // Сохраняем изменения
+                self.saveContext()
+            }
+        } catch {
+            print("Ошибка при обновлении всей задачи: \(error)")
         }
     }
 }
