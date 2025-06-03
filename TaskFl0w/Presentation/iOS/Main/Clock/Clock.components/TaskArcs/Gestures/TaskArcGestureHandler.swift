@@ -15,6 +15,10 @@ class TaskArcGestureHandler: ObservableObject {
     @Published var lastHourComponent: Int = -1
     @Published var isDraggingWholeArc: Bool = false
     
+    // Переменные для корректного отслеживания смещения
+    private var initialDragLocation: CGPoint = .zero
+    private var initialTaskStartTime: Date = Date()
+    
     init(viewModel: ClockViewModel, task: TaskOnRing) {
         self.viewModel = viewModel
         self.task = task
@@ -35,15 +39,43 @@ class TaskArcGestureHandler: ObservableObject {
         updateTaskTime(hourComponent: hourComponent, minuteComponent: minuteComponent, isDraggingStart: isDraggingStart)
     }
     
+    func startWholeArcDrag(at location: CGPoint, center: CGPoint, indicatorPosition: CGPoint) {
+        // Запоминаем начальную позицию пальца и время задачи
+        initialDragLocation = location
+        initialTaskStartTime = task.startTime
+        isDraggingWholeArc = true
+    }
+    
     func handleWholeArcDrag(value: DragGesture.Value, center: CGPoint) {
-        let vector = CGVector(dx: value.location.x - center.x, dy: value.location.y - center.y)
-        let angle = atan2(vector.dy, vector.dx)
-        let degrees = (angle * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
-        let adjustedDegrees = (degrees - 270 - viewModel.zeroPosition + 360).truncatingRemainder(dividingBy: 360)
+        // Вычисляем смещение пальца от начальной позиции
+        let fingerOffset = CGVector(
+            dx: value.location.x - initialDragLocation.x,
+            dy: value.location.y - initialDragLocation.y
+        )
         
-        let hours = adjustedDegrees / 15
-        let hourComponent = Int(hours)
-        let minuteComponent = Int((hours - Double(hourComponent)) * 60)
+        // Конвертируем смещение пальца в смещение угла
+        let currentFingerAngle = atan2(value.location.y - center.y, value.location.x - center.x)
+        let initialFingerAngle = atan2(initialDragLocation.y - center.y, initialDragLocation.x - center.x)
+        let angleDifference = currentFingerAngle - initialFingerAngle
+        
+        // Конвертируем разность углов в градусы
+        var angleDifferenceInDegrees = angleDifference * 180 / .pi
+        
+        // Нормализуем угол (обрабатываем переход через 0/360)
+        if angleDifferenceInDegrees > 180 {
+            angleDifferenceInDegrees -= 360
+        } else if angleDifferenceInDegrees < -180 {
+            angleDifferenceInDegrees += 360
+        }
+        
+        // Вычисляем новое время задачи на основе начального времени и смещения угла
+        let timeOffsetInMinutes = angleDifferenceInDegrees * 4 // 1 градус = 4 минуты
+        let newStartTime = initialTaskStartTime.addingTimeInterval(timeOffsetInMinutes * 60)
+        
+        // Извлекаем компоненты времени из нового времени
+        let components = Calendar.current.dateComponents([.hour, .minute], from: newStartTime)
+        let hourComponent = components.hour ?? 0
+        let minuteComponent = components.minute ?? 0
         
         handleHourChange(hourComponent)
         handleMinuteChange(minuteComponent)
@@ -138,5 +170,8 @@ class TaskArcGestureHandler: ObservableObject {
     
     func resetLastHourComponent() {
         lastHourComponent = -1
+        // Сбрасываем переменные смещения
+        initialDragLocation = .zero
+        initialTaskStartTime = Date()
     }
 } 

@@ -148,11 +148,18 @@ struct WholeArcDragIndicator: View {
     private func createWholeArcDragGesture() -> some Gesture {
         DragGesture(minimumDistance: 5)
             .onChanged { value in
-                gestureHandler.isDraggingWholeArc = true
+                // При первом движении инициализируем перетаскивание с правильным смещением
+                if !gestureHandler.isDraggingWholeArc {
+                    gestureHandler.startWholeArcDrag(
+                        at: value.startLocation,
+                        center: geometry.center,
+                        indicatorPosition: currentPosition
+                    )
+                    hapticsManager.triggerDragFeedback()
+                }
                 
-                // Используем оригинальный метод handleWholeArcDrag
+                // Обрабатываем перетаскивание с учетом смещения
                 gestureHandler.handleWholeArcDrag(value: value, center: geometry.center)
-                hapticsManager.triggerDragFeedback()
             }
             .onEnded { _ in
                 gestureHandler.isDraggingWholeArc = false
