@@ -116,14 +116,29 @@ struct WholeArcDragIndicator: View {
         Image(systemName: "arrow.left.and.right")
             .font(.system(size: 16, weight: .semibold))
             .foregroundColor(.white)
+            .rotationEffect(rotationAngleToCenter)
             .background(
                 Circle()
                     .fill(geometry.task.category.color)
-                    .frame(width: 32, height: 32)
+                    .stroke(.gray, lineWidth: 2)
+                    .frame(width: 25, height: 25)
             )
             .position(currentPosition)
             .animation(.none, value: currentPosition)
             .gesture(createWholeArcDragGesture())
+    }
+    
+    // Вычисляем угол поворота иконки к центру циферблата
+    private var rotationAngleToCenter: Angle {
+        let iconPos = currentPosition
+        let center = geometry.center
+        
+        // Вычисляем угол от иконки к центру
+        let deltaX = center.x - iconPos.x
+        let deltaY = center.y - iconPos.y
+        let angleToCenter = atan2(deltaY, deltaX)
+        
+        return Angle(radians: angleToCenter + .pi/2)
     }
     
     // Динамически вычисляемая позиция, синхронизированная с дугой
@@ -136,12 +151,18 @@ struct WholeArcDragIndicator: View {
             let midAngleRadians = currentMidAngle.radians
             
             return CGPoint(
-                x: geometry.center.x + geometry.iconRadius * cos(midAngleRadians),
-                y: geometry.center.y + geometry.iconRadius * sin(midAngleRadians)
+                x: geometry.center.x + (geometry.iconRadius + 10) * cos(midAngleRadians),
+                y: geometry.center.y + (geometry.iconRadius + 10) * sin(midAngleRadians)
             )
         } else {
-            // Используем статичную позицию из геометрии
-            return geometry.iconPosition()
+            // Используем статичную позицию из геометрии с увеличенным радиусом
+            let basePosition = geometry.iconPosition()
+            let angle = atan2(basePosition.y - geometry.center.y, basePosition.x - geometry.center.x)
+            
+            return CGPoint(
+                x: geometry.center.x + (geometry.iconRadius + 10) * cos(angle),
+                y: geometry.center.y + (geometry.iconRadius + 10) * sin(angle)
+            )
         }
     }
     
