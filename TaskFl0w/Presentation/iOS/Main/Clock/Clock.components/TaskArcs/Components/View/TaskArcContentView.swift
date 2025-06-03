@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreGraphics
 
 struct TaskArcContentView: View {
     let task: TaskOnRing
@@ -23,7 +24,6 @@ struct TaskArcContentView: View {
             // Основная дуга задачи
             TaskArcShape(geometry: geometry)
                 .gesture(createTapGesture())
-                .gesture(createWholeArcDragGesture())
                 .onDrag {
                     handleDragStart()
                     return NSItemProvider(object: task.id.uuidString as NSString)
@@ -42,13 +42,23 @@ struct TaskArcContentView: View {
                 timeFormatter: timeFormatter
             )
             
-            // Иконка категории
-            TaskIconView(
-                task: task,
-                geometry: geometry,
-                animationManager: animationManager
-            )
-            .gesture(createTapGesture())
+            // Иконка категории или индикатор перетаскивания
+            if shouldShowWholeArcDragIndicator {
+                WholeArcDragIndicator(
+                    midAngle: geometry.midAngle,
+                    geometry: geometry,
+                    gestureHandler: gestureHandler,
+                    hapticsManager: hapticsManager,
+                    viewModel: viewModel
+                )
+            } else {
+                TaskIconView(
+                    task: task,
+                    geometry: geometry,
+                    animationManager: animationManager
+                )
+                .gesture(createTapGesture())
+            }
         }
         .scaleEffect(animationManager.currentScale)
         .opacity(animationManager.appearanceOpacity)
@@ -89,13 +99,60 @@ struct TaskArcContentView: View {
         return NSItemProvider()
     }
     
+    private var shouldShowWholeArcDragIndicator: Bool {
+        viewModel.isEditingMode && task.id == viewModel.editingTask?.id && geometry.taskDurationMinutes >= 30
+    }
+}
+
+// MARK: - Supporting Views
+struct WholeArcDragIndicator: View {
+    let midAngle: Angle
+    let geometry: TaskArcGeometry
+    @ObservedObject var gestureHandler: TaskArcGestureHandler
+    let hapticsManager: TaskArcHapticsManager
+    @ObservedObject var viewModel: ClockViewModel
+    
+    var body: some View {
+        Image(systemName: "arrow.left.and.right")
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundColor(.white)
+            .background(
+                Circle()
+                    .fill(geometry.task.category.color)
+                    .frame(width: 32, height: 32)
+            )
+            .position(currentPosition)
+            .animation(.none, value: currentPosition)
+            .gesture(createWholeArcDragGesture())
+    }
+    
+    // Динамически вычисляемая позиция, синхронизированная с дугой
+    private var currentPosition: CGPoint {
+        // Если идет перетаскивание всей дуги, используем актуальную геометрию
+        if gestureHandler.isDraggingWholeArc {
+            // Пересчитываем углы на основе актуальных данных задачи
+            let currentAngles = RingTimeCalculator.calculateAngles(for: geometry.task)
+            let currentMidAngle = RingTimeCalculator.calculateMidAngle(start: currentAngles.start, end: currentAngles.end)
+            let midAngleRadians = currentMidAngle.radians
+            
+            return CGPoint(
+                x: geometry.center.x + geometry.iconRadius * cos(midAngleRadians),
+                y: geometry.center.y + geometry.iconRadius * sin(midAngleRadians)
+            )
+        } else {
+            // Используем статичную позицию из геометрии
+            return geometry.iconPosition()
+        }
+    }
+    
     private func createWholeArcDragGesture() -> some Gesture {
-        DragGesture(minimumDistance: 10)
+        DragGesture(minimumDistance: 5)
             .onChanged { value in
-                if viewModel.isEditingMode && viewModel.editingTask?.id == task.id {
-                    gestureHandler.isDraggingWholeArc = true
-                    gestureHandler.handleWholeArcDrag(value: value, center: geometry.center)
-                }
+                gestureHandler.isDraggingWholeArc = true
+                
+                // Используем оригинальный метод handleWholeArcDrag
+                gestureHandler.handleWholeArcDrag(value: value, center: geometry.center)
+                hapticsManager.triggerDragFeedback()
             }
             .onEnded { _ in
                 gestureHandler.isDraggingWholeArc = false

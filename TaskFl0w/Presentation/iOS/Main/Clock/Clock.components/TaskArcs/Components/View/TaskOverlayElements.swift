@@ -46,16 +46,6 @@ struct TaskOverlayElements: View {
                     timeFormatter: timeFormatter
                 )
             }
-            
-            if shouldShowWholeArcDragHandle {
-                WholeArcDragIndicator(
-                    midAngle: geometry.midAngle,
-                    geometry: geometry,
-                    gestureHandler: gestureHandler,
-                    hapticsManager: hapticsManager,
-                    viewModel: viewModel
-                )
-            }
         }
     }
     
@@ -68,10 +58,6 @@ struct TaskOverlayElements: View {
         !geometry.configuration.isAnalog && 
         !geometry.configuration.isEditingMode && 
         (!geometry.configuration.showTimeOnlyForActiveTask || geometry.isActiveTask)
-    }
-    
-    private var shouldShowWholeArcDragHandle: Bool {
-        viewModel.isEditingMode && task.id == viewModel.editingTask?.id && geometry.taskDurationMinutes >= 30
     }
 }
 
@@ -235,40 +221,5 @@ struct TaskTimeLabel: View {
         .rotationEffect(isLeftHalf ? angle + .degrees(180) : angle)
         .position(geometry.timeMarkerPosition(for: angle, isThin: isThin))
         .scaleEffect(scale)
-    }
-}
-
-struct WholeArcDragIndicator: View {
-    let midAngle: Angle
-    let geometry: TaskArcGeometry
-    @ObservedObject var gestureHandler: TaskArcGestureHandler
-    let hapticsManager: TaskArcHapticsManager
-    @ObservedObject var viewModel: ClockViewModel
-    
-    var body: some View {
-        Image(systemName: "move.3d")
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundColor(.white)
-            .background(
-                Circle()
-                    .fill(geometry.task.category.color)
-                    .frame(width: 32, height: 32)
-            )
-            .position(geometry.iconPosition())
-            .gesture(createWholeArcDragGesture())
-    }
-    
-    private func createWholeArcDragGesture() -> some Gesture {
-        DragGesture(minimumDistance: 5)
-            .onChanged { value in
-                gestureHandler.isDraggingWholeArc = true
-                gestureHandler.handleWholeArcDrag(value: value, center: geometry.center)
-                hapticsManager.triggerDragFeedback()
-            }
-            .onEnded { _ in
-                gestureHandler.isDraggingWholeArc = false
-                gestureHandler.resetLastHourComponent()
-                hapticsManager.triggerSoftFeedback()
-            }
     }
 }

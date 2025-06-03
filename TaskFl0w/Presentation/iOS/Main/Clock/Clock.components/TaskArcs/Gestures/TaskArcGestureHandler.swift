@@ -50,6 +50,21 @@ class TaskArcGestureHandler: ObservableObject {
         updateWholeTaskTime(hourComponent: hourComponent, minuteComponent: minuteComponent)
     }
     
+    func handleWholeArcDragWithLocation(location: CGPoint, center: CGPoint) {
+        let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
+        let angle = atan2(vector.dy, vector.dx)
+        let degrees = (angle * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
+        let adjustedDegrees = (degrees - 270 - viewModel.zeroPosition + 360).truncatingRemainder(dividingBy: 360)
+        
+        let hours = adjustedDegrees / 15
+        let hourComponent = Int(hours)
+        let minuteComponent = Int((hours - Double(hourComponent)) * 60)
+        
+        handleHourChange(hourComponent)
+        handleMinuteChange(minuteComponent)
+        updateWholeTaskTime(hourComponent: hourComponent, minuteComponent: minuteComponent)
+    }
+    
     private func handleHourChange(_ hourComponent: Int) {
         if hourComponent != lastHourComponent {
             if lastHourComponent != -1 {
