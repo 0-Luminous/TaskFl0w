@@ -91,12 +91,10 @@ final class ClockViewModel: ObservableObject {
     }
     @Published var tasks: [TaskOnRing] = [] {
         didSet {
-            if let editingTask = editingTask, 
-               let updatedTask = tasks.first(where: { $0.id == editingTask.id }) {
-                self.editingTask = updatedTask
-            }
+            handleTasksUpdate(oldValue: oldValue, newValue: tasks)
         }
     }
+    @Published var overlappingTaskGroups: [[TaskOnRing]] = []
 
     // MARK: - AppStorage Properties
     @AppStorage("lightModeHandColor") var lightModeHandColor: String = Color.blue.toHex()
@@ -622,4 +620,158 @@ final class ClockViewModel: ObservableObject {
             }
             .store(in: &cancellables)
     }
+
+    // MARK: - Task Update Handling Methods
+    private func handleTasksUpdate(oldValue: [TaskOnRing], newValue: [TaskOnRing]) {
+        // Обновляем редактируемую задачу если она была изменена
+        updateEditingTaskIfNeeded(newTasks: newValue)
+        
+        // Проверяем наличие конфликтов и перекрытий
+        validateTaskOverlaps(newValue)
+        
+        // Уведомляем TaskArcs компоненты об изменениях
+        notifyTaskArcsComponents(oldTasks: oldValue, newTasks: newValue)
+        
+        // Обновляем состояние категорий
+        updateCategoryStates(newValue)
+    }
+
+    private func updateEditingTaskIfNeeded(newTasks: [TaskOnRing]) {
+        guard let editingTask = editingTask else { return }
+        
+        if let updatedTask = newTasks.first(where: { $0.id == editingTask.id }) {
+            // Обновляем редактируемую задачу только если она действительно изменилась
+            if !tasksAreEqual(editingTask, updatedTask) {
+                self.editingTask = updatedTask
+            }
+        } else {
+            // Редактируемая задача была удалена
+            self.editingTask = nil
+            self.isEditingMode = false
+        }
+    }
+
+    private func validateTaskOverlaps(_ newTasks: [TaskOnRing]) {
+        // Проверяем задачи только для выбранной даты
+        let todayTasks = newTasks.filter { task in
+            Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
+        }
+        
+        // Группируем перекрывающиеся задачи для дальнейшей обработки
+        let overlappingGroups = findOverlappingTaskGroups(todayTasks)
+        
+        // Сохраняем информацию о перекрытиях напрямую в ClockViewModel
+        self.overlappingTaskGroups = overlappingGroups
+    }
+
+    private func notifyTaskArcsComponents(oldTasks: [TaskOnRing], newTasks: [TaskOnRing]) {
+        // Находим добавленные задачи
+        let addedTasks = newTasks.filter { newTask in
+            !oldTasks.contains { $0.id == newTask.id }
+        }
+        
+        // Находим удаленные задачи
+        let removedTasks = oldTasks.filter { oldTask in
+            !newTasks.contains { $0.id == oldTask.id }
+        }
+        
+        // Находим измененные задачи
+        let modifiedTasks = newTasks.compactMap { newTask -> TaskOnRing? in
+            guard let oldTask = oldTasks.first(where: { $0.id == newTask.id }) else { return nil }
+            return tasksAreEqual(oldTask, newTask) ? nil : newTask
+        }
+        
+        // Отправляем уведомления компонентам TaskArcs
+        if !addedTasks.isEmpty {
+            NotificationCenter.default.post(
+                name: .taskArcsTasksAdded,
+                object: self,
+                userInfo: ["addedTasks": addedTasks]
+            )
+        }
+        
+        if !removedTasks.isEmpty {
+            NotificationCenter.default.post(
+                name: .taskArcsTasksRemoved,
+                object: self,
+                userInfo: ["removedTasks": removedTasks]
+            )
+        }
+        
+        if !modifiedTasks.isEmpty {
+            NotificationCenter.default.post(
+                name: .taskArcsTasksModified,
+                object: self,
+                userInfo: ["modifiedTasks": modifiedTasks]
+            )
+        }
+    }
+
+    private func updateCategoryStates(_ newTasks: [TaskOnRing]) {
+        // Обновляем информацию о текущей активной категории
+        checkForCategoryChange()
+        
+        // Обновляем статистику категорий для внутреннего использования
+        updateCategoryStatistics(newTasks)
+    }
+
+    private func updateCategoryStatistics(_ tasks: [TaskOnRing]) {
+        // Подсчитываем задачи по категориям для внутренней статистики
+        let categoryTaskCounts = Dictionary(grouping: tasks) { $0.category }
+            .mapValues { $0.count }
+        
+        // Уведомляем об изменениях в статистике категорий
+        NotificationCenter.default.post(
+            name: .categoryStatisticsUpdated,
+            object: self,
+            userInfo: ["categoryTaskCounts": categoryTaskCounts]
+        )
+    }
+
+    private func findOverlappingTaskGroups(_ tasks: [TaskOnRing]) -> [[TaskOnRing]] {
+        var overlappingGroups: [[TaskOnRing]] = []
+        var processedTasks: Set<UUID> = []
+        
+        for task in tasks.sorted(by: { $0.startTime < $1.startTime }) {
+            if processedTasks.contains(task.id) { continue }
+            
+            var currentGroup: [TaskOnRing] = [task]
+            processedTasks.insert(task.id)
+            
+            // Ищем все задачи, которые пересекаются с текущей
+            for otherTask in tasks where !processedTasks.contains(otherTask.id) {
+                if tasksOverlap(task, otherTask) {
+                    currentGroup.append(otherTask)
+                    processedTasks.insert(otherTask.id)
+                }
+            }
+            
+            // Добавляем группу только если в ней больше одной задачи
+            if currentGroup.count > 1 {
+                overlappingGroups.append(currentGroup)
+            }
+        }
+        
+        return overlappingGroups
+    }
+
+    private func tasksOverlap(_ task1: TaskOnRing, _ task2: TaskOnRing) -> Bool {
+        return task1.startTime < task2.endTime && task1.endTime > task2.startTime
+    }
+
+    private func tasksAreEqual(_ task1: TaskOnRing, _ task2: TaskOnRing) -> Bool {
+        return task1.id == task2.id &&
+               task1.startTime == task2.startTime &&
+               task1.endTime == task2.endTime &&
+               task1.category == task2.category &&
+               task1.isCompleted == task2.isCompleted
+    }
+}
+
+// MARK: - TaskArcs Notification Extensions
+extension Notification.Name {
+    static let taskArcsTasksAdded = Notification.Name("TaskArcsTasksAdded")
+    static let taskArcsTasksRemoved = Notification.Name("TaskArcsTasksRemoved")
+    static let taskArcsTasksModified = Notification.Name("TaskArcsTasksModified")
+    static let categoryStatisticsUpdated = Notification.Name("CategoryStatisticsUpdated")
 }
