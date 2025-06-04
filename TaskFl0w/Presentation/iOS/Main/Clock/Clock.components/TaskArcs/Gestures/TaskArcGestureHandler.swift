@@ -170,23 +170,45 @@ class TaskArcGestureHandler: ObservableObject {
     }
     
     private func handleStartTimeUpdate(_ newTime: Date, hourComponent: Int, minuteComponent: Int) {
-        guard hourComponent != 0 || minuteComponent != 0 else { return }
+        // Убираем блокирующую проверку на 00:00 - время 00:00 должно быть допустимым
+        // guard hourComponent != 0 || minuteComponent != 0 else { return }
+        
+        // Проверяем минимальную продолжительность задачи  
         guard task.endTime.timeIntervalSince(newTime) >= TaskArcConstants.minimumDuration else { return }
         
-        viewModel.previewTime = newTime
-        task.startTime = newTime
-        viewModel.taskManagement.updateTaskStartTimeKeepingEnd(task, newStartTime: newTime)
-        TaskOverlapManager.adjustTaskStartTimesForOverlap(viewModel: viewModel, currentTask: task, newStartTime: newTime)
+        // Проверяем границы дня
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60) // 23:59
+        
+        // Ограничиваем время границами дня
+        let constrainedTime = max(startOfDay, min(newTime, endOfDay))
+        
+        viewModel.previewTime = constrainedTime
+        task.startTime = constrainedTime
+        viewModel.taskManagement.updateTaskStartTimeKeepingEnd(task, newStartTime: constrainedTime)
+        TaskOverlapManager.adjustTaskStartTimesForOverlap(viewModel: viewModel, currentTask: task, newStartTime: constrainedTime)
     }
     
     private func handleEndTimeUpdate(_ newTime: Date, hourComponent: Int, minuteComponent: Int) {
-        guard hourComponent != 0 || minuteComponent != 0 else { return }
+        // Убираем блокирующую проверку на 00:00 - время 00:00 должно быть допустимым для конца задачи
+        // guard hourComponent != 0 || minuteComponent != 0 else { return }
+        
+        // Проверяем минимальную продолжительность задачи
         guard newTime.timeIntervalSince(task.startTime) >= TaskArcConstants.minimumDuration else { return }
         
-        viewModel.previewTime = newTime
-        task.endTime = newTime
-        viewModel.taskManagement.updateTaskDuration(task, newEndTime: newTime)
-        TaskOverlapManager.adjustTaskEndTimesForOverlap(viewModel: viewModel, currentTask: task, newEndTime: newTime)
+        // Проверяем границы дня  
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60) // 23:59
+        
+        // Ограничиваем время границами дня
+        let constrainedTime = max(startOfDay, min(newTime, endOfDay))
+        
+        viewModel.previewTime = constrainedTime
+        task.endTime = constrainedTime
+        viewModel.taskManagement.updateTaskDuration(task, newEndTime: constrainedTime)
+        TaskOverlapManager.adjustTaskEndTimesForOverlap(viewModel: viewModel, currentTask: task, newEndTime: constrainedTime)
     }
     
     private func updateWholeTaskTime(hourComponent: Int, minuteComponent: Int) {

@@ -22,36 +22,42 @@ struct TaskOverlapManager {
         // Обрабатываем перекрытия с другими задачами
         for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {
             if updatedTask.startTime >= otherTask.startTime && updatedTask.startTime < otherTask.endTime {
-                // Вместо уменьшения времени другой задачи, сдвигаем её целиком
+                // Рассчитываем идеальную позицию для сдвинутой задачи
                 let taskDuration = otherTask.duration
-                let newOtherEndTime = updatedTask.startTime
-                let newOtherStartTime = newOtherEndTime.addingTimeInterval(-taskDuration)
+                let idealNewEndTime = updatedTask.startTime
+                let idealNewStartTime = idealNewEndTime.addingTimeInterval(-taskDuration)
                 
-                // Проверяем, что новое время не выходит за границы дня
                 let calendar = Calendar.current
                 let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
                 
-                if newOtherStartTime >= startOfDay {
-                    // Добавляем в список для обновления
-                    tasksToUpdate.append((otherTask, newOtherStartTime, newOtherEndTime))
+                if idealNewStartTime >= startOfDay {
+                    // Задача помещается полностью - обычный сдвиг
+                    tasksToUpdate.append((otherTask, idealNewStartTime, idealNewEndTime))
                 } else {
-                    // Если не можем сдвинуть назад, находим свободное место
-                    let freePlacement = findFreeTimeSlot(
-                        viewModel: viewModel,
-                        currentTask: otherTask,
-                        preferredStartTime: otherTask.startTime,
-                        taskDuration: taskDuration
-                    )
+                    // Задача упирается в начало дня - рассчитываем доступное время
+                    let availableStartTime = startOfDay
+                    let availableEndTime = idealNewEndTime
+                    let availableTimeInterval = availableEndTime.timeIntervalSince(availableStartTime)
                     
-                    // Добавляем в список для обновления
-                    tasksToUpdate.append((otherTask, freePlacement.startTime, freePlacement.endTime))
+                    if availableTimeInterval >= TaskArcConstants.minimumDuration {
+                        // Есть достаточно места - задача "сжимается" до границы
+                        tasksToUpdate.append((otherTask, availableStartTime, availableEndTime))
+                    } else {
+                        // Места недостаточно - ищем свободное место позже в дне
+                        let freePlacement = findFreeTimeSlot(
+                            viewModel: viewModel,
+                            currentTask: otherTask,
+                            preferredStartTime: idealNewEndTime.addingTimeInterval(TaskArcConstants.minimumDuration), // Начинаем поиск после редактируемой задачи
+                            taskDuration: taskDuration
+                        )
+                        tasksToUpdate.append((otherTask, freePlacement.startTime, freePlacement.endTime))
+                    }
                 }
             }
         }
         
         // Обновляем все найденные задачи через taskManagement
         for (task, newStart, newEnd) in tasksToUpdate {
-            // Обновляем только через taskManagement для сохранения в базе данных
             viewModel.taskManagement.updateWholeTask(task, newStartTime: newStart, newEndTime: newEnd)
         }
         
@@ -75,37 +81,43 @@ struct TaskOverlapManager {
         // Обрабатываем перекрытия с другими задачами
         for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {
             if updatedTask.endTime > otherTask.startTime && updatedTask.endTime <= otherTask.endTime {
-                // Вместо уменьшения времени другой задачи, сдвигаем её целиком
+                // Рассчитываем идеальную позицию для сдвинутой задачи
                 let taskDuration = otherTask.duration
-                let newOtherStartTime = updatedTask.endTime
-                let newOtherEndTime = newOtherStartTime.addingTimeInterval(taskDuration)
+                let idealNewStartTime = updatedTask.endTime
+                let idealNewEndTime = idealNewStartTime.addingTimeInterval(taskDuration)
                 
-                // Проверяем, что новое время не выходит за границы дня
                 let calendar = Calendar.current
                 let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
                 let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60) // 23:59
                 
-                if newOtherEndTime <= endOfDay {
-                    // Добавляем в список для обновления
-                    tasksToUpdate.append((otherTask, newOtherStartTime, newOtherEndTime))
+                if idealNewEndTime <= endOfDay {
+                    // Задача помещается полностью - обычный сдвиг
+                    tasksToUpdate.append((otherTask, idealNewStartTime, idealNewEndTime))
                 } else {
-                    // Если не можем сдвинуть вперед, находим свободное место
-                    let freePlacement = findFreeTimeSlot(
-                        viewModel: viewModel,
-                        currentTask: otherTask,
-                        preferredStartTime: otherTask.startTime,
-                        taskDuration: taskDuration
-                    )
+                    // Задача упирается в конец дня - рассчитываем доступное время
+                    let availableStartTime = idealNewStartTime
+                    let availableEndTime = endOfDay
+                    let availableTimeInterval = availableEndTime.timeIntervalSince(availableStartTime)
                     
-                    // Добавляем в список для обновления
-                    tasksToUpdate.append((otherTask, freePlacement.startTime, freePlacement.endTime))
+                    if availableTimeInterval >= TaskArcConstants.minimumDuration {
+                        // Есть достаточно места - задача "сжимается" до границы
+                        tasksToUpdate.append((otherTask, availableStartTime, availableEndTime))
+                    } else {
+                        // Места недостаточно - ищем свободное место раньше в дне
+                        let freePlacement = findFreeTimeSlot(
+                            viewModel: viewModel,
+                            currentTask: otherTask,
+                            preferredStartTime: updatedTask.endTime.addingTimeInterval(-taskDuration - TaskArcConstants.minimumDuration), // Начинаем поиск до редактируемой задачи
+                            taskDuration: taskDuration
+                        )
+                        tasksToUpdate.append((otherTask, freePlacement.startTime, freePlacement.endTime))
+                    }
                 }
             }
         }
         
         // Обновляем все найденные задачи через taskManagement
         for (task, newStart, newEnd) in tasksToUpdate {
-            // Обновляем только через taskManagement для сохранения в базе данных
             viewModel.taskManagement.updateWholeTask(task, newStartTime: newStart, newEndTime: newEnd)
         }
         
