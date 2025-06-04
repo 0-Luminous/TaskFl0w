@@ -221,5 +221,6 @@ struct TaskTimeLabel: View {
         .rotationEffect(isLeftHalf ? angle + .degrees(180) : angle)
         .position(geometry.timeMarkerPosition(for: angle, isThin: isThin))
         .scaleEffect(scale)
+        .animation(.none, value: angle)
     }
 }
