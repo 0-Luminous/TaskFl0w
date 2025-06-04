@@ -123,6 +123,7 @@ struct WholeArcDragIndicator: View {
                     .stroke(.gray, lineWidth: 2)
                     .frame(width: 25, height: 25)
             )
+            .contentShape(Circle().size(width: 35, height: 35))
             .position(currentPosition)
             .animation(.none, value: currentPosition)
             .gesture(createWholeArcDragGesture())
