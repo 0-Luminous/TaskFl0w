@@ -73,6 +73,7 @@ struct ClockTaskArcIOS: View {
             .onChange(of: isDragging) { oldValue, newValue in
                 handleDragStateChange(oldValue: oldValue, newValue: newValue)
             }
+            .zIndex(zIndexValue)
         }
     }
     
@@ -98,6 +99,24 @@ struct ClockTaskArcIOS: View {
                 viewModel.taskManagement.removeTask(task)
                 isVisible = false
             }
+        }
+    }
+    
+    private var isEditingTask: Bool {
+        viewModel.isEditingMode && task.id == viewModel.editingTask?.id
+    }
+    
+    private var isDraggedTask: Bool {
+        isDragging || viewModel.draggedTask?.id == task.id
+    }
+    
+    private var zIndexValue: Double {
+        if isEditingTask {
+            return 1000 // Редактируемая задача - максимальный приоритет
+        } else if isDraggedTask {
+            return 500 // Перетаскиваемая задача - средний приоритет
+        } else {
+            return 0 // Обычные задачи
         }
     }
 }
