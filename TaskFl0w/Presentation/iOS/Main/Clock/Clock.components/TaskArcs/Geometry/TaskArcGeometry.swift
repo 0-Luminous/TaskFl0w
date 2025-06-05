@@ -175,42 +175,52 @@ struct TaskArcGeometry {
             path.closeSubpath()
             
             // Добавляем маркеры времени если нужно
-            // addTimeMarkersToPath(&path, startAngle: startAngle, endAngle: endAngle)
+            addTimeMarkersToPath(&path, startAngle: startAngle, endAngle: endAngle)
         }
     }
     
+    private func addTimeMarkersToPath(_ path: inout Path, startAngle: Angle, endAngle: Angle) {
+        // Показываем маркеры времени только в неаналоговом режиме
+        guard !configuration.isAnalog else { return }
+        
+        if taskDurationMinutes >= 40 {
+            // Полные маркеры времени для длинных задач
+            addFullTimeMarkers(&path, startAngle: startAngle, endAngle: endAngle)
+        } else if taskDurationMinutes >= 20 {
+            // Тонкие маркеры для коротких задач
+            addThinTimeMarkers(&path, startAngle: startAngle, endAngle: endAngle)
+        }
+    }
     
     private func addFullTimeMarkers(_ path: inout Path, startAngle: Angle, endAngle: Angle) {
-        let markerRadius = arcRadius + TaskArcConstants.timeTextOffset
-        
         // Маркер начала
         let startMarkerPosition = timeMarkerPosition(for: startAngle)
         let startTimeText = DateFormatter.shortTime.string(from: task.startTime)
         let startMarkerWidth = CGFloat(startTimeText.count) * TaskArcConstants.timeMarkerCharacterWidth + TaskArcConstants.timeMarkerPadding
+        let startIsLeftHalf = isAngleInLeftHalf(startAngle)
+        let startRotationAngle = startIsLeftHalf ? startAngle + .degrees(180) : startAngle
         
-        path.addRoundedRect(
-            in: CGRect(
-                x: startMarkerPosition.x - startMarkerWidth/2,
-                y: startMarkerPosition.y - TaskArcConstants.timeMarkerHeight/2,
-                width: startMarkerWidth,
-                height: TaskArcConstants.timeMarkerHeight
-            ),
-            cornerSize: CGSize(width: TaskArcConstants.timeMarkerHeight/2, height: TaskArcConstants.timeMarkerHeight/2)
+        addRotatedRoundedRect(
+            to: &path,
+            center: startMarkerPosition,
+            width: startMarkerWidth,
+            height: TaskArcConstants.timeMarkerHeight,
+            angle: startRotationAngle
         )
         
         // Маркер конца
         let endMarkerPosition = timeMarkerPosition(for: endAngle)
         let endTimeText = DateFormatter.shortTime.string(from: task.endTime)
         let endMarkerWidth = CGFloat(endTimeText.count) * TaskArcConstants.timeMarkerCharacterWidth + TaskArcConstants.timeMarkerPadding
+        let endIsLeftHalf = isAngleInLeftHalf(endAngle)
+        let endRotationAngle = endIsLeftHalf ? endAngle + .degrees(180) : endAngle
         
-        path.addRoundedRect(
-            in: CGRect(
-                x: endMarkerPosition.x - endMarkerWidth/2,
-                y: endMarkerPosition.y - TaskArcConstants.timeMarkerHeight/2,
-                width: endMarkerWidth,
-                height: TaskArcConstants.timeMarkerHeight
-            ),
-            cornerSize: CGSize(width: TaskArcConstants.timeMarkerHeight/2, height: TaskArcConstants.timeMarkerHeight/2)
+        addRotatedRoundedRect(
+            to: &path,
+            center: endMarkerPosition,
+            width: endMarkerWidth,
+            height: TaskArcConstants.timeMarkerHeight,
+            angle: endRotationAngle
         )
     }
     
@@ -219,17 +229,52 @@ struct TaskArcGeometry {
         let startMarkerPosition = timeMarkerPosition(for: startAngle, isThin: true)
         let endMarkerPosition = timeMarkerPosition(for: endAngle, isThin: true)
         
-        for position in [startMarkerPosition, endMarkerPosition] {
-            path.addRoundedRect(
-                in: CGRect(
-                    x: position.x - TaskArcConstants.thinTimeMarkerWidth/2,
-                    y: position.y - TaskArcConstants.thinTimeMarkerHeight/2,
-                    width: TaskArcConstants.thinTimeMarkerWidth,
-                    height: TaskArcConstants.thinTimeMarkerHeight
-                ),
-                cornerSize: CGSize(width: TaskArcConstants.thinTimeMarkerHeight/2, height: TaskArcConstants.thinTimeMarkerHeight/2)
+        let startIsLeftHalf = isAngleInLeftHalf(startAngle)
+        let endIsLeftHalf = isAngleInLeftHalf(endAngle)
+        
+        let startRotationAngle = startIsLeftHalf ? startAngle + .degrees(180) : startAngle
+        let endRotationAngle = endIsLeftHalf ? endAngle + .degrees(180) : endAngle
+        
+        addRotatedRoundedRect(
+            to: &path,
+            center: startMarkerPosition,
+            width: TaskArcConstants.thinTimeMarkerWidth,
+            height: TaskArcConstants.thinTimeMarkerHeight,
+            angle: startRotationAngle
+        )
+        
+        addRotatedRoundedRect(
+            to: &path,
+            center: endMarkerPosition,
+            width: TaskArcConstants.thinTimeMarkerWidth,
+            height: TaskArcConstants.thinTimeMarkerHeight,
+            angle: endRotationAngle
+        )
+    }
+    
+    private func addRotatedRoundedRect(to path: inout Path, center: CGPoint, width: CGFloat, height: CGFloat, angle: Angle) {
+        let rect = CGRect(
+            x: -width/2,
+            y: -height/2,
+            width: width,
+            height: height
+        )
+        
+        let cornerRadius = height/2
+        
+        // Создаем путь для скругленного прямоугольника
+        let roundedRectPath = Path { rectPath in
+            rectPath.addRoundedRect(
+                in: rect,
+                cornerSize: CGSize(width: cornerRadius, height: cornerRadius)
             )
         }
+        
+        // Применяем трансформацию: сначала поворот, затем перемещение
+        let transform = CGAffineTransform(rotationAngle: angle.radians)
+            .concatenating(CGAffineTransform(translationX: center.x, y: center.y))
+        
+        path.addPath(roundedRectPath.applying(transform))
     }
     
     // MARK: - Helper Properties

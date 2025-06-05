@@ -22,7 +22,7 @@ struct TaskArcContentView: View {
     var body: some View {
         ZStack {
             // Основная дуга задачи
-            TaskArcShape(geometry: geometry)
+            TaskArcShape(geometry: geometry, timeFormatter: timeFormatter)
                 .gesture(createTapGesture())
                 .onDrag {
                     handleDragStart()
