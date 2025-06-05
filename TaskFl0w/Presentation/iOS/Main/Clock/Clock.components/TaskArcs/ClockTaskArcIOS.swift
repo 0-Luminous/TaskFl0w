@@ -70,6 +70,13 @@ struct ClockTaskArcIOS: View {
             .onAppear {
                 animationManager.startAppearanceAnimation()
             }
+            .onReceive(NotificationCenter.default.publisher(for: .startTaskRemovalAnimation)) { notification in
+                if let taskToRemove = notification.userInfo?["task"] as? TaskOnRing,
+                   taskToRemove.id == task.id {
+                    print("🎬 Получено уведомление об удалении задачи: \(task.id)")
+                    animationManager.startAnimatedRemoval(task: task, taskManagement: viewModel.taskManagement)
+                }
+            }
             .onChange(of: isDragging) { oldValue, newValue in
                 handleDragStateChange(oldValue: oldValue, newValue: newValue)
             }

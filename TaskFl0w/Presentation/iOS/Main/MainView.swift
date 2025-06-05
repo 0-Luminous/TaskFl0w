@@ -254,9 +254,18 @@ struct ClockViewIOS: View {
     private func handleDropZoneEntered() {
         print("⚠️ [ClockViewIOS] Объект перетаскивания обнаружен во внешней зоне")
         if let task = viewModel.draggedTask {
-            print("⚠️ [ClockViewIOS] Это задача \(task.id)")
-            viewModel.taskManagement.removeTask(task)
+            print("⚠️ [ClockViewIOS] Это задача \(task.id) - запускаем анимированное удаление")
+            startTaskRemovalAnimation(for: task)
         }
+    }
+    
+    private func startTaskRemovalAnimation(for task: TaskOnRing) {
+        // Отправляем уведомление для запуска анимации исчезновения
+        NotificationCenter.default.post(
+            name: .startTaskRemovalAnimation,
+            object: self,
+            userInfo: ["task": task]
+        )
     }
     
     private func handleDropZoneExited() {
