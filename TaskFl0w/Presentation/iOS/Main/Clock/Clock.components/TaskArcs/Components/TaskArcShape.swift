@@ -129,6 +129,35 @@ struct TaskTimeLabelForPreview: View {
                            CGFloat(text.count) * TaskArcConstants.timeMarkerCharacterWidth + TaskArcConstants.timeMarkerPadding,
                     height: isThin ? TaskArcConstants.thinTimeMarkerHeight : TaskArcConstants.timeMarkerHeight
                 )
+                .overlay(
+                    // Внутренняя тень
+                    Capsule()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.black.opacity(0.3),
+                                    Color.clear,
+                                    Color.white.opacity(0.2)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .overlay(
+                    Capsule().stroke(
+                        Color(red: 0.6, green: 0.6, blue: 0.6), 
+                        lineWidth: 1
+                    )
+                )
+                // Внешняя тень
+                .shadow(
+                    color: Color.black.opacity(0.25),
+                    radius: 2,
+                    x: 1,
+                    y: 1
+                )
             
             if !isThin {
                 Text(text)
