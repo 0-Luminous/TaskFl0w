@@ -72,7 +72,7 @@ struct TaskTimeMarkersForPreview: View {
         let endTimeText = timeFormatter.string(from: task.endTime)
         
         if geometry.taskDurationMinutes >= 40 {
-            // Полные маркеры времени
+            // Полные маркеры времени для длинных задач
             TaskTimeLabelForPreview(
                 text: startTimeText,
                 angle: startAngle,
@@ -113,7 +113,7 @@ struct TaskTimeLabelForPreview: View {
     
     var body: some View {
         let isLeftHalf = geometry.isAngleInLeftHalf(angle)
-        let scale = geometry.shortTaskScale * (1.0 + ((geometry.configuration.arcLineWidth - TaskArcConstants.minArcWidth) / (TaskArcConstants.maxArcWidth - TaskArcConstants.minArcWidth)) * 0.5)
+        let scale: CGFloat = 1.0 // Фиксированный масштаб для всех маркеров
         
         ZStack {
             Capsule()

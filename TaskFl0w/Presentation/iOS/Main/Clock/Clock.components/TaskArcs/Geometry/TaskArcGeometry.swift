@@ -109,15 +109,15 @@ struct TaskArcGeometry {
     }
     
     func timeMarkerPosition(for angle: Angle, isThin: Bool = false) -> CGPoint {
-    let markerRadius = isThin ? 
-        arcRadius + TaskArcConstants.timeTextOffset + 100 : // Тонкие маркеры дальше от центра
-        arcRadius + TaskArcConstants.timeTextOffset 
-    
-    return CGPoint(
-        x: center.x + markerRadius * cos(angle.radians),
-        y: center.y + markerRadius * sin(angle.radians)
-    )
-}
+        let markerRadius = isThin ? 
+            arcRadius + TaskArcConstants.timeTextOffset + 3 : // Тонкие маркеры на 3 пункта дальше
+            arcRadius + TaskArcConstants.timeTextOffset 
+        
+        return CGPoint(
+            x: center.x + markerRadius * cos(angle.radians),
+            y: center.y + markerRadius * sin(angle.radians)
+        )
+    }
     
     // MARK: - Path Generation
     func createArcPath() -> Path {
@@ -228,7 +228,7 @@ struct TaskArcGeometry {
     }
     
     private func addThinTimeMarkers(_ path: inout Path, startAngle: Angle, endAngle: Angle) {
-        // Тонкие маркеры для коротких задач
+        // Возвращаем правильный параметр для тонких маркеров
         let startMarkerPosition = timeMarkerPosition(for: startAngle, isThin: true)
         let endMarkerPosition = timeMarkerPosition(for: endAngle, isThin: true)
         
