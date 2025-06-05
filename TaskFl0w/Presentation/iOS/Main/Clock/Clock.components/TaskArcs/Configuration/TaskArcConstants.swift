@@ -59,8 +59,8 @@ struct TaskArcConstants {
     static let hapticFeedbackDelay: Double = 0.5
     
     // MARK: - Time Label Dimensions
-    static let thinTimeMarkerWidth: CGFloat = 25
-    static let thinTimeMarkerHeight: CGFloat = 4
+    static let thinTimeMarkerWidth: CGFloat = 40
+    static let thinTimeMarkerHeight: CGFloat = 6
     static let timeMarkerHeight: CGFloat = 16
     static let timeMarkerPadding: CGFloat = 6
     static let timeMarkerCharacterWidth: CGFloat = 6

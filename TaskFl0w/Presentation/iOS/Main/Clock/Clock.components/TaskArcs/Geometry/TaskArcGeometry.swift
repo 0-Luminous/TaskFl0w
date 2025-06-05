@@ -109,15 +109,15 @@ struct TaskArcGeometry {
     }
     
     func timeMarkerPosition(for angle: Angle, isThin: Bool = false) -> CGPoint {
-        let markerRadius = isThin ? 
-            arcRadius - TaskArcConstants.dragPreviewOffsetFromArc : 
-            arcRadius + TaskArcConstants.timeTextOffset
-        
-        return CGPoint(
-            x: center.x + markerRadius * cos(angle.radians),
-            y: center.y + markerRadius * sin(angle.radians)
-        )
-    }
+    let markerRadius = isThin ? 
+        arcRadius + TaskArcConstants.timeTextOffset + 100 : // Тонкие маркеры дальше от центра
+        arcRadius + TaskArcConstants.timeTextOffset 
+    
+    return CGPoint(
+        x: center.x + markerRadius * cos(angle.radians),
+        y: center.y + markerRadius * sin(angle.radians)
+    )
+}
     
     // MARK: - Path Generation
     func createArcPath() -> Path {
