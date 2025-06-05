@@ -9,7 +9,7 @@ import SwiftUI
 
 class TaskArcGestureHandler: ObservableObject {
     private let viewModel: ClockViewModel
-    private var task: TaskOnRing
+    private let taskId: UUID  // ✅ Храним только ID вместо копии задачи
     private let hapticsManager = TaskArcHapticsManager()
     
     @Published var lastHourComponent: Int = -1
@@ -19,9 +19,14 @@ class TaskArcGestureHandler: ObservableObject {
     private var initialDragLocation: CGPoint = .zero
     private var initialTaskStartTime: Date = Date()
     
+    // ✅ Computed property для получения актуальной задачи
+    private var currentTask: TaskOnRing? {
+        return viewModel.tasks.first { $0.id == taskId }
+    }
+    
     init(viewModel: ClockViewModel, task: TaskOnRing) {
         self.viewModel = viewModel
-        self.task = task
+        self.taskId = task.id  // ✅ Сохраняем только ID
     }
     
     func handleDragGesture(value: DragGesture.Value, center: CGPoint, isDraggingStart: Bool) {
@@ -40,6 +45,8 @@ class TaskArcGestureHandler: ObservableObject {
     }
     
     func startWholeArcDrag(at location: CGPoint, center: CGPoint, indicatorPosition: CGPoint) {
+        guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
+        
         // Запоминаем начальную позицию пальца и время задачи
         initialDragLocation = location
         initialTaskStartTime = task.startTime
@@ -47,6 +54,8 @@ class TaskArcGestureHandler: ObservableObject {
     }
     
     func handleWholeArcDrag(value: DragGesture.Value, center: CGPoint) {
+        guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
+        
         // Вычисляем смещение пальца от начальной позиции
         let fingerOffset = CGVector(
             dx: value.location.x - initialDragLocation.x,
@@ -105,6 +114,8 @@ class TaskArcGestureHandler: ObservableObject {
     
     // Новый метод обновления времени без проверки столкновений
     private func updateWholeTaskTimeWithoutCollisionCheck(hourComponent: Int, minuteComponent: Int) {
+        guard var task = currentTask else { return }  // ✅ Получаем актуальную задачу
+        
         var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
         components.hour = hourComponent
         components.minute = minuteComponent
@@ -170,8 +181,7 @@ class TaskArcGestureHandler: ObservableObject {
     }
     
     private func handleStartTimeUpdate(_ newTime: Date, hourComponent: Int, minuteComponent: Int) {
-        // Убираем блокирующую проверку на 00:00 - время 00:00 должно быть допустимым
-        // guard hourComponent != 0 || minuteComponent != 0 else { return }
+        guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
         
         // Проверяем минимальную продолжительность задачи  
         guard task.endTime.timeIntervalSince(newTime) >= TaskArcConstants.minimumDuration else { return }
@@ -185,14 +195,13 @@ class TaskArcGestureHandler: ObservableObject {
         let constrainedTime = max(startOfDay, min(newTime, endOfDay))
         
         viewModel.previewTime = constrainedTime
-        task.startTime = constrainedTime
+        // ✅ Больше не изменяем локальную копию задачи
         viewModel.taskManagement.updateTaskStartTimeKeepingEnd(task, newStartTime: constrainedTime)
         TaskOverlapManager.adjustTaskStartTimesForOverlap(viewModel: viewModel, currentTask: task, newStartTime: constrainedTime)
     }
     
     private func handleEndTimeUpdate(_ newTime: Date, hourComponent: Int, minuteComponent: Int) {
-        // Убираем блокирующую проверку на 00:00 - время 00:00 должно быть допустимым для конца задачи
-        // guard hourComponent != 0 || minuteComponent != 0 else { return }
+        guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
         
         // Проверяем минимальную продолжительность задачи
         guard newTime.timeIntervalSince(task.startTime) >= TaskArcConstants.minimumDuration else { return }
@@ -206,12 +215,14 @@ class TaskArcGestureHandler: ObservableObject {
         let constrainedTime = max(startOfDay, min(newTime, endOfDay))
         
         viewModel.previewTime = constrainedTime
-        task.endTime = constrainedTime
+        // ✅ Больше не изменяем локальную копию задачи
         viewModel.taskManagement.updateTaskDuration(task, newEndTime: constrainedTime)
         TaskOverlapManager.adjustTaskEndTimesForOverlap(viewModel: viewModel, currentTask: task, newEndTime: constrainedTime)
     }
     
     private func updateWholeTaskTime(hourComponent: Int, minuteComponent: Int) {
+        guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
+        
         var components = Calendar.current.dateComponents([.year, .month, .day], from: viewModel.selectedDate)
         components.hour = hourComponent
         components.minute = minuteComponent
@@ -223,8 +234,7 @@ class TaskArcGestureHandler: ObservableObject {
         let newEndTime = newStartTime.addingTimeInterval(duration)
         
         viewModel.previewTime = newStartTime
-        task.startTime = newStartTime
-        task.endTime = newEndTime
+        // ✅ Больше не изменяем локальную копию задачи
         
         viewModel.taskManagement.updateWholeTask(task, newStartTime: newStartTime, newEndTime: newEndTime)
         
@@ -240,6 +250,8 @@ class TaskArcGestureHandler: ObservableObject {
     
     // Метод для завершения перетаскивания всей дуги с проверкой столкновений
     func finalizeWholeArcDrag() {
+        guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
+        
         // Проверяем, есть ли столкновения с другими задачами
         let hasCollisions = checkForCollisions()
         
@@ -253,8 +265,6 @@ class TaskArcGestureHandler: ObservableObject {
             )
             
             // Перемещаем задачу в свободное место
-            task.startTime = freePlacement.startTime
-            task.endTime = freePlacement.endTime
             viewModel.taskManagement.updateWholeTask(task, newStartTime: freePlacement.startTime, newEndTime: freePlacement.endTime)
             
             // Дополнительная тактильная обратная связь для обозначения перепрыгивания
@@ -264,6 +274,8 @@ class TaskArcGestureHandler: ObservableObject {
     
     // Проверка столкновений с другими задачами
     private func checkForCollisions() -> Bool {
+        guard let task = currentTask else { return false }  // ✅ Получаем актуальную задачу
+        
         for otherTask in viewModel.tasks where otherTask.id != task.id {
             // Проверяем пересечение временных интервалов
             if task.startTime < otherTask.endTime && task.endTime > otherTask.startTime {
