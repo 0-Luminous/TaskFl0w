@@ -157,7 +157,7 @@ struct GlobleClockFaceViewIOS: View {
         .aspectRatio(1, contentMode: .fit)
         .frame(height: UIScreen.main.bounds.width * 0.7)
         .padding()
-        .animation(.spring(), value: viewModel.tasksForSelectedDate(tasks))
+        // .animation(.spring(), value: viewModel.tasksForSelectedDate(tasks))
         .animation(.spring(), value: markersViewModel.showMarkers)
         .animation(.spring(), value: markersViewModel.showHourNumbers)
         .onAppear {
