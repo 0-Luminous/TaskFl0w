@@ -176,6 +176,9 @@ struct TaskArcGeometry {
             
             // Добавляем маркеры времени если нужно
             addTimeMarkersToPath(&path, startAngle: startAngle, endAngle: endAngle)
+            
+            // Добавляем круглый фон иконки категории
+            addIconBackgroundToPath(&path)
         }
     }
     
@@ -275,6 +278,31 @@ struct TaskArcGeometry {
             .concatenating(CGAffineTransform(translationX: center.x, y: center.y))
         
         path.addPath(roundedRectPath.applying(transform))
+    }
+    
+    private func addIconBackgroundToPath(_ path: inout Path) {
+        // Добавляем фон иконки только если она должна отображаться
+        let shouldShowIcon = !configuration.isEditingMode || taskDurationMinutes < 30
+        guard shouldShowIcon else { return }
+        
+        // Используем увеличенный радиус для drag preview - иконка дальше от циферблата
+        let dragPreviewIconRadius = iconRadius + 14 // Добавляем 15 пунктов отступа
+        let midAngleRadians = midAngle.radians
+        let dragPreviewIconPosition = CGPoint(
+            x: center.x + dragPreviewIconRadius * cos(midAngleRadians),
+            y: center.y + dragPreviewIconRadius * sin(midAngleRadians)
+        )
+        
+        // Используем точно такой же размер как у иконки
+        let iconSize = self.iconSize
+        
+        // Добавляем круглую область точно такого же размера как иконка
+        path.addEllipse(in: CGRect(
+            x: dragPreviewIconPosition.x - iconSize/2,
+            y: dragPreviewIconPosition.y - iconSize/2,
+            width: iconSize + 1,
+            height: iconSize + 1
+        ))
     }
     
     // MARK: - Helper Properties

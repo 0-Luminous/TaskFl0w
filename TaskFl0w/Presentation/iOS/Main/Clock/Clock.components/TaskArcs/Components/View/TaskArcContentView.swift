@@ -21,8 +21,12 @@ struct TaskArcContentView: View {
     
     var body: some View {
         ZStack {
-            // Основная дуга задачи
-            TaskArcShape(geometry: geometry, timeFormatter: timeFormatter)
+            // Основная дуга задачи с иконкой
+            TaskArcShape(
+                geometry: geometry, 
+                timeFormatter: timeFormatter,
+                animationManager: animationManager
+            )
                 .gesture(createTapGesture())
                 .onDrag {
                     handleDragStart()
@@ -31,7 +35,7 @@ struct TaskArcContentView: View {
                     CategoryDragPreview(task: task)
                 }
             
-            // Оверлейные элементы (маркеры времени, редактирования)
+            // Оверлейные элементы (только маркеры редактирования)
             TaskOverlayElements(
                 task: task,
                 viewModel: viewModel,
@@ -42,7 +46,7 @@ struct TaskArcContentView: View {
                 timeFormatter: timeFormatter
             )
             
-            // Иконка категории или индикатор перетаскивания
+            // Индикатор перетаскивания всей дуги (только для длинных задач в режиме редактирования)
             if shouldShowWholeArcDragIndicator {
                 WholeArcDragIndicator(
                     midAngle: geometry.midAngle,
@@ -51,13 +55,6 @@ struct TaskArcContentView: View {
                     hapticsManager: hapticsManager,
                     viewModel: viewModel
                 )
-            } else {
-                TaskIconView(
-                    task: task,
-                    geometry: geometry,
-                    animationManager: animationManager
-                )
-                .gesture(createTapGesture())
             }
         }
         .scaleEffect(animationManager.currentScale)

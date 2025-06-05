@@ -10,6 +10,7 @@ import SwiftUI
 struct TaskArcShape: View {
     let geometry: TaskArcGeometry
     let timeFormatter: DateFormatter
+    @ObservedObject var animationManager: TaskArcAnimationManager
     
     var body: some View {
         ZStack {
@@ -28,6 +29,15 @@ struct TaskArcShape: View {
                     timeFormatter: timeFormatter
                 )
             }
+            
+            // Иконка категории
+            if shouldShowIcon {
+                TaskIcon(
+                    task: geometry.task,
+                    geometry: geometry,
+                    animationManager: animationManager
+                )
+            }
         }
         .contentShape(.interaction, geometry.createGestureArea())
         .contentShape(.dragPreview, geometry.createDragPreviewArea())
@@ -41,6 +51,12 @@ struct TaskArcShape: View {
         !geometry.configuration.isAnalog && 
         !geometry.configuration.isEditingMode &&
         geometry.taskDurationMinutes >= 20
+    }
+    
+    private var shouldShowIcon: Bool {
+        // Показываем иконку если не режим редактирования или это не редактируемая задача
+        !geometry.configuration.isEditingMode || 
+        geometry.taskDurationMinutes < 30
     }
 }
 
@@ -119,5 +135,38 @@ struct TaskTimeLabelForPreview: View {
         .position(geometry.timeMarkerPosition(for: angle, isThin: isThin))
         .scaleEffect(scale)
         .animation(.none, value: angle)
+    }
+}
+
+struct TaskIcon: View {
+    let task: TaskOnRing
+    let geometry: TaskArcGeometry
+    @ObservedObject var animationManager: TaskArcAnimationManager
+    
+    var body: some View {
+        ZStack {
+            // Круглый фон иконки - теперь включен в drag preview
+            Circle()
+                .fill(task.category.color)
+                .frame(width: geometry.iconSize, height: geometry.iconSize)
+                .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+            
+            // Иконка
+            Image(systemName: task.category.iconName)
+                .font(.system(size: geometry.iconFontSize))
+                .foregroundColor(.white)
+                .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+        }
+        .position(geometry.iconPosition())
+        .scaleEffect(iconScale)
+        .opacity(animationManager.appearanceOpacity)
+        .rotationEffect(.degrees(animationManager.appearanceRotation * 0.5))
+        .animation(.easeInOut(duration: TaskArcConstants.appearanceAnimationDuration), value: geometry.configuration.editingOffset)
+    }
+    
+    private var iconScale: CGFloat {
+        animationManager.appearanceScale * 
+        TaskArcConstants.iconScaleMultiplier * 
+        (animationManager.isPressed ? TaskArcConstants.pressScale : 1.0)
     }
 } 
