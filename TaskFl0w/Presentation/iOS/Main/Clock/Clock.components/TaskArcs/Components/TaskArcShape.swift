@@ -6,11 +6,15 @@
 //
 
 import SwiftUI
+import CoreGraphics
 
 struct TaskArcShape: View {
     let geometry: TaskArcGeometry
     let timeFormatter: DateFormatter
     @ObservedObject var animationManager: TaskArcAnimationManager
+    @ObservedObject var gestureHandler: TaskArcGestureHandler
+    let hapticsManager: TaskArcHapticsManager
+    @ObservedObject var viewModel: ClockViewModel
     
     var body: some View {
         ZStack {
@@ -30,12 +34,15 @@ struct TaskArcShape: View {
                 )
             }
             
-            // Иконка категории
+            // Иконка категории с функциональностью перетаскивания всей дуги
             if shouldShowIcon {
                 TaskIcon(
                     task: geometry.task,
                     geometry: geometry,
-                    animationManager: animationManager
+                    animationManager: animationManager,
+                    gestureHandler: gestureHandler,
+                    hapticsManager: hapticsManager,
+                    viewModel: viewModel
                 )
             }
         }
@@ -54,9 +61,8 @@ struct TaskArcShape: View {
     }
     
     private var shouldShowIcon: Bool {
-        // Показываем иконку если не режим редактирования или это не редактируемая задача
-        !geometry.configuration.isEditingMode || 
-        geometry.taskDurationMinutes < 30
+        // В режиме редактирования скрываем иконку для коротких задач
+        return true
     }
 }
 
@@ -142,31 +148,121 @@ struct TaskIcon: View {
     let task: TaskOnRing
     let geometry: TaskArcGeometry
     @ObservedObject var animationManager: TaskArcAnimationManager
+    @ObservedObject var gestureHandler: TaskArcGestureHandler
+    let hapticsManager: TaskArcHapticsManager
+    @ObservedObject var viewModel: ClockViewModel
     
     var body: some View {
         ZStack {
-            // Круглый фон иконки - теперь включен в drag preview
+            // Круглый фон иконки
             Circle()
                 .fill(task.category.color)
-                .frame(width: geometry.iconSize, height: geometry.iconSize)
+                .frame(width: backgroundSize, height: backgroundSize)
                 .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
             
-            // Иконка
-            Image(systemName: task.category.iconName)
-                .font(.system(size: geometry.iconFontSize))
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+            // Иконка с индикатором перетаскивания для длинных задач в режиме редактирования
+            if shouldShowDragIndicator {
+                Image(systemName: "arrow.left.and.right")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .rotationEffect(rotationAngleToCenter)
+            } else {
+                Image(systemName: task.category.iconName)
+                    .font(.system(size: geometry.iconFontSize))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+            }
         }
-        .position(geometry.iconPosition())
+        .position(currentPosition)
         .scaleEffect(iconScale)
         .opacity(animationManager.appearanceOpacity)
         .rotationEffect(.degrees(animationManager.appearanceRotation * 0.5))
         .animation(.easeInOut(duration: TaskArcConstants.appearanceAnimationDuration), value: geometry.configuration.editingOffset)
+        .animation(.none, value: currentPosition)
+        .gesture(shouldShowDragIndicator ? createWholeArcDragGesture() : nil)
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var backgroundSize: CGFloat {
+        // Увеличиваем размер фона в режиме редактирования
+        shouldShowDragIndicator ? geometry.iconSize * 1.4 : geometry.iconSize
+    }
+    
+    private var shouldShowDragIndicator: Bool {
+        viewModel.isEditingMode && 
+        task.id == viewModel.editingTask?.id
+    }
+    
+    private var currentPosition: CGPoint {
+        // Если идет перетаскивание всей дуги, используем актуальную геометрию
+        if gestureHandler.isDraggingWholeArc && shouldShowDragIndicator {
+            // Пересчитываем углы на основе актуальных данных задачи
+            let currentAngles = RingTimeCalculator.calculateAngles(for: geometry.task)
+            let currentMidAngle = RingTimeCalculator.calculateMidAngle(start: currentAngles.start, end: currentAngles.end)
+            let midAngleRadians = currentMidAngle.radians
+            
+            return CGPoint(
+                x: geometry.center.x + (geometry.iconRadius ) * cos(midAngleRadians),
+                y: geometry.center.y + (geometry.iconRadius ) * sin(midAngleRadians)
+            )
+        } else if shouldShowDragIndicator {
+            // Используем статичную позицию из геометрии с уменьшенным радиусом
+            let basePosition = geometry.iconPosition()
+            let angle = atan2(basePosition.y - geometry.center.y, basePosition.x - geometry.center.x)
+            
+            return CGPoint(
+                x: geometry.center.x + (geometry.iconRadius ) * cos(angle),
+                y: geometry.center.y + (geometry.iconRadius ) * sin(angle)
+            )
+        } else {
+            return geometry.iconPosition()
+        }
+    }
+    
+    // Вычисляем угол поворота иконки к центру циферблата
+    private var rotationAngleToCenter: Angle {
+        let iconPos = currentPosition
+        let center = geometry.center
+        
+        // Вычисляем угол от иконки к центру
+        let deltaX = center.x - iconPos.x
+        let deltaY = center.y - iconPos.y
+        let angleToCenter = atan2(deltaY, deltaX)
+        
+        return Angle(radians: angleToCenter + .pi/2)
     }
     
     private var iconScale: CGFloat {
         animationManager.appearanceScale * 
         TaskArcConstants.iconScaleMultiplier * 
         (animationManager.isPressed ? TaskArcConstants.pressScale : 1.0)
+    }
+    
+    // MARK: - Gesture Handling
+    
+    private func createWholeArcDragGesture() -> some Gesture {
+        DragGesture(minimumDistance: 5)
+            .onChanged { value in
+                // При первом движении инициализируем перетаскивание с правильным смещением
+                if !gestureHandler.isDraggingWholeArc {
+                    gestureHandler.startWholeArcDrag(
+                        at: value.startLocation,
+                        center: geometry.center,
+                        indicatorPosition: currentPosition
+                    )
+                    hapticsManager.triggerDragFeedback()
+                }
+                
+                // Обрабатываем перетаскивание с учетом смещения
+                gestureHandler.handleWholeArcDrag(value: value, center: geometry.center)
+            }
+            .onEnded { _ in
+                // При завершении перетаскивания проверяем столкновения и корректируем позицию
+                gestureHandler.finalizeWholeArcDrag()
+                gestureHandler.isDraggingWholeArc = false
+                gestureHandler.resetLastHourComponent()
+                hapticsManager.triggerSoftFeedback()
+            }
     }
 } 

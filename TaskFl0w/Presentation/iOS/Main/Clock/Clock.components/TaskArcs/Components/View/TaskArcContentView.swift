@@ -25,7 +25,10 @@ struct TaskArcContentView: View {
             TaskArcShape(
                 geometry: geometry, 
                 timeFormatter: timeFormatter,
-                animationManager: animationManager
+                animationManager: animationManager,
+                gestureHandler: gestureHandler,
+                hapticsManager: hapticsManager,
+                viewModel: viewModel
             )
                 .gesture(createTapGesture())
                 .onDrag {
@@ -45,17 +48,6 @@ struct TaskArcContentView: View {
                 hapticsManager: hapticsManager,
                 timeFormatter: timeFormatter
             )
-            
-            // Индикатор перетаскивания всей дуги (только для длинных задач в режиме редактирования)
-            if shouldShowWholeArcDragIndicator {
-                WholeArcDragIndicator(
-                    midAngle: geometry.midAngle,
-                    geometry: geometry,
-                    gestureHandler: gestureHandler,
-                    hapticsManager: hapticsManager,
-                    viewModel: viewModel
-                )
-            }
         }
         .scaleEffect(animationManager.currentScale)
         .opacity(animationManager.appearanceOpacity)
@@ -94,10 +86,6 @@ struct TaskArcContentView: View {
             return NSItemProvider(object: task.id.uuidString as NSString)
         }
         return NSItemProvider()
-    }
-    
-    private var shouldShowWholeArcDragIndicator: Bool {
-        viewModel.isEditingMode && task.id == viewModel.editingTask?.id && geometry.taskDurationMinutes >= 30
     }
 }
 
