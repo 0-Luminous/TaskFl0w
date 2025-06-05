@@ -64,10 +64,33 @@ struct TaskDragHandle: View {
             .fill(geometry.task.category.color)
             .frame(width: handleWidth, height: handleHeight)
             .overlay(
+                // Внутренняя тень
+                Capsule()
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.black.opacity(0.3),
+                                Color.clear,
+                                Color.white.opacity(0.2)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .overlay(
                 Capsule().stroke(
-                    Color.gray, 
+                    Color(red: 0.6, green: 0.6, blue: 0.6), 
                     lineWidth: TaskArcConstants.handleStrokeWidth * geometry.shortTaskScale
                 )
+            )
+            // Внешняя тень
+            .shadow(
+                color: Color.black.opacity(0.25),
+                radius: 3 * geometry.shortTaskScale,
+                x: 1,
+                y: 2
             )
             .contentShape(
                 Capsule().size(width: touchWidth, height: touchHeight)

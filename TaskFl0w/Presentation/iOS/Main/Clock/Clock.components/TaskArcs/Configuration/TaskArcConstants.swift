@@ -44,7 +44,7 @@ struct TaskArcConstants {
     // MARK: - Handle Dimensions
     static let minHandleSize: CGFloat = 20
     static let maxHandleSize: CGFloat = 30
-    static let handleStrokeWidth: CGFloat = 2
+    static let handleStrokeWidth: CGFloat = 1
     
     // MARK: - Animation
     static let appearanceAnimationDuration: Double = 0.3
