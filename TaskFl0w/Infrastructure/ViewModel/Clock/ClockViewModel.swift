@@ -330,6 +330,8 @@ final class ClockViewModel: ObservableObject {
             return selectedDate.formattedForClockDateEs()
         case "ja":
             return selectedDate.formattedForClockDateJa()
+        case "fr":
+            return selectedDate.formattedForClockDateFr()
         default:
             return selectedDate.formattedForClockDateEn()
         }
@@ -345,6 +347,8 @@ final class ClockViewModel: ObservableObject {
             return selectedDate.formattedWeekdayEs()
         case "ja":
             return selectedDate.formattedWeekdayJa()
+        case "fr":
+            return selectedDate.formattedWeekdayFr()
         default:
             return selectedDate.formattedWeekdayEn()
         }
