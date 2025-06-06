@@ -9,6 +9,11 @@ import Foundation
 
 struct TaskChainAnalyzer {
     
+    // MARK: - Кэш для улучшения производительности
+    private static let calendar = Calendar.current
+    private static var hourComponentCache: [Date: Int] = [:]
+    private static let maxCacheSize = 200
+    
     // MARK: - Оптимизированный анализ цепочки для времени начала
     static func findCompleteTaskChainForStartTime(
         tasks: [TaskOnRing],
@@ -102,16 +107,16 @@ struct TaskChainAnalyzer {
         return (tasksToUpdate, iterationCount < TaskOverlapConstants.maxIterationsPerChain)
     }
     
-    // MARK: - Производительные индексы (ИСПРАВЛЕНО)
+    // MARK: - Производительные индексы (ОПТИМИЗИРОВАНО)
     private static func createTaskTimeIndex(tasks: [TaskOnRing], excluding excludedId: UUID) -> [Int: [TaskOnRing]] {
         var index: [Int: [TaskOnRing]] = [:]
         
         for task in tasks where task.id != excludedId {
-            let startHour = Calendar.current.component(.hour, from: task.startTime)
-            let endHour = Calendar.current.component(.hour, from: task.endTime)
+            let startHour = getCachedHourComponent(for: task.startTime)
+            let endHour = getCachedHourComponent(for: task.endTime)
             
-            // ИСПРАВЛЕНИЕ: Обработка перехода через полночь
-            let hoursToIndex = getHoursForTask(startHour: startHour, endHour: endHour)
+            // ОПТИМИЗАЦИЯ: Использование оптимизированного метода генерации часов
+            let hoursToIndex = getHoursForTaskOptimized(startHour: startHour, endHour: endHour)
             
             for hour in hoursToIndex {
                 if index[hour] == nil {
@@ -124,28 +129,41 @@ struct TaskChainAnalyzer {
         return index
     }
     
-    // НОВЫЙ МЕТОД: Безопасное получение часов для задачи
-    private static func getHoursForTask(startHour: Int, endHour: Int) -> [Int] {
-        var hours: [Int] = []
-        
-        if startHour <= endHour {
-            // Обычный случай: задача в пределах одного дня
-            for hour in startHour...endHour {
-                hours.append(hour)
-            }
-        } else {
-            // Задача переходит через полночь
-            // Добавляем часы от startHour до 23
-            for hour in startHour...23 {
-                hours.append(hour)
-            }
-            // Добавляем часы от 0 до endHour
-            for hour in 0...endHour {
-                hours.append(hour)
-            }
+    // ОПТИМИЗАЦИЯ: Кэширование компонентов часов
+    private static func getCachedHourComponent(for date: Date) -> Int {
+        if let cachedHour = hourComponentCache[date] {
+            return cachedHour
         }
         
-        return hours
+        let hour = calendar.component(.hour, from: date)
+        
+        // Управление размером кэша
+        if hourComponentCache.count >= maxCacheSize {
+            hourComponentCache.removeAll(keepingCapacity: true)
+        }
+        
+        hourComponentCache[date] = hour
+        return hour
+    }
+    
+    // ОПТИМИЗАЦИЯ: Более эффективная генерация массива часов
+    private static func getHoursForTaskOptimized(startHour: Int, endHour: Int) -> [Int] {
+        if startHour <= endHour {
+            // Обычный случай: создаем массив одним вызовом
+            return Array(startHour...endHour)
+        } else {
+            // Задача переходит через полночь
+            // Предварительно выделяем память для массива
+            var hours: [Int] = []
+            hours.reserveCapacity((24 - startHour) + (endHour + 1))
+            
+            // Добавляем часы от startHour до 23
+            hours.append(contentsOf: startHour...23)
+            // Добавляем часы от 0 до endHour
+            hours.append(contentsOf: 0...endHour)
+            
+            return hours
+        }
     }
     
     private static func findOverlappingTasks(
@@ -154,26 +172,35 @@ struct TaskChainAnalyzer {
         processedTasks: Set<UUID>
     ) -> [TaskOnRing] {
         
-        let startHour = Calendar.current.component(.hour, from: timeRange.start)
-        let endHour = Calendar.current.component(.hour, from: timeRange.end)
+        let startHour = getCachedHourComponent(for: timeRange.start)
+        let endHour = getCachedHourComponent(for: timeRange.end)
         
-        var overlappingTasks: Set<TaskOnRing> = []
+        // ОПТИМИЗАЦИЯ: Используем Set для автоматического удаления дубликатов
+        // и избегаем промежуточного массива
+        var overlappingTasks: Set<TaskOnRing> = Set()
         
-        // ИСПРАВЛЕНИЕ: Безопасное получение часов для поиска
-        let hoursToCheck = getHoursForTask(startHour: startHour, endHour: endHour)
+        // ОПТИМИЗАЦИЯ: Безопасное получение часов для поиска
+        let hoursToCheck = getHoursForTaskOptimized(startHour: startHour, endHour: endHour)
         
         // Проверяем только релевантные часы
         for hour in hoursToCheck {
-            if let tasksInHour = taskIndex[hour] {
-                for task in tasksInHour where !processedTasks.contains(task.id) {
-                    // Точная проверка пересечения
-                    if timeRange.start < task.endTime && timeRange.end > task.startTime {
-                        overlappingTasks.insert(task)
-                    }
+            guard let tasksInHour = taskIndex[hour] else { continue }
+            
+            for task in tasksInHour {
+                guard !processedTasks.contains(task.id) else { continue }
+                
+                // Точная проверка пересечения
+                if timeRange.start < task.endTime && timeRange.end > task.startTime {
+                    overlappingTasks.insert(task)
                 }
             }
         }
         
         return Array(overlappingTasks)
+    }
+    
+    // MARK: - Очистка кэша
+    static func clearCache() {
+        hourComponentCache.removeAll()
     }
 } 

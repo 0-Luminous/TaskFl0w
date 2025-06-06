@@ -106,6 +106,7 @@ struct SearchView: View {
                     }
                     .padding(.vertical, 8)
                 }
+                .scrollIndicators(.hidden)
                 .frame(width: 80)
                 .background(
                     themeManager.isDarkMode ? 

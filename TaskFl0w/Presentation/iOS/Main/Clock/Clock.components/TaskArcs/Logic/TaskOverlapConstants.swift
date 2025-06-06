@@ -12,6 +12,7 @@ enum TaskOverlapConstants {
     static let searchStep: TimeInterval = 15 * 60 // 15 минут
     static let maxSearchRadius: TimeInterval = 12 * 60 * 60 // 12 часов
     static let uiUpdateDelay: TimeInterval = 0.1
-    static let batchProcessingThreshold = 5 // Пороговое значение для батчевой обработки
-    static let maxIterationsPerChain = 20 // Максимальное количество итераций для предотвращения бесконечных циклов
+    static let batchProcessingThreshold = 3 // Уменьшено для более быстрой обработки небольших групп
+    static let maxIterationsPerChain = 15 // Уменьшено для улучшения производительности
+    static let maxCacheSize = 200 // Размер кэша для оптимизации
 } 
