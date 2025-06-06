@@ -1,0 +1,126 @@
+// Localizable.strings (Japanese)
+
+"navigation.settings" = "設定";
+"navigation.back" = "戻る";
+"navigation.done" = "完了";
+"navigation.cancel" = "キャンセル";
+
+"settings.notifications" = "通知";
+"settings.tasks" = "タスク";
+"settings.watchFaceLibrary" = "ウォッチフェイスライブラリ";
+"settings.watchFace" = "ウォッチフェイス";
+"settings.categories" = "カテゴリ";
+
+"notifications.title" = "通知";
+"notifications.reminderTime" = "事前リマインダー";
+"notifications.footer" = "重要な通知は「おやすみモード」でも再生されます";
+"notifications.time.oneMinute" = "1分";
+"notifications.time.fiveMinutes" = "5分";
+"notifications.time.tenMinutes" = "10分";
+"notifications.time.fifteenMinutes" = "15分";
+"notifications.time.thirtyMinutes" = "30分";
+"notifications.time.oneHour" = "1時間";
+"notifications.testing.title" = "テスト";
+"notifications.testing.testButton" = "通知をテスト";
+"notifications.alert.title" = "許可が必要です";
+"notifications.alert.settings" = "設定";
+"notifications.alert.cancel" = "キャンセル";
+"notifications.alert.message" = "通知を送信するには許可が必要です。アプリの設定を開いて通知を有効にしてください。";
+
+"settingsTask.moveUnfinished" = "未完了タスクを移動";
+"settingsTask.increasePriority" = "移動時に優先度を上げる";
+"settingsTask.priorityFrequency" = "優先度上昇頻度";
+"settingsTask.sectionHeader" = "タスク転送";
+"settingsTask.sectionFooter" = "日付が変わる時、未完了のタスクは自動的に当日に移動されます。優先度上昇が有効な場合、選択した頻度に従ってタスクの優先度が上がります。";
+"settingsTask.navTitle" = "タスク設定";
+"settingsTask.frequencyEveryDay" = "毎日";
+"settingsTask.frequencyEveryTwoDays" = "2日毎";
+"settingsTask.frequencyEveryThreeDays" = "3日毎";
+
+"categoryEditor.name" = "名前";
+"categoryEditor.newCategory" = "新しいカテゴリ";
+"categoryEditor.editCategory" = "カテゴリを編集";
+"categoryEditor.changeIcon" = "アイコンを変更";
+"categoryEditor.changeColor" = "色を変更";
+"categoryEditor.categoryHidden" = "カテゴリは非表示";
+"categoryEditor.categoryVisible" = "カテゴリは表示中";
+"categoryEditor.show" = "表示";
+"categoryEditor.hide" = "非表示";
+"categoryEditor.addCategory" = "カテゴリを追加";
+"categoryEditor.deleteCategory" = "カテゴリを削除";
+"categoryEditor.deleteAlertTitle" = "カテゴリを削除しますか？";
+"categoryEditor.deleteAlertMessage" = "このカテゴリのすべてのタスクも削除されます";
+"categoryEditor.cancel" = "キャンセル";
+"categoryEditor.done" = "完了";
+"categoryEditor.colorPickerTitle" = "カラーピッカー";
+"categoryEditor.ready" = "準備完了";
+"categoryEditor.categoryNamePlaceholder" = "カテゴリ名";
+"categoryEditor.selectColor" = "色を選択";
+"categoryEditor.add" = "追加";
+
+"categoryEditor.iconPicker.iconSelection" = "アイコン選択";
+"categoryEditor.iconPicker.searchIcon" = "アイコン検索";
+
+"categoryEditor.dockBar.all" = "すべて";
+"categoryEditor.dockBar.workAndEducation" = "仕事・教育";
+"categoryEditor.dockBar.homeAndFamily" = "家庭・家族";
+"categoryEditor.dockBar.creativity" = "クリエイティブ";
+"categoryEditor.dockBar.shopping" = "ショッピング";
+"categoryEditor.dockBar.travel" = "旅行";
+"categoryEditor.dockBar.planning" = "計画";
+"categoryEditor.dockBar.communication" = "コミュニケーション";
+"categoryEditor.dockBar.tools" = "ツール";
+
+"archive.title" = "完了タスクのアーカイブ";
+
+"taskTimeLine.title" = "この日はタスクがありません";
+"taskTimeLine.categoryNotFound" = "カテゴリが見つかりません";
+
+"libraryOfWatchFaces.title" = "ウォッチフェイスライブラリ";
+"libraryOfWatchFaces.category.classics" = "クラシック";
+"libraryOfWatchFaces.category.digital" = "デジタル";
+"libraryOfWatchFaces.category.minimal" = "ミニマル";
+
+"libraryOfWatchFaces.model.classic" = "スタンダード";
+"libraryOfWatchFaces.model.grafitti" = "グラフィティ";
+"libraryOfWatchFaces.model.crimsonCore" = "クリムゾンコア";
+"libraryOfWatchFaces.model.forest" = "フォレスト";
+"libraryOfWatchFaces.model.inferno" = "インフェルノ";
+"libraryOfWatchFaces.model.bluePixel" = "ブルーピクセル";
+"libraryOfWatchFaces.model.lines" = "ライン";
+"libraryOfWatchFaces.model.coral" = "コーラル";
+"libraryOfWatchFaces.model.happyBeat" = "ハッピービート";
+"libraryOfWatchFaces.model.technoRhythm" = "テクノリズム";
+"libraryOfWatchFaces.model.redPixel" = "レッドピクセル";
+"libraryOfWatchFaces.model.green" = "グリーン";
+"libraryOfWatchFaces.model.yellowBits" = "イエロービット";
+"libraryOfWatchFaces.model.diamond" = "ダイアモンド";
+
+"monthYearPicker.title" = "月と年を選択";
+"monthYearPicker.month" = "月";
+"monthYearPicker.year" = "年";
+"monthYearPicker.select" = "選択";
+"month.january" = "1月";
+"month.february" = "2月";
+"month.march" = "3月";
+"month.april" = "4月";
+"month.may" = "5月";
+"month.june" = "6月";
+"month.july" = "7月";
+"month.august" = "8月";
+"month.september" = "9月";
+"month.october" = "10月";
+"month.november" = "11月";
+"month.december" = "12月";
+
+"week.monday" = "月";
+"week.tuesday" = "火";
+"week.wednesday" = "水";
+"week.thursday" = "木";
+"week.friday" = "金";
+"week.saturday" = "土";
+"week.sunday" = "日";
+
+"search.search" = "検索";
+"search.cancel" = "キャンセル";
+"search.tasksNotFound" = "タスクが見つかりません"; 

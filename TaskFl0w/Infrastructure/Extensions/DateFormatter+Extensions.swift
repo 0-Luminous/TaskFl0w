@@ -95,6 +95,28 @@ extension DateFormatter {
         formatter.locale = Locale(identifier: "es_ES")
         return formatter
     }()
+
+    // Добавляем форматы для японской версии
+    static let todoDateFormatterJa: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yy/MM/dd"
+        formatter.locale = Locale(identifier: "ja_JP")
+        return formatter
+    }()
+
+    static let clockDateFormatterJa: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy年M月d日"
+        formatter.locale = Locale(identifier: "ja_JP")
+        return formatter
+    }()
+
+    static let weekdayFormatterJa: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE"
+        formatter.locale = Locale(identifier: "ja_JP")
+        return formatter
+    }()
 }
 
 extension Date {
@@ -148,6 +170,19 @@ extension Date {
         return DateFormatter.weekdayFormatterEs.string(from: self).capitalized
     }
 
+    // Японские методы форматирования
+    func formattedForTodoListJa() -> String {
+        return DateFormatter.todoDateFormatterJa.string(from: self)
+    }
+
+    func formattedForClockDateJa() -> String {
+        return DateFormatter.clockDateFormatterJa.string(from: self)
+    }
+
+    func formattedWeekdayJa() -> String {
+        return DateFormatter.weekdayFormatterJa.string(from: self)
+    }
+
     // Локализованные форматы дат и дней недели
     func formattedForTodoListLocalized() -> String {
         switch Locale.current.languageCode {
@@ -157,6 +192,8 @@ extension Date {
             return formattedForTodoListZh()
         case "es":
             return formattedForTodoListEs()
+        case "ja":
+            return formattedForTodoListJa()
         default:
             return formattedForTodoListEn()
         }
@@ -170,6 +207,8 @@ extension Date {
             return formattedForClockDateZh()
         case "es":
             return formattedForClockDateEs()
+        case "ja":
+            return formattedForClockDateJa()
         default:
             return formattedForClockDateEn()
         }
@@ -183,6 +222,8 @@ extension Date {
             return formattedWeekdayZh()
         case "es":
             return formattedWeekdayEs()
+        case "ja":
+            return formattedWeekdayJa()
         default:
             return formattedWeekdayEn()
         }
