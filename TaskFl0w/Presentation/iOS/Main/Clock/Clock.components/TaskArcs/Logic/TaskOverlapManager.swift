@@ -170,28 +170,15 @@ struct TaskOverlapManager {
         updatedTask: TaskOnRing
     ) -> ([(TaskOnRing, Date, Date)], Bool) {
         
-        var tasksToUpdate: [(TaskOnRing, Date, Date)] = []
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
         
-        for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {
-            if updatedTask.startTime >= otherTask.startTime && updatedTask.startTime < otherTask.endTime {
-                let taskDuration = otherTask.duration
-                let idealNewEndTime = updatedTask.startTime
-                let idealNewStartTime = idealNewEndTime.addingTimeInterval(-taskDuration)
-                
-                // ❌ БЛОКИРОВКА: Если задача не помещается полностью до 00:00
-                if idealNewStartTime < startOfDay {
-                    // НЕ СЖИМАЕМ задачу! Блокируем маркер
-                    return ([], false)
-                }
-                
-                // ✅ Задача помещается полностью - добавляем к обновлению
-                tasksToUpdate.append((otherTask, idealNewStartTime, idealNewEndTime))
-            }
-        }
-        
-        return (tasksToUpdate, true)
+        // Используем итеративный подход для проверки всей цепочки
+        return findCompleteTaskChainForStartTime(
+            viewModel: viewModel,
+            initiatingTask: updatedTask,
+            startOfDay: startOfDay
+        )
     }
     
     private static func findAffectedTasksForEndTimeChange(
@@ -199,25 +186,100 @@ struct TaskOverlapManager {
         updatedTask: TaskOnRing
     ) -> ([(TaskOnRing, Date, Date)], Bool) {
         
-        var tasksToUpdate: [(TaskOnRing, Date, Date)] = []
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60)
         
-        for otherTask in viewModel.tasks where otherTask.id != updatedTask.id {
-            if updatedTask.endTime > otherTask.startTime && updatedTask.endTime <= otherTask.endTime {
-                let taskDuration = otherTask.duration
-                let idealNewStartTime = updatedTask.endTime
-                let idealNewEndTime = idealNewStartTime.addingTimeInterval(taskDuration)
+        // Используем итеративный подход для проверки всей цепочки
+        return findCompleteTaskChainForEndTime(
+            viewModel: viewModel,
+            initiatingTask: updatedTask,
+            endOfDay: endOfDay
+        )
+    }
+    
+    // НОВЫЙ МЕТОД: Полная проверка цепочки задач для времени начала (любое количество задач)
+    private static func findCompleteTaskChainForStartTime(
+        viewModel: ClockViewModel,
+        initiatingTask: TaskOnRing,
+        startOfDay: Date
+    ) -> ([(TaskOnRing, Date, Date)], Bool) {
+        
+        var tasksToUpdate: [(TaskOnRing, Date, Date)] = []
+        var processedTasks: Set<UUID> = [initiatingTask.id]
+        var tasksQueue: [(task: TaskOnRing, newStartTime: Date, newEndTime: Date)] = [(initiatingTask, initiatingTask.startTime, initiatingTask.endTime)]
+        
+        // Итеративно обрабатываем все задачи в цепочке
+        while !tasksQueue.isEmpty {
+            let currentTaskInfo = tasksQueue.removeFirst()
+            let currentTask = currentTaskInfo.task
+            
+            // Ищем все задачи, которые пересекаются с текущей
+            for otherTask in viewModel.tasks where otherTask.id != currentTask.id && !processedTasks.contains(otherTask.id) {
                 
-                // ❌ БЛОКИРОВКА: Если задача не помещается полностью до 23:59
-                if idealNewEndTime > endOfDay {
-                    // НЕ СЖИМАЕМ задачу! Блокируем маркер
-                    return ([], false)
+                // Проверяем пересечение с новой позицией текущей задачи
+                if currentTaskInfo.newStartTime >= otherTask.startTime && currentTaskInfo.newStartTime < otherTask.endTime {
+                    
+                    let taskDuration = otherTask.duration
+                    let idealNewEndTime = currentTaskInfo.newStartTime
+                    let idealNewStartTime = idealNewEndTime.addingTimeInterval(-taskDuration)
+                    
+                    // ❌ КРИТИЧЕСКАЯ ПРОВЕРКА: Если любая задача в цепочке упирается в 00:00
+                    if idealNewStartTime < startOfDay {
+                        // БЛОКИРУЕМ всю операцию - задача не помещается
+                        return ([], false)
+                    }
+                    
+                    // ✅ Задача помещается - добавляем в обработку
+                    processedTasks.insert(otherTask.id)
+                    let newTaskInfo = (task: otherTask, newStartTime: idealNewStartTime, newEndTime: idealNewEndTime)
+                    tasksQueue.append(newTaskInfo)
+                    tasksToUpdate.append((otherTask, idealNewStartTime, idealNewEndTime))
                 }
+            }
+        }
+        
+        return (tasksToUpdate, true)
+    }
+    
+    // НОВЫЙ МЕТОД: Полная проверка цепочки задач для времени конца (любое количество задач)
+    private static func findCompleteTaskChainForEndTime(
+        viewModel: ClockViewModel,
+        initiatingTask: TaskOnRing,
+        endOfDay: Date
+    ) -> ([(TaskOnRing, Date, Date)], Bool) {
+        
+        var tasksToUpdate: [(TaskOnRing, Date, Date)] = []
+        var processedTasks: Set<UUID> = [initiatingTask.id]
+        var tasksQueue: [(task: TaskOnRing, newStartTime: Date, newEndTime: Date)] = [(initiatingTask, initiatingTask.startTime, initiatingTask.endTime)]
+        
+        // Итеративно обрабатываем все задачи в цепочке
+        while !tasksQueue.isEmpty {
+            let currentTaskInfo = tasksQueue.removeFirst()
+            let currentTask = currentTaskInfo.task
+            
+            // Ищем все задачи, которые пересекаются с текущей
+            for otherTask in viewModel.tasks where otherTask.id != currentTask.id && !processedTasks.contains(otherTask.id) {
                 
-                // ✅ Задача помещается полностью - добавляем к обновлению
-                tasksToUpdate.append((otherTask, idealNewStartTime, idealNewEndTime))
+                // Проверяем пересечение с новой позицией текущей задачи
+                if currentTaskInfo.newEndTime > otherTask.startTime && currentTaskInfo.newEndTime <= otherTask.endTime {
+                    
+                    let taskDuration = otherTask.duration
+                    let idealNewStartTime = currentTaskInfo.newEndTime
+                    let idealNewEndTime = idealNewStartTime.addingTimeInterval(taskDuration)
+                    
+                    // ❌ КРИТИЧЕСКАЯ ПРОВЕРКА: Если любая задача в цепочке упирается в 23:59
+                    if idealNewEndTime > endOfDay {
+                        // БЛОКИРУЕМ всю операцию - задача не помещается
+                        return ([], false)
+                    }
+                    
+                    // ✅ Задача помещается - добавляем в обработку
+                    processedTasks.insert(otherTask.id)
+                    let newTaskInfo = (task: otherTask, newStartTime: idealNewStartTime, newEndTime: idealNewEndTime)
+                    tasksQueue.append(newTaskInfo)
+                    tasksToUpdate.append((otherTask, idealNewStartTime, idealNewEndTime))
+                }
             }
         }
         
