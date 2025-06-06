@@ -8,19 +8,16 @@
 import SwiftUI
 
 struct FirstView: View {
-    @State private var isAnimating = false
-    @State private var showButton = false
-    @State private var selectedWatchFace: WatchFaceModel?
     @State private var navigateToLibrary = false
     @State private var navigateToSelectWatch = false
-
-    // Новые состояния для начальной анимации
-    @State private var showBlackScreen = true
-    @State private var showAppTitle = false
+    @State private var showWelcomeScreen = true
     @State private var showMainClock = false
-    @State private var showFlyingWatches = false
-    @State private var showArcs = false
-
+    @State private var showWelcomeText = false
+    @State private var showButton = false
+    
+    // Создаем demo ViewModel с примерами задач
+    @StateObject private var demoViewModel = ClockViewModel()
+    
     // Массив предустановленных циферблатов
     private let watchFaces = WatchFaceModel.defaultWatchFaces
 
@@ -34,111 +31,75 @@ struct FirstView: View {
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-                .opacity(showBlackScreen ? 0 : 1)
-                .animation(.easeIn(duration: 0.5).delay(2.0), value: showBlackScreen)
 
-                // Черный экран для начальной анимации
-                Color.black
-                    .ignoresSafeArea()
-                    .opacity(showBlackScreen ? 1 : 0)
-                    .animation(.easeOut(duration: 0.5).delay(2.0), value: showBlackScreen)
-
-                // Анимированные дуги категорий - перемещаем сюда, чтобы они были за циферблатами
-                ZStack {
-                    ForEach(0..<5, id: \.self) { i in
-                        CategoryArcView(
-                            radius: CGFloat.random(in: 80...180),
-                            thickness: CGFloat.random(in: 8...18),
-                            startAngle: .degrees(Double.random(in: 0...180)),
-                            endAngle: .degrees(Double.random(in: 200...360)),
-                            color: [
-                                Color.pink, Color.blue, Color.purple, Color.green, Color.orange,
-                            ][i % 5],
-                            animationDuration: Double.random(in: 3.5...6.5),
-                            maxOffset: 120,
-                            initialDelay: Double(i) * 0.2 + 0.5,
-                            startFromCenter: true
-                        )
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .opacity(showMainClock ? 1 : 0)
-                .animation(.easeIn(duration: 0.5), value: showMainClock)
-                
-                // Заголовок приложения "TaskFl0w"
-                Text("TaskFl0w")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                    .shadow(color: .blue.opacity(0.8), radius: 10, x: 0, y: 0)
-                    .opacity(showAppTitle && !showMainClock ? 1 : 0)
-                    .scaleEffect(showAppTitle ? 1 : 0.5)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.7), value: showAppTitle)
-
-                // Главный центральный циферблат
-                if showMainClock {
-                    ZStack {
-                        // Основной циферблат, из которого потом "разлетаются" остальные
-                        let mainWatchFace = watchFaces.first ?? WatchFaceModel.defaultWatchFaces[0]
-                        
-                        // Анимированное кольцо планировщика, более крупное, чем циферблат
-                        RingPlanner(
-                            color: .white.opacity(0.25),
-                            viewModel: ClockViewModel(),
-                            zeroPosition: 0,
-                            shouldDeleteTask: false,
-                            outerRingLineWidth: 20
-                        )
-                        .frame(width: 350, height: 350) // Увеличенный размер
-                        .scaleEffect(showMainClock ? 1.1 : 0.1) // Увеличенный масштаб
-                        .scaleEffect(showFlyingWatches ? 0.55 : 0.9) // Уменьшаем вместе с циферблатом
-                        .rotationEffect(.degrees(showMainClock ? 0 : 180))
-                        .opacity(showMainClock ? 0.8 : 0.0)
-                        .animation(.spring(response: 0.8, dampingFraction: 0.6).delay(0.3), value: showMainClock)
-                        .animation(.spring(response: 0.7), value: showFlyingWatches)
-                        
-                        // Изменяем масштаб стрелки
-                        ModifiedLibraryClockFaceView(
-                            watchFace: mainWatchFace,
-                            scale: 1.0,
-                            handScale: 0.92
-                        )
-                        .frame(width: 300, height: 300)
-                        .scaleEffect(showFlyingWatches ? 0.6 : 1.0)
-                        .animation(.spring(response: 0.7), value: showFlyingWatches)
-                    }
-                    .opacity(showMainClock ? 1 : 0)
-                    .animation(.easeIn(duration: 0.5).delay(1.5), value: showMainClock)
-                }
-
-                // Анимированные циферблаты
-                ZStack {
-                    ForEach(Array(watchFaces.dropFirst().enumerated()), id: \.1.id) { (idx, face) in
-                        AnimatedFlyingWatchFaceView(
-                            watchFace: face,
-                            index: idx,
-                            isAnimating: showFlyingWatches,
-                            startFromCenter: true
-                        )
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .opacity(showFlyingWatches ? 1 : 0)
-                .animation(.easeIn(duration: 0.5).delay(2.5), value: showFlyingWatches)
-
-                // Кнопка выбора циферблата
-                VStack {
+                VStack(spacing: 0) {
+                    // Отступ сверху
                     Spacer()
+                        .frame(height: 80)
+                    
+                    // Главный циферблат с задачами
+                    if showMainClock {
+                        ZStack {
+                            let mainWatchFace = watchFaces.first { $0.category == WatchFaceCategory.minimal.rawValue } ?? WatchFaceModel.defaultWatchFaces[0]
+                            
+                            // Анимированное кольцо планировщика с задачами
+                            RingPlanner(
+                                color: .white.opacity(0.25),
+                                viewModel: demoViewModel,
+                                zeroPosition: mainWatchFace.zeroPosition,
+                                shouldDeleteTask: false,
+                                outerRingLineWidth: 20
+                            )
+                            .frame(width: 350, height: 350)
 
+                            // Циферблат
+                            ModifiedLibraryClockFaceView(
+                                watchFace: mainWatchFace,
+                                scale: 1.0,
+                                handScale: 0.92
+                            )
+                            .frame(width: 300, height: 300)
+    
+                        }
+                        .scaleEffect(showMainClock ? 1.0 : 0.1)
+                        .opacity(showMainClock ? 1.0 : 0.0)
+                        .animation(.spring(response: 0.8, dampingFraction: 0.6), value: showMainClock)
+                    }
+                    
+                    // Промежуточный отступ
+                    Spacer()
+                        .frame(height: 40)
+                    
+                    // Приветственный текст
+                    if showWelcomeText {
+                        VStack(spacing: 16) {
+                            Text("Добро пожаловать в TaskFl0w")
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                            
+                            Text("Начните управлять задачами в одном месте")
+                                .font(.headline)
+                                .foregroundColor(.white.opacity(0.9))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 40)
+                        }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+
+                    // Кнопка продолжения
                     if showButton {
                         Button(action: {
                             navigateToSelectWatch = true
                         }) {
-                            Text("Выбрать стартовый циферблат")
+                            Text("Продолжить")
                                 .font(.headline)
                                 .foregroundColor(.white)
-                                .padding()
+                                .padding(.horizontal, 40)
+                                .padding(.vertical, 12)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 15)
+                                    RoundedRectangle(cornerRadius: 25)
                                         .fill(
                                             LinearGradient(
                                                 colors: [.blue, .purple],
@@ -147,13 +108,15 @@ struct FirstView: View {
                                             )
                                         )
                                 )
-                                .shadow(radius: 5)
+                                .shadow(radius: 10)
                         }
                         .transition(.scale.combined(with: .opacity))
-                        .zIndex(10)  // Чтобы кнопка была поверх циферблатов
+                        .padding(.top, 30)
                     }
 
-                    Spacer().frame(height: 20)
+                    // Отступ снизу
+                    Spacer()
+                        .frame(height: 80)
                 }
             }
             .navigationDestination(isPresented: $navigateToLibrary) {
@@ -163,32 +126,105 @@ struct FirstView: View {
                 SelectWatch()
             }
             .onAppear {
-                // Последовательность анимации
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    withAnimation {
-                        showAppTitle = true
-                    }
-                }
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    withAnimation {
-                        showMainClock = true
-                    }
-                }
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                    withAnimation {
-                        showFlyingWatches = true
-                        showBlackScreen = false
-                    }
-                }
-
-                // Показываем кнопку с задержкой
-                DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
-                    withAnimation {
-                        showButton = true
-                    }
-                }
+                setupDemoTasks()
+                startAnimationSequence()
+            }
+        }
+    }
+    
+    // Настройка демонстрационных задач
+    private func setupDemoTasks() {
+        // Создаем демонстрационные категории
+        let workCategory = TaskCategoryModel(
+            id: UUID(),
+            rawValue: "Работа",
+            iconName: "briefcase.fill",
+            color: .blue
+        )
+        
+        let breakCategory = TaskCategoryModel(
+            id: UUID(),
+            rawValue: "Перерыв",
+            iconName: "cup.and.saucer.fill",
+            color: .green
+        )
+        
+        let studyCategory = TaskCategoryModel(
+            id: UUID(),
+            rawValue: "Учёба",
+            iconName: "book.fill",
+            color: .purple
+        )
+        
+        // Создаем демонстрационные задачи
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Задача работы (9:00 - 12:00)
+        let workStart = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: now) ?? now
+        let workEnd = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: now) ?? now
+        let workTask = TaskOnRing(
+            id: UUID(),
+            startTime: workStart,
+            endTime: workEnd,
+            color: workCategory.color,
+            icon: workCategory.iconName,
+            category: workCategory,
+            isCompleted: false
+        )
+        
+        // Задача перерыва (12:00 - 13:00)
+        let breakStart = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: now) ?? now
+        let breakEnd = calendar.date(bySettingHour: 13, minute: 0, second: 0, of: now) ?? now
+        let breakTask = TaskOnRing(
+            id: UUID(),
+            startTime: breakStart,
+            endTime: breakEnd,
+            color: breakCategory.color,
+            icon: breakCategory.iconName,
+            category: breakCategory,
+            isCompleted: false
+        )
+        
+        // Задача учёбы (14:00 - 16:00)
+        let studyStart = calendar.date(bySettingHour: 14, minute: 0, second: 0, of: now) ?? now
+        let studyEnd = calendar.date(bySettingHour: 16, minute: 0, second: 0, of: now) ?? now
+        let studyTask = TaskOnRing(
+            id: UUID(),
+            startTime: studyStart,
+            endTime: studyEnd,
+            color: studyCategory.color,
+            icon: studyCategory.iconName,
+            category: studyCategory,
+            isCompleted: false
+        )
+        
+        // Добавляем задачи в demoViewModel
+        demoViewModel.taskManagement.addTask(workTask)
+        demoViewModel.taskManagement.addTask(breakTask)
+        demoViewModel.taskManagement.addTask(studyTask)
+    }
+    
+    // Последовательность анимации
+    private func startAnimationSequence() {
+        // Показываем циферблат
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
+                showMainClock = true
+            }
+        }
+        
+        // Показываем приветственный текст
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(.easeInOut(duration: 0.8)) {
+                showWelcomeText = true
+            }
+        }
+        
+        // Показываем кнопку
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                showButton = true
             }
         }
     }
