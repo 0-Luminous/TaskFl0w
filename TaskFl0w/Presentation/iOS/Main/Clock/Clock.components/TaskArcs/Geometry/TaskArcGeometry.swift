@@ -182,16 +182,97 @@ struct TaskArcGeometry {
         }
     }
     
+    // Новый метод для создания drag preview с учетом индивидуальных настроек маркеров
+    func createDragPreviewArea(startMarkerThin: Bool, endMarkerThin: Bool) -> Path {
+        let (startAngle, endAngle) = angles
+        return Path { path in
+            // Основная дуга
+            path.addArc(
+                center: center,
+                radius: arcRadius + configuration.arcLineWidth/2,
+                startAngle: startAngle,
+                endAngle: endAngle,
+                clockwise: false
+            )
+            path.addArc(
+                center: center,
+                radius: arcRadius - configuration.arcLineWidth/2,
+                startAngle: endAngle,
+                endAngle: startAngle,
+                clockwise: true
+            )
+            path.closeSubpath()
+            
+            // Добавляем маркеры времени с индивидуальными настройками
+            addTimeMarkersToPath(&path, startAngle: startAngle, endAngle: endAngle, startMarkerThin: startMarkerThin, endMarkerThin: endMarkerThin)
+            
+            // Добавляем круглый фон иконки категории
+            addIconBackgroundToPath(&path)
+        }
+    }
+    
     private func addTimeMarkersToPath(_ path: inout Path, startAngle: Angle, endAngle: Angle) {
         // Показываем маркеры времени только в неаналоговом режиме
         guard !configuration.isAnalog else { return }
         
         if taskDurationMinutes >= 40 {
-            // Полные маркеры времени для длинных задач
+            // Полные маркеры времени для длинных задач (по умолчанию)
             addFullTimeMarkers(&path, startAngle: startAngle, endAngle: endAngle)
         } else if taskDurationMinutes >= 20 {
             // Тонкие маркеры для коротких задач
             addThinTimeMarkers(&path, startAngle: startAngle, endAngle: endAngle)
+        }
+    }
+    
+    // Перегруженный метод с индивидуальными настройками для каждого маркера
+    private func addTimeMarkersToPath(_ path: inout Path, startAngle: Angle, endAngle: Angle, startMarkerThin: Bool, endMarkerThin: Bool) {
+        // Показываем маркеры времени только в неаналоговом режиме
+        guard !configuration.isAnalog else { return }
+        
+        // Проверяем, показывать ли маркеры вообще
+        guard taskDurationMinutes >= 20 else { return }
+        
+        // Для задач меньше 40 минут используем переданные настройки (обычно тонкие)
+        if taskDurationMinutes < 40 {
+            // Для коротких задач обычно оба маркера тонкие, но используем переданные настройки
+            addIndividualTimeMarker(&path, angle: startAngle, isThin: startMarkerThin, isStart: true)
+            addIndividualTimeMarker(&path, angle: endAngle, isThin: endMarkerThin, isStart: false)
+        } else {
+            // Для длинных задач используем индивидуальные настройки каждого маркера
+            addIndividualTimeMarker(&path, angle: startAngle, isThin: startMarkerThin, isStart: true)
+            addIndividualTimeMarker(&path, angle: endAngle, isThin: endMarkerThin, isStart: false)
+        }
+    }
+    
+    // Новый метод для добавления индивидуального маркера
+    private func addIndividualTimeMarker(_ path: inout Path, angle: Angle, isThin: Bool, isStart: Bool) {
+        let markerPosition = timeMarkerPosition(for: angle, isThin: isThin)
+        let isLeftHalf = isAngleInLeftHalf(angle)
+        let rotationAngle = isLeftHalf ? angle + .degrees(180) : angle
+        
+        if isThin {
+            // Тонкий маркер
+            addRotatedRoundedRect(
+                to: &path,
+                center: markerPosition,
+                width: TaskArcConstants.thinTimeMarkerWidth,
+                height: TaskArcConstants.thinTimeMarkerHeight,
+                angle: rotationAngle
+            )
+        } else {
+            // Полный маркер с текстом
+            let timeText = isStart ? 
+                DateFormatter.shortTime.string(from: task.startTime) :
+                DateFormatter.shortTime.string(from: task.endTime)
+            let markerWidth = CGFloat(timeText.count) * TaskArcConstants.timeMarkerCharacterWidth + TaskArcConstants.timeMarkerPadding
+            
+            addRotatedRoundedRect(
+                to: &path,
+                center: markerPosition,
+                width: markerWidth,
+                height: TaskArcConstants.timeMarkerHeight,
+                angle: rotationAngle
+            )
         }
     }
     

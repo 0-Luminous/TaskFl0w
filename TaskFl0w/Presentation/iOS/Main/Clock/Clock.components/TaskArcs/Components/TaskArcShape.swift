@@ -30,7 +30,8 @@ struct TaskArcShape: View {
                 TaskTimeMarkersForPreview(
                     task: geometry.task,
                     geometry: geometry,
-                    timeFormatter: timeFormatter
+                    timeFormatter: timeFormatter,
+                    viewModel: viewModel
                 )
             }
             
@@ -47,7 +48,20 @@ struct TaskArcShape: View {
             }
         }
         .contentShape(.interaction, geometry.createGestureArea())
-        .contentShape(.dragPreview, geometry.createDragPreviewArea())
+        .contentShape(.dragPreview, createCustomDragPreview())
+    }
+    
+    // Создаем кастомный drag preview с учетом индивидуальных настроек маркеров
+    private func createCustomDragPreview() -> some Shape {
+        // Проверяем настройки для каждого маркера
+        let shouldStartMarkerBeThin = shouldMarkerBeThin(for: geometry.task.startTime)
+        let shouldEndMarkerBeThin = shouldMarkerBeThin(for: geometry.task.endTime)
+        
+        return CustomDragPreviewShape(
+            geometry: geometry,
+            startMarkerThin: shouldStartMarkerBeThin,
+            endMarkerThin: shouldEndMarkerBeThin
+        )
     }
     
     private var shouldShowTimeMarkersInPreview: Bool {
@@ -64,6 +78,97 @@ struct TaskArcShape: View {
         // В режиме редактирования скрываем иконку для коротких задач
         return true
     }
+    
+    // Проверяем, должен ли конкретный маркер (по времени) быть тонким
+    private func shouldMarkerBeThin(for markerTime: Date) -> Bool {
+        // Для задач меньше 20 минут маркеры не показываются
+        guard geometry.taskDurationMinutes >= 20 else { return false }
+        
+        // Для задач от 20 до 40 минут маркеры всегда тонкие
+        if geometry.taskDurationMinutes < 40 {
+            return true
+        }
+        
+        // Для задач 40+ минут проверяем близость к задачам с тонкими маркерами
+        return hasNearbyTasksWithThinMarkers(for: markerTime)
+    }
+    
+    // Проверяем наличие близких задач с тонкими маркерами для конкретного времени
+    private func hasNearbyTasksWithThinMarkers(for markerTime: Date) -> Bool {
+        // Константа для проверки близости (15 минут)
+        let proximityThreshold: TimeInterval = 15 * 60
+        
+        // Получаем все задачи на выбранную дату
+        let tasksForDate = viewModel.tasksForSelectedDate(viewModel.tasks)
+        
+        // Исключаем текущую задачу из проверки
+        let otherTasks = tasksForDate.filter { $0.id != geometry.task.id }
+        
+        for otherTask in otherTasks {
+            // Вычисляем длительность другой задачи
+            let otherTaskDuration = otherTask.duration / 60 // в минутах
+            
+            // Проверяем, показывает ли другая задача тонкие маркеры
+            let otherTaskHasThinMarkers = determineIfTaskHasThinMarkers(otherTask, otherTaskDuration)
+            
+            if otherTaskHasThinMarkers {
+                // Проверяем близость конкретного времени маркера к границам другой задачи
+                let proximityToStart = abs(markerTime.timeIntervalSince(otherTask.startTime))
+                let proximityToEnd = abs(markerTime.timeIntervalSince(otherTask.endTime))
+                
+                // Если маркер находится в пределах 15 минут от любой границы задачи с тонкими маркерами
+                if proximityToStart <= proximityThreshold || proximityToEnd <= proximityThreshold {
+                    return true
+                }
+            }
+        }
+        
+        return false
+    }
+    
+    // Определяем, есть ли у задачи тонкие маркеры
+    private func determineIfTaskHasThinMarkers(_ task: TaskOnRing, _ durationMinutes: Double) -> Bool {
+        // Задачи от 20 до 40 минут всегда имеют тонкие маркеры
+        if durationMinutes >= 20 && durationMinutes < 40 {
+            return true
+        }
+        
+        // Задачи 40+ минут могут иметь тонкие маркеры, если рядом есть другие задачи с тонкими маркерами
+        if durationMinutes >= 40 {
+            return checkIfLongTaskHasThinMarkers(task)
+        }
+        
+        return false
+    }
+    
+    // Проверяем, должна ли длинная задача (40+ минут) показывать тонкие маркеры
+    private func checkIfLongTaskHasThinMarkers(_ task: TaskOnRing) -> Bool {
+        let proximityThreshold: TimeInterval = 15 * 60
+        let tasksForDate = viewModel.tasksForSelectedDate(viewModel.tasks)
+        let otherTasks = tasksForDate.filter { $0.id != task.id }
+        
+        for otherTask in otherTasks {
+            let otherTaskDuration = otherTask.duration / 60
+            
+            // Проверяем только задачи, которые гарантированно имеют тонкие маркеры (20-40 минут)
+            if otherTaskDuration >= 20 && otherTaskDuration < 40 {
+                // Проверяем близость границ задач
+                let startToStartProximity = abs(task.startTime.timeIntervalSince(otherTask.startTime))
+                let endToEndProximity = abs(task.endTime.timeIntervalSince(otherTask.endTime))
+                let startToEndProximity = abs(task.startTime.timeIntervalSince(otherTask.endTime))
+                let endToStartProximity = abs(task.endTime.timeIntervalSince(otherTask.startTime))
+                
+                if startToStartProximity <= proximityThreshold ||
+                   endToEndProximity <= proximityThreshold ||
+                   startToEndProximity <= proximityThreshold ||
+                   endToStartProximity <= proximityThreshold {
+                    return true
+                }
+            }
+        }
+        
+        return false
+    }
 }
 
 // MARK: - Supporting Views
@@ -71,29 +176,34 @@ struct TaskTimeMarkersForPreview: View {
     let task: TaskOnRing
     let geometry: TaskArcGeometry
     let timeFormatter: DateFormatter
+    @ObservedObject var viewModel: ClockViewModel
     
     var body: some View {
         let (startAngle, endAngle) = geometry.angles
         let startTimeText = timeFormatter.string(from: task.startTime)
         let endTimeText = timeFormatter.string(from: task.endTime)
         
+        // Проверяем каждый маркер отдельно
+        let shouldStartMarkerBeThin = shouldMarkerBeThin(for: task.startTime)
+        let shouldEndMarkerBeThin = shouldMarkerBeThin(for: task.endTime)
+        
         if geometry.taskDurationMinutes >= 40 {
-            // Полные маркеры времени для длинных задач
+            // Для длинных задач проверяем каждый маркер отдельно
             TaskTimeLabelForPreview(
-                text: startTimeText,
+                text: shouldStartMarkerBeThin ? "" : startTimeText,
                 angle: startAngle,
                 geometry: geometry,
-                isThin: false
+                isThin: shouldStartMarkerBeThin
             )
             
             TaskTimeLabelForPreview(
-                text: endTimeText,
+                text: shouldEndMarkerBeThin ? "" : endTimeText,
                 angle: endAngle,
                 geometry: geometry,
-                isThin: false
+                isThin: shouldEndMarkerBeThin
             )
         } else if geometry.taskDurationMinutes >= 20 {
-            // Тонкие маркеры для коротких задач
+            // Тонкие маркеры для коротких задач (20-40 минут)
             TaskTimeLabelForPreview(
                 text: "",
                 angle: startAngle,
@@ -108,6 +218,97 @@ struct TaskTimeMarkersForPreview: View {
                 isThin: true
             )
         }
+    }
+    
+    // Проверяем, должен ли конкретный маркер (по времени) быть тонким
+    private func shouldMarkerBeThin(for markerTime: Date) -> Bool {
+        // Для задач меньше 20 минут маркеры не показываются
+        guard geometry.taskDurationMinutes >= 20 else { return false }
+        
+        // Для задач от 20 до 40 минут маркеры всегда тонкие
+        if geometry.taskDurationMinutes < 40 {
+            return true
+        }
+        
+        // Для задач 40+ минут проверяем близость к задачам с тонкими маркерами
+        return hasNearbyTasksWithThinMarkers(for: markerTime)
+    }
+    
+    // Проверяем наличие близких задач с тонкими маркерами для конкретного времени
+    private func hasNearbyTasksWithThinMarkers(for markerTime: Date) -> Bool {
+        // Константа для проверки близости (15 минут)
+        let proximityThreshold: TimeInterval = 15 * 60
+        
+        // Получаем все задачи на выбранную дату
+        let tasksForDate = viewModel.tasksForSelectedDate(viewModel.tasks)
+        
+        // Исключаем текущую задачу из проверки
+        let otherTasks = tasksForDate.filter { $0.id != task.id }
+        
+        for otherTask in otherTasks {
+            // Вычисляем длительность другой задачи
+            let otherTaskDuration = otherTask.duration / 60 // в минутах
+            
+            // Проверяем, показывает ли другая задача тонкие маркеры
+            let otherTaskHasThinMarkers = determineIfTaskHasThinMarkers(otherTask, otherTaskDuration)
+            
+            if otherTaskHasThinMarkers {
+                // Проверяем близость конкретного времени маркера к границам другой задачи
+                let proximityToStart = abs(markerTime.timeIntervalSince(otherTask.startTime))
+                let proximityToEnd = abs(markerTime.timeIntervalSince(otherTask.endTime))
+                
+                // Если маркер находится в пределах 15 минут от любой границы задачи с тонкими маркерами
+                if proximityToStart <= proximityThreshold || proximityToEnd <= proximityThreshold {
+                    return true
+                }
+            }
+        }
+        
+        return false
+    }
+    
+    // Определяем, есть ли у задачи тонкие маркеры
+    private func determineIfTaskHasThinMarkers(_ task: TaskOnRing, _ durationMinutes: Double) -> Bool {
+        // Задачи от 20 до 40 минут всегда имеют тонкие маркеры
+        if durationMinutes >= 20 && durationMinutes < 40 {
+            return true
+        }
+        
+        // Задачи 40+ минут могут иметь тонкие маркеры, если рядом есть другие задачи с тонкими маркерами
+        if durationMinutes >= 40 {
+            return checkIfLongTaskHasThinMarkers(task)
+        }
+        
+        return false
+    }
+    
+    // Проверяем, должна ли длинная задача (40+ минут) показывать тонкие маркеры
+    private func checkIfLongTaskHasThinMarkers(_ task: TaskOnRing) -> Bool {
+        let proximityThreshold: TimeInterval = 15 * 60
+        let tasksForDate = viewModel.tasksForSelectedDate(viewModel.tasks)
+        let otherTasks = tasksForDate.filter { $0.id != task.id }
+        
+        for otherTask in otherTasks {
+            let otherTaskDuration = otherTask.duration / 60
+            
+            // Проверяем только задачи, которые гарантированно имеют тонкие маркеры (20-40 минут)
+            if otherTaskDuration >= 20 && otherTaskDuration < 40 {
+                // Проверяем близость границ задач
+                let startToStartProximity = abs(task.startTime.timeIntervalSince(otherTask.startTime))
+                let endToEndProximity = abs(task.endTime.timeIntervalSince(otherTask.endTime))
+                let startToEndProximity = abs(task.startTime.timeIntervalSince(otherTask.endTime))
+                let endToStartProximity = abs(task.endTime.timeIntervalSince(otherTask.startTime))
+                
+                if startToStartProximity <= proximityThreshold ||
+                   endToEndProximity <= proximityThreshold ||
+                   startToEndProximity <= proximityThreshold ||
+                   endToStartProximity <= proximityThreshold {
+                    return true
+                }
+            }
+        }
+        
+        return false
     }
 }
 
@@ -187,7 +388,7 @@ struct TaskIcon: View {
             Circle()
                 .fill(task.category.color)
                 .frame(width: backgroundSize, height: backgroundSize)
-                .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+                .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
             
             // Иконка с индикатором перетаскивания для длинных задач в режиме редактирования
             if shouldShowDragIndicator {
@@ -195,6 +396,7 @@ struct TaskIcon: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
                     .rotationEffect(rotationAngleToCenter)
+                    .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
             } else {
                 Image(systemName: task.category.iconName)
                     .font(.system(size: geometry.iconFontSize))
@@ -293,5 +495,16 @@ struct TaskIcon: View {
                 gestureHandler.resetLastHourComponent()
                 hapticsManager.triggerSoftFeedback()
             }
+    }
+}
+
+// Новая структура для кастомного drag preview
+struct CustomDragPreviewShape: Shape {
+    let geometry: TaskArcGeometry
+    let startMarkerThin: Bool
+    let endMarkerThin: Bool
+    
+    func path(in rect: CGRect) -> Path {
+        return geometry.createDragPreviewArea(startMarkerThin: startMarkerThin, endMarkerThin: endMarkerThin)
     }
 } 
