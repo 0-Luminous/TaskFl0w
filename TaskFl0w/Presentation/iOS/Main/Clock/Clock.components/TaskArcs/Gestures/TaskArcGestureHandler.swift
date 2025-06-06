@@ -181,7 +181,7 @@ class TaskArcGestureHandler: ObservableObject {
     }
     
     private func handleStartTimeUpdate(_ newTime: Date, hourComponent: Int, minuteComponent: Int) {
-        guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
+        guard let task = currentTask else { return }
         
         // Проверяем минимальную продолжительность задачи  
         guard task.endTime.timeIntervalSince(newTime) >= TaskArcConstants.minimumDuration else { return }
@@ -189,19 +189,30 @@ class TaskArcGestureHandler: ObservableObject {
         // Проверяем границы дня
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60) // 23:59
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60)
         
         // Ограничиваем время границами дня
         let constrainedTime = max(startOfDay, min(newTime, endOfDay))
         
+        // ✅ ПРОВЕРЯЕМ, МОЖНО ЛИ ПЕРЕМЕСТИТЬ ДРУГИЕ ЗАДАЧИ БЕЗ СЖАТИЯ
+        let canMoveOtherTasks = TaskOverlapManager.adjustTaskStartTimesForOverlap(
+            viewModel: viewModel, 
+            currentTask: task, 
+            newStartTime: constrainedTime
+        )
+        
+        // Если другие задачи упираются в границы и не помещаются - БЛОКИРУЕМ маркер
+        if !canMoveOtherTasks {
+            hapticsManager.triggerHardFeedback() // Тактильная обратная связь о блокировке
+            return // НЕ ОБНОВЛЯЕМ позицию маркера
+        }
+        
         viewModel.previewTime = constrainedTime
-        // ✅ Больше не изменяем локальную копию задачи
-        viewModel.taskManagement.updateTaskStartTimeKeepingEnd(task, newStartTime: constrainedTime)
-        TaskOverlapManager.adjustTaskStartTimesForOverlap(viewModel: viewModel, currentTask: task, newStartTime: constrainedTime)
+        // Обновление уже произошло в adjustTaskStartTimesForOverlap
     }
     
     private func handleEndTimeUpdate(_ newTime: Date, hourComponent: Int, minuteComponent: Int) {
-        guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
+        guard let task = currentTask else { return }
         
         // Проверяем минимальную продолжительность задачи
         guard newTime.timeIntervalSince(task.startTime) >= TaskArcConstants.minimumDuration else { return }
@@ -209,15 +220,26 @@ class TaskArcGestureHandler: ObservableObject {
         // Проверяем границы дня  
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60) // 23:59
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60)
         
         // Ограничиваем время границами дня
         let constrainedTime = max(startOfDay, min(newTime, endOfDay))
         
+        // ✅ ПРОВЕРЯЕМ, МОЖНО ЛИ ПЕРЕМЕСТИТЬ ДРУГИЕ ЗАДАЧИ БЕЗ СЖАТИЯ
+        let canMoveOtherTasks = TaskOverlapManager.adjustTaskEndTimesForOverlap(
+            viewModel: viewModel, 
+            currentTask: task, 
+            newEndTime: constrainedTime
+        )
+        
+        // Если другие задачи упираются в границы и не помещаются - БЛОКИРУЕМ маркер
+        if !canMoveOtherTasks {
+            hapticsManager.triggerHardFeedback() // Тактильная обратная связь о блокировке
+            return // НЕ ОБНОВЛЯЕМ позицию маркера
+        }
+        
         viewModel.previewTime = constrainedTime
-        // ✅ Больше не изменяем локальную копию задачи
-        viewModel.taskManagement.updateTaskDuration(task, newEndTime: constrainedTime)
-        TaskOverlapManager.adjustTaskEndTimesForOverlap(viewModel: viewModel, currentTask: task, newEndTime: constrainedTime)
+        // Обновление уже произошло в adjustTaskEndTimesForOverlap
     }
     
     private func updateWholeTaskTime(hourComponent: Int, minuteComponent: Int) {
