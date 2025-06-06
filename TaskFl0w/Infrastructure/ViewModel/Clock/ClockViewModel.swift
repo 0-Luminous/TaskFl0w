@@ -321,17 +321,23 @@ final class ClockViewModel: ObservableObject {
     
     // MARK: - Formatted Date Methods
     var formattedDate: String {
-        if Locale.current.languageCode == "ru" {
+        switch Locale.current.languageCode {
+        case "ru":
             return selectedDate.formattedForClockDate()
-        } else {
+        case "zh":
+            return selectedDate.formattedForClockDateZh()
+        default:
             return selectedDate.formattedForClockDateEn()
         }
     }
     
     var formattedWeekday: String {
-        if Locale.current.languageCode == "ru" {
+        switch Locale.current.languageCode {
+        case "ru":
             return selectedDate.formattedWeekday()
-        } else {
+        case "zh":
+            return selectedDate.formattedWeekdayZh()
+        default:
             return selectedDate.formattedWeekdayEn()
         }
     }

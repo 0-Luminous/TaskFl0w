@@ -1,0 +1,126 @@
+// Localizable.strings (Chinese Simplified)
+
+"navigation.settings" = "设置";
+"navigation.back" = "返回";
+"navigation.done" = "完成";
+"navigation.cancel" = "取消";
+
+"settings.notifications" = "通知";
+"settings.tasks" = "任务";
+"settings.watchFaceLibrary" = "表盘库";
+"settings.watchFace" = "表盘";
+"settings.categories" = "类别";
+
+"notifications.title" = "通知";
+"notifications.reminderTime" = "提前提醒";
+"notifications.footer" = "重要通知即使在勿扰模式下也会播放";
+"notifications.time.oneMinute" = "1分钟";
+"notifications.time.fiveMinutes" = "5分钟";
+"notifications.time.tenMinutes" = "10分钟";
+"notifications.time.fifteenMinutes" = "15分钟";
+"notifications.time.thirtyMinutes" = "30分钟";
+"notifications.time.oneHour" = "1小时";
+"notifications.testing.title" = "测试";
+"notifications.testing.testButton" = "测试通知";
+"notifications.alert.title" = "需要权限";
+"notifications.alert.settings" = "设置";
+"notifications.alert.cancel" = "取消";
+"notifications.alert.message" = "发送通知需要权限。请打开应用设置并启用通知。";
+
+"settingsTask.moveUnfinished" = "移动未完成任务";
+"settingsTask.increasePriority" = "移动时提高优先级";
+"settingsTask.priorityFrequency" = "优先级提高频率";
+"settingsTask.sectionHeader" = "任务转移";
+"settingsTask.sectionFooter" = "日期变更时，未完成的任务将自动移动到当前日期。如果启用优先级提高，任务将根据选定的频率提高其优先级。";
+"settingsTask.navTitle" = "任务设置";
+"settingsTask.frequencyEveryDay" = "每天";
+"settingsTask.frequencyEveryTwoDays" = "每两天";
+"settingsTask.frequencyEveryThreeDays" = "每三天";
+
+"categoryEditor.name" = "名称";
+"categoryEditor.newCategory" = "新类别";
+"categoryEditor.editCategory" = "编辑类别";
+"categoryEditor.changeIcon" = "更改图标";
+"categoryEditor.changeColor" = "更改颜色";
+"categoryEditor.categoryHidden" = "类别已隐藏";
+"categoryEditor.categoryVisible" = "类别可见";
+"categoryEditor.show" = "显示";
+"categoryEditor.hide" = "隐藏";
+"categoryEditor.addCategory" = "添加类别";
+"categoryEditor.deleteCategory" = "删除类别";
+"categoryEditor.deleteAlertTitle" = "删除类别？";
+"categoryEditor.deleteAlertMessage" = "此类别中的所有任务也将被删除";
+"categoryEditor.cancel" = "取消";
+"categoryEditor.done" = "完成";
+"categoryEditor.colorPickerTitle" = "颜色选择器";
+"categoryEditor.ready" = "准备就绪";
+"categoryEditor.categoryNamePlaceholder" = "类别名称";
+"categoryEditor.selectColor" = "选择颜色";
+"categoryEditor.add" = "添加";
+
+"categoryEditor.iconPicker.iconSelection" = "图标选择";
+"categoryEditor.iconPicker.searchIcon" = "搜索图标";
+
+"categoryEditor.dockBar.all" = "全部";
+"categoryEditor.dockBar.workAndEducation" = "工作和学习";
+"categoryEditor.dockBar.homeAndFamily" = "家庭";
+"categoryEditor.dockBar.creativity" = "创意";
+"categoryEditor.dockBar.shopping" = "购物";
+"categoryEditor.dockBar.travel" = "旅行";
+"categoryEditor.dockBar.planning" = "规划";
+"categoryEditor.dockBar.communication" = "沟通";
+"categoryEditor.dockBar.tools" = "工具";
+
+"archive.title" = "已完成任务存档";
+
+"taskTimeLine.title" = "这一天没有任务";
+"taskTimeLine.categoryNotFound" = "未找到类别";
+
+"libraryOfWatchFaces.title" = "表盘库";
+"libraryOfWatchFaces.category.classics" = "经典";
+"libraryOfWatchFaces.category.digital" = "数字";
+"libraryOfWatchFaces.category.minimal" = "简约";
+
+"libraryOfWatchFaces.model.classic" = "标准";
+"libraryOfWatchFaces.model.grafitti" = "涂鸦";
+"libraryOfWatchFaces.model.crimsonCore" = "深红核心";
+"libraryOfWatchFaces.model.forest" = "森林";
+"libraryOfWatchFaces.model.inferno" = "地狱";
+"libraryOfWatchFaces.model.bluePixel" = "蓝色像素";
+"libraryOfWatchFaces.model.lines" = "线条";
+"libraryOfWatchFaces.model.coral" = "珊瑚";
+"libraryOfWatchFaces.model.happyBeat" = "快乐节拍";
+"libraryOfWatchFaces.model.technoRhythm" = "科技节奏";
+"libraryOfWatchFaces.model.redPixel" = "红色像素";
+"libraryOfWatchFaces.model.green" = "绿色";
+"libraryOfWatchFaces.model.yellowBits" = "黄色位";
+"libraryOfWatchFaces.model.diamond" = "钻石";
+
+"monthYearPicker.title" = "选择月份和年份";
+"monthYearPicker.month" = "月份";
+"monthYearPicker.year" = "年份";
+"monthYearPicker.select" = "选择";
+"month.january" = "一月";
+"month.february" = "二月";
+"month.march" = "三月";
+"month.april" = "四月";
+"month.may" = "五月";
+"month.june" = "六月";
+"month.july" = "七月";
+"month.august" = "八月";
+"month.september" = "九月";
+"month.october" = "十月";
+"month.november" = "十一月";
+"month.december" = "十二月";
+
+"week.monday" = "周一";
+"week.tuesday" = "周二";
+"week.wednesday" = "周三";
+"week.thursday" = "周四";
+"week.friday" = "周五";
+"week.saturday" = "周六";
+"week.sunday" = "周日";
+
+"search.search" = "搜索";
+"search.cancel" = "取消";
+"search.tasksNotFound" = "未找到任务"; 

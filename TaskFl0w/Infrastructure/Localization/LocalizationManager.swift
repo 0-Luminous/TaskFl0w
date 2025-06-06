@@ -102,6 +102,21 @@ final class LocalizationManager {
     func currentLanguage() -> String {
         return Locale.current.languageCode ?? "en"
     }
+    
+    /// Получение списка поддерживаемых языков
+    func supportedLanguages() -> [String] {
+        return ["en", "ru", "zh-Hans"]
+    }
+    
+    /// Проверка поддерживается ли язык
+    func isLanguageSupported(_ languageCode: String) -> Bool {
+        return supportedLanguages().contains(languageCode)
+    }
+    
+    /// Установка китайского языка (упрощенный)
+    func setChineseSimplified() {
+        setLanguage("zh-Hans")
+    }
 }
 
 // MARK: - Convenience Extensions

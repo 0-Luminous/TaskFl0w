@@ -51,6 +51,28 @@ extension DateFormatter {
         formatter.locale = Locale(identifier: "en_GB")
         return formatter
     }()
+
+    // Добавляем форматы для китайской версии (упрощенный китайский)
+    static let todoDateFormatterZh: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yy/MM/dd"
+        formatter.locale = Locale(identifier: "zh_Hans_CN")
+        return formatter
+    }()
+
+    static let clockDateFormatterZh: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy年M月d日"
+        formatter.locale = Locale(identifier: "zh_Hans_CN")
+        return formatter
+    }()
+
+    static let weekdayFormatterZh: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE"
+        formatter.locale = Locale(identifier: "zh_Hans_CN")
+        return formatter
+    }()
 }
 
 extension Date {
@@ -78,27 +100,49 @@ extension Date {
         return DateFormatter.weekdayFormatterEn.string(from: self).capitalized
     }
 
+    // Китайские методы форматирования
+    func formattedForTodoListZh() -> String {
+        return DateFormatter.todoDateFormatterZh.string(from: self)
+    }
+
+    func formattedForClockDateZh() -> String {
+        return DateFormatter.clockDateFormatterZh.string(from: self)
+    }
+
+    func formattedWeekdayZh() -> String {
+        return DateFormatter.weekdayFormatterZh.string(from: self)
+    }
+
     // Локализованные форматы дат и дней недели
     func formattedForTodoListLocalized() -> String {
-        if Locale.current.languageCode == "ru" {
+        switch Locale.current.languageCode {
+        case "ru":
             return formattedForTodoList()
-        } else {
+        case "zh":
+            return formattedForTodoListZh()
+        default:
             return formattedForTodoListEn()
         }
     }
 
     func formattedForClockDateLocalized() -> String {
-        if Locale.current.languageCode == "ru" {
+        switch Locale.current.languageCode {
+        case "ru":
             return formattedForClockDate()
-        } else {
+        case "zh":
+            return formattedForClockDateZh()
+        default:
             return formattedForClockDateEn()
         }
     }
 
     func formattedWeekdayLocalized() -> String {
-        if Locale.current.languageCode == "ru" {
+        switch Locale.current.languageCode {
+        case "ru":
             return formattedWeekday()
-        } else {
+        case "zh":
+            return formattedWeekdayZh()
+        default:
             return formattedWeekdayEn()
         }
     }
