@@ -698,7 +698,8 @@ struct AnimatedRingPlanner: View {
             AnimatedTaskArcsView(
                 tasks: viewModel.tasks,
                 viewModel: viewModel,
-                arcLineWidth: viewModel.taskArcLineWidth
+                arcLineWidth: viewModel.taskArcLineWidth,
+                rotationAngle: rotationAngle
             )
             .rotationEffect(.degrees(rotationAngle))
             .onAppear {
@@ -708,7 +709,7 @@ struct AnimatedRingPlanner: View {
     }
     
     private func startRotationAnimation() {
-        withAnimation(.linear(duration: 30).repeatForever(autoreverses: false)) {
+        withAnimation(.linear(duration: 20).repeatForever(autoreverses: false)) {
             rotationAngle = 360
         }
     }
@@ -719,11 +720,17 @@ struct AnimatedTaskArcsView: View {
     let tasks: [TaskOnRing]
     @ObservedObject var viewModel: ClockViewModel
     let arcLineWidth: CGFloat
+    let rotationAngle: Double
 
     var body: some View {
         ZStack {
             ForEach(tasks) { task in
-                AnimatedTaskArc(task: task, viewModel: viewModel, arcLineWidth: arcLineWidth)
+                AnimatedTaskArc(
+                    task: task, 
+                    viewModel: viewModel, 
+                    arcLineWidth: arcLineWidth,
+                    globalRotationAngle: rotationAngle
+                )
             }
         }
     }
@@ -734,8 +741,7 @@ struct AnimatedTaskArc: View {
     let task: TaskOnRing
     @ObservedObject var viewModel: ClockViewModel
     let arcLineWidth: CGFloat
-    
-    @State private var taskRotation: Double = 0
+    let globalRotationAngle: Double
     
     var body: some View {
         GeometryReader { geometry in
@@ -766,25 +772,12 @@ struct AnimatedTaskArc: View {
                         lineWidth: configuration.arcLineWidth
                     )
                 
-                // Иконка с дополнительной анимацией
+                // Иконка с правильным центрированием
                 AnimatedTaskIcon(
                     task: task,
-                    geometry: taskGeometry
+                    geometry: taskGeometry,
+                    globalRotationAngle: globalRotationAngle
                 )
-            }
-        }
-        .onAppear {
-            startTaskAnimation()
-        }
-    }
-    
-    private func startTaskAnimation() {
-        // Добавляем небольшую задержку для каждой задачи
-        let delay = Double.random(in: 0...2)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            withAnimation(.linear(duration: Double.random(in: 25...35)).repeatForever(autoreverses: false)) {
-                taskRotation = 360
             }
         }
     }
@@ -794,41 +787,70 @@ struct AnimatedTaskArc: View {
 struct AnimatedTaskIcon: View {
     let task: TaskOnRing
     let geometry: TaskArcGeometry
+    let globalRotationAngle: Double
     
     @State private var iconScale: CGFloat = 1.0
-    @State private var iconRotation: Double = 0
+    @State private var iconPulse: CGFloat = 1.0
     
-    var body: some View {
-        ZStack {
-            // Круглый фон иконки
-            Circle()
-                .fill(task.category.color)
-                .frame(width: geometry.iconSize, height: geometry.iconSize)
-                .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
-            
-            // Иконка
-            Image(systemName: task.category.iconName)
-                .font(.system(size: geometry.iconFontSize))
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
-                .rotationEffect(.degrees(iconRotation))
-        }
-        .position(geometry.iconPosition())
-        .scaleEffect(iconScale)
-        .onAppear {
-            startIconAnimation()
+    // Вычисляемое свойство для позиции иконки с правильным центрированием
+    private var iconPosition: CGPoint {
+        let originalPosition = geometry.iconPosition()
+        let center = geometry.center
+        
+        // Вычисляем направление от центра к иконке
+        let dx = originalPosition.x - center.x
+        let dy = originalPosition.y - center.y
+        
+        // Вычисляем расстояние от центра
+        let distance = sqrt(dx * dx + dy * dy)
+        
+        // Устанавливаем правильное расстояние для центровки иконки на кольце
+        let targetDistance = geometry.radius + 18
+        
+        // Вычисляем новую позицию
+        if distance > 0 {
+            let ratio = targetDistance / distance
+            return CGPoint(
+                x: center.x + dx * ratio,
+                y: center.y + dy * ratio
+            )
+        } else {
+            return originalPosition
         }
     }
     
-    private func startIconAnimation() {
-        // Пульсация иконки
-        withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
-            iconScale = 1.1
+    var body: some View {
+        ZStack {
+            // Круглый фон иконки с пульсацией
+            Circle()
+                .fill(task.category.color)
+                .frame(width: geometry.iconSize * iconPulse, height: geometry.iconSize * iconPulse)
+                .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+            
+            // Иконка, которая остается вертикально ориентированной
+            Image(systemName: task.category.iconName)
+                .font(.system(size: geometry.iconFontSize, weight: .medium))
+                .foregroundColor(.white)
+                .shadow(color: .black.opacity(0.4), radius: 2, y: 1)
+                // Компенсируем глобальное вращение, чтобы иконка оставалась читаемой
+                .rotationEffect(.degrees(-globalRotationAngle))
+        }
+        .position(iconPosition)
+        .scaleEffect(iconScale)
+        .onAppear {
+            startIconAnimations()
+        }
+    }
+    
+    private func startIconAnimations() {
+        // Анимация пульсации
+        withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+            iconPulse = 1.2
         }
         
-        // Вращение иконки
-        withAnimation(.linear(duration: 8).repeatForever(autoreverses: false)) {
-            iconRotation = 360
+        // Анимация масштаба при появлении
+        withAnimation(.spring(response: 0.8, dampingFraction: 0.6).delay(0.3)) {
+            iconScale = 1.0
         }
     }
 }
