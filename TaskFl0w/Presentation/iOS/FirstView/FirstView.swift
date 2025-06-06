@@ -772,6 +772,13 @@ struct AnimatedTaskArc: View {
                         lineWidth: configuration.arcLineWidth
                     )
                 
+                // Круглые маркеры начала и конца задачи
+                TaskCircularMarkers(
+                    task: task,
+                    geometry: taskGeometry,
+                    globalRotationAngle: globalRotationAngle
+                )
+                
                 // Иконка с правильным центрированием
                 AnimatedTaskIcon(
                     task: task,
@@ -780,6 +787,121 @@ struct AnimatedTaskArc: View {
                 )
             }
         }
+    }
+}
+
+// Новый компонент для круглых маркеров задач
+struct TaskCircularMarkers: View {
+    let task: TaskOnRing
+    let geometry: TaskArcGeometry
+    let globalRotationAngle: Double
+    
+    // Расстояние маркеров от циферблата
+    private let markerOffset: CGFloat = 10
+    
+    // Вычисляем позиции для начального и конечного маркеров
+    private var startMarkerPosition: CGPoint {
+        let startAngle = calculateAngle(from: task.startTime)
+        let radians = (startAngle - 90) * .pi / 180
+        let markerRadius = geometry.radius + markerOffset
+        return CGPoint(
+            x: geometry.center.x + markerRadius * cos(radians),
+            y: geometry.center.y + markerRadius * sin(radians)
+        )
+    }
+    
+    private var endMarkerPosition: CGPoint {
+        let endAngle = calculateAngle(from: task.endTime)
+        let radians = (endAngle - 90) * .pi / 180
+        let markerRadius = geometry.radius + markerOffset
+        return CGPoint(
+            x: geometry.center.x + markerRadius * cos(radians),
+            y: geometry.center.y + markerRadius * sin(radians)
+        )
+    }
+    
+    var body: some View {
+        ZStack {
+            // Маркер начала задачи (стиль как TaskDragHandle)
+            Circle()
+                .fill(task.category.color)
+                .frame(width: 18 , height: 18 )
+                .overlay(
+                    // Внутренняя тень с градиентом
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.black.opacity(0.3),
+                                    Color.clear,
+                                    Color.white.opacity(0.2)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .overlay(
+                    Circle().stroke(
+                        Color(red: 0.6, green: 0.6, blue: 0.6), 
+                        lineWidth: 1.5
+                    )
+                )
+                // Внешняя тень
+                .shadow(
+                    color: Color.black.opacity(0.25),
+                    radius: 3,
+                    x: 1,
+                    y: 2
+                )
+                .position(startMarkerPosition)
+            
+            // Маркер конца задачи (немного меньше)
+            Circle()
+                .fill(task.category.color)
+                .frame(width: 18 , height: 18 )
+                .overlay(
+                    // Внутренняя тень с градиентом
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.black.opacity(0.2),
+                                    Color.clear,
+                                    Color.white.opacity(0.15)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .overlay(
+                    Circle().stroke(
+                        Color(red: 0.6, green: 0.6, blue: 0.6), 
+                        lineWidth: 1.2
+                    )
+                )
+                // Внешняя тень
+                .shadow(
+                    color: Color.black.opacity(0.2),
+                    radius: 2,
+                    x: 1,
+                    y: 1
+                )
+                .position(endMarkerPosition)
+        }
+    }
+    
+    
+    // Вычисляем угол для времени (используем 24-часовой формат)
+    private func calculateAngle(from date: Date) -> Double {
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: date)
+        let minute = calendar.component(.minute, from: date)
+        let totalMinutes = Double(hour * 60 + minute)
+        return (totalMinutes / (24 * 60)) * 360
     }
 }
 
