@@ -18,99 +18,93 @@ struct TaskOverlapManager {
     }
     
     // MARK: - Start Time Adjustment
-    static func adjustTaskStartTimesForOverlap(viewModel: ClockViewModel, currentTask: TaskOnRing, newStartTime: Date) -> Bool {
-        // Проверяем валидность времени
-        guard validateTimeChange(viewModel: viewModel, newTime: newStartTime) else {
+    static func adjustTaskStartTimesForOverlap(
+        viewModel: ClockViewModel, 
+        currentTask: TaskOnRing, 
+        newStartTime: Date
+    ) -> Bool {
+        
+        guard TaskTimeValidator.validateTimeChange(viewModel: viewModel, newTime: newStartTime) else {
             return false
         }
         
-        // Создаем обновленную версию задачи
         var updatedTask = currentTask
         updatedTask.startTime = newStartTime
         
-        // Проверяем, можно ли переместить затрагиваемые задачи
-        let (affectedTasks, canMove) = findAffectedTasksForStartTimeChange(
-            viewModel: viewModel,
-            updatedTask: updatedTask
+        let dayBounds = TaskTimeValidator.getDayBounds(for: viewModel.selectedDate)
+        let (affectedTasks, canMove) = TaskChainAnalyzer.findCompleteTaskChainForStartTime(
+            tasks: viewModel.tasks,
+            initiatingTask: updatedTask,
+            dayBounds: dayBounds
         )
         
-        // Если не можем переместить задачи (они упираются в границы), блокируем движение
-        guard canMove else {
-            return false
-        }
+        guard canMove else { return false }
         
-        // Обновляем задачу в базе данных
-        viewModel.taskManagement.updateTaskStartTimeKeepingEnd(currentTask, newStartTime: newStartTime)
-
-        // Обрабатываем перекрытия
-        processTaskOverlaps(viewModel: viewModel, affectedTasks: affectedTasks)
+        // Батчевое обновление для улучшения производительности
+        batchUpdateTasks(viewModel: viewModel, taskUpdates: [(currentTask, newStartTime, currentTask.endTime)] + affectedTasks)
         
-        // Уведомляем об изменениях
         notifyTaskArcsAboutOverlapChanges(viewModel: viewModel, changedTasks: affectedTasks)
-        
         scheduleUIUpdate(viewModel: viewModel)
         return true
     }
 
     // MARK: - End Time Adjustment
-    static func adjustTaskEndTimesForOverlap(viewModel: ClockViewModel, currentTask: TaskOnRing, newEndTime: Date) -> Bool {
-        // Проверяем валидность времени
-        guard validateTimeChange(viewModel: viewModel, newTime: newEndTime) else {
+    static func adjustTaskEndTimesForOverlap(
+        viewModel: ClockViewModel, 
+        currentTask: TaskOnRing, 
+        newEndTime: Date
+    ) -> Bool {
+        
+        guard TaskTimeValidator.validateTimeChange(viewModel: viewModel, newTime: newEndTime) else {
             return false
         }
         
-        // Создаем обновленную версию задачи
         var updatedTask = currentTask
         updatedTask.endTime = newEndTime
         
-        // Проверяем, можно ли переместить затрагиваемые задачи
-        let (affectedTasks, canMove) = findAffectedTasksForEndTimeChange(
-            viewModel: viewModel,
-            updatedTask: updatedTask
+        let dayBounds = TaskTimeValidator.getDayBounds(for: viewModel.selectedDate)
+        let (affectedTasks, canMove) = TaskChainAnalyzer.findCompleteTaskChainForEndTime(
+            tasks: viewModel.tasks,
+            initiatingTask: updatedTask,
+            dayBounds: dayBounds
         )
         
-        // Если не можем переместить задачи (они упираются в границы), блокируем движение
-        guard canMove else {
-            return false
-        }
+        guard canMove else { return false }
         
-        // Обновляем задачу в базе данных
-        viewModel.taskManagement.updateTaskDuration(currentTask, newEndTime: newEndTime)
-
-        // Обрабатываем перекрытия
-        processTaskOverlaps(viewModel: viewModel, affectedTasks: affectedTasks)
+        batchUpdateTasks(viewModel: viewModel, taskUpdates: [(currentTask, currentTask.startTime, newEndTime)] + affectedTasks)
         
-        // Уведомляем об изменениях
         notifyTaskArcsAboutOverlapChanges(viewModel: viewModel, changedTasks: affectedTasks)
-        
         scheduleUIUpdate(viewModel: viewModel)
         return true
     }
 
     // MARK: - Whole Arc Movement
-    static func adjustTaskTimesForWholeArcMove(viewModel: ClockViewModel, currentTask: TaskOnRing, newStartTime: Date, newEndTime: Date) {
-        // Проверяем валидность времени
-        guard validateTimeChange(viewModel: viewModel, newTime: newStartTime),
-              validateTimeChange(viewModel: viewModel, newTime: newEndTime) else {
+    static func adjustTaskTimesForWholeArcMove(
+        viewModel: ClockViewModel, 
+        currentTask: TaskOnRing, 
+        newStartTime: Date, 
+        newEndTime: Date
+    ) {
+        
+        guard TaskTimeValidator.validateTimeChange(viewModel: viewModel, newTime: newStartTime),
+              TaskTimeValidator.validateTimeChange(viewModel: viewModel, newTime: newEndTime) else {
             return
         }
         
-        // Находим оптимальное место для задачи
-        let optimalPlacement = findOptimalTaskPlacement(
-            viewModel: viewModel,
+        let optimalPlacement = TaskPlacementOptimizer.findOptimalTaskPlacement(
+            tasks: viewModel.tasks,
             currentTask: currentTask,
             preferredStartTime: newStartTime,
-            taskDuration: currentTask.duration
+            taskDuration: currentTask.duration,
+            selectedDate: viewModel.selectedDate
         )
         
-        // Обновляем задачу в оптимальном месте
         viewModel.taskManagement.updateWholeTask(
             currentTask,
             newStartTime: optimalPlacement.startTime,
             newEndTime: optimalPlacement.endTime
         )
         
-        // Уведомляем об изменениях
         NotificationCenter.default.post(
             name: .taskArcsTaskMoved,
             object: viewModel,
@@ -132,11 +126,12 @@ struct TaskOverlapManager {
         taskDuration: TimeInterval
     ) -> (startTime: Date, endTime: Date) {
         
-        return findOptimalTaskPlacement(
-            viewModel: viewModel,
+        return TaskPlacementOptimizer.findOptimalTaskPlacement(
+            tasks: viewModel.tasks,
             currentTask: currentTask,
             preferredStartTime: preferredStartTime,
-            taskDuration: taskDuration
+            taskDuration: taskDuration,
+            selectedDate: viewModel.selectedDate
         )
     }
     
@@ -145,10 +140,7 @@ struct TaskOverlapManager {
         for group in conflictingGroups {
             guard group.count > 1 else { continue }
             
-            // Сортируем задачи по приоритету (например, по времени создания или важности)
             let sortedTasks = prioritizeTasks(group)
-            
-            // Размещаем задачи без перекрытий
             redistributeTasksInGroup(viewModel: viewModel, tasks: sortedTasks)
         }
         
@@ -157,279 +149,31 @@ struct TaskOverlapManager {
     
     // MARK: - Private Helper Methods
     
-    private static func validateTimeChange(viewModel: ClockViewModel, newTime: Date) -> Bool {
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60)
-        
-        return newTime >= startOfDay && newTime <= endOfDay
-    }
-    
-    private static func findAffectedTasksForStartTimeChange(
-        viewModel: ClockViewModel,
-        updatedTask: TaskOnRing
-    ) -> ([(TaskOnRing, Date, Date)], Bool) {
-        
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
-        
-        // Используем итеративный подход для проверки всей цепочки
-        return findCompleteTaskChainForStartTime(
-            viewModel: viewModel,
-            initiatingTask: updatedTask,
-            startOfDay: startOfDay
-        )
-    }
-    
-    private static func findAffectedTasksForEndTimeChange(
-        viewModel: ClockViewModel,
-        updatedTask: TaskOnRing
-    ) -> ([(TaskOnRing, Date, Date)], Bool) {
-        
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60)
-        
-        // Используем итеративный подход для проверки всей цепочки
-        return findCompleteTaskChainForEndTime(
-            viewModel: viewModel,
-            initiatingTask: updatedTask,
-            endOfDay: endOfDay
-        )
-    }
-    
-    // НОВЫЙ МЕТОД: Полная проверка цепочки задач для времени начала (любое количество задач)
-    private static func findCompleteTaskChainForStartTime(
-        viewModel: ClockViewModel,
-        initiatingTask: TaskOnRing,
-        startOfDay: Date
-    ) -> ([(TaskOnRing, Date, Date)], Bool) {
-        
-        var tasksToUpdate: [(TaskOnRing, Date, Date)] = []
-        var processedTasks: Set<UUID> = [initiatingTask.id]
-        var tasksQueue: [(task: TaskOnRing, newStartTime: Date, newEndTime: Date)] = [(initiatingTask, initiatingTask.startTime, initiatingTask.endTime)]
-        
-        // Итеративно обрабатываем все задачи в цепочке
-        while !tasksQueue.isEmpty {
-            let currentTaskInfo = tasksQueue.removeFirst()
-            let currentTask = currentTaskInfo.task
-            
-            // Ищем все задачи, которые пересекаются с текущей
-            for otherTask in viewModel.tasks where otherTask.id != currentTask.id && !processedTasks.contains(otherTask.id) {
-                
-                // Проверяем пересечение с новой позицией текущей задачи
-                if currentTaskInfo.newStartTime >= otherTask.startTime && currentTaskInfo.newStartTime < otherTask.endTime {
-                    
-                    let taskDuration = otherTask.duration
-                    let idealNewEndTime = currentTaskInfo.newStartTime
-                    let idealNewStartTime = idealNewEndTime.addingTimeInterval(-taskDuration)
-                    
-                    // ❌ КРИТИЧЕСКАЯ ПРОВЕРКА: Если любая задача в цепочке упирается в 00:00
-                    if idealNewStartTime < startOfDay {
-                        // БЛОКИРУЕМ всю операцию - задача не помещается
-                        return ([], false)
-                    }
-                    
-                    // ✅ Задача помещается - добавляем в обработку
-                    processedTasks.insert(otherTask.id)
-                    let newTaskInfo = (task: otherTask, newStartTime: idealNewStartTime, newEndTime: idealNewEndTime)
-                    tasksQueue.append(newTaskInfo)
-                    tasksToUpdate.append((otherTask, idealNewStartTime, idealNewEndTime))
+    private static func batchUpdateTasks(
+        viewModel: ClockViewModel, 
+        taskUpdates: [(TaskOnRing, Date, Date)]
+    ) {
+        // Группируем обновления для улучшения производительности
+        if taskUpdates.count >= TaskOverlapConstants.batchProcessingThreshold {
+            // Батчевое обновление
+            DispatchQueue.global(qos: .userInitiated).async {
+                for (task, newStart, newEnd) in taskUpdates {
+                    viewModel.taskManagement.updateWholeTask(task, newStartTime: newStart, newEndTime: newEnd)
                 }
             }
-        }
-        
-        return (tasksToUpdate, true)
-    }
-    
-    // НОВЫЙ МЕТОД: Полная проверка цепочки задач для времени конца (любое количество задач)
-    private static func findCompleteTaskChainForEndTime(
-        viewModel: ClockViewModel,
-        initiatingTask: TaskOnRing,
-        endOfDay: Date
-    ) -> ([(TaskOnRing, Date, Date)], Bool) {
-        
-        var tasksToUpdate: [(TaskOnRing, Date, Date)] = []
-        var processedTasks: Set<UUID> = [initiatingTask.id]
-        var tasksQueue: [(task: TaskOnRing, newStartTime: Date, newEndTime: Date)] = [(initiatingTask, initiatingTask.startTime, initiatingTask.endTime)]
-        
-        // Итеративно обрабатываем все задачи в цепочке
-        while !tasksQueue.isEmpty {
-            let currentTaskInfo = tasksQueue.removeFirst()
-            let currentTask = currentTaskInfo.task
-            
-            // Ищем все задачи, которые пересекаются с текущей
-            for otherTask in viewModel.tasks where otherTask.id != currentTask.id && !processedTasks.contains(otherTask.id) {
-                
-                // Проверяем пересечение с новой позицией текущей задачи
-                if currentTaskInfo.newEndTime > otherTask.startTime && currentTaskInfo.newEndTime <= otherTask.endTime {
-                    
-                    let taskDuration = otherTask.duration
-                    let idealNewStartTime = currentTaskInfo.newEndTime
-                    let idealNewEndTime = idealNewStartTime.addingTimeInterval(taskDuration)
-                    
-                    // ❌ КРИТИЧЕСКАЯ ПРОВЕРКА: Если любая задача в цепочке упирается в 23:59
-                    if idealNewEndTime > endOfDay {
-                        // БЛОКИРУЕМ всю операцию - задача не помещается
-                        return ([], false)
-                    }
-                    
-                    // ✅ Задача помещается - добавляем в обработку
-                    processedTasks.insert(otherTask.id)
-                    let newTaskInfo = (task: otherTask, newStartTime: idealNewStartTime, newEndTime: idealNewEndTime)
-                    tasksQueue.append(newTaskInfo)
-                    tasksToUpdate.append((otherTask, idealNewStartTime, idealNewEndTime))
-                }
+        } else {
+            // Обычное обновление для небольшого количества задач
+            for (task, newStart, newEnd) in taskUpdates {
+                viewModel.taskManagement.updateWholeTask(task, newStartTime: newStart, newEndTime: newEnd)
             }
         }
-        
-        return (tasksToUpdate, true)
-    }
-    
-    private static func processTaskOverlaps(viewModel: ClockViewModel, affectedTasks: [(TaskOnRing, Date, Date)]) {
-        for (task, newStart, newEnd) in affectedTasks {
-            viewModel.taskManagement.updateWholeTask(task, newStartTime: newStart, newEndTime: newEnd)
-        }
-    }
-    
-    private static func findOptimalTaskPlacement(
-        viewModel: ClockViewModel,
-        currentTask: TaskOnRing,
-        preferredStartTime: Date,
-        taskDuration: TimeInterval
-    ) -> (startTime: Date, endTime: Date) {
-        
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60)
-        
-        // Получаем все задачи кроме текущей, отсортированные по времени начала
-        let otherTasks = viewModel.tasks
-            .filter { $0.id != currentTask.id }
-            .sorted { $0.startTime < $1.startTime }
-        
-        // Функция проверки свободности временного слота
-        func isTimeSlotFree(startTime: Date, endTime: Date) -> Bool {
-            guard startTime >= startOfDay && endTime <= endOfDay else { return false }
-            
-            for task in otherTasks {
-                if startTime < task.endTime && endTime > task.startTime {
-                    return false
-                }
-            }
-            return true
-        }
-        
-        let preferredEndTime = preferredStartTime.addingTimeInterval(taskDuration)
-        
-        // Проверяем предпочтительное время
-        if isTimeSlotFree(startTime: preferredStartTime, endTime: preferredEndTime) {
-            return (startTime: preferredStartTime, endTime: preferredEndTime)
-        }
-        
-        // Используем умный поиск ближайшего свободного места
-        return findNearestFreeSlot(
-            preferredStartTime: preferredStartTime,
-            taskDuration: taskDuration,
-            otherTasks: otherTasks,
-            startOfDay: startOfDay,
-            endOfDay: endOfDay,
-            isTimeSlotFree: isTimeSlotFree
-        )
-    }
-    
-    private static func findNearestFreeSlot(
-        preferredStartTime: Date,
-        taskDuration: TimeInterval,
-        otherTasks: [TaskOnRing],
-        startOfDay: Date,
-        endOfDay: Date,
-        isTimeSlotFree: (Date, Date) -> Bool
-    ) -> (startTime: Date, endTime: Date) {
-        
-        // Поиск в радиусе предпочтительного времени
-        for offset in stride(from: Constants.searchStep, to: Constants.maxSearchRadius, by: Constants.searchStep) {
-            // Справа от предпочтительного времени
-            let rightStartTime = preferredStartTime.addingTimeInterval(offset)
-            let rightEndTime = rightStartTime.addingTimeInterval(taskDuration)
-            
-            if isTimeSlotFree(rightStartTime, rightEndTime) {
-                return (startTime: rightStartTime, endTime: rightEndTime)
-            }
-            
-            // Слева от предпочтительного времени
-            let leftStartTime = preferredStartTime.addingTimeInterval(-offset)
-            let leftEndTime = leftStartTime.addingTimeInterval(taskDuration)
-            
-            if isTimeSlotFree(leftStartTime, leftEndTime) {
-                return (startTime: leftStartTime, endTime: leftEndTime)
-            }
-        }
-        
-        // Если не найдено в радиусе, ищем первое доступное место
-        return findFirstAvailableSlot(
-            taskDuration: taskDuration,
-            otherTasks: otherTasks,
-            startOfDay: startOfDay,
-            endOfDay: endOfDay,
-            preferredStartTime: preferredStartTime
-        )
-    }
-    
-    private static func findFirstAvailableSlot(
-        taskDuration: TimeInterval,
-        otherTasks: [TaskOnRing],
-        startOfDay: Date,
-        endOfDay: Date,
-        preferredStartTime: Date
-    ) -> (startTime: Date, endTime: Date) {
-        
-        if otherTasks.isEmpty {
-            let startTime = max(startOfDay, preferredStartTime)
-            let endTime = startTime.addingTimeInterval(taskDuration)
-            return (startTime: startTime, endTime: min(endTime, endOfDay))
-        }
-        
-        // Проверяем место перед первой задачей
-        if otherTasks.first!.startTime.timeIntervalSince(startOfDay) >= taskDuration {
-            let endTime = otherTasks.first!.startTime
-            let startTime = endTime.addingTimeInterval(-taskDuration)
-            if startTime >= startOfDay {
-                return (startTime: startTime, endTime: endTime)
-            }
-        }
-        
-        // Ищем промежутки между задачами
-        for i in 0..<(otherTasks.count - 1) {
-            let currentTaskEnd = otherTasks[i].endTime
-            let nextTaskStart = otherTasks[i + 1].startTime
-            let availableTime = nextTaskStart.timeIntervalSince(currentTaskEnd)
-            
-            if availableTime >= taskDuration {
-                return (startTime: currentTaskEnd, endTime: currentTaskEnd.addingTimeInterval(taskDuration))
-            }
-        }
-        
-        // Проверяем место после последней задачи
-        if let lastTask = otherTasks.last {
-            let availableTime = endOfDay.timeIntervalSince(lastTask.endTime)
-            if availableTime >= taskDuration {
-                return (startTime: lastTask.endTime, endTime: lastTask.endTime.addingTimeInterval(taskDuration))
-            }
-        }
-        
-        // В крайнем случае возвращаем оригинальное время
-        return (startTime: preferredStartTime, endTime: preferredStartTime.addingTimeInterval(taskDuration))
     }
     
     private static func prioritizeTasks(_ tasks: [TaskOnRing]) -> [TaskOnRing] {
         return tasks.sorted { task1, task2 in
-            // Приоритет по времени начала (более ранние задачи имеют приоритет)
             if task1.startTime != task2.startTime {
                 return task1.startTime < task2.startTime
             }
-            
-            // Если время начала одинаковое, приоритет по длительности (более короткие задачи имеют приоритет)
             return task1.duration < task2.duration
         }
     }
@@ -438,26 +182,28 @@ struct TaskOverlapManager {
         guard tasks.count > 1 else { return }
         
         var currentTime = tasks.first!.startTime
+        var taskUpdates: [(TaskOnRing, Date, Date)] = []
         
         for task in tasks {
-            let optimalPlacement = findOptimalTaskPlacement(
-                viewModel: viewModel,
+            let optimalPlacement = TaskPlacementOptimizer.findOptimalTaskPlacement(
+                tasks: viewModel.tasks,
                 currentTask: task,
                 preferredStartTime: currentTime,
-                taskDuration: task.duration
+                taskDuration: task.duration,
+                selectedDate: viewModel.selectedDate
             )
             
-            viewModel.taskManagement.updateWholeTask(
-                task,
-                newStartTime: optimalPlacement.startTime,
-                newEndTime: optimalPlacement.endTime
-            )
-            
+            taskUpdates.append((task, optimalPlacement.startTime, optimalPlacement.endTime))
             currentTime = optimalPlacement.endTime.addingTimeInterval(Constants.minimumDuration)
         }
+        
+        batchUpdateTasks(viewModel: viewModel, taskUpdates: taskUpdates)
     }
     
-    private static func notifyTaskArcsAboutOverlapChanges(viewModel: ClockViewModel, changedTasks: [(TaskOnRing, Date, Date)]) {
+    private static func notifyTaskArcsAboutOverlapChanges(
+        viewModel: ClockViewModel, 
+        changedTasks: [(TaskOnRing, Date, Date)]
+    ) {
         let modifiedTasks = changedTasks.map { $0.0 }
         
         if !modifiedTasks.isEmpty {
