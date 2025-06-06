@@ -709,7 +709,7 @@ struct AnimatedRingPlanner: View {
     }
     
     private func startRotationAnimation() {
-        withAnimation(.linear(duration: 20).repeatForever(autoreverses: false)) {
+        withAnimation(.linear(duration: 45).repeatForever(autoreverses: false)) {
             rotationAngle = 360
         }
     }
@@ -825,7 +825,7 @@ struct TaskCircularMarkers: View {
             // Маркер начала задачи (стиль как TaskDragHandle)
             Circle()
                 .fill(task.category.color)
-                .frame(width: 18 , height: 18 )
+                .frame(width: 20 , height: 20 )
                 .overlay(
                     // Внутренняя тень с градиентом
                     Circle()
@@ -860,7 +860,7 @@ struct TaskCircularMarkers: View {
             // Маркер конца задачи (немного меньше)
             Circle()
                 .fill(task.category.color)
-                .frame(width: 18 , height: 18 )
+                .frame(width: 20 , height: 20 )
                 .overlay(
                     // Внутренняя тень с градиентом
                     Circle()
