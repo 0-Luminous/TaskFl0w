@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CoreGraphics
 
 struct FirstView: View {
     @State private var navigateToLibrary = false
@@ -43,7 +44,7 @@ struct FirstView: View {
                             let mainWatchFace = watchFaces.first { $0.category == WatchFaceCategory.minimal.rawValue } ?? WatchFaceModel.defaultWatchFaces[0]
                             
                             // Анимированное кольцо планировщика с задачами
-                            RingPlanner(
+                            AnimatedRingPlanner(
                                 color: .white.opacity(0.25),
                                 viewModel: demoViewModel,
                                 zeroPosition: mainWatchFace.zeroPosition,
@@ -134,6 +135,14 @@ struct FirstView: View {
     
     // Настройка демонстрационных задач
     private func setupDemoTasks() {
+        // Очищаем существующие задачи перед добавлением новых
+        let allTasks = demoViewModel.tasks
+        if !allTasks.isEmpty {
+            Task {
+                try? await demoViewModel.taskManagement.removeMultipleTasks(allTasks)
+            }
+        }
+        
         // Создаем демонстрационные категории
         let workCategory = TaskCategoryModel(
             id: UUID(),
@@ -160,9 +169,9 @@ struct FirstView: View {
         let calendar = Calendar.current
         let now = Date()
         
-        // Задача работы (9:00 - 12:00)
-        let workStart = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: now) ?? now
-        let workEnd = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: now) ?? now
+        // Задача работы (4:00 - 11:00)
+        let workStart = calendar.date(bySettingHour: 4, minute: 0, second: 0, of: now) ?? now
+        let workEnd = calendar.date(bySettingHour: 11, minute: 0, second: 0, of: now) ?? now
         let workTask = TaskOnRing(
             id: UUID(),
             startTime: workStart,
@@ -173,9 +182,9 @@ struct FirstView: View {
             isCompleted: false
         )
         
-        // Задача перерыва (12:00 - 13:00)
-        let breakStart = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: now) ?? now
-        let breakEnd = calendar.date(bySettingHour: 13, minute: 0, second: 0, of: now) ?? now
+        // Задача перерыва (13:00 - 18:00)
+        let breakStart = calendar.date(bySettingHour: 15, minute: 0, second: 0, of: now) ?? now
+        let breakEnd = calendar.date(bySettingHour: 18, minute: 0, second: 0, of: now) ?? now
         let breakTask = TaskOnRing(
             id: UUID(),
             startTime: breakStart,
@@ -186,9 +195,9 @@ struct FirstView: View {
             isCompleted: false
         )
         
-        // Задача учёбы (14:00 - 16:00)
-        let studyStart = calendar.date(bySettingHour: 14, minute: 0, second: 0, of: now) ?? now
-        let studyEnd = calendar.date(bySettingHour: 16, minute: 0, second: 0, of: now) ?? now
+        // Задача учёбы (19:00 - 23:00)
+        let studyStart = calendar.date(bySettingHour: 19, minute: 0, second: 0, of: now) ?? now
+        let studyEnd = calendar.date(bySettingHour: 23, minute: 0, second: 0, of: now) ?? now
         let studyTask = TaskOnRing(
             id: UUID(),
             startTime: studyStart,
@@ -199,10 +208,12 @@ struct FirstView: View {
             isCompleted: false
         )
         
-        // Добавляем задачи в demoViewModel
-        demoViewModel.taskManagement.addTask(workTask)
-        demoViewModel.taskManagement.addTask(breakTask)
-        demoViewModel.taskManagement.addTask(studyTask)
+        // Добавляем задачи в demoViewModel с небольшой задержкой после удаления
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            demoViewModel.taskManagement.addTask(workTask)
+            demoViewModel.taskManagement.addTask(breakTask)
+            demoViewModel.taskManagement.addTask(studyTask)
+        }
     }
     
     // Последовательность анимации
@@ -336,8 +347,8 @@ struct ArcShape: Shape {
     var endAngle: Angle
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        let center = CGPoint(x: rect.midX, y: rect.midY)
-        let radius = min(rect.width, rect.height) / 2
+        let center = CGPoint(x: rect.width / 2, y: rect.height / 2)
+        let radius = min(rect.width, rect.height) / 2 - 50
         path.addArc(
             center: center, radius: radius, startAngle: startAngle - .degrees(90),
             endAngle: endAngle - .degrees(90), clockwise: false)
@@ -652,5 +663,172 @@ struct ModifiedLibraryClockFaceView: View {
         themeManager.isDarkMode
             ? Color(hex: watchFace.darkModeDigitalFontColor) ?? .white
             : Color(hex: watchFace.lightModeDigitalFontColor) ?? .black
+    }
+}
+
+// Добавляем новый компонент для анимированного кольца планировщика
+struct AnimatedRingPlanner: View {
+    let color: Color
+    @ObservedObject var viewModel: ClockViewModel
+    let zeroPosition: Double
+    let shouldDeleteTask: Bool
+    let outerRingLineWidth: CGFloat
+    
+    @State private var rotationAngle: Double = 0
+    
+    init(color: Color, viewModel: ClockViewModel, zeroPosition: Double, shouldDeleteTask: Bool = true, outerRingLineWidth: CGFloat) {
+        self.color = color
+        self.viewModel = viewModel
+        self.zeroPosition = zeroPosition
+        self.shouldDeleteTask = shouldDeleteTask
+        self.outerRingLineWidth = outerRingLineWidth
+    }
+
+    var body: some View {
+        ZStack {
+            // Основное кольцо
+            Circle()
+                .stroke(color, lineWidth: outerRingLineWidth)
+                .frame(
+                    width: UIScreen.main.bounds.width * 0.8,
+                    height: UIScreen.main.bounds.width * 0.8
+                )
+            
+            // Анимированные задачи
+            AnimatedTaskArcsView(
+                tasks: viewModel.tasks,
+                viewModel: viewModel,
+                arcLineWidth: viewModel.taskArcLineWidth
+            )
+            .rotationEffect(.degrees(rotationAngle))
+            .onAppear {
+                startRotationAnimation()
+            }
+        }
+    }
+    
+    private func startRotationAnimation() {
+        withAnimation(.linear(duration: 30).repeatForever(autoreverses: false)) {
+            rotationAngle = 360
+        }
+    }
+}
+
+// Компонент для анимированных задач
+struct AnimatedTaskArcsView: View {
+    let tasks: [TaskOnRing]
+    @ObservedObject var viewModel: ClockViewModel
+    let arcLineWidth: CGFloat
+
+    var body: some View {
+        ZStack {
+            ForEach(tasks) { task in
+                AnimatedTaskArc(task: task, viewModel: viewModel, arcLineWidth: arcLineWidth)
+            }
+        }
+    }
+}
+
+// Отдельная анимированная задача
+struct AnimatedTaskArc: View {
+    let task: TaskOnRing
+    @ObservedObject var viewModel: ClockViewModel
+    let arcLineWidth: CGFloat
+    
+    @State private var taskRotation: Double = 0
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
+            let radius = min(geometry.size.width, geometry.size.height) / 2 - 37
+            
+            let configuration = TaskArcConfiguration(
+                isAnalog: viewModel.isAnalogArcStyle,
+                arcLineWidth: arcLineWidth,
+                outerRingLineWidth: viewModel.outerRingLineWidth,
+                isEditingMode: false,
+                showTimeOnlyForActiveTask: viewModel.showTimeOnlyForActiveTask
+            )
+            
+            let taskGeometry = TaskArcGeometry(
+                center: center,
+                radius: radius,
+                configuration: configuration,
+                task: task
+            )
+            
+            // Упрощенная версия TaskArcContentView только для демонстрации
+            ZStack {
+                // Основная дуга
+                taskGeometry.createArcPath()
+                    .stroke(
+                        task.category.color, 
+                        lineWidth: configuration.arcLineWidth
+                    )
+                
+                // Иконка с дополнительной анимацией
+                AnimatedTaskIcon(
+                    task: task,
+                    geometry: taskGeometry
+                )
+            }
+        }
+        .onAppear {
+            startTaskAnimation()
+        }
+    }
+    
+    private func startTaskAnimation() {
+        // Добавляем небольшую задержку для каждой задачи
+        let delay = Double.random(in: 0...2)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            withAnimation(.linear(duration: Double.random(in: 25...35)).repeatForever(autoreverses: false)) {
+                taskRotation = 360
+            }
+        }
+    }
+}
+
+// Анимированная иконка задачи
+struct AnimatedTaskIcon: View {
+    let task: TaskOnRing
+    let geometry: TaskArcGeometry
+    
+    @State private var iconScale: CGFloat = 1.0
+    @State private var iconRotation: Double = 0
+    
+    var body: some View {
+        ZStack {
+            // Круглый фон иконки
+            Circle()
+                .fill(task.category.color)
+                .frame(width: geometry.iconSize, height: geometry.iconSize)
+                .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+            
+            // Иконка
+            Image(systemName: task.category.iconName)
+                .font(.system(size: geometry.iconFontSize))
+                .foregroundColor(.white)
+                .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+                .rotationEffect(.degrees(iconRotation))
+        }
+        .position(geometry.iconPosition())
+        .scaleEffect(iconScale)
+        .onAppear {
+            startIconAnimation()
+        }
+    }
+    
+    private func startIconAnimation() {
+        // Пульсация иконки
+        withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+            iconScale = 1.1
+        }
+        
+        // Вращение иконки
+        withAnimation(.linear(duration: 8).repeatForever(autoreverses: false)) {
+            iconRotation = 360
+        }
     }
 }
