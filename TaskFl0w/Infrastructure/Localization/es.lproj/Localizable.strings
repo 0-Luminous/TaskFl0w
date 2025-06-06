@@ -1,0 +1,126 @@
+// Localizable.strings (Spanish)
+
+"navigation.settings" = "Configuración";
+"navigation.back" = "Atrás";
+"navigation.done" = "Hecho";
+"navigation.cancel" = "Cancelar";
+
+"settings.notifications" = "Notificaciones";
+"settings.tasks" = "Tareas";
+"settings.watchFaceLibrary" = "Biblioteca de esferas";
+"settings.watchFace" = "Esfera";
+"settings.categories" = "Categorías";
+
+"notifications.title" = "Notificaciones";
+"notifications.reminderTime" = "Recordar antes";
+"notifications.footer" = "Las notificaciones importantes se reproducirán incluso en modo No Molestar";
+"notifications.time.oneMinute" = "1 minuto";
+"notifications.time.fiveMinutes" = "5 minutos";
+"notifications.time.tenMinutes" = "10 minutos";
+"notifications.time.fifteenMinutes" = "15 minutos";
+"notifications.time.thirtyMinutes" = "30 minutos";
+"notifications.time.oneHour" = "1 hora";
+"notifications.testing.title" = "Prueba";
+"notifications.testing.testButton" = "Probar notificación";
+"notifications.alert.title" = "Permiso requerido";
+"notifications.alert.settings" = "Configuración";
+"notifications.alert.cancel" = "Cancelar";
+"notifications.alert.message" = "Se requiere permiso para enviar notificaciones. Por favor, abre la configuración de la aplicación y habilita las notificaciones.";
+
+"settingsTask.moveUnfinished" = "Mover tareas incompletas";
+"settingsTask.increasePriority" = "Aumentar prioridad al mover";
+"settingsTask.priorityFrequency" = "Frecuencia de aumento de prioridad";
+"settingsTask.sectionHeader" = "Transferencia de tareas";
+"settingsTask.sectionFooter" = "Las tareas incompletas se moverán automáticamente al día actual cuando cambie la fecha. Si el aumento de prioridad está habilitado, las tareas aumentarán su prioridad según la frecuencia seleccionada.";
+"settingsTask.navTitle" = "Configuración de tareas";
+"settingsTask.frequencyEveryDay" = "Cada día";
+"settingsTask.frequencyEveryTwoDays" = "Cada dos días";
+"settingsTask.frequencyEveryThreeDays" = "Cada tres días";
+
+"categoryEditor.name" = "Nombre";
+"categoryEditor.newCategory" = "Nueva categoría";
+"categoryEditor.editCategory" = "Editar categoría";
+"categoryEditor.changeIcon" = "Cambiar icono";
+"categoryEditor.changeColor" = "Cambiar color";
+"categoryEditor.categoryHidden" = "Categoría oculta";
+"categoryEditor.categoryVisible" = "Categoría visible";
+"categoryEditor.show" = "Mostrar";
+"categoryEditor.hide" = "Ocultar";
+"categoryEditor.addCategory" = "Agregar categoría";
+"categoryEditor.deleteCategory" = "Eliminar categoría";
+"categoryEditor.deleteAlertTitle" = "¿Eliminar categoría?";
+"categoryEditor.deleteAlertMessage" = "Todas las tareas en esta categoría también serán eliminadas";
+"categoryEditor.cancel" = "Cancelar";
+"categoryEditor.done" = "Hecho";
+"categoryEditor.colorPickerTitle" = "Selector de color";
+"categoryEditor.ready" = "Listo";
+"categoryEditor.categoryNamePlaceholder" = "Nombre de la categoría";
+"categoryEditor.selectColor" = "Seleccionar color";
+"categoryEditor.add" = "Agregar";
+
+"categoryEditor.iconPicker.iconSelection" = "Selección de icono";
+"categoryEditor.iconPicker.searchIcon" = "Buscar icono";
+
+"categoryEditor.dockBar.all" = "Todo";
+"categoryEditor.dockBar.workAndEducation" = "Trabajo y educación";
+"categoryEditor.dockBar.homeAndFamily" = "Hogar y familia";
+"categoryEditor.dockBar.creativity" = "Creatividad";
+"categoryEditor.dockBar.shopping" = "Compras";
+"categoryEditor.dockBar.travel" = "Viajes";
+"categoryEditor.dockBar.planning" = "Planificación";
+"categoryEditor.dockBar.communication" = "Comunicación";
+"categoryEditor.dockBar.tools" = "Herramientas";
+
+"archive.title" = "Archivo de tareas completadas";
+
+"taskTimeLine.title" = "No hay tareas para este día";
+"taskTimeLine.categoryNotFound" = "Categoría no encontrada";
+
+"libraryOfWatchFaces.title" = "Biblioteca de esferas";
+"libraryOfWatchFaces.category.classics" = "Clásico";
+"libraryOfWatchFaces.category.digital" = "Digital";
+"libraryOfWatchFaces.category.minimal" = "Minimalista";
+
+"libraryOfWatchFaces.model.classic" = "Estándar";
+"libraryOfWatchFaces.model.grafitti" = "Grafiti";
+"libraryOfWatchFaces.model.crimsonCore" = "Núcleo carmesí";
+"libraryOfWatchFaces.model.forest" = "Bosque";
+"libraryOfWatchFaces.model.inferno" = "Infierno";
+"libraryOfWatchFaces.model.bluePixel" = "Píxel azul";
+"libraryOfWatchFaces.model.lines" = "Líneas";
+"libraryOfWatchFaces.model.coral" = "Coral";
+"libraryOfWatchFaces.model.happyBeat" = "Ritmo alegre";
+"libraryOfWatchFaces.model.technoRhythm" = "Ritmo tecno";
+"libraryOfWatchFaces.model.redPixel" = "Píxel rojo";
+"libraryOfWatchFaces.model.green" = "Verde";
+"libraryOfWatchFaces.model.yellowBits" = "Bits amarillos";
+"libraryOfWatchFaces.model.diamond" = "Diamante";
+
+"monthYearPicker.title" = "Seleccionar mes y año";
+"monthYearPicker.month" = "Mes";
+"monthYearPicker.year" = "Año";
+"monthYearPicker.select" = "Seleccionar";
+"month.january" = "Enero";
+"month.february" = "Febrero";
+"month.march" = "Marzo";
+"month.april" = "Abril";
+"month.may" = "Mayo";
+"month.june" = "Junio";
+"month.july" = "Julio";
+"month.august" = "Agosto";
+"month.september" = "Septiembre";
+"month.october" = "Octubre";
+"month.november" = "Noviembre";
+"month.december" = "Diciembre";
+
+"week.monday" = "Lun";
+"week.tuesday" = "Mar";
+"week.wednesday" = "Mié";
+"week.thursday" = "Jue";
+"week.friday" = "Vie";
+"week.saturday" = "Sáb";
+"week.sunday" = "Dom";
+
+"search.search" = "Buscar";
+"search.cancel" = "Cancelar";
+"search.tasksNotFound" = "Tareas no encontradas"; 

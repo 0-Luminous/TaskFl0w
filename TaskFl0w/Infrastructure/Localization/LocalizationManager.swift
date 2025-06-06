@@ -105,7 +105,7 @@ final class LocalizationManager {
     
     /// Получение списка поддерживаемых языков
     func supportedLanguages() -> [String] {
-        return ["en", "ru", "zh-Hans"]
+        return ["en", "ru", "zh-Hans", "es"]
     }
     
     /// Проверка поддерживается ли язык
@@ -116,6 +116,11 @@ final class LocalizationManager {
     /// Установка китайского языка (упрощенный)
     func setChineseSimplified() {
         setLanguage("zh-Hans")
+    }
+    
+    /// Установка испанского языка
+    func setSpanish() {
+        setLanguage("es")
     }
 }
 
