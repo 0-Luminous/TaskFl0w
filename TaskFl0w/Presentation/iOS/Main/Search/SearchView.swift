@@ -110,7 +110,7 @@ struct SearchView: View {
                 .frame(width: 80)
                 .background(
                     themeManager.isDarkMode ? 
-                        Color(red: 0.13, green: 0.13, blue: 0.13) : 
+                        Color(red: 0.1, green: 0.1, blue: 0.1) : 
                         Color(red: 0.8, green: 0.8, blue: 0.8)
                 )
 
