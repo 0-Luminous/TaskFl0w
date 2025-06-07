@@ -50,7 +50,7 @@ struct EnhancedWatchFacePreviewCard: View {
                     
                     // Название и статус
                     VStack(spacing: 2) {
-                        Text(watchFace.name)
+                        Text(watchFace.localizedName)
                             .font(.headline)
                             .foregroundColor(themeManager.isDarkMode ? .white : .black)
                             .lineLimit(1)

@@ -76,6 +76,9 @@
 
 "taskTimeLine.title" = "Aucune tâche pour ce jour";
 "taskTimeLine.categoryNotFound" = "Catégorie introuvable";
+"taskTimeLine.endOfDay" = "Fin de journée :";
+"taskTimeLine.hours" = "heures";
+"taskTimeLine.minutes" = "minutes";
 
 "libraryOfWatchFaces.title" = "Bibliothèque de cadrans";
 "libraryOfWatchFaces.category.classics" = "Classique";

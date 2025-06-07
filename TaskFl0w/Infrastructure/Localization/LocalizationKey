@@ -105,6 +105,9 @@ enum LocalizationKey {
     enum TaskTimeLine {
         static let title = "taskTimeLine.title"
         static let categoryNotFound = "taskTimeLine.categoryNotFound"
+        static let endOfDay = "taskTimeLine.endOfDay"
+        static let hours = "taskTimeLine.hours"
+        static let minutes = "taskTimeLine.minutes"
     }
 
     enum LibraryOfWatchFaces {

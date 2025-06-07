@@ -76,6 +76,9 @@
 
 "taskTimeLine.title" = "No hay tareas para este día";
 "taskTimeLine.categoryNotFound" = "Categoría no encontrada";
+"taskTimeLine.endOfDay" = "Fin del día:";
+"taskTimeLine.hours" = "horas";
+"taskTimeLine.minutes" = "minutos";
 
 "libraryOfWatchFaces.title" = "Biblioteca de esferas";
 "libraryOfWatchFaces.category.classics" = "Clásico";

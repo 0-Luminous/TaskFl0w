@@ -77,6 +77,10 @@
 
 "taskTimeLine.title" = "No tasks for this day";
 "taskTimeLine.categoryNotFound" = "Category not found";
+"taskTimeLine.endOfDay" = "End of day:";
+"taskTimeLine.hours" = "hours";
+"taskTimeLine.minutes" = "minutes";
+
 
 "libraryOfWatchFaces.title" = "Library of watch faces";
 "libraryOfWatchFaces.category.classics" = "Сlassic";

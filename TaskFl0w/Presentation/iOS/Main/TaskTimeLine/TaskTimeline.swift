@@ -310,7 +310,7 @@ struct TaskTimeline: View {
                         }
 
                         // Информация о конце дня
-                        Text("End of day: \(timeUntilEndOfDay.hours) hrs, \(timeUntilEndOfDay.minutes) min")
+                        Text("\("taskTimeLine.endOfDay".localized()) \(timeUntilEndOfDay.hours) \("taskTimeLine.hours".localized()), \(timeUntilEndOfDay.minutes) \("taskTimeLine.minutes".localized())")
                             .font(.caption)
                             .foregroundColor(.gray)
                             .padding(.top, 20)

@@ -11,6 +11,7 @@ import SwiftUI
 struct WatchFaceModel: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var name: String
+    var nameKey: String? // Ключ локализации для предустановленных циферблатов
     var style: String // Используем String, чтобы легко хранить в UserDefaults
     var isCustom: Bool = false
     var category: String = WatchFaceCategory.classic.rawValue
@@ -48,6 +49,15 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
     var lightModeHandColor: String
     var darkModeHandColor: String
     
+    // Вычисляемое свойство для динамического получения локализованного названия
+    var localizedName: String {
+        if isCustom || nameKey == nil {
+            return name // Для пользовательских циферблатов возвращаем сохраненное название
+        } else {
+            return nameKey!.localized // Для предустановленных - динамически локализуем
+        }
+    }
+    
     static func == (lhs: WatchFaceModel, rhs: WatchFaceModel) -> Bool {
         return lhs.id == rhs.id
     }
@@ -62,7 +72,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
         [
             // Классический светлый циферблат
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.classic".localized,
+                name: "libraryOfWatchFaces.model.classic",
+                nameKey: "libraryOfWatchFaces.model.classic",
                 style: "classic",
                 isCustom: false,
                 category: "classics",
@@ -81,12 +92,13 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),
             // Добавляем еще один классический циферблат
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.grafitti".localized,
+                name: "libraryOfWatchFaces.model.grafitti",
+                nameKey: "libraryOfWatchFaces.model.grafitti",
                 style: "classic",
                 isCustom: false,
                 category: "classics",
                 lightModeClockFaceColor: Color(red: 0.596, green: 0.596, blue: 0.596).toHex(),
-                darkModeClockFaceColor: Color(red: 0.2, green: 0.2, blue: 0.2).toHex(), // #ffd966
+                darkModeClockFaceColor: Color(red: 0.2, green: 0.2, blue: 0.2).toHex(),
                 lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
                 darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
                 lightModeMarkersColor: Color(red: 1, green: 1, blue: 0.329).toHex(),
@@ -100,7 +112,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),
             // Добавляем кастомные циферблаты с разными шрифтами и стилями маркеров
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.crimsonCore".localized,
+                name: "libraryOfWatchFaces.model.crimsonCore",
+                nameKey: "libraryOfWatchFaces.model.crimsonCore",
                 style: "classic",
                 isCustom: false,
                 category: "classics",
@@ -118,7 +131,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.red1.toHex()
             ),
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.forest".localized,
+                name: "libraryOfWatchFaces.model.forest",
+                nameKey: "libraryOfWatchFaces.model.forest",
                 style: "classic",
                 isCustom: false,
                 category: "classics",
@@ -136,7 +150,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.gray.toHex()
             ),
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.inferno".localized,
+                name: "libraryOfWatchFaces.model.inferno",
+                nameKey: "libraryOfWatchFaces.model.inferno",
                 style: "classic",
                 isCustom: false,
                 category: "classics",
@@ -155,7 +170,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),       
             // Необычные стили
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.bluePixel".localized,
+                name: "libraryOfWatchFaces.model.bluePixel",
+                nameKey: "libraryOfWatchFaces.model.bluePixel",
                 style: "classic",
                 isCustom: false,
                 category: "classics",
@@ -173,7 +189,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color(red: 0.361, green: 0.686, blue: 0.773).toHex()
             ),
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.lines".localized,
+                name: "libraryOfWatchFaces.model.lines",
+                nameKey: "libraryOfWatchFaces.model.lines",
                 style: "digital",
                 isCustom: false,
                 category: "digital",
@@ -194,12 +211,13 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.gray.toHex()
             ), 
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.coral".localized,
+                name: "libraryOfWatchFaces.model.coral",
+                nameKey: "libraryOfWatchFaces.model.coral",
                 style: "digital",
                 isCustom: false,
                 category: "digital",
                 lightModeClockFaceColor: Color.coral1.toHex(),
-                darkModeClockFaceColor: Color.coral1.toHex(), // #ffd966
+                darkModeClockFaceColor: Color.coral1.toHex(),
                 lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
                 darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
                 lightModeMarkersColor: Color.black.toHex(),
@@ -215,12 +233,13 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.gray.toHex()
             ), 
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.happyBeat".localized,
+                name: "libraryOfWatchFaces.model.happyBeat",
+                nameKey: "libraryOfWatchFaces.model.happyBeat",
                 style: "digital",
                 isCustom: false,
                 category: "digital",
                 lightModeClockFaceColor: Color.Pink1.toHex(),
-                darkModeClockFaceColor: Color.Pink1.toHex(), // #ffd966
+                darkModeClockFaceColor: Color.Pink1.toHex(),
                 lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
                 darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
                 lightModeMarkersColor: Color.black.toHex(),
@@ -236,7 +255,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 darkModeHandColor: Color.gray.toHex()
             ), 
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.technoRhythm".localized,
+                name: "libraryOfWatchFaces.model.technoRhythm",
+                nameKey: "libraryOfWatchFaces.model.technoRhythm",
                 style: "digital",
                 isCustom: false,
                 category: "digital",
@@ -249,36 +269,38 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 showHourNumbers: false,
                 markerStyle: "lines",
                 showIntermediateMarkers: true,
-                digitalFont: "Minstrels",
-                digitalFontSize: 60.0,
+                digitalFont: "MOSCOW2024",
+                digitalFontSize: 50.0,
                 lightModeDigitalFontColor: Color.black.toHex(),
-                darkModeDigitalFontColor: Color(red: 0.969, green: 0.808, blue: 0.275).toHex(),
+                darkModeDigitalFontColor: Color.black.toHex(),
                 lightModeHandColor: Color.gray.toHex(),
                 darkModeHandColor: Color.gray.toHex()
             ),
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.redPixel".localized,
+                name: "libraryOfWatchFaces.model.redPixel",
+                nameKey: "libraryOfWatchFaces.model.redPixel",
                 style: "digital",
                 isCustom: false,
                 category: "digital",
-                lightModeClockFaceColor: Color(red: 0.851, green: 0.851, blue: 0.851).toHex(),
-                darkModeClockFaceColor: Color(red: 0.098, green: 0.098, blue: 0.098).toHex(),
+                lightModeClockFaceColor: Color.red1.toHex(),
+                darkModeClockFaceColor: Color.red1.toHex(),
                 lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
                 darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
                 lightModeMarkersColor: Color.black.toHex(),
-                darkModeMarkersColor: Color.white.toHex(),
+                darkModeMarkersColor: Color.black.toHex(),
                 showHourNumbers: false,
-                markerStyle: "lines",
+                markerStyle: "thinUniform",
                 showIntermediateMarkers: true,
                 digitalFont: "TDAText",
-                digitalFontSize: 60.0,
-                lightModeDigitalFontColor: Color(red: 0.922, green: 0.267, blue: 0.353).toHex(),
-                darkModeDigitalFontColor: Color(red: 0.922, green: 0.267, blue: 0.353).toHex(),
+                digitalFontSize: 70.0,
+                lightModeDigitalFontColor: Color.black.toHex(),
+                darkModeDigitalFontColor: Color.black.toHex(),
                 lightModeHandColor: Color.gray.toHex(),
                 darkModeHandColor: Color.gray.toHex()
             ),
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.green".localized,
+                name: "libraryOfWatchFaces.model.green",
+                nameKey: "libraryOfWatchFaces.model.green",
                 style: "digital",
                 isCustom: false,
                 category: "digital",
@@ -300,7 +322,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),     
             // Классический светлый циферблат
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.classic".localized,
+                name: "libraryOfWatchFaces.model.classic",
+                nameKey: "libraryOfWatchFaces.model.classic",
                 style: "classic",
                 isCustom: false,
                 category: "minimal",
@@ -320,7 +343,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),
             // Минималистичный стиль с необычными маркерами
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.yellowBits".localized,
+                name: "libraryOfWatchFaces.model.yellowBits",
+                nameKey: "libraryOfWatchFaces.model.yellowBits",
                 style: "minimal",
                 isCustom: false,
                 category: "minimal",
@@ -340,7 +364,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             ),
             // Минималистичный стиль с необычными маркерами
             WatchFaceModel(
-                name: "libraryOfWatchFaces.model.diamond".localized,
+                name: "libraryOfWatchFaces.model.diamond",
+                nameKey: "libraryOfWatchFaces.model.diamond",
                 style: "minimal",
                 isCustom: false,
                 category: "minimal",
@@ -349,7 +374,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 lightModeOuterRingColor: Color.gray.opacity(0.3).toHex(),
                 darkModeOuterRingColor: Color.gray.opacity(0.5).toHex(),
                 lightModeMarkersColor: Color.black.toHex(),
-                darkModeMarkersColor: Color(red: 0.608, green: 0.941, blue: 0.965).toHex(), // #9bf0f6
+                darkModeMarkersColor: Color(red: 0.608, green: 0.941, blue: 0.965).toHex(),
                 showHourNumbers: true,
                 numberInterval: 2,
                 markerStyle: "hourAccent",

@@ -77,6 +77,9 @@
 
 "taskTimeLine.title" = "Нет задач на этот день";
 "taskTimeLine.categoryNotFound" = "Категория не найдена";
+"taskTimeLine.endOfDay" = "До конца дня:";
+"taskTimeLine.hours" = "ч";
+"taskTimeLine.minutes" = "мин";
 
 "libraryOfWatchFaces.title" = "Библиотека циферблатов";
 "libraryOfWatchFaces.category.classics" = "Классический";

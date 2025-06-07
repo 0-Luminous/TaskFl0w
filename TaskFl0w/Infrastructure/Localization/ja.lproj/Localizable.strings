@@ -76,6 +76,9 @@
 
 "taskTimeLine.title" = "この日はタスクがありません";
 "taskTimeLine.categoryNotFound" = "カテゴリが見つかりません";
+"taskTimeLine.endOfDay" = "終了まで:";
+"taskTimeLine.hours" = "時間";
+"taskTimeLine.minutes" = "分";
 
 "libraryOfWatchFaces.title" = "ウォッチフェイスライブラリ";
 "libraryOfWatchFaces.category.classics" = "クラシック";

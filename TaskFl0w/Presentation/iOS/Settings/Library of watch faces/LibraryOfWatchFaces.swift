@@ -18,6 +18,7 @@ struct LibraryOfWatchFaces: View {
     @State private var newWatchFaceName = ""
     @State private var selectedWatchFace: WatchFaceModel?
     @State private var showDeleteAllAlert = false
+    @State private var refreshTrigger = UUID() // Добавляем триггер для принудительного обновления
     
     // Модификатор для стилизации кнопок
     private struct ButtonModifier: ViewModifier {
@@ -34,7 +35,7 @@ struct LibraryOfWatchFaces: View {
             content
                 .font(.caption)
                 .padding(.vertical, 6)
-                .padding(.horizontal, 10)
+                // .padding(.horizontal, 10)
                 .foregroundColor(isSelected ? .yellow : (isDisabled ? .gray : (themeManager.isDarkMode ? .white : .black)))
                 .frame(maxWidth: .infinity)
                 .background(
@@ -97,36 +98,36 @@ struct LibraryOfWatchFaces: View {
                                         libraryManager.deleteWatchFace(face.id)
                                     }
                                 )
-                                .padding(.horizontal)
+                                // .padding(.horizontal)
                             }
                             
-                            Spacer().frame(height: 100)
+                            // Spacer().frame(height: 100)
                         }
                         .padding(.top)
                     }
                 }
                 
                 // Добавляем докбар
-                VStack {
-                    Spacer()
-                    LibraryDockBar(
-                        tabs: [
-                            ("plus.circle.fill", "Добавить"),
-                            ("trash.fill", "Сбросить")
-                        ],
-                        onTabSelected: { index in
-                            switch index {
-                            case 0:
-                                showingAddSheet = true
-                            case 1:
-                                showDeleteAllAlert = true
-                            default:
-                                break
-                            }
-                        }
-                    )
-                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
-                }
+                // VStack {
+                //     Spacer()
+                //     LibraryDockBar(
+                //         tabs: [
+                //             ("plus.circle.fill", "Добавить"),
+                //             ("trash.fill", "Сбросить")
+                //         ],
+                //         onTabSelected: { index in
+                //             switch index {
+                //             case 0:
+                //                 showingAddSheet = true
+                //             case 1:
+                //                 showDeleteAllAlert = true
+                //             default:
+                //                 break
+                //             }
+                //         }
+                //     )
+                //     .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
+                // }
             }
             .navigationTitle("libraryOfWatchFaces.title".localized)
             .navigationBarTitleDisplayMode(.inline)
@@ -144,6 +145,13 @@ struct LibraryOfWatchFaces: View {
                     }
                 }
             }
+            // Добавляем подписку на изменение локали
+            .onReceive(NotificationCenter.default.publisher(for: NSLocale.currentLocaleDidChangeNotification)) { _ in
+                // Принудительно обновляем интерфейс при смене языка
+                refreshTrigger = UUID()
+                libraryManager.objectWillChange.send()
+            }
+            .id(refreshTrigger) // Используем ID для принудительного пересоздания View
 //            .sheet(isPresented: $showingAddSheet) {
 //               EnhancedAddWatchFaceView()
 //            }

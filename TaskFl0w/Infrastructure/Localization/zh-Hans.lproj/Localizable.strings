@@ -76,6 +76,9 @@
 
 "taskTimeLine.title" = "这一天没有任务";
 "taskTimeLine.categoryNotFound" = "未找到类别";
+"taskTimeLine.endOfDay" = "距离结束:";
+"taskTimeLine.hours" = "小时";
+"taskTimeLine.minutes" = "分钟";
 
 "libraryOfWatchFaces.title" = "表盘库";
 "libraryOfWatchFaces.category.classics" = "经典";
