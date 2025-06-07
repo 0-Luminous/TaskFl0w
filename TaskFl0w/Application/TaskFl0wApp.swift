@@ -35,20 +35,22 @@ struct TaskFl0wApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     let persistenceController = PersistenceController.shared
     @AppStorage("isAppAlreadyLaunchedOnce") private var isAppAlreadyLaunchedOnce: Bool = false
+    @AppStorage("isAppSetupCompleted") private var isAppSetupCompleted: Bool = false
 
     var body: some Scene {
         WindowGroup {
-            if !isAppAlreadyLaunchedOnce {
-                FirstView()
-                    .onDisappear {
-                        // Обновляем флаг после исчезновения FirstView
-                        isAppAlreadyLaunchedOnce = true
-                    }
-                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
-            } else {
-                ClockViewIOS()
-                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            // Более эффективная логика показа экранов
+            Group {
+                if !isAppAlreadyLaunchedOnce || !isAppSetupCompleted {
+                    FirstView()
+                        .onDisappear {
+                            isAppAlreadyLaunchedOnce = true
+                        }
+                } else {
+                    ClockViewIOS()
+                }
             }
+            .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }
 }

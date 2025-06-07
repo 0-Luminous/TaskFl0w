@@ -22,8 +22,8 @@ class DemoClockViewModel: ObservableObject {
     var isAnalogArcStyle: Bool = false
     var showTimeOnlyForActiveTask: Bool = false
     
-    // Изолированное управление задачами только для демонстрации
-    lazy var taskManagement: DemoTaskManagement = {
+    // Изолированное управление задачами только для демонстрации - ДЕЛАЕМ OPTIONAL
+    lazy var taskManagement: DemoTaskManagement? = {
         return DemoTaskManagement(viewModel: self)
     }()
     
@@ -44,6 +44,21 @@ class DemoClockViewModel: ObservableObject {
         }
         tasks = demoTasks
     }
+    
+    static func empty() -> DemoClockViewModel {
+        let vm = DemoClockViewModel()
+        vm.tasks = []
+        return vm
+    }
+    
+    deinit {
+        // Принудительно очищаем все данные при освобождении памяти
+        clearAllTasks()
+        demoTasks.removeAll()
+        tasks.removeAll()
+        taskManagement = nil  // Теперь это работает, так как taskManagement optional
+        print("DemoClockViewModel успешно освобожден из памяти")
+    }
 }
 
 // Создаем изолированный TaskManagement для демо
@@ -62,6 +77,11 @@ class DemoTaskManagement {
         await MainActor.run {
             viewModel?.removeDemoTasks(tasks)
         }
+    }
+    
+    deinit {
+        viewModel = nil
+        print("DemoTaskManagement освобожден")
     }
 }
 

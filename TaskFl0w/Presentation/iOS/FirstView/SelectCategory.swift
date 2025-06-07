@@ -13,6 +13,7 @@ struct SelectCategory: View {
     @Environment(\.colorScheme) var colorScheme
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var navigateToMainApp = false
+    @AppStorage("isFirstViewCompleted") private var isFirstViewCompleted: Bool = false
 
     private let columns = [
         GridItem(.adaptive(minimum: 160), spacing: 20)

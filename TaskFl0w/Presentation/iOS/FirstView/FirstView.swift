@@ -134,12 +134,26 @@ struct FirstView: View {
                 SelectWatch()
             }
             .onAppear {
-                setupDemoTasks()
-                startAnimationSequence()
+                // Проверяем, нужно ли показывать демо
+                if !UserDefaults.standard.bool(forKey: "isAppSetupCompleted") {
+                    setupDemoTasks()
+                    startAnimationSequence()
+                } else {
+                    // Если настройка завершена, сразу переходим дальше
+                    navigateToSelectWatch = true
+                }
             }
             .onDisappear {
                 // Очищаем демонстрационные задачи при уходе с FirstView
                 demoViewModel.clearAllTasks()
+                
+                // Освобождаем память от анимаций
+                showMainClock = false
+                showWelcomeText = false
+                showButton = false
+                
+                // Останавливаем все таймеры анимаций
+                cancelAllAnimations()
             }
         }
     }
@@ -216,9 +230,9 @@ struct FirstView: View {
         
         // Добавляем задачи в изолированный demoViewModel
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            demoViewModel.taskManagement.addTask(workTask)
-            demoViewModel.taskManagement.addTask(breakTask)
-            demoViewModel.taskManagement.addTask(studyTask)
+            demoViewModel.taskManagement?.addTask(workTask)
+            demoViewModel.taskManagement?.addTask(breakTask)
+            demoViewModel.taskManagement?.addTask(studyTask)
         }
     }
     
@@ -244,6 +258,12 @@ struct FirstView: View {
                 showButton = true
             }
         }
+    }
+    
+    // Добавьте этот метод в FirstView
+    private func cancelAllAnimations() {
+        // Отменяем все DispatchQueue задачи
+        NSObject.cancelPreviousPerformRequests(withTarget: self)
     }
 }
 
