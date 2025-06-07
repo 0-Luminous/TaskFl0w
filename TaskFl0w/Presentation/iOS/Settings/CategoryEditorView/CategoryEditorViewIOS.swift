@@ -739,20 +739,8 @@ struct CategoryEditorViewIOS: View {
             selectedDockCategory = newCategory
             editingCategory = newCategory
         } else {
-            // При добавлении новой категории, вставляем её в начало списка
-            var categories = viewModel.categories
-            // Добавляем новую категорию в начало массива
-            categories.insert(newCategory, at: 0)
-            
-            // Сначала удаляем все категории
-            for category in viewModel.categories {
-                viewModel.categoryManagement.removeCategory(category)
-            }
-            
-            // Затем добавляем все категории по порядку
-            for category in categories {
-                viewModel.categoryManagement.addCategory(category)
-            }
+            // При добавлении новой категории просто добавляем её
+            viewModel.categoryManagement.addCategory(newCategory)
             
             // Подготавливаем для добавления следующей категории
             categoryName = ""
