@@ -159,3 +159,5 @@
 "selectCategory.description.start" = "Empecemos juntos";
 "selectCategory.description.choose" = "Elige las categorías más adecuadas para tus tareas. Podrás agregar las tuyas más tarde.";
 "selectCategory.description.loading" = "Configurando categorías..."; 
+
+"task.newTask" = "Nueva tarea";

@@ -160,3 +160,5 @@
 "selectCategory.description.start" = "Давайте начнем вместе";
 "selectCategory.description.choose" = "Выберите наиболее подходящие категории для ваших задач. Позже вы сможете добавить свои.";
 "selectCategory.description.loading" = "Настройка категорий...";
+
+"task.newTask" = "Новая задача";

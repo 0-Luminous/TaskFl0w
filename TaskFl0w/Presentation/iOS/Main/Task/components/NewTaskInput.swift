@@ -18,7 +18,7 @@ struct NewTaskInput: View {
     
     var body: some View {
         HStack(alignment: .center) {
-            TextField("Новая задача", text: $newTaskTitle, axis: .vertical)
+            TextField("task.newTask".localized(), text: $newTaskTitle, axis: .vertical)
                 .foregroundColor(themeManager.isDarkMode ? .white : .black)
                 .lineLimit(3) // Разрешить до 3 строк
                 .onSubmit {

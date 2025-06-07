@@ -159,3 +159,5 @@
 "selectCategory.description.start" = "一緒に始めましょう";
 "selectCategory.description.choose" = "タスクに最も適したカテゴリを選択してください。後で独自のカテゴリを追加できます。";
 "selectCategory.description.loading" = "カテゴリを設定中..."; 
+
+"task.newTask" = "新しいタスク";

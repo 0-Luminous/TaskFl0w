@@ -160,3 +160,4 @@
 "selectCategory.description.choose" = "选择最适合您任务的类别。稍后您可以添加自己的类别。";
 "selectCategory.description.loading" = "正在设置类别...";
 
+"task.newTask" = "新任务";

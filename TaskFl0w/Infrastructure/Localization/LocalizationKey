@@ -214,4 +214,8 @@ enum LocalizationKey {
             static let loading = "selectCategory.description.loading"
         }
     }
+
+    enum Task {
+        static let newTask = "task.newTask"
+    }
 }
