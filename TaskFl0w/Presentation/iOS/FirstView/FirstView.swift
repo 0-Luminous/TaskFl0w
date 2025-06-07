@@ -18,6 +18,7 @@ struct FirstView: View {
     
     // Создаем demo ViewModel с примерами задач
     @StateObject private var demoViewModel = ClockViewModel()
+    @ObservedObject private var themeManager = ThemeManager.shared
     
     // Массив предустановленных циферблатов
     private let watchFaces = WatchFaceModel.defaultWatchFaces
@@ -74,7 +75,7 @@ struct FirstView: View {
                     // Приветственный текст
                     if showWelcomeText {
                         VStack(spacing: 16) {
-                            Text("Добро пожаловать")
+                            Text("firstView.welcome".localized())
                                 .font(.title)
                                 .fontWeight(.bold)
                                 .foregroundStyle(
@@ -86,9 +87,9 @@ struct FirstView: View {
                                 )
                                 .multilineTextAlignment(.center)
                             
-                            Text("TaskFlow — простой способ спланировать день и держать всё под контролем.")
+                            Text("firstView.welcomeDescription".localized())
                                 .font(.headline)
-                                .foregroundColor(Color(hue: 0.7, saturation: 0.7, brightness: 0.7))
+                                .foregroundColor(themeManager.isDarkMode ? .white.opacity(0.9) : .black.opacity(0.9))
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 40)
                         }
@@ -100,7 +101,7 @@ struct FirstView: View {
                         Button(action: {
                             navigateToSelectWatch = true
                         }) {
-                            Text("Начать")
+                            Text("firstView.start".localized())
                                 .font(.headline)
                                 .foregroundColor(.black)
                                 .padding(.horizontal, 40)
@@ -920,31 +921,37 @@ struct AnimatedTaskIcon: View {
     @State private var iconScale: CGFloat = 1.0
     @State private var iconPulse: CGFloat = 1.0
     
-    // Вычисляемое свойство для позиции иконки с правильным центрированием
+    // Упрощенное и стабильное вычисление позиции иконки
     private var iconPosition: CGPoint {
-        let originalPosition = geometry.iconPosition()
+        // Используем стандартный метод из геометрии, но увеличиваем расстояние
+        let basePosition = geometry.iconPosition()
         let center = geometry.center
         
-        // Вычисляем направление от центра к иконке
-        let dx = originalPosition.x - center.x
-        let dy = originalPosition.y - center.y
+        // Вычисляем направление от центра к базовой позиции иконки
+        let dx = basePosition.x - center.x
+        let dy = basePosition.y - center.y
+        let currentDistance = sqrt(dx * dx + dy * dy)
         
-        // Вычисляем расстояние от центра
-        let distance = sqrt(dx * dx + dy * dy)
-        
-        // Устанавливаем правильное расстояние для центровки иконки на кольце
-        let targetDistance = geometry.radius + 18
-        
-        // Вычисляем новую позицию
-        if distance > 0 {
-            let ratio = targetDistance / distance
+        // Если позиция некорректна, используем резервный расчет
+        if currentDistance.isNaN || currentDistance < 10 {
+            let (startAngle, endAngle) = geometry.angles
+            let midAngle = RingTimeCalculator.calculateMidAngle(start: startAngle, end: endAngle)
+            let targetRadius = geometry.radius + 35 // Увеличенное расстояние от центра
+            
             return CGPoint(
-                x: center.x + dx * ratio,
-                y: center.y + dy * ratio
+                x: center.x + targetRadius * cos(midAngle.radians),
+                y: center.y + targetRadius * sin(midAngle.radians)
             )
-        } else {
-            return originalPosition
         }
+        
+        // Увеличиваем расстояние от центра на дополнительные 15 пикселей
+        let targetDistance = currentDistance + 12
+        let ratio = targetDistance / currentDistance
+        
+        return CGPoint(
+            x: center.x + dx * ratio,
+            y: center.y + dy * ratio
+        )
     }
     
     var body: some View {

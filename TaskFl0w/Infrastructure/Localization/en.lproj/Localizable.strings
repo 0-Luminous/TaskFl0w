@@ -4,6 +4,8 @@
 "navigation.back" = "Back";
 "navigation.done" = "Done";
 "navigation.cancel" = "Cancel";
+"navigation.continue" = "Continue";
+
 
 "settings.notifications" = "Notifications";
 "settings.tasks" = "Tasks";
@@ -125,3 +127,34 @@
 "search.search" = "Search";
 "search.cancel" = "Cancel";
 "search.tasksNotFound" = "Tasks not found";
+
+"firstView.welcome" = "Welcome";
+"firstView.welcomeDescription" = "TaskFlow is a simple way to plan your day and stay in control.";
+"firstView.start" = "Start";
+"firstView.selectWatch" = "Choose a starting watch face";
+
+"selectCategory.work" = "Work";
+"selectCategory.education" = "Education";
+"selectCategory.break" = "Break";
+"selectCategory.rest" = "Rest";
+"selectCategory.hobby" = "Hobby";
+"selectCategory.sport" = "Sport";
+"selectCategory.food" = "Food";
+"selectCategory.sleep" = "Sleep";
+"selectCategory.travel" = "Travel";
+"selectCategory.meditation" = "Meditation";
+
+"selectCategory.title.work" = "Work tasks and meetings";
+"selectCategory.title.education" = "Study activities and homework";
+"selectCategory.title.break" = "Short breaks for rest";
+"selectCategory.title.rest" = "Full rest and relaxation";
+"selectCategory.title.hobby" = "Personal time for hobbies";
+"selectCategory.title.sport" = "Workouts and physical activity";
+"selectCategory.title.food" = "Cooking and eating";
+"selectCategory.title.sleep" = "Time for sleep and recovery";
+"selectCategory.title.travel" = "Trips and excursions";
+"selectCategory.title.meditation" = "Time for contemplation";
+
+"selectCategory.description.start" = "Let's start together";
+"selectCategory.description.choose" = "Choose the most suitable categories for your tasks. You can add your own later.";
+"selectCategory.description.loading" = "Setting up categories...";

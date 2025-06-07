@@ -45,7 +45,7 @@ struct SelectCategory: View {
                         }
                     }
                 }) {
-                    Text("Продолжить")
+                    Text("navigation.continue".localized())
                         .font(.headline)
                         .padding()
                         .frame(maxWidth: .infinity)
@@ -71,11 +71,11 @@ struct SelectCategory: View {
     
     private var introText: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Давайте начнем вместе")
+            Text("selectCategory.description.start".localized())
                 .font(.title2.bold())
                 .foregroundColor(themeManager.isDarkMode ? .white : .black)
             
-            Text("Выберите наиболее подходящие категории для ваших задач. Позже вы сможете добавить свои.")
+            Text("selectCategory.description.choose".localized())
                 .font(.subheadline)
                 .foregroundColor(themeManager.isDarkMode ? .white.opacity(0.8) : .black.opacity(0.7))
                 .fixedSize(horizontal: false, vertical: true)
@@ -211,26 +211,26 @@ struct CategoryCard: View {
     
     private func getDescription(for category: String) -> String {
         switch category {
-        case "Работа":
-            return "Рабочие задачи и встречи"
-        case "Учеба":
-            return "Учебные активности и домашняя работа"
-        case "Перерыв":
-            return "Короткие перерывы для отдыха"
-        case "Отдых":
-            return "Полноценный отдых и релаксация"
-        case "Хобби":
-            return "Личное время для увлечений"
-        case "Спорт":
-            return "Тренировки и физическая активность"
-        case "Еда":
-            return "Приготовление и прием пищи"
-        case "Сон":
-            return "Время для сна и восстановления"
-        case "Путешествия":
-            return "Поездки и экскурсии"
-        case "Медитация":
-            return "Время для самосозерцания"
+        case "selectCategory.work".localized():
+            return "selectCategory.title.work".localized()
+        case "selectCategory.education".localized():
+            return "selectCategory.title.education".localized()
+        case "selectCategory.break".localized():
+            return "selectCategory.title.break".localized()
+        case "selectCategory.rest".localized():
+            return "selectCategory.title.rest".localized()
+        case "selectCategory.hobby".localized():
+            return "selectCategory.title.hobby".localized()
+        case "selectCategory.sport".localized():
+            return "selectCategory.title.sport".localized()
+        case "selectCategory.food".localized():
+            return "selectCategory.title.food".localized()
+        case "selectCategory.sleep".localized():
+            return "selectCategory.title.sleep".localized()
+        case "selectCategory.travel".localized():
+            return "selectCategory.title.travel".localized()
+        case "selectCategory.meditation".localized():
+            return "selectCategory.title.meditation".localized()
         default:
             return "Персональная категория"
         }
@@ -254,16 +254,16 @@ final class SelectCategoryViewModel: ObservableObject {
     func setupDefaultCategories() {
         // Создаем набор стандартных категорий
         startCategories = [
-            TaskCategoryModel(id: UUID(), rawValue: "Работа", iconName: "briefcase", color: .Blue1),
-            TaskCategoryModel(id: UUID(), rawValue: "Учеба", iconName: "book", color: .Purple1),
-            TaskCategoryModel(id: UUID(), rawValue: "Перерыв", iconName: "cup.and.saucer", color: .Mint1),
-            TaskCategoryModel(id: UUID(), rawValue: "Отдых", iconName: "beach.umbrella", color: .Teal1),
-            TaskCategoryModel(id: UUID(), rawValue: "Хобби", iconName: "paintpalette", color: .Orange1),
-            TaskCategoryModel(id: UUID(), rawValue: "Спорт", iconName: "figure.run", color: .red1),
-            TaskCategoryModel(id: UUID(), rawValue: "Еда", iconName: "fork.knife", color: .green1),
-            TaskCategoryModel(id: UUID(), rawValue: "Сон", iconName: "moon.stars", color: .Indigo1),
-            TaskCategoryModel(id: UUID(), rawValue: "Путешествия", iconName: "airplane", color: .BlueJay1),
-            TaskCategoryModel(id: UUID(), rawValue: "Медитация", iconName: "sparkles", color: .Pink1)
+            TaskCategoryModel(id: UUID(), rawValue: "selectCategory.work".localized(), iconName: "briefcase", color: .Blue1),
+            TaskCategoryModel(id: UUID(), rawValue: "selectCategory.education".localized(), iconName: "book", color: .Purple1),
+            TaskCategoryModel(id: UUID(), rawValue: "selectCategory.break".localized(), iconName: "cup.and.saucer", color: .Mint1),
+            TaskCategoryModel(id: UUID(), rawValue: "selectCategory.rest".localized(), iconName: "beach.umbrella", color: .Teal1),
+            TaskCategoryModel(id: UUID(), rawValue: "selectCategory.hobby".localized(), iconName: "paintpalette", color: .Orange1),
+            TaskCategoryModel(id: UUID(), rawValue: "selectCategory.sport".localized(), iconName: "figure.run", color: .red1),
+            TaskCategoryModel(id: UUID(), rawValue: "selectCategory.food".localized(), iconName: "fork.knife", color: .green1),
+            TaskCategoryModel(id: UUID(), rawValue: "selectCategory.sleep".localized(), iconName: "moon.stars", color: .Indigo1),
+            TaskCategoryModel(id: UUID(), rawValue: "selectCategory.travel".localized(), iconName: "airplane", color: .BlueJay1),
+            TaskCategoryModel(id: UUID(), rawValue: "selectCategory.meditation".localized(), iconName: "sparkles", color: .Pink1)
         ]
     }
     

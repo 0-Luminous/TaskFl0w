@@ -6,6 +6,7 @@ enum LocalizationKey {
         static let settings = "navigation.settings"
         static let back = "navigation.back"
         static let done = "navigation.done"
+        static let continue = "navigation.continue"
     }
     
     // Настройки
@@ -170,5 +171,44 @@ enum LocalizationKey {
         static let search = "search.search"
         static let cancel = "search.cancel"
         static let tasksNotFound = "search.tasksNotFound"
+    }
+
+    enum FirstView {
+        static let welcome = "firstView.welcome"
+        static let welcomeDescription = "firstView.welcomeDescription"
+        static let start = "firstView.start"
+        static let selectWatch = "firstView.selectWatch"
+    }
+
+    enum SelectCategory {
+        static let work = "selectCategory.work"
+        static let education = "selectCategory.education"
+        static let break = "selectCategory.break"
+        static let rest = "selectCategory.rest"
+        static let hobby = "selectCategory.hobby"
+        static let sport = "selectCategory.sport"
+        static let food = "selectCategory.food"
+        static let sleep = "selectCategory.sleep"
+        static let travel = "selectCategory.travel"
+        static let meditation = "selectCategory.meditation"
+
+        enum Title {
+            static let work = "selectCategory.title.work"
+            static let education = "selectCategory.title.education"
+            static let break = "selectCategory.title.break"
+            static let rest = "selectCategory.title.rest"
+            static let hobby = "selectCategory.title.hobby"
+            static let sport = "selectCategory.title.sport"
+            static let food = "selectCategory.title.food"
+            static let sleep = "selectCategory.title.sleep"
+            static let travel = "selectCategory.title.travel"
+            static let meditation = "selectCategory.title.meditation"
+        }
+        
+        enum Description {
+            static let start = "selectCategory.description.start"
+            static let choose = "selectCategory.description.choose"
+            static let loading = "selectCategory.description.loading"
+        }
     }
 }

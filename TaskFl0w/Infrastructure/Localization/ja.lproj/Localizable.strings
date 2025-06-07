@@ -4,6 +4,7 @@
 "navigation.back" = "戻る";
 "navigation.done" = "完了";
 "navigation.cancel" = "キャンセル";
+"navigation.continue" = "続行";
 
 "settings.notifications" = "通知";
 "settings.tasks" = "タスク";
@@ -123,4 +124,35 @@
 
 "search.search" = "検索";
 "search.cancel" = "キャンセル";
-"search.tasksNotFound" = "タスクが見つかりません"; 
+"search.tasksNotFound" = "タスクが見つかりません";
+
+"firstView.welcome" = "ようこそ";
+"firstView.welcomeDescription" = "TaskFlowは1日を計画し、すべてをコントロール下に置く簡単な方法です。";
+"firstView.start" = "開始";
+"firstView.selectWatch" = "スタート用のウォッチフェイスを選択";
+
+"selectCategory.work" = "仕事";
+"selectCategory.education" = "学習";
+"selectCategory.break" = "休憩";
+"selectCategory.rest" = "休息";
+"selectCategory.hobby" = "趣味";
+"selectCategory.sport" = "運動";
+"selectCategory.food" = "食事";
+"selectCategory.sleep" = "睡眠";
+"selectCategory.travel" = "旅行";
+"selectCategory.meditation" = "瞑想";
+
+"selectCategory.title.work" = "仕事のタスクと会議";
+"selectCategory.title.education" = "学習活動と宿題";
+"selectCategory.title.break" = "休息のための短い休憩";
+"selectCategory.title.rest" = "完全な休息とリラクゼーション";
+"selectCategory.title.hobby" = "趣味のための個人時間";
+"selectCategory.title.sport" = "ワークアウトと身体活動";
+"selectCategory.title.food" = "料理と食事";
+"selectCategory.title.sleep" = "睡眠と回復の時間";
+"selectCategory.title.travel" = "旅行と遠足";
+"selectCategory.title.meditation" = "瞑想の時間";
+
+"selectCategory.description.start" = "一緒に始めましょう";
+"selectCategory.description.choose" = "タスクに最も適したカテゴリを選択してください。後で独自のカテゴリを追加できます。";
+"selectCategory.description.loading" = "カテゴリを設定中..."; 

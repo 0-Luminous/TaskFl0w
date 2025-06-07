@@ -4,6 +4,7 @@
 "navigation.back" = "Atrás";
 "navigation.done" = "Hecho";
 "navigation.cancel" = "Cancelar";
+"navigation.continue" = "Continuar";
 
 "settings.notifications" = "Notificaciones";
 "settings.tasks" = "Tareas";
@@ -123,4 +124,35 @@
 
 "search.search" = "Buscar";
 "search.cancel" = "Cancelar";
-"search.tasksNotFound" = "Tareas no encontradas"; 
+"search.tasksNotFound" = "Tareas no encontradas";
+
+"firstView.welcome" = "Bienvenido";
+"firstView.welcomeDescription" = "TaskFlow es una forma sencilla de planificar tu día y mantener todo bajo control.";
+"firstView.start" = "Comenzar";
+"firstView.selectWatch" = "Elige una esfera inicial";
+
+"selectCategory.work" = "Trabajo";
+"selectCategory.education" = "Educación";
+"selectCategory.break" = "Descanso";
+"selectCategory.rest" = "Relajación";
+"selectCategory.hobby" = "Afición";
+"selectCategory.sport" = "Deporte";
+"selectCategory.food" = "Comida";
+"selectCategory.sleep" = "Sueño";
+"selectCategory.travel" = "Viaje";
+"selectCategory.meditation" = "Meditación";
+
+"selectCategory.title.work" = "Tareas de trabajo y reuniones";
+"selectCategory.title.education" = "Actividades de estudio y tareas";
+"selectCategory.title.break" = "Descansos cortos para relajarse";
+"selectCategory.title.rest" = "Descanso completo y relajación";
+"selectCategory.title.hobby" = "Tiempo personal para aficiones";
+"selectCategory.title.sport" = "Entrenamientos y actividad física";
+"selectCategory.title.food" = "Cocinar y comer";
+"selectCategory.title.sleep" = "Tiempo para dormir y recuperarse";
+"selectCategory.title.travel" = "Viajes y excursiones";
+"selectCategory.title.meditation" = "Tiempo para la contemplación";
+
+"selectCategory.description.start" = "Empecemos juntos";
+"selectCategory.description.choose" = "Elige las categorías más adecuadas para tus tareas. Podrás agregar las tuyas más tarde.";
+"selectCategory.description.loading" = "Configurando categorías..."; 

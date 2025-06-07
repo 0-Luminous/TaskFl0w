@@ -122,7 +122,7 @@ struct SelectWatch: View {
                             .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                             .font(.system(size: 16))
 
-                        Text("Выберите стартовый циферблат")
+                        Text("firstView.selectWatch".localized())
                             .font(.system(size: 16, weight: .medium))
                             .foregroundColor(themeManager.isDarkMode ? .white : .black)
                     }
@@ -174,7 +174,7 @@ struct SelectWatch: View {
                         }
                         navigateToSelectCategory = true
                     }) {
-                        Text("Продолжить")
+                        Text("navigation.continue".localized())
                             .font(.headline)
                             .padding()
                             .frame(maxWidth: .infinity)

@@ -4,6 +4,7 @@
 "navigation.back" = "Retour";
 "navigation.done" = "Terminé";
 "navigation.cancel" = "Annuler";
+"navigation.continue" = "Continuer";
 
 "settings.notifications" = "Notifications";
 "settings.tasks" = "Tâches";
@@ -123,4 +124,35 @@
 
 "search.search" = "Rechercher";
 "search.cancel" = "Annuler";
-"search.tasksNotFound" = "Aucune tâche trouvée"; 
+"search.tasksNotFound" = "Aucune tâche trouvée";
+
+"firstView.welcome" = "Bienvenue";
+"firstView.welcomeDescription" = "TaskFlow est un moyen simple de planifier votre journée et de garder tout sous contrôle.";
+"firstView.start" = "Commencer";
+"firstView.selectWatch" = "Choisissez un cadran de départ";
+
+"selectCategory.work" = "Travail";
+"selectCategory.education" = "Éducation";
+"selectCategory.break" = "Pause";
+"selectCategory.rest" = "Repos";
+"selectCategory.hobby" = "Loisir";
+"selectCategory.sport" = "Sport";
+"selectCategory.food" = "Nourriture";
+"selectCategory.sleep" = "Sommeil";
+"selectCategory.travel" = "Voyage";
+"selectCategory.meditation" = "Méditation";
+
+"selectCategory.title.work" = "Tâches de travail et réunions";
+"selectCategory.title.education" = "Activités d'étude et devoirs";
+"selectCategory.title.break" = "Courtes pauses pour se reposer";
+"selectCategory.title.rest" = "Repos complet et relaxation";
+"selectCategory.title.hobby" = "Temps personnel pour les loisirs";
+"selectCategory.title.sport" = "Entraînements et activité physique";
+"selectCategory.title.food" = "Cuisiner et manger";
+"selectCategory.title.sleep" = "Temps pour dormir et récupérer";
+"selectCategory.title.travel" = "Voyages et excursions";
+"selectCategory.title.meditation" = "Temps pour la contemplation";
+
+"selectCategory.description.start" = "Commençons ensemble";
+"selectCategory.description.choose" = "Choisissez les catégories les plus appropriées pour vos tâches. Vous pourrez ajouter les vôtres plus tard.";
+"selectCategory.description.loading" = "Configuration des catégories..."; 

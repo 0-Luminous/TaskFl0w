@@ -4,6 +4,7 @@
 "navigation.back" = "返回";
 "navigation.done" = "完成";
 "navigation.cancel" = "取消";
+"navigation.continue" = "继续";
 
 "settings.notifications" = "通知";
 "settings.tasks" = "任务";
@@ -123,4 +124,36 @@
 
 "search.search" = "搜索";
 "search.cancel" = "取消";
-"search.tasksNotFound" = "未找到任务"; 
+"search.tasksNotFound" = "未找到任务";
+
+"firstView.welcome" = "欢迎";
+"firstView.welcomeDescription" = "TaskFlow 是规划您的一天并保持一切在掌控之中的简单方法。";
+"firstView.start" = "开始";
+"firstView.selectWatch" = "选择初始表盘";
+
+"selectCategory.work" = "工作";
+"selectCategory.education" = "学习";
+"selectCategory.break" = "休息";
+"selectCategory.rest" = "放松";
+"selectCategory.hobby" = "爱好";
+"selectCategory.sport" = "运动";
+"selectCategory.food" = "饮食";
+"selectCategory.sleep" = "睡眠";
+"selectCategory.travel" = "旅行";
+"selectCategory.meditation" = "冥想";
+
+"selectCategory.title.work" = "工作任务和会议";
+"selectCategory.title.education" = "学习活动和作业";
+"selectCategory.title.break" = "短暂休息";
+"selectCategory.title.rest" = "完全休息和放松";
+"selectCategory.title.hobby" = "个人爱好时间";
+"selectCategory.title.sport" = "锻炼和体育活动";
+"selectCategory.title.food" = "烹饪和用餐";
+"selectCategory.title.sleep" = "睡眠和恢复时间";
+"selectCategory.title.travel" = "旅行和游览";
+"selectCategory.title.meditation" = "冥想时间";
+
+"selectCategory.description.start" = "让我们一起开始";
+"selectCategory.description.choose" = "选择最适合您任务的类别。稍后您可以添加自己的类别。";
+"selectCategory.description.loading" = "正在设置类别...";
+

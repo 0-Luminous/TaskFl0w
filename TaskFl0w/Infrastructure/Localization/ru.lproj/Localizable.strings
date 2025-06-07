@@ -4,6 +4,7 @@
 "navigation.back" = "Назад";
 "navigation.done" = "Готово";
 "navigation.cancel" = "Отмена";
+"navigation.continue" = "Продолжить";
 
 
 "settings.notifications" = "Уведомления";
@@ -125,3 +126,34 @@
 "search.search" = "Поиск";
 "search.cancel" = "Отмена";
 "search.tasksNotFound" = "Задачи не найдены";
+
+"firstView.welcome" = "Добро пожаловать";
+"firstView.welcomeDescription" = "TaskFlow — простой способ спланировать день и держать всё под контролем.";
+"firstView.start" = "Начать";
+"firstView.selectWatch" = "Выберите стартовый циферблат";
+
+"selectCategory.work" = "Работа";
+"selectCategory.education" = "Учеба";
+"selectCategory.break" = "Перерыв";
+"selectCategory.rest" = "Отдых";
+"selectCategory.hobby" = "Хобби";
+"selectCategory.sport" = "Спорт";
+"selectCategory.food" = "Еда";
+"selectCategory.sleep" = "Сон";
+"selectCategory.travel" = "Путешествия";
+"selectCategory.meditation" = "Медитация";
+
+"selectCategory.title.work" = "Рабочие задачи и встречи";
+"selectCategory.title.education" = "Учебные активности и домашняя работа";
+"selectCategory.title.break" = "Короткие перерывы для отдыха";
+"selectCategory.title.rest" = "Полноценный отдых и релаксация";
+"selectCategory.title.hobby" = "Личное время для увлечений";
+"selectCategory.title.sport" = "Тренировки и физическая активность";
+"selectCategory.title.food" = "Приготовление и прием пищи";
+"selectCategory.title.sleep" = "Время для сна и восстановления";
+"selectCategory.title.travel" = "Поездки и экскурсии";
+"selectCategory.title.meditation" = "Время для самосозерцания";
+
+"selectCategory.description.start" = "Давайте начнем вместе";
+"selectCategory.description.choose" = "Выберите наиболее подходящие категории для ваших задач. Позже вы сможете добавить свои.";
+"selectCategory.description.loading" = "Настройка категорий...";
