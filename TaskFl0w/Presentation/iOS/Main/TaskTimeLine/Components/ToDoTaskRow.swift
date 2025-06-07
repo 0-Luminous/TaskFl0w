@@ -42,11 +42,11 @@ struct ToDoTaskRow: View {
     
     private var completionIndicator: some View {
         Circle()
-            .fill(task.isCompleted ? Color.green : Color.clear)
+            .fill(task.isCompleted ? categoryColor : Color.clear)
             .frame(width: 12, height: 12)
             .overlay(
                 Circle()
-                    .stroke(task.isCompleted ? Color.green : categoryColor.opacity(0.7), lineWidth: 1)
+                    .stroke(task.isCompleted ? categoryColor.opacity(0.7) : categoryColor.opacity(0.7), lineWidth: 1)
             )
     }
     
@@ -55,7 +55,7 @@ struct ToDoTaskRow: View {
             Text(task.title)
                 .font(.subheadline)
                 .fontWeight(.medium)
-                .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                .foregroundColor(task.isCompleted ? .gray : themeManager.isDarkMode ? .white : .black)
                 .strikethrough(task.isCompleted)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
@@ -74,11 +74,12 @@ struct ToDoTaskRow: View {
     
     private var taskBackground: some View {
         RoundedRectangle(cornerRadius: 10)
-            .fill(themeManager.isDarkMode ? Color(red: 0.25, green: 0.25, blue: 0.25) : Color(red: 0.9, green: 0.9, blue: 0.9))
+            .fill(themeManager.isDarkMode ? Color(red: 0.35, green: 0.35, blue: 0.35) : Color(red: 0.9, green: 0.9, blue: 0.9))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
                     .strokeBorder(priorityBorderColor, lineWidth: task.priority != .none ? 1.5 : 0)
             )
+            .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
     }
     
     // MARK: - Private Properties

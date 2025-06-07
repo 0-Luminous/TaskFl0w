@@ -248,7 +248,7 @@ struct TasksFromView: View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(.ultraThinMaterial)
+                    .fill(themeManager.isDarkMode ? Color(red: 0.22, green: 0.22, blue: 0.227) : Color(red: 0.808, green: 0.808, blue: 0.812))
                     .opacity(0.9)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)

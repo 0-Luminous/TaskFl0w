@@ -572,6 +572,7 @@ struct TaskTimeline: View {
                                     .cornerRadius(5)
                             }
                         }
+                        .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
                         .zIndex(1)  // Нижний слой
 
                         // Иконки поверх прямоугольников

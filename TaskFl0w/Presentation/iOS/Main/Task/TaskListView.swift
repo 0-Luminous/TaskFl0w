@@ -153,13 +153,7 @@ struct TaskListView: View {
                             }
                             
                             // Перемещаем добавление новой задачи сюда, в конец списка
-                            if isAddingNewTask {
-                                // Spacer()
-                                //     .frame(height: 40)
-                                //     .listRowSeparator(.hidden)
-                                //     .listRowBackground(Color.clear)
-                                //     .id("new_task_spacer")
-                                
+                            if isAddingNewTask {                         
                                 NewTaskInput(
                                     newTaskTitle: $newTaskTitle,
                                     isNewTaskFocused: _isNewTaskFocused,
