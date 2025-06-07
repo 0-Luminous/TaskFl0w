@@ -16,8 +16,8 @@ struct FirstView: View {
     @State private var showWelcomeText = false
     @State private var showButton = false
     
-    // Создаем demo ViewModel с примерами задач
-    @StateObject private var demoViewModel = ClockViewModel()
+    // Создаем изолированный demo ViewModel для демонстрации только в FirstView
+    @StateObject private var demoViewModel = DemoClockViewModel()
     @ObservedObject private var themeManager = ThemeManager.shared
     
     // Массив предустановленных циферблатов
@@ -137,37 +137,36 @@ struct FirstView: View {
                 setupDemoTasks()
                 startAnimationSequence()
             }
+            .onDisappear {
+                // Очищаем демонстрационные задачи при уходе с FirstView
+                demoViewModel.clearAllTasks()
+            }
         }
     }
     
     // Настройка демонстрационных задач
     private func setupDemoTasks() {
         // Очищаем существующие задачи перед добавлением новых
-        let allTasks = demoViewModel.tasks
-        if !allTasks.isEmpty {
-            Task {
-                try? await demoViewModel.taskManagement.removeMultipleTasks(allTasks)
-            }
-        }
+        demoViewModel.clearAllTasks()
         
         // Создаем демонстрационные категории
         let workCategory = TaskCategoryModel(
             id: UUID(),
-            rawValue: "Работа",
+            rawValue: "selectCategory.work".localized(),
             iconName: "briefcase.fill",
             color: .blue
         )
         
         let breakCategory = TaskCategoryModel(
             id: UUID(),
-            rawValue: "Перерыв",
+            rawValue: "selectCategory.break".localized(),
             iconName: "cup.and.saucer.fill",
             color: .green
         )
         
         let studyCategory = TaskCategoryModel(
             id: UUID(),
-            rawValue: "Учёба",
+            rawValue: "selectCategory.education".localized(),
             iconName: "book.fill",
             color: .purple
         )
@@ -215,7 +214,7 @@ struct FirstView: View {
             isCompleted: false
         )
         
-        // Добавляем задачи в demoViewModel с небольшой задержкой после удаления
+        // Добавляем задачи в изолированный demoViewModel
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             demoViewModel.taskManagement.addTask(workTask)
             demoViewModel.taskManagement.addTask(breakTask)
@@ -419,13 +418,6 @@ struct AnimatedFlyingWatchFaceView: View {
                 scale: randomScale,
                 handScale: handScale
             )
-            RingPlanner(
-                color: .white.opacity(0.25),
-                viewModel: ClockViewModel(),
-                zeroPosition: 0,
-                shouldDeleteTask: false,
-                outerRingLineWidth: 20
-            )
         }
         .scaleEffect(randomScale)
         .rotationEffect(.degrees(randomRotation))
@@ -447,9 +439,7 @@ struct ModifiedLibraryClockFaceView: View {
     let scale: CGFloat
     let handScale: CGFloat  // Новый параметр для масштаба стрелки
     let currentDate: Date = Date()
-    @StateObject private var viewModel = ClockViewModel()
     @StateObject private var markersViewModel = ClockMarkersViewModel()
-    @State private var draggedCategory: TaskCategoryModel? = nil
     @ObservedObject private var themeManager = ThemeManager.shared
 
     // Для обратной совместимости с существующими вызовами
@@ -630,16 +620,6 @@ struct ModifiedLibraryClockFaceView: View {
         markersViewModel.lightModeDigitalFontColor = watchFace.lightModeDigitalFontColor
         markersViewModel.darkModeDigitalFontColor = watchFace.darkModeDigitalFontColor
 
-        // Настройка viewModel
-        viewModel.clockStyle = WatchFaceModel.displayStyleName(for: watchFace.style)
-        viewModel.zeroPosition = watchFace.zeroPosition
-        viewModel.outerRingLineWidth = watchFace.outerRingLineWidth
-        viewModel.taskArcLineWidth = watchFace.taskArcLineWidth
-        viewModel.isAnalogArcStyle = watchFace.isAnalogArcStyle
-        viewModel.showTimeOnlyForActiveTask = watchFace.showTimeOnlyForActiveTask
-        viewModel.lightModeHandColor = watchFace.lightModeHandColor
-        viewModel.darkModeHandColor = watchFace.darkModeHandColor
-
         // Добавляем эти строки в SetupViewModels()
         if watchFace.style == "digital" {
             UserDefaults.standard.set(watchFace.digitalFont, forKey: "digitalFont")
@@ -676,14 +656,14 @@ struct ModifiedLibraryClockFaceView: View {
 // Добавляем новый компонент для анимированного кольца планировщика
 struct AnimatedRingPlanner: View {
     let color: Color
-    @ObservedObject var viewModel: ClockViewModel
+    @ObservedObject var viewModel: DemoClockViewModel
     let zeroPosition: Double
     let shouldDeleteTask: Bool
     let outerRingLineWidth: CGFloat
     
     @State private var rotationAngle: Double = 0
     
-    init(color: Color, viewModel: ClockViewModel, zeroPosition: Double, shouldDeleteTask: Bool = true, outerRingLineWidth: CGFloat) {
+    init(color: Color, viewModel: DemoClockViewModel, zeroPosition: Double, shouldDeleteTask: Bool = true, outerRingLineWidth: CGFloat) {
         self.color = color
         self.viewModel = viewModel
         self.zeroPosition = zeroPosition
@@ -725,7 +705,7 @@ struct AnimatedRingPlanner: View {
 // Компонент для анимированных задач
 struct AnimatedTaskArcsView: View {
     let tasks: [TaskOnRing]
-    @ObservedObject var viewModel: ClockViewModel
+    @ObservedObject var viewModel: DemoClockViewModel
     let arcLineWidth: CGFloat
     let rotationAngle: Double
 
@@ -746,7 +726,7 @@ struct AnimatedTaskArcsView: View {
 // Отдельная анимированная задача
 struct AnimatedTaskArc: View {
     let task: TaskOnRing
-    @ObservedObject var viewModel: ClockViewModel
+    @ObservedObject var viewModel: DemoClockViewModel
     let arcLineWidth: CGFloat
     let globalRotationAngle: Double
     

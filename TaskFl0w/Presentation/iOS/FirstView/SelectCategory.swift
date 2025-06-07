@@ -113,7 +113,7 @@ struct SelectCategory: View {
                             .scaleEffect(1.5)
                             .tint(.white)
                         
-                        Text("Настройка категорий...")
+                        Text("selectCategory.description.loading".localized())
                             .font(.headline)
                             .foregroundColor(.white)
                     }
