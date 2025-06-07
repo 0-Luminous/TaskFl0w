@@ -26,7 +26,7 @@ struct EnhancedCategorySection: View {
                 Image(systemName: category.systemImage)
                     .font(.headline)
                     .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
-                Text(category.rawValue)
+                Text(category.localizedName)
                     .font(.headline)
                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
             }

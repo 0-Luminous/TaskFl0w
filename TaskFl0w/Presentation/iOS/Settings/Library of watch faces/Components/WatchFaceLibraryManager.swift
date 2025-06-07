@@ -62,6 +62,7 @@ class WatchFaceLibraryManager: ObservableObject {
         
         // Определяем категорию на основе стиля
         let category: String
+        
         if style == "minimal" {
             category = WatchFaceCategory.minimal.rawValue
         } else if style == "digital" {
