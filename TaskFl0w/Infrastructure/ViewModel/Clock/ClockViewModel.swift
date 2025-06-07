@@ -784,6 +784,13 @@ final class ClockViewModel: ObservableObject {
                task1.category == task2.category &&
                task1.isCompleted == task2.isCompleted
     }
+
+    // Добавляем метод для принудительного обновления UI
+    func forceUIUpdate() {
+        DispatchQueue.main.async { [weak self] in
+            self?.objectWillChange.send()
+        }
+    }
 }
 
 // MARK: - TaskArcs Notification Extensions

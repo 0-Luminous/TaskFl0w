@@ -94,6 +94,11 @@ struct ClockTaskArcIOS: View {
                 checkForRemoval()
             }
         }
+        
+        // Если перетаскивание завершилось, сбрасываем высокочастотное обновление
+        if !newValue {
+            gestureHandler.resetLastHourComponent()
+        }
     }
     
     private func checkForRemoval() {

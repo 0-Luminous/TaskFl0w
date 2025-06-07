@@ -12,6 +12,9 @@ class TaskArcGestureHandler: ObservableObject {
     private let taskId: UUID  // ✅ Храним только ID вместо копии задачи
     private let hapticsManager = TaskArcHapticsManager()
     
+    // Добавляем менеджер высокочастотного обновления
+    @StateObject private var highFrequencyManager: HighFrequencyUpdateManager
+    
     @Published var lastHourComponent: Int = -1
     @Published var isDraggingWholeArc: Bool = false
     
@@ -27,9 +30,15 @@ class TaskArcGestureHandler: ObservableObject {
     init(viewModel: ClockViewModel, task: TaskOnRing) {
         self.viewModel = viewModel
         self.taskId = task.id  // ✅ Сохраняем только ID
+        self._highFrequencyManager = StateObject(wrappedValue: HighFrequencyUpdateManager(viewModel: viewModel))
     }
     
     func handleDragGesture(value: DragGesture.Value, center: CGPoint, isDraggingStart: Bool) {
+        // Запускаем высокочастотное обновление при начале перетаскивания
+        if !highFrequencyManager.isHighFrequencyMode {
+            highFrequencyManager.startHighFrequencyUpdates()
+        }
+        
         let vector = CGVector(dx: value.location.x - center.x, dy: value.location.y - center.y)
         let angle = atan2(vector.dy, vector.dx)
         let degrees = (angle * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
@@ -47,6 +56,9 @@ class TaskArcGestureHandler: ObservableObject {
     func startWholeArcDrag(at location: CGPoint, center: CGPoint, indicatorPosition: CGPoint) {
         guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
         
+        // Запускаем высокочастотное обновление
+        highFrequencyManager.startHighFrequencyUpdates()
+        
         // Запоминаем начальную позицию пальца и время задачи
         initialDragLocation = location
         initialTaskStartTime = task.startTime
@@ -54,6 +66,11 @@ class TaskArcGestureHandler: ObservableObject {
     }
     
     func handleWholeArcDrag(value: DragGesture.Value, center: CGPoint) {
+        // Убеждаемся что высокочастотное обновление активно
+        if !highFrequencyManager.isHighFrequencyMode {
+            highFrequencyManager.startHighFrequencyUpdates()
+        }
+        
         guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
         
         // Вычисляем смещение пальца от начальной позиции
@@ -268,11 +285,17 @@ class TaskArcGestureHandler: ObservableObject {
         // Сбрасываем переменные смещения
         initialDragLocation = .zero
         initialTaskStartTime = Date()
+        
+        // Останавливаем высокочастотное обновление
+        highFrequencyManager.stopHighFrequencyUpdates()
     }
     
     // Метод для завершения перетаскивания всей дуги с проверкой столкновений
     func finalizeWholeArcDrag() {
         guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
+        
+        // Останавливаем высокочастотное обновление
+        highFrequencyManager.stopHighFrequencyUpdates()
         
         // Проверяем, есть ли столкновения с другими задачами
         let hasCollisions = checkForCollisions()
