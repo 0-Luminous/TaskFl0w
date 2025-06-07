@@ -1,12 +1,18 @@
 import SwiftUI
 
+enum ThemeMode: String, CaseIterable {
+    case light = "light"
+    case auto = "auto"
+    case dark = "dark"
+}
+
 final class ThemeManager: ObservableObject {
     // MARK: - Singleton
     static let shared = ThemeManager()
     
     // MARK: - Constants
     enum Constants {
-        static let isDarkModeKey = "isDarkMode"
+        static let themeModeKey = "themeMode"
         static let lightModeClockFaceColorKey = "lightModeClockFaceColor"
         static let darkModeClockFaceColorKey = "darkModeClockFaceColor"
         static let lightModeOuterRingColorKey = "lightModeOuterRingColor"
@@ -16,11 +22,24 @@ final class ThemeManager: ObservableObject {
     }
     
     // MARK: - Theme Properties
-    @Published var isDarkMode: Bool {
+    @Published var currentThemeMode: ThemeMode {
         didSet {
-            UserDefaults.standard.set(isDarkMode, forKey: Constants.isDarkModeKey)
+            UserDefaults.standard.set(currentThemeMode.rawValue, forKey: Constants.themeModeKey)
             updateColorsForCurrentTheme()
             objectWillChange.send()
+        }
+    }
+    
+    // Computed property для совместимости с существующим кодом
+    var isDarkMode: Bool {
+        switch currentThemeMode {
+        case .light:
+            return false
+        case .auto:
+            // Автоматически определяем по системной теме
+            return UITraitCollection.current.userInterfaceStyle == .dark
+        case .dark:
+            return true
         }
     }
     
@@ -61,7 +80,16 @@ final class ThemeManager: ObservableObject {
     
     // MARK: - Initialization
     private init() {
-        self.isDarkMode = UserDefaults.standard.bool(forKey: Constants.isDarkModeKey)
+        let savedThemeMode = UserDefaults.standard.string(forKey: Constants.themeModeKey) ?? ThemeMode.auto.rawValue
+        self.currentThemeMode = ThemeMode(rawValue: savedThemeMode) ?? .auto
+        
+        // Подписываемся на изменения системной темы для автоматического режима
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(systemThemeChanged),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
     }
     
     // MARK: - Public Methods
@@ -86,42 +114,40 @@ final class ThemeManager: ObservableObject {
         objectWillChange.send()
     }
     
-    // Простой метод для переключения темы напрямую из интерфейса
+    // Методы для обратной совместимости
+    func setTheme(_ isDark: Bool) {
+        currentThemeMode = isDark ? .dark : .light
+    }
+    
     func toggleDarkMode() {
-        // Переключаем тему напрямую, минуя промежуточные вызовы
-        self.isDarkMode.toggle()
-        updateColorsForCurrentTheme()
-        
-        // Дополнительно обновляем представление через двойную отправку
-        objectWillChange.send()
-        DispatchQueue.main.async { [weak self] in
-            self?.objectWillChange.send()
+        switch currentThemeMode {
+        case .light:
+            currentThemeMode = .dark
+        case .auto:
+            currentThemeMode = .dark
+        case .dark:
+            currentThemeMode = .light
         }
     }
     
     func toggleTheme() {
-        isDarkMode.toggle()
-        updateColorsForCurrentTheme()
-        objectWillChange.send()
-        
-        // Прямое обновление без NotificationCenter
-        // Используем временный объект для обновления всех вью
-        DispatchQueue.main.async { [weak self] in
-            self?.objectWillChange.send()
+        switch currentThemeMode {
+        case .light:
+            currentThemeMode = .auto
+        case .auto:
+            currentThemeMode = .dark
+        case .dark:
+            currentThemeMode = .light
         }
     }
     
-    func setTheme(_ isDark: Bool) {
-        if isDarkMode != isDark {
-            isDarkMode = isDark
-            updateColorsForCurrentTheme()
+    func setThemeMode(_ mode: ThemeMode) {
+        currentThemeMode = mode
+    }
+    
+    @objc private func systemThemeChanged() {
+        if currentThemeMode == .auto {
             objectWillChange.send()
-        
-            // Прямое обновление без NotificationCenter
-            // Используем временный объект для обновления всех вью
-            DispatchQueue.main.async { [weak self] in
-                self?.objectWillChange.send()
-            }
         }
     }
     

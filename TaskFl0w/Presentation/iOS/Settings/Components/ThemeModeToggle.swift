@@ -5,91 +5,188 @@ struct ThemeModeToggle: View {
     @State private var isAnimating = false
     
     var body: some View {
-        Toggle("", isOn: Binding(
-            get: { themeManager.isDarkMode },
-            set: { _ in
+        CustomThreeWayToggle(
+            currentMode: themeManager.currentThemeMode,
+            onModeChange: { newMode in
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    themeManager.toggleTheme()
+                    themeManager.setThemeMode(newMode)
                     isAnimating.toggle()
                 }
             }
-        ))
-        .toggleStyle(CustomToggleStyle())
+        )
         .padding(.horizontal)
     }
 }
 
-struct CustomToggleStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack {
-            configuration.label
-            
-            RoundedRectangle(cornerRadius: 25)
-                .fill(configuration.isOn ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.9, green: 0.9, blue: 0.9))
-                .frame(width: 90, height: 40)
-                .overlay(
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    configuration.isOn ? Color(red: 0.1, green: 0.1, blue: 0.2) : Color(red: 0.8, green: 0.8, blue: 0.8),
-                                    configuration.isOn ? Color(red: 0.2, green: 0.2, blue: 0.3) : Color(red: 0.9, green: 0.9, blue: 0.9)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .overlay(
-                            Circle()
-                                .strokeBorder(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [
-                                            configuration.isOn ? 
-                                                Color.gray.opacity(0.3) :
-                                                Color.gray.opacity(0.3),
-                                            configuration.isOn ?
-                                                Color(red: 0.2, green: 0.2, blue: 0.4, opacity: 0.4) :
-                                                Color(red: 0.7, green: 0.7, blue: 0.9, opacity: 0.4)
-                                        ]),
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 2
-                                )
-                        )
-                        .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-                        .frame(width: 36, height: 36)
-                        .overlay(
-                            Image(systemName: configuration.isOn ? "moon.fill" : "sun.max.fill")
-                                .foregroundColor(configuration.isOn ? .white : .red1)
-                                .font(.system(size: 16))
-                        )
-                        .offset(x: configuration.isOn ? 25 : -25)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .strokeBorder(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color(red: 0.5, green: 0.5, blue: 0.5, opacity: 0.5),
-                                    Color(red: 0.3, green: 0.3, blue: 0.3, opacity: 0.3),
-                                    Color(red: 0.1, green: 0.1, blue: 0.1, opacity: 0.1)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.5
-                        )
-                )
-                .shadow(color: configuration.isOn ? 
-                    Color.black.opacity(0.25) : 
-                    Color.gray.opacity(0.15), 
-                    radius: 3, x: 0, y: 1)
-                .onTapGesture {
+struct CustomThreeWayToggle: View {
+    let currentMode: ThemeMode
+    let onModeChange: (ThemeMode) -> Void
+    @StateObject private var themeManager = ThemeManager.shared
+    
+    // Вычисляемые свойства для адаптации под тему
+    private var backgroundGradient: LinearGradient {
+        if themeManager.isDarkMode {
+            return LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.22, green: 0.22, blue: 0.22),
+                    Color(red: 0.18, green: 0.18, blue: 0.18)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            return LinearGradient(
+                gradient: Gradient(colors: [
+                    Color(red: 0.98, green: 0.98, blue: 0.98),
+                    Color(red: 0.95, green: 0.95, blue: 0.95)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+    
+    private var borderGradient: LinearGradient {
+        if themeManager.isDarkMode {
+            return LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.gray.opacity(0.6),
+                    Color.gray.opacity(0.3)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            return LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.white.opacity(0.8),
+                    Color.gray.opacity(0.2)
+                ]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+    
+    private var shadowColor: Color {
+        themeManager.isDarkMode ? .black.opacity(0.4) : .gray.opacity(0.2)
+    }
+    
+    private var inactiveIconColor: Color {
+        themeManager.isDarkMode ? .gray.opacity(0.5) : .gray.opacity(0.6)
+    }
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            // Левая секция - Light mode
+            Button(action: {
+                if currentMode != .light {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        configuration.$isOn.wrappedValue.toggle()
+                        onModeChange(.light)
                     }
                 }
+            }) {
+                ZStack {
+                    if currentMode == .light {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.yellow.opacity(0.8),
+                                        Color.orange.opacity(0.6)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 36, height: 36)
+                            .shadow(color: .yellow.opacity(0.4), radius: 4, x: 0, y: 2)
+                    }
+                    
+                    Image(systemName: "sun.max.fill")
+                        .foregroundColor(currentMode == .light ? .white : inactiveIconColor)
+                        .font(.system(size: 16, weight: .medium))
+                }
+                .frame(width: 40, height: 40)
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            // Средняя секция - Auto mode
+            Button(action: {
+                if currentMode != .auto {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        onModeChange(.auto)
+                    }
+                }
+            }) {
+                ZStack {
+                    if currentMode == .auto {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.blue.opacity(0.8),
+                                        Color.cyan.opacity(0.6)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 36, height: 36)
+                            .shadow(color: .blue.opacity(0.4), radius: 4, x: 0, y: 2)
+                    }
+                    
+                    Image(systemName: "gear")
+                        .foregroundColor(currentMode == .auto ? .white : inactiveIconColor)
+                        .font(.system(size: 16, weight: .medium))
+                }
+                .frame(width: 40, height: 40)
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            // Правая секция - Dark mode
+            Button(action: {
+                if currentMode != .dark {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        onModeChange(.dark)
+                    }
+                }
+            }) {
+                ZStack {
+                    if currentMode == .dark {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.indigo.opacity(0.9),
+                                        Color.purple.opacity(0.7)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 36, height: 36)
+                            .shadow(color: .indigo.opacity(0.4), radius: 4, x: 0, y: 2)
+                    }
+                    
+                    Image(systemName: "moon.fill")
+                        .foregroundColor(currentMode == .dark ? .white : inactiveIconColor)
+                        .font(.system(size: 16, weight: .medium))
+                }
+                .frame(width: 40, height: 40)
+            }
+            .buttonStyle(PlainButtonStyle())
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 25)
+                .fill(backgroundGradient)
+                .shadow(color: shadowColor, radius: 6, x: 0, y: 3)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 25)
+                .strokeBorder(borderGradient, lineWidth: 1)
+        )
     }
 }

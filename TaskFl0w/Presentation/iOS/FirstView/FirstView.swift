@@ -74,15 +74,21 @@ struct FirstView: View {
                     // Приветственный текст
                     if showWelcomeText {
                         VStack(spacing: 16) {
-                            Text("Добро пожаловать в TaskFl0w")
+                            Text("Добро пожаловать")
                                 .font(.title)
                                 .fontWeight(.bold)
-                                .foregroundColor(.white)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.blue.opacity(0.8), .purple.opacity(0.9)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
                                 .multilineTextAlignment(.center)
                             
-                            Text("Начните управлять задачами в одном месте")
+                            Text("TaskFlow — простой способ спланировать день и держать всё под контролем.")
                                 .font(.headline)
-                                .foregroundColor(.white.opacity(0.9))
+                                .foregroundColor(Color(hue: 0.7, saturation: 0.7, brightness: 0.7))
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 40)
                         }
@@ -94,16 +100,16 @@ struct FirstView: View {
                         Button(action: {
                             navigateToSelectWatch = true
                         }) {
-                            Text("Продолжить")
+                            Text("Начать")
                                 .font(.headline)
-                                .foregroundColor(.white)
+                                .foregroundColor(.black)
                                 .padding(.horizontal, 40)
                                 .padding(.vertical, 12)
                                 .background(
                                     RoundedRectangle(cornerRadius: 25)
                                         .fill(
                                             LinearGradient(
-                                                colors: [.blue, .purple],
+                                                colors: [Color(hue: 0.7, saturation: 0.7, brightness: 0.7), Color(hue: 0.9, saturation: 0.9, brightness: 0.9)],
                                                 startPoint: .leading,
                                                 endPoint: .trailing
                                             )

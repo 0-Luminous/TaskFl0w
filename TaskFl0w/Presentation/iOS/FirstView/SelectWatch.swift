@@ -186,9 +186,8 @@ struct SelectWatch: View {
                     .padding(.bottom, 20)
                 }
             }
-            .navigationTitle("Первая настройка")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .navigationBarBackButtonHidden(true)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(themeManager.isDarkMode ? .dark : .light, for: .navigationBar)
         }
     }

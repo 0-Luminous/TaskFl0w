@@ -21,8 +21,6 @@ struct SelectCategory: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                headerView
-                
                 ScrollView {
                     VStack(spacing: 30) {
                         introText
@@ -70,48 +68,6 @@ struct SelectCategory: View {
     }
     
     // MARK: - UI Components
-    
-    private var headerView: some View {
-        HStack {
-            Button(action: {
-                withAnimation {
-                    dismiss()
-                }
-            }) {
-                Image(systemName: "arrow.left")
-                    .font(.title3)
-                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                    .padding()
-            }
-            
-            Spacer()
-            
-            Text("Выберите стартовые категории")
-                .font(.headline)
-                .foregroundColor(themeManager.isDarkMode ? .white : .black)
-            
-            Spacer()
-            
-            // Пустая кнопка для баланса
-            Button(action: {}) {
-                Image(systemName: "arrow.left")
-                    .font(.title3)
-                    .foregroundColor(.clear)
-                    .padding()
-            }
-        }
-        .background(
-            themeManager.isDarkMode ? 
-                Color(red: 0.12, green: 0.12, blue: 0.12) : 
-                Color(red: 0.95, green: 0.95, blue: 0.95)
-        )
-        .overlay(
-            Rectangle()
-                .frame(height: 0.5)
-                .foregroundColor(themeManager.isDarkMode ? Color.white.opacity(0.2) : Color.black.opacity(0.2)),
-            alignment: .bottom
-        )
-    }
     
     private var introText: some View {
         VStack(alignment: .leading, spacing: 12) {
