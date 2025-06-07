@@ -80,11 +80,11 @@ struct SelectWatch: View {
                         : Color(red: 0.98, green: 0.98, blue: 0.98)
                 )
                 .ignoresSafeArea()
-                
+
                 VStack(spacing: 0) {
                     // Добавляем отступ для заголовка
                     // Spacer().frame(height: 50)
-                    
+
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
 
@@ -140,18 +140,20 @@ struct SelectWatch: View {
                     }
                     .padding(.top, 20)
                     .padding(.horizontal, 20)
-                    
+
                     Spacer()
                 }
-                
+
                 // Кнопка внизу для продолжения
                 VStack {
                     Spacer()
-                    NavigationLink(destination: SelectCategory(), isActive: $navigateToSelectCategory) {
+                    NavigationLink(
+                        destination: SelectCategory(), isActive: $navigateToSelectCategory
+                    ) {
                         EmptyView()
                     }
                     .hidden()
-                    
+
                     Button(action: {
                         // Проверяем, был ли выбран циферблат
                         if let selectedID = localSelectedFaceID {
@@ -178,8 +180,29 @@ struct SelectWatch: View {
                             .font(.headline)
                             .padding()
                             .frame(maxWidth: .infinity)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(
+                                        localSelectedFaceID == nil
+                                            ? AnyShapeStyle(.ultraThinMaterial)
+                                            : AnyShapeStyle(
+                                                LinearGradient(
+                                                    gradient: Gradient(colors: [
+                                                        Color.Blue1,
+                                                        Color.Purple1,
+                                                    ]),
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                            )
+                                    )
+                                    .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
+                            )
+                            .foregroundColor(
+                                localSelectedFaceID == nil
+                                    ? (themeManager.isDarkMode ? .white.opacity(0.6) : .black.opacity(0.6))
+                                    : .black
+                            )
                             .cornerRadius(10)
                             .padding(.horizontal, 20)
                     }

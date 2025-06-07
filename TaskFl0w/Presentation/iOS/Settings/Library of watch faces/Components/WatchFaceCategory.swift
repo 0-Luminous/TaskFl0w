@@ -9,9 +9,9 @@ import SwiftUI
 
 // Перечисление для категорий циферблатов
 enum WatchFaceCategory: String, CaseIterable, Identifiable {
+    case minimal = "minimal"
     case classic = "classics"
     case digital = "digital"
-    case minimal = "minimal"
     
     var id: String { rawValue }
     
