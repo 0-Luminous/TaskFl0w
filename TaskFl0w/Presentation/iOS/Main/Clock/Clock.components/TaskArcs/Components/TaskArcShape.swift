@@ -410,7 +410,8 @@ struct TaskTimeLabelForPreview: View {
                         touchingTasks.isEmpty ? 
                             Color(red: 0.6, green: 0.6, blue: 0.6) :
                             Color.white.opacity(0.8), // Белая обводка для градиентных маркеров
-                        lineWidth: touchingTasks.isEmpty ? 1 : 1.5
+                        lineWidth: 1
+                        // lineWidth: touchingTasks.isEmpty ? 1 : 1.5
                     )
                 )
                 // Внешняя тень - более яркая для градиентных маркеров
