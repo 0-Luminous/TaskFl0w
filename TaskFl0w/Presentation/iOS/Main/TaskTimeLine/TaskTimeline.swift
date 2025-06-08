@@ -567,20 +567,22 @@ struct TaskTimeline: View {
                                 ZStack {
                                     Rectangle()
                                         .fill(firstTask.category.color)
-                                        .frame(width: 30, height: blockHeight) // ИСПОЛЬЗУЕМ ДИНАМИЧЕСКУЮ ВЫСОТУ
+                                        .frame(width: 30, height: blockHeight)
                                         .cornerRadius(5)
                                     
                                     VStack {
+                                        Spacer()
+
                                         Image(systemName: firstTask.icon)
                                             .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                             .font(.system(size: 14))
                                         
                                         Spacer() // Пушит иконку вверх
                                     }
-                                    .padding(.top, 8)
+                
                                 }
                                 .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
-                                .offset(x: -5)
+                                .offset(y: isEmptyBlock(for: firstTask.category.id) ? -3 : 0)
                                 
                                 // Правый блок с измерением высоты
                                 let allCategoryTasks = filteredTasks.filter { $0.category.id == firstTask.category.id }
@@ -593,11 +595,10 @@ struct TaskTimeline: View {
                                     startTime: getEarliestStartTime(for: tasksInCategory),
                                     endTime: getLatestEndTime(for: tasksInCategory),
                                     allTimelineTasksForCategory: allCategoryTasks,
-                                    slotId: slotId // ПЕРЕДАЕМ УНИКАЛЬНЫЙ ID
+                                    slotId: slotId
                                 )
                                 .padding(.leading, 10)
                                 .background(
-                                    // ИЗМЕРЯЕМ ВЫСОТУ БЛОКА
                                     GeometryReader { geometry in
                                         Color.clear
                                             .preference(
@@ -610,7 +611,6 @@ struct TaskTimeline: View {
                         }
                     }
                 }
-                .padding(.leading, 5)
             }
         }
         .onPreferenceChange(BlockHeightPreferenceKey.self) { heights in
@@ -651,6 +651,16 @@ struct TaskTimeline: View {
         withAnimation(Animation.spring(response: 0.3, dampingFraction: 0.7).delay(0.01)) {
             showWeekCalendar.toggle()
         }
+    }
+
+    // ФУНКЦИЯ ДЛЯ ПРОВЕРКИ ПУСТЫХ БЛОКОВ
+    private func isEmptyBlock(for categoryId: UUID) -> Bool {
+        let categoryTasks = listViewModel.items.filter { 
+            $0.categoryID == categoryId && 
+            Calendar.current.isDate($0.date, inSameDayAs: selectedDate) &&
+            !$0.isCompleted // Проверяем только незавершенные задачи
+        }
+        return categoryTasks.isEmpty
     }
 }
 
