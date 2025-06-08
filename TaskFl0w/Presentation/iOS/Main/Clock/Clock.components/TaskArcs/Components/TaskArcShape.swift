@@ -193,14 +193,16 @@ struct TaskTimeMarkersForPreview: View {
                 text: shouldStartMarkerBeThin ? "" : startTimeText,
                 angle: startAngle,
                 geometry: geometry,
-                isThin: shouldStartMarkerBeThin
+                isThin: shouldStartMarkerBeThin,
+                viewModel: viewModel
             )
             
             TaskTimeLabelForPreview(
                 text: shouldEndMarkerBeThin ? "" : endTimeText,
                 angle: endAngle,
                 geometry: geometry,
-                isThin: shouldEndMarkerBeThin
+                isThin: shouldEndMarkerBeThin,
+                viewModel: viewModel
             )
         } else if geometry.taskDurationMinutes >= 20 {
             // Тонкие маркеры для коротких задач (20-40 минут)
@@ -208,14 +210,16 @@ struct TaskTimeMarkersForPreview: View {
                 text: "",
                 angle: startAngle,
                 geometry: geometry,
-                isThin: true
+                isThin: true,
+                viewModel: viewModel
             )
             
             TaskTimeLabelForPreview(
                 text: "",
                 angle: endAngle,
                 geometry: geometry,
-                isThin: true
+                isThin: true,
+                viewModel: viewModel
             )
         }
     }
@@ -317,6 +321,61 @@ struct TaskTimeLabelForPreview: View {
     let angle: Angle
     let geometry: TaskArcGeometry
     let isThin: Bool
+    let viewModel: ClockViewModel?
+    
+    // Вычисляем время маркера на основе угла
+    private var markerTime: Date {
+        // Определяем, является ли это начальным или конечным маркером
+        let (startAngle, endAngle) = geometry.angles
+        let isStartMarker = abs(angle.degrees - startAngle.degrees) < abs(angle.degrees - endAngle.degrees)
+        return isStartMarker ? geometry.task.startTime : geometry.task.endTime
+    }
+    
+    // Определяем соприкасающиеся задачи
+    private var touchingTasks: [TaskOnRing] {
+        guard let viewModel = viewModel else { return [] }
+        
+        let proximityThreshold: TimeInterval = 15 * 60 // 15 минут
+        let tasksForDate = viewModel.tasksForSelectedDate(viewModel.tasks)
+        let otherTasks = tasksForDate.filter { $0.id != geometry.task.id }
+        
+        return otherTasks.filter { otherTask in
+            let startProximity = abs(markerTime.timeIntervalSince(otherTask.startTime))
+            let endProximity = abs(markerTime.timeIntervalSince(otherTask.endTime))
+            
+            return startProximity <= proximityThreshold || endProximity <= proximityThreshold
+        }
+    }
+    
+    // Создаем градиент из цветов соприкасающихся задач
+    private var markerFill: AnyShapeStyle {
+        if touchingTasks.isEmpty {
+            // Если нет соприкасающихся задач, используем стандартный цвет
+            return AnyShapeStyle(geometry.task.category.color)
+        } else {
+            // Создаем градиент из цветов текущей задачи и соприкасающихся
+            var colors: [Color] = [geometry.task.category.color]
+            colors.append(contentsOf: touchingTasks.map { $0.category.color })
+            
+            // Убираем дубликаты цветов
+            let uniqueColors = Array(Set(colors.map { $0.description }))
+                .compactMap { colorDescription in
+                    colors.first { $0.description == colorDescription }
+                }
+            
+            if uniqueColors.count > 1 {
+                return AnyShapeStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: uniqueColors),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            } else {
+                return AnyShapeStyle(geometry.task.category.color)
+            }
+        }
+    }
     
     var body: some View {
         let isLeftHalf = geometry.isAngleInLeftHalf(angle)
@@ -324,7 +383,7 @@ struct TaskTimeLabelForPreview: View {
         
         ZStack {
             Capsule()
-                .fill(geometry.task.category.color)
+                .fill(markerFill) // Используем градиент или стандартный цвет
                 .frame(
                     width: isThin ? TaskArcConstants.thinTimeMarkerWidth : 
                            CGFloat(text.count) * TaskArcConstants.timeMarkerCharacterWidth + TaskArcConstants.timeMarkerPadding,
@@ -348,14 +407,16 @@ struct TaskTimeLabelForPreview: View {
                 )
                 .overlay(
                     Capsule().stroke(
-                        Color(red: 0.6, green: 0.6, blue: 0.6), 
-                        lineWidth: 1
+                        touchingTasks.isEmpty ? 
+                            Color(red: 0.6, green: 0.6, blue: 0.6) :
+                            Color.white.opacity(0.8), // Белая обводка для градиентных маркеров
+                        lineWidth: touchingTasks.isEmpty ? 1 : 1.5
                     )
                 )
-                // Внешняя тень
+                // Внешняя тень - более яркая для градиентных маркеров
                 .shadow(
-                    color: Color.black.opacity(0.25),
-                    radius: 2,
+                    color: Color.black.opacity(touchingTasks.isEmpty ? 0.25 : 0.35),
+                    radius: touchingTasks.isEmpty ? 2 : 3,
                     x: 1,
                     y: 1
                 )
@@ -364,7 +425,7 @@ struct TaskTimeLabelForPreview: View {
                 Text(text)
                     .font(.system(size: TaskArcConstants.timeFontSize))
                     .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.3), radius: 1)
+                    .shadow(color: .black.opacity(0.5), radius: 2) // Увеличиваем тень текста для лучшей читаемости
             }
         }
         .rotationEffect(isLeftHalf ? angle + .degrees(180) : angle)
@@ -506,5 +567,149 @@ struct CustomDragPreviewShape: Shape {
     
     func path(in rect: CGRect) -> Path {
         return geometry.createDragPreviewArea(startMarkerThin: startMarkerThin, endMarkerThin: endMarkerThin)
+    }
+}
+
+struct TaskTimeMarkers: View {
+    let task: TaskOnRing
+    let geometry: TaskArcGeometry
+    let timeFormatter: DateFormatter
+    @ObservedObject var viewModel: ClockViewModel
+    
+    var body: some View {
+        let (startAngle, endAngle) = geometry.angles
+        let startTimeText = timeFormatter.string(from: task.startTime)
+        let endTimeText = timeFormatter.string(from: task.endTime)
+        
+        // Проверяем каждый маркер отдельно
+        let shouldStartMarkerBeThin = shouldMarkerBeThin(for: task.startTime)
+        let shouldEndMarkerBeThin = shouldMarkerBeThin(for: task.endTime)
+        
+        if geometry.taskDurationMinutes >= 40 {
+            // Для длинных задач проверяем каждый маркер отдельно
+            TaskTimeLabelForPreview(
+                text: shouldStartMarkerBeThin ? "" : startTimeText,
+                angle: startAngle,
+                geometry: geometry,
+                isThin: shouldStartMarkerBeThin,
+                viewModel: viewModel
+            )
+            
+            TaskTimeLabelForPreview(
+                text: shouldEndMarkerBeThin ? "" : endTimeText,
+                angle: endAngle,
+                geometry: geometry,
+                isThin: shouldEndMarkerBeThin,
+                viewModel: viewModel
+            )
+        } else if geometry.taskDurationMinutes >= 20 {
+            // Тонкие маркеры для коротких задач (20-40 минут)
+            TaskTimeLabelForPreview(
+                text: "",
+                angle: startAngle,
+                geometry: geometry,
+                isThin: true,
+                viewModel: viewModel
+            )
+            
+            TaskTimeLabelForPreview(
+                text: "",
+                angle: endAngle,
+                geometry: geometry,
+                isThin: true,
+                viewModel: viewModel
+            )
+        }
+    }
+    
+    // Проверяем, должен ли конкретный маркер (по времени) быть тонким
+    private func shouldMarkerBeThin(for markerTime: Date) -> Bool {
+        // Для задач меньше 20 минут маркеры не показываются
+        guard geometry.taskDurationMinutes >= 20 else { return false }
+        
+        // Для задач от 20 до 40 минут маркеры всегда тонкие
+        if geometry.taskDurationMinutes < 40 {
+            return true
+        }
+        
+        // Для задач 40+ минут проверяем близость к задачам с тонкими маркерами
+        return hasNearbyTasksWithThinMarkers(for: markerTime)
+    }
+    
+    // Проверяем наличие близких задач с тонкими маркерами для конкретного времени
+    private func hasNearbyTasksWithThinMarkers(for markerTime: Date) -> Bool {
+        // Константа для проверки близости (15 минут)
+        let proximityThreshold: TimeInterval = 15 * 60
+        
+        // Получаем все задачи на выбранную дату
+        let tasksForDate = viewModel.tasksForSelectedDate(viewModel.tasks)
+        
+        // Исключаем текущую задачу из проверки
+        let otherTasks = tasksForDate.filter { $0.id != task.id }
+        
+        for otherTask in otherTasks {
+            // Вычисляем длительность другой задачи
+            let otherTaskDuration = otherTask.duration / 60 // в минутах
+            
+            // Проверяем, показывает ли другая задача тонкие маркеры
+            let otherTaskHasThinMarkers = determineIfTaskHasThinMarkers(otherTask, otherTaskDuration)
+            
+            if otherTaskHasThinMarkers {
+                // Проверяем близость конкретного времени маркера к границам другой задачи
+                let proximityToStart = abs(markerTime.timeIntervalSince(otherTask.startTime))
+                let proximityToEnd = abs(markerTime.timeIntervalSince(otherTask.endTime))
+                
+                // Если маркер находится в пределах 15 минут от любой границы задачи с тонкими маркерами
+                if proximityToStart <= proximityThreshold || proximityToEnd <= proximityThreshold {
+                    return true
+                }
+            }
+        }
+        
+        return false
+    }
+    
+    // Определяем, есть ли у задачи тонкие маркеры
+    private func determineIfTaskHasThinMarkers(_ task: TaskOnRing, _ durationMinutes: Double) -> Bool {
+        // Задачи от 20 до 40 минут всегда имеют тонкие маркеры
+        if durationMinutes >= 20 && durationMinutes < 40 {
+            return true
+        }
+        
+        // Задачи 40+ минут могут иметь тонкие маркеры, если рядом есть другие задачи с тонкими маркерами
+        if durationMinutes >= 40 {
+            return checkIfLongTaskHasThinMarkers(task)
+        }
+        
+        return false
+    }
+    
+    // Проверяем, должна ли длинная задача (40+ минут) показывать тонкие маркеры
+    private func checkIfLongTaskHasThinMarkers(_ task: TaskOnRing) -> Bool {
+        let proximityThreshold: TimeInterval = 15 * 60
+        let tasksForDate = viewModel.tasksForSelectedDate(viewModel.tasks)
+        let otherTasks = tasksForDate.filter { $0.id != task.id }
+        
+        for otherTask in otherTasks {
+            let otherTaskDuration = otherTask.duration / 60
+            
+            // Проверяем только задачи, которые гарантированно имеют тонкие маркеры (20-40 минут)
+            if otherTaskDuration >= 20 && otherTaskDuration < 40 {
+                // Проверяем близость границ задач
+                let startToStartProximity = abs(task.startTime.timeIntervalSince(otherTask.startTime))
+                let endToEndProximity = abs(task.endTime.timeIntervalSince(otherTask.endTime))
+                let startToEndProximity = abs(task.startTime.timeIntervalSince(otherTask.endTime))
+                let endToStartProximity = abs(task.endTime.timeIntervalSince(otherTask.startTime))
+                
+                if startToStartProximity <= proximityThreshold ||
+                   endToEndProximity <= proximityThreshold ||
+                   startToEndProximity <= proximityThreshold ||
+                   endToStartProximity <= proximityThreshold {
+                    return true
+                }
+            }
+        }
+        
+        return false
     }
 } 

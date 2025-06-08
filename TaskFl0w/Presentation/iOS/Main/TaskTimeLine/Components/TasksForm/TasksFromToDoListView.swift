@@ -158,7 +158,7 @@ struct TasksFromView: View {
     
     private func getTransferMessage(activeSlot: TaskOnRing?) -> String {
         guard let slot = activeSlot else {
-            return "Незавершённые задачи перенесены в активный слот"
+            return "Будущий слот"
         }
         
         let formatter = DateFormatter()

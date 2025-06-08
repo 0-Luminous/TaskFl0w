@@ -582,7 +582,7 @@ struct TaskTimeline: View {
                 
                                 }
                                 .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
-                                .offset(y: isEmptyBlock(for: firstTask.category.id) ? -3 : 0)
+                                .offset(y: isEmptyBlock(for: firstTask.category.id) ? -5 : 0)
                                 
                                 // Правый блок с измерением высоты
                                 let allCategoryTasks = filteredTasks.filter { $0.category.id == firstTask.category.id }
