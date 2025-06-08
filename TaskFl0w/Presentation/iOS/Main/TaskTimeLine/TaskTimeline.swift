@@ -249,17 +249,6 @@ class TimelineManager: ObservableObject {
     }
 }
 
-protocol CategoryHeightProvider {
-    func getHeight(for categoryId: UUID, date: Date) -> CGFloat
-}
-
-extension TaskTimeline: CategoryHeightProvider {
-    func getHeight(for categoryId: UUID, date: Date) -> CGFloat {
-        let categoryIdentifier = "\(categoryId)-\(date.timeIntervalSince1970)"
-        return categoryHeights[categoryIdentifier] ?? 100
-    }
-}
-
 struct TaskTimeline: View {
     @State var selectedDate: Date
     let tasks: [TaskOnRing]
@@ -272,12 +261,12 @@ struct TaskTimeline: View {
     @StateObject private var timelineManager = TimelineManager()
     @StateObject private var clockViewModel = ClockViewModel()
 
+    // ДОБАВЛЯЕМ СЛОВАРЬ ДЛЯ ХРАНЕНИЯ ВЫСОТ БЛОКОВ
+    @State private var blockHeights: [String: CGFloat] = [:]
+
     // Состояние интерфейса
     @State private var showSettings = false
     @State private var showWeekCalendar = false
-
-    // Добавляем состояние для хранения высот категорий
-    @State private var categoryHeights: [String: CGFloat] = [:]
 
     // Вычисляемые свойства для фильтрации задач
     private var filteredTasks: [TaskOnRing] {
@@ -420,8 +409,6 @@ struct TaskTimeline: View {
         }
         .onChange(of: clockViewModel.selectedDate) { newValue in
             selectedDate = newValue
-            // Очищаем кэш высот при смене даты
-            categoryHeights.removeAll()
         }
     }
 
@@ -541,7 +528,7 @@ struct TaskTimeline: View {
         .padding(.leading, 15)
     }
 
-    // Отображение блока времени
+    // ОБНОВЛЯЕМ timeBlockView ДЛЯ РАБОТЫ С ВЫСОТАМИ
     private func timeBlockView(for timeBlock: TimeBlock) -> some View {
         VStack(spacing: 0) {
             // Метка часа (если нужно показать)
@@ -558,107 +545,97 @@ struct TaskTimeline: View {
                 }
             }
 
-            // Задачи для этого часа
+            // ЛЕВЫЕ ИНДИКАТОРЫ С ДИНАМИЧЕСКОЙ ВЫСОТОЙ
             if !timeBlock.tasks.isEmpty {
-                HStack(alignment: .top, spacing: 0) {
-                    // Левая колонка с индикаторами
-                    ZStack {
-                        // Фоновые прямоугольники
-                        VStack(spacing: 0) {
-                            ForEach(timeBlock.tasks, id: \.id) { task in
-                                Rectangle()
-                                    .fill(task.category.color)
-                                    .frame(width: 30, height: getTaskHeight(for: task))
-                                    .cornerRadius(5)
-                            }
-                        }
-                        .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
-                        .zIndex(1)  // Нижний слой
-
-                        // Иконки поверх прямоугольников
-                        VStack(spacing: 0) {
-                            ForEach(timeBlock.tasks, id: \.id) { task in
-                                Image(systemName: task.icon)
-                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                                    .font(.system(size: 14))
-                                    .frame(width: 30, height: getTaskHeight(for: task))
-                            }
-                        }
-                        .zIndex(2)  // Верхний слой
-                    }
-
-                    // Правая колонка с задачами по категориям
-                    VStack(spacing: 15) {
-                        ForEach(timelineManager.groupTasksByCategory(timeBlock.tasks), id: \.key) {
-                            category, tasksInCategory in
-                            if let firstTask = tasksInCategory.first {
+                VStack(spacing: 15) {
+                    ForEach(timelineManager.groupTasksByCategory(timeBlock.tasks), id: \.key) {
+                        category, tasksInCategory in
+                        if let firstTask = tasksInCategory.first {
+                            // СОЗДАЕМ УНИКАЛЬНЫЙ ID ДЛЯ ВРЕМЕННОГО СЛОТА
+                            let slotId = createSlotId(
+                                categoryId: firstTask.category.id,
+                                startTime: getEarliestStartTime(for: tasksInCategory),
+                                endTime: getLatestEndTime(for: tasksInCategory),
+                                date: selectedDate
+                            )
+                            
+                            // ПОЛУЧАЕМ ВЫСОТУ БЛОКА
+                            let blockHeight = blockHeights[slotId] ?? 60.0
+                            
+                            HStack(alignment: .top, spacing: 0) {
+                                // Левый индикатор с динамической высотой
+                                ZStack {
+                                    Rectangle()
+                                        .fill(firstTask.category.color)
+                                        .frame(width: 30, height: blockHeight) // ИСПОЛЬЗУЕМ ДИНАМИЧЕСКУЮ ВЫСОТУ
+                                        .cornerRadius(5)
+                                    
+                                    VStack {
+                                        Image(systemName: firstTask.icon)
+                                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                                            .font(.system(size: 14))
+                                        
+                                        Spacer() // Пушит иконку вверх
+                                    }
+                                    .padding(.top, 8)
+                                }
+                                .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
+                                .offset(x: -5)
+                                
+                                // Правый блок с измерением высоты
+                                let allCategoryTasks = filteredTasks.filter { $0.category.id == firstTask.category.id }
+                                
                                 TasksFromView(
                                     listViewModel: listViewModel,
                                     selectedDate: selectedDate,
                                     categoryManager: categoryManager,
                                     selectedCategoryID: firstTask.category.id,
                                     startTime: getEarliestStartTime(for: tasksInCategory),
-                                    endTime: getLatestEndTime(for: tasksInCategory)
+                                    endTime: getLatestEndTime(for: tasksInCategory),
+                                    allTimelineTasksForCategory: allCategoryTasks,
+                                    slotId: slotId // ПЕРЕДАЕМ УНИКАЛЬНЫЙ ID
                                 )
+                                .padding(.leading, 10)
                                 .background(
+                                    // ИЗМЕРЯЕМ ВЫСОТУ БЛОКА
                                     GeometryReader { geometry in
                                         Color.clear
-                                            .onAppear {
-                                                let categoryIdentifier =
-                                                    "\(firstTask.category.id)-\(selectedDate.timeIntervalSince1970)"
-                                                categoryHeights[categoryIdentifier] =
-                                                    geometry.size.height
-                                                print(
-                                                    "Category height updated: \(categoryIdentifier) = \(geometry.size.height)"
-                                                )
-                                            }
-                                            .onChange(of: geometry.size) { newSize in
-                                                let categoryIdentifier =
-                                                    "\(firstTask.category.id)-\(selectedDate.timeIntervalSince1970)"
-                                                categoryHeights[categoryIdentifier] = newSize.height
-                                                print(
-                                                    "Category height changed: \(categoryIdentifier) = \(newSize.height)"
-                                                )
-                                            }
+                                            .preference(
+                                                key: BlockHeightPreferenceKey.self,
+                                                value: [slotId: geometry.size.height]
+                                            )
                                     }
                                 )
                             }
                         }
                     }
-                    .padding(.leading, 15)
                 }
+                .padding(.leading, 5)
+            }
+        }
+        .onPreferenceChange(BlockHeightPreferenceKey.self) { heights in
+            // ОБНОВЛЯЕМ ВЫСОТЫ БЛОКОВ
+            for (id, height) in heights {
+                blockHeights[id] = height
             }
         }
     }
-
-    // Переключение календаря
-    private func toggleWeekCalendar() {
-        withAnimation(Animation.spring(response: 0.3, dampingFraction: 0.7).delay(0.01)) {
-            showWeekCalendar.toggle()
-        }
+    
+    // ФУНКЦИЯ ДЛЯ СОЗДАНИЯ УНИКАЛЬНОГО ID СЛОТА
+    private func createSlotId(categoryId: UUID, startTime: Date, endTime: Date, date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd-HH:mm"
+        let dateString = formatter.string(from: date)
+        let startString = formatter.string(from: startTime)
+        let endString = formatter.string(from: endTime)
+        
+        return "\(categoryId)-\(dateString)-\(startString)-\(endString)"
     }
 
-    // Вспомогательные методы
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
-    }
-
-    private func getTaskHeight(for task: TaskOnRing) -> CGFloat {
-        let todoTasks = listViewModel.items.filter { item in
-            Calendar.current.isDate(item.date, inSameDayAs: selectedDate)
-                && item.categoryID == task.category.id
-        }
-
-        if todoTasks.isEmpty {
-            return 100  // Базовая высота для пустого блока
-        } else {
-            let categoryIdentifier = "\(task.category.id)-\(selectedDate.timeIntervalSince1970)"
-            let height = categoryHeights[categoryIdentifier] ?? 100
-            print("Getting height for \(categoryIdentifier): \(height)")
-            return height
-        }
     }
 
     private func getEarliestStartTime(for tasks: [TaskOnRing]) -> Date {
@@ -667,5 +644,21 @@ struct TaskTimeline: View {
 
     private func getLatestEndTime(for tasks: [TaskOnRing]) -> Date {
         return tasks.max { $0.endTime < $1.endTime }?.endTime ?? Date()
+    }
+
+    // Переключение календаря
+    private func toggleWeekCalendar() {
+        withAnimation(Animation.spring(response: 0.3, dampingFraction: 0.7).delay(0.01)) {
+            showWeekCalendar.toggle()
+        }
+    }
+}
+
+// ДОБАВЛЯЕМ PreferenceKey ДЛЯ ПЕРЕДАЧИ ВЫСОТ
+struct BlockHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: [String: CGFloat] = [:]
+    
+    static func reduce(value: inout [String: CGFloat], nextValue: () -> [String: CGFloat]) {
+        value.merge(nextValue()) { _, new in new }
     }
 }

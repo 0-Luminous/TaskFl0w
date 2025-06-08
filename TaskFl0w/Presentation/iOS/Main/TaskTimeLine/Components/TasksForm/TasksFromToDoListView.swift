@@ -25,55 +25,35 @@ struct TasksFromView: View {
     let selectedCategoryID: UUID
     var startTime: Date? = nil
     var endTime: Date? = nil
-    var isNearestCategory: Bool = true // Новый параметр: ближайшая ли это категория
-    var specificTasks: [ToDoItem]? = nil // Добавляем параметр для передачи конкретных задач
-    
-    // Добавляем состояние для хранения высоты
-    @State private var categoryHeight: CGFloat = 0
-    
-    // Добавляем идентификатор для уникальной идентификации категории
-    private let categoryIdentifier: String
-    
-    init(listViewModel: ListViewModel, selectedDate: Date, categoryManager: CategoryManagementProtocol, selectedCategoryID: UUID, startTime: Date? = nil, endTime: Date? = nil, isNearestCategory: Bool = true, specificTasks: [ToDoItem]? = nil) {
-        self.listViewModel = listViewModel
-        self.selectedDate = selectedDate
-        self.categoryManager = categoryManager
-        self.selectedCategoryID = selectedCategoryID
-        self.startTime = startTime
-        self.endTime = endTime
-        self.isNearestCategory = isNearestCategory
-        self.specificTasks = specificTasks
-        // Создаем уникальный идентификатор для категории
-        self.categoryIdentifier = "\(selectedCategoryID)-\(selectedDate.timeIntervalSince1970)"
-    }
+    var isNearestCategory: Bool = true
+    var specificTasks: [ToDoItem]? = nil
+    var allTimelineTasksForCategory: [TaskOnRing]? = nil
+    var slotId: String? = nil // ДОБАВЛЯЕМ УНИКАЛЬНЫЙ ID СЛОТА
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Получаем все задачи для данной категории
             let categoryTasks: [ToDoItem] = specificTasks ?? getFilteredItemsForDate(selectedDate).filter { $0.categoryID == selectedCategoryID }
+            
+            // Логика определения задач для показа с использованием slotId
+            let tasksToShow = getTasksForSlot(categoryTasks: categoryTasks, slotId: slotId)
             
             if let categoryItem = categoryTasks.first, let categoryName = categoryItem.categoryName {
                 let (color, icon) = getCategoryInfo(for: selectedCategoryID, categoryManager: categoryManager)
                 let category = TaskCategoryModel(id: selectedCategoryID, rawValue: categoryName, iconName: icon, color: color)
                 
-                if categoryTasks.isEmpty {
-                    Text("taskTimeLine.title".localized)
-                        .foregroundColor(themeManager.isDarkMode ? .gray : .black)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 15)
-                } else {
-                    CategoryView(
-                        category: category,
-                        todoTasks: categoryTasks,
-                        startTime: startTime,
-                        endTime: endTime,
-                        showFullTasks: isNearestCategory,
-                        onToggleTask: { taskId in
-                            listViewModel.presenter?.toggleItem(id: taskId)
-                        }
-                    )
-                }
+                CategoryView(
+                    category: category,
+                    todoTasks: tasksToShow.tasks,
+                    startTime: startTime,
+                    endTime: endTime,
+                    showFullTasks: tasksToShow.shouldShow,
+                    transferMessage: tasksToShow.message,
+                    onToggleTask: { taskId in
+                        listViewModel.presenter?.toggleItem(id: taskId)
+                    }
+                )
             } else if let category = categoryManager.categories.first(where: { $0.id == selectedCategoryID }) {
-                // Если нет задач, пытаемся получить информацию о категории из categoryManager
                 let taskCategory = TaskCategoryModel(
                     id: selectedCategoryID,
                     rawValue: category.rawValue,
@@ -87,10 +67,8 @@ struct TasksFromView: View {
                     startTime: startTime,
                     endTime: endTime,
                     showFullTasks: false,
-                    onToggleTask: { taskId in
-                        // Используем presenter из ListViewModel для переключения статуса задачи
-                        listViewModel.presenter?.toggleItem(id: taskId)
-                    }
+                    transferMessage: nil,
+                    onToggleTask: { _ in }
                 )
             } else {
                 // Если категория вообще не найдена
@@ -102,13 +80,102 @@ struct TasksFromView: View {
         }
     }
     
-    // Компонент для отображения одной категории
+    // ИСПРАВЛЯЕМ ЛОГИКУ С ПРАВИЛЬНЫМ ИМЕНЕМ ФУНКЦИИ
+    private func getTasksForSlot(categoryTasks: [ToDoItem], slotId: String?) -> (tasks: [ToDoItem], shouldShow: Bool, message: String?) {
+        // Если нет временных слотов или только один слот
+        guard let allCategoryTasks = allTimelineTasksForCategory,
+              allCategoryTasks.count > 1,
+              let currentStart = startTime,
+              let currentEnd = endTime,
+              let slotId = slotId else {
+            return (tasks: categoryTasks, shouldShow: true, message: nil)
+        }
+        
+        let currentTime = Date()
+        let incompleteTasks = categoryTasks.filter { !$0.isCompleted }
+        let completedTasks = categoryTasks.filter { $0.isCompleted }
+        
+        // ИСПОЛЬЗУЕМ СУЩЕСТВУЮЩУЮ ФУНКЦИЮ findActiveSlot
+        let activeSlot = findActiveSlot(slots: allCategoryTasks, currentTime: currentTime)
+        
+        // Создаем ID для активного слота
+        let activeSlotId = activeSlot.map { slot in
+            createSlotId(
+                categoryId: selectedCategoryID,
+                startTime: slot.startTime,
+                endTime: slot.endTime,
+                date: selectedDate
+            )
+        }
+        
+        // Проверяем, является ли текущий слот активным
+        let isActive = activeSlotId == slotId
+        
+        if isActive {
+            // Активный слот - показываем все задачи
+            return (tasks: categoryTasks, shouldShow: true, message: nil)
+        } else if !incompleteTasks.isEmpty {
+            // Неактивный слот с незавершенными задачами
+            let message = getTransferMessage(activeSlot: activeSlot)
+            return (tasks: completedTasks, shouldShow: false, message: message)
+        } else {
+            // Неактивный слот без незавершенных задач
+            return (tasks: completedTasks, shouldShow: true, message: nil)
+        }
+    }
+    
+    // ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ДЛЯ СОЗДАНИЯ ID
+    private func createSlotId(categoryId: UUID, startTime: Date, endTime: Date, date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd-HH:mm"
+        let dateString = formatter.string(from: date)
+        let startString = formatter.string(from: startTime)
+        let endString = formatter.string(from: endTime)
+        
+        return "\(categoryId)-\(dateString)-\(startString)-\(endString)"
+    }
+    
+    private func findActiveSlot(slots: [TaskOnRing], currentTime: Date) -> TaskOnRing? {
+        let sortedSlots = slots.sorted { $0.startTime < $1.startTime }
+        
+        // Проверяем, находимся ли мы внутри какого-то слота
+        for slot in sortedSlots {
+            if currentTime >= slot.startTime && currentTime < slot.endTime {
+                return slot
+            }
+        }
+        
+        // Ищем следующий слот
+        for slot in sortedSlots {
+            if currentTime < slot.startTime {
+                return slot
+            }
+        }
+        
+        // Возвращаем последний слот
+        return sortedSlots.last
+    }
+    
+    private func getTransferMessage(activeSlot: TaskOnRing?) -> String {
+        guard let slot = activeSlot else {
+            return "Незавершённые задачи перенесены в активный слот"
+        }
+        
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        let timeRange = "\(formatter.string(from: slot.startTime)) - \(formatter.string(from: slot.endTime))"
+        
+        return "Незавершённые задачи перенесены в слот (\(timeRange))"
+    }
+    
+    // Компонент для отображения одной категории (старый дизайн)
     private struct CategoryView: View {
         let category: TaskCategoryModel
         let todoTasks: [ToDoItem]
         let startTime: Date?
         let endTime: Date?
-        let showFullTasks: Bool // Новый параметр
+        let showFullTasks: Bool
+        let transferMessage: String?
         var onToggleTask: ((UUID) -> Void)? = nil
         @ObservedObject private var themeManager = ThemeManager.shared
         
@@ -118,7 +185,6 @@ struct TasksFromView: View {
             formatter.unitsStyle = .brief
             formatter.allowedUnits = [.hour, .minute]
             formatter.zeroFormattingBehavior = .dropAll
-            // Автоматически возьмёт локаль устройства
             formatter.calendar = Calendar.current
             formatter.calendar?.locale = Locale.current
             return formatter
@@ -227,17 +293,21 @@ struct TasksFromView: View {
                     }
                 }
                 
-                // Для не ранних категорий показываем сообщение
-                if !showFullTasks && !todoTasks.isEmpty {
-                    Text("Незавершённые задачи перенесены в следующую категорию")
+                // Показываем сообщение о переносе задач
+                if let transferMessage = transferMessage {
+                    Text(transferMessage)
                         .font(.caption)
                         .foregroundColor(themeManager.isDarkMode ? .gray : .black)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(category.color.opacity(0.1))
+                        )
                 }
                 
                 // Если нет задач в категории, показываем информационное сообщение
-                if todoTasks.isEmpty {
+                if todoTasks.isEmpty && transferMessage == nil {
                     Text("taskTimeLine.title".localized)
                         .font(.caption)
                         .foregroundColor(themeManager.isDarkMode ? .gray : .black)
