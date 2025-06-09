@@ -237,6 +237,7 @@ struct TasksFromView: View {
                                 .frame(maxWidth: .infinity, alignment: .trailing)
                             }
                         }
+                        .zIndex(11)
                     } else {
                         // Если нет времени, показываем только категорию
                         HStack(spacing: 8) {
@@ -250,6 +251,7 @@ struct TasksFromView: View {
                             
                             Spacer()
                         }
+                        .zIndex(11)
                     }
                     
                     // Список задач
@@ -277,6 +279,7 @@ struct TasksFromView: View {
                                 )
                             }
                         }
+                        .zIndex(11)
                         .padding(.top, 8)
                     }
                     
@@ -310,6 +313,7 @@ struct TasksFromView: View {
                             )
                         )
                 )
+                .zIndex(9)
                 .shadow(color: category.color.opacity(0.3), radius: 8, x: 0, y: 4)
             }
         }
