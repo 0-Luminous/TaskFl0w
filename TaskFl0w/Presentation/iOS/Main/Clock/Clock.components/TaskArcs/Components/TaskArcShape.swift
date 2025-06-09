@@ -409,24 +409,17 @@ struct TaskTimeLabelForPreview: View {
                     Capsule().stroke(
                         touchingTasks.isEmpty ? 
                             Color(red: 0.6, green: 0.6, blue: 0.6) :
-                            Color.white.opacity(0.8), // Белая обводка для градиентных маркеров
+                            Color(red: 0.75, green: 0.75, blue: 0.75),
                         lineWidth: 1
-                        // lineWidth: touchingTasks.isEmpty ? 1 : 1.5
                     )
                 )
-                // Внешняя тень - более яркая для градиентных маркеров
-                .shadow(
-                    color: Color.black.opacity(touchingTasks.isEmpty ? 0.25 : 0.35),
-                    radius: touchingTasks.isEmpty ? 2 : 3,
-                    x: 1,
-                    y: 1
-                )
+                .shadow(color: Color.black.opacity(0.25), radius: 2, x: 1, y: 1)
             
             if !isThin {
                 Text(text)
                     .font(.system(size: TaskArcConstants.timeFontSize))
                     .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.5), radius: 2) // Увеличиваем тень текста для лучшей читаемости
+                    .shadow(color: .black.opacity(0.5), radius: 1)
             }
         }
         .rotationEffect(isLeftHalf ? angle + .degrees(180) : angle)

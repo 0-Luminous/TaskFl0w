@@ -582,7 +582,6 @@ struct TaskTimeline: View {
                 
                                 }
                                 .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
-                                .offset(y: isEmptyBlock(for: firstTask.category.id) ? -5 : 0)
                                 
                                 // Правый блок с измерением высоты
                                 let allCategoryTasks = filteredTasks.filter { $0.category.id == firstTask.category.id }
@@ -651,16 +650,6 @@ struct TaskTimeline: View {
         withAnimation(Animation.spring(response: 0.3, dampingFraction: 0.7).delay(0.01)) {
             showWeekCalendar.toggle()
         }
-    }
-
-    // ФУНКЦИЯ ДЛЯ ПРОВЕРКИ ПУСТЫХ БЛОКОВ
-    private func isEmptyBlock(for categoryId: UUID) -> Bool {
-        let categoryTasks = listViewModel.items.filter { 
-            $0.categoryID == categoryId && 
-            Calendar.current.isDate($0.date, inSameDayAs: selectedDate) &&
-            !$0.isCompleted // Проверяем только незавершенные задачи
-        }
-        return categoryTasks.isEmpty
     }
 }
 

@@ -168,7 +168,7 @@ struct TasksFromView: View {
         return "Незавершённые задачи перенесены в слот (\(timeRange))"
     }
     
-    // Компонент для отображения одной категории (старый дизайн)
+    // Компонент для отображения одной категории (новый дизайн по фото)
     private struct CategoryView: View {
         let category: TaskCategoryModel
         let todoTasks: [ToDoItem]
@@ -182,7 +182,7 @@ struct TasksFromView: View {
         // Добавляем локализованный форматтер продолжительности
         private static let durationFormatter: DateComponentsFormatter = {
             let formatter = DateComponentsFormatter()
-            formatter.unitsStyle = .brief
+            formatter.unitsStyle = .abbreviated
             formatter.allowedUnits = [.hour, .minute]
             formatter.zeroFormattingBehavior = .dropAll
             formatter.calendar = Calendar.current
@@ -191,146 +191,130 @@ struct TasksFromView: View {
         }()
         
         var body: some View {
-            VStack(alignment: .leading, spacing: 8) {
-                // Заголовок категории
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Image(systemName: category.iconName)
-                            .foregroundColor(category.color)
-                            .font(.system(size: 14))
-                        
-                        Text(category.rawValue)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                        
-                        Spacer()
-                        
-                        // Улучшенный индикатор количества задач
-                        let totalCount = todoTasks.count
-                        let completedCount = todoTasks.filter { $0.isCompleted }.count
-                        
-                        if totalCount > 0 {
-                            HStack(spacing: 4) {
-                                // Индикатор прогресса
-                                ZStack {
-                                    // Фоновая капсула
-                                    Capsule()
-                                        .stroke(category.color.opacity(0.2), lineWidth: 2)
-                                        .frame(width: 60, height: 24)
-                                    
-                                    // Капсула прогресса
-                                    Capsule()
-                                        .trim(from: 0, to: CGFloat(completedCount) / CGFloat(totalCount))
-                                        .stroke(category.color, lineWidth: 2)
-                                        .frame(width: 60, height: 24)
-                                    
-                                    // Добавляем текст внутрь капсулы
-                                    Text("\(completedCount)/\(totalCount)")
-                                        .font(.system(size: 10))
-                                        .foregroundColor(themeManager.isDarkMode ? .gray : .black)
-                                }
-                            }
-                            .padding(.trailing, 4)
-                        }
-                    }
-                    
-                    // Показываем время начала и окончания, если они доступны
+            VStack(alignment: .leading, spacing: 0) {
+                // Основной блок с временем и категорией
+                VStack(alignment: .leading, spacing: 8) {
+                    // Время и продолжительность
                     if let start = startTime, let end = endTime {
-                        HStack {
-                            Text(formatTime(start))
-                                .font(.caption)
-                                .foregroundColor(themeManager.isDarkMode ? .gray : .black)
-                            
-                            Text("-")
-                                .font(.caption)
-                                .foregroundColor(themeManager.isDarkMode ? .gray : .black)
-                            
-                            Text(formatTime(end))
-                                .font(.caption)
-                                .foregroundColor(themeManager.isDarkMode ? .gray : .black)
+                        HStack(alignment: .top) {
+                            // Время начала и окончания
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(formatTime(start))
+                                    .font(.system(size: 24, weight: .bold))
+                                    .foregroundColor(.black)
+                                
+                                Text(formatTime(end))
+                                    .font(.system(size: 24, weight: .bold))
+                                    .foregroundColor(.black)
+                            }
                             
                             Spacer()
                             
-                            // Добавляем продолжительность
-                            Text("\(formatDuration(end.timeIntervalSince(start)))")
-                                .font(.caption)
-                                .foregroundColor(themeManager.isDarkMode ? .gray : .black)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(category.color.opacity(0.2))
-                                )
+                            // Индикатор продолжительности
+                            VStack(spacing: 4) {
+                                Text(formatDuration(end.timeIntervalSince(start)))
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color.white.opacity(0.3))
+                                    )
+                                
+                                // Иконка и название категории
+                                HStack(spacing: 6) {
+                                    Image(systemName: category.iconName)
+                                        .foregroundColor(.black)
+                                        .font(.system(size: 16))
+                                    
+                                    Text(category.rawValue)
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.black)
+                                }
+                            }
                         }
-                    }
-                }
-                .padding(.horizontal, 10)
-                
-                // Отображаем задачи только если showFullTasks = true
-                if showFullTasks && !todoTasks.isEmpty {                    
-                    // Сортируем задачи: сначала по статусу завершения, затем по приоритету
-                    let sortedTasks = todoTasks.sorted { (task1, task2) -> Bool in
-                        // Сначала незавершенные задачи
-                        if task1.isCompleted != task2.isCompleted {
-                            return !task1.isCompleted
+                    } else {
+                        // Если нет времени, показываем только категорию
+                        HStack(spacing: 8) {
+                            Image(systemName: category.iconName)
+                                .foregroundColor(.black)
+                                .font(.system(size: 20))
+                            
+                            Text(category.rawValue)
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.black)
+                            
+                            Spacer()
                         }
-                        
-                        // Потом по приоритету от высокого к низкому
-                        return task1.priority.rawValue > task2.priority.rawValue
                     }
                     
-                    // Отображаем отсортированные задачи с обработчиком нажатия
-                    ForEach(sortedTasks) { task in
-                        ToDoTaskRow(
-                            task: task, 
-                            categoryColor: category.color,
-                            onToggle: {
-                                // Вызываем обработчик переключения задачи
-                                onToggleTask?(task.id)
+                    // Список задач
+                    if showFullTasks && !todoTasks.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            // Сортируем задачи: сначала по статусу завершения, затем по приоритету
+                            let sortedTasks = todoTasks.sorted { (task1, task2) -> Bool in
+                                // Сначала незавершенные задачи
+                                if task1.isCompleted != task2.isCompleted {
+                                    return !task1.isCompleted
+                                }
+                                
+                                // Потом по приоритету от высокого к низкому
+                                return task1.priority.rawValue > task2.priority.rawValue
                             }
-                        )
+                            
+                            // Отображаем отсортированные задачи
+                            ForEach(sortedTasks) { task in
+                                ToDoTaskRow(
+                                    task: task, 
+                                    categoryColor: category.color,
+                                    onToggle: {
+                                        onToggleTask?(task.id)
+                                    }
+                                )
+                            }
+                        }
+                        .padding(.top, 8)
+                    }
+                    
+                    // Показываем сообщение о переносе задач
+                    if let transferMessage = transferMessage {
+                        Text(transferMessage)
+                            .font(.system(size: 14))
+                            .foregroundColor(.black.opacity(0.7))
+                            .padding(.top, 8)
+                    }
+                    
+                    // Если нет задач в категории, показываем информационное сообщение
+                    if todoTasks.isEmpty && transferMessage == nil {
+                        Text("taskTimeLine.title".localized)
+                            .font(.system(size: 14))
+                            .foregroundColor(.black.opacity(0.7))
+                            .padding(.top, 8)
                     }
                 }
-                
-                // Показываем сообщение о переносе задач
-                if let transferMessage = transferMessage {
-                    Text(transferMessage)
-                        .font(.caption)
-                        .foregroundColor(themeManager.isDarkMode ? .gray : .black)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(category.color.opacity(0.1))
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    category.color.opacity(0.9),
+                                    category.color.opacity(0.7)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                }
-                
-                // Если нет задач в категории, показываем информационное сообщение
-                if todoTasks.isEmpty && transferMessage == nil {
-                    Text("taskTimeLine.title".localized)
-                        .font(.caption)
-                        .foregroundColor(themeManager.isDarkMode ? .gray : .black)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                }
+                )
+                .shadow(color: category.color.opacity(0.3), radius: 8, x: 0, y: 4)
             }
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(themeManager.isDarkMode ? Color(red: 0.22, green: 0.22, blue: 0.227) : Color(red: 0.808, green: 0.808, blue: 0.812))
-                    .opacity(0.9)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(category.color.opacity(0.3), lineWidth: 1)
-                    )
-            )
         }
         
-        // Форматирование времени
+        // Форматирование времени в формате HH:MM
         private func formatTime(_ date: Date) -> String {
             let formatter = DateFormatter()
-            formatter.timeStyle = .short
+            formatter.dateFormat = "HH:mm"
             return formatter.string(from: date)
         }
         
