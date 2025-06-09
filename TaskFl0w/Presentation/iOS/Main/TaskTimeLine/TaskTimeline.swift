@@ -311,13 +311,14 @@ struct TaskTimeline: View {
 
                         // Контейнер для временной шкалы и индикатора
                         ZStack(alignment: .leading) {
-                            // Индикатор текущего времени
+                            // Базовая временная шкала
+                            timelineContentView
+                            
+                            // Индикатор текущего времени (поверх всего)
                             GeometryReader { geometry in
                                 timeIndicatorView(in: geometry)
                             }
-
-                            // Базовая временная шкала
-                            timelineContentView
+                            .zIndex(1000) // Максимальный приоритет для индикатора
                         }
 
                         // Информация о конце дня
@@ -424,26 +425,23 @@ struct TaskTimeline: View {
             )
 
             return AnyView(
-                HStack(alignment: .center, spacing: 4) {
-                    // Метка времени
+                HStack(alignment: .center, spacing: 0) {
+                    // Метка времени слева от линии
                     Text(formatTime(timelineManager.currentTime))
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.pink)
-
-                    // Линия с индикатором
-                    ZStack(alignment: .leading) {
-                        Rectangle()
-                            .fill(Color.pink)
-                            .frame(height: 1.5)
-
-                        Circle()
-                            .fill(Color.pink)
-                            .frame(width: 6, height: 6)
-                    }
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.black)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(.ultraThickMaterial)
+                                .frame(width: 40, height: 20)
+                                .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
+                        )
+                        .frame(width: 40, alignment: .trailing)
+                        // .padding(.trailing, 20)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .offset(y: yPosition - 10)
-                .padding(.leading, -15)
+                .offset(y: yPosition - 5)
+                .padding(.leading)
+                .zIndex(1001) // Еще больший приоритет
             )
         } else {
             return AnyView(Color.clear.frame(height: 0))
