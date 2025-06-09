@@ -165,7 +165,7 @@ struct TasksFromView: View {
         formatter.timeStyle = .short
         let timeRange = "\(formatter.string(from: slot.startTime)) - \(formatter.string(from: slot.endTime))"
         
-        return "Незавершённые задачи перенесены в слот (\(timeRange))"
+        return "Слот завершён"
     }
     
     // Компонент для отображения одной категории (новый дизайн по фото)
@@ -211,7 +211,7 @@ struct TasksFromView: View {
                             Spacer()
                             
                             // Индикатор продолжительности
-                            VStack(spacing: 4) {
+                            VStack(alignment: .trailing, spacing: 4) {
                                 Text(formatDuration(end.timeIntervalSince(start)))
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.black)
@@ -221,6 +221,7 @@ struct TasksFromView: View {
                                         RoundedRectangle(cornerRadius: 12)
                                             .fill(Color.white.opacity(0.3))
                                     )
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
                                 
                                 // Иконка и название категории
                                 HStack(spacing: 6) {
@@ -232,6 +233,8 @@ struct TasksFromView: View {
                                         .font(.system(size: 16, weight: .medium))
                                         .foregroundColor(.black)
                                 }
+                                .padding(.top, 6)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
                             }
                         }
                     } else {
