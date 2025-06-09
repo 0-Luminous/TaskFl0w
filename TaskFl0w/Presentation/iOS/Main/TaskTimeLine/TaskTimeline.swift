@@ -32,6 +32,29 @@ struct TimeBlock: Identifiable {
     }
 }
 
+// ОБНОВЛЯЕМ СТРУКТУРУ BlockPosition для соответствия Equatable
+struct BlockPosition: Equatable {
+    let hour: Int
+    let yPosition: CGFloat
+    let height: CGFloat
+    
+    // Реализация Equatable для сравнения позиций блоков
+    static func == (lhs: BlockPosition, rhs: BlockPosition) -> Bool {
+        return lhs.hour == rhs.hour && 
+               abs(lhs.yPosition - rhs.yPosition) < 0.1 && 
+               abs(lhs.height - rhs.height) < 0.1
+    }
+}
+
+// ДОБАВЛЯЕМ PreferenceKey ДЛЯ ПЕРЕДАЧИ ПОЗИЦИЙ БЛОКОВ
+struct BlockPositionPreferenceKey: PreferenceKey {
+    static var defaultValue: [BlockPosition] = []
+    
+    static func reduce(value: inout [BlockPosition], nextValue: () -> [BlockPosition]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
 // Абстрагируем логику работы с таймлайном в отдельный класс
 class TimelineManager: ObservableObject {
     @Published var currentTime = Date()
@@ -247,6 +270,45 @@ class TimelineManager: ObservableObject {
         // Вычисляем позицию между блоками
         return lowerPosition + blockDistance * hourProgress
     }
+
+    // НОВАЯ ФУНКЦИЯ ДЛЯ РАСЧЕТА ПОЗИЦИИ С УЧЕТОМ РЕАЛЬНЫХ ВЫСОТ БЛОКОВ
+    func calculateTimeIndicatorPositionWithBlocks(
+        for date: Date, 
+        blockPositions: [BlockPosition]
+    ) -> CGFloat {
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: date)
+        let currentMinute = calendar.component(.minute, from: date)
+        
+        // Сортируем позиции блоков по часам
+        let sortedPositions = blockPositions.sorted { $0.hour < $1.hour }
+        
+        // Находим блоки до и после текущего времени
+        let lowerBlock = sortedPositions.filter { $0.hour <= currentHour }.last
+        let upperBlock = sortedPositions.first { $0.hour > currentHour }
+        
+        guard let lower = lowerBlock else {
+            // Если нет блока до текущего времени, используем первый блок
+            return sortedPositions.first?.yPosition ?? 0
+        }
+        
+        guard let upper = upperBlock else {
+            // Если нет блока после текущего времени, используем последний блок
+            return lower.yPosition + lower.height
+        }
+        
+        // Вычисляем прогресс внутри интервала
+        let hourDifference = upper.hour - lower.hour
+        let minuteProgress = CGFloat(currentMinute) / 60.0
+        let hourProgress = (CGFloat(currentHour - lower.hour) + minuteProgress) / CGFloat(hourDifference)
+        
+        // Интерполируем позицию между блоками
+        let startPosition = lower.yPosition
+        let endPosition = upper.yPosition
+        let totalDistance = endPosition - startPosition
+        
+        return startPosition + totalDistance * hourProgress
+    }
 }
 
 struct TaskTimeline: View {
@@ -267,6 +329,9 @@ struct TaskTimeline: View {
     // Состояние интерфейса
     @State private var showSettings = false
     @State private var showWeekCalendar = false
+
+    // ДОБАВЛЯЕМ СОСТОЯНИЕ ДЛЯ ХРАНЕНИЯ ПОЗИЦИЙ БЛОКОВ
+    @State private var blockPositions: [BlockPosition] = []
 
     // Вычисляемые свойства для фильтрации задач
     private var filteredTasks: [TaskOnRing] {
@@ -330,7 +395,6 @@ struct TaskTimeline: View {
                         .padding(.top, 20)
                         .padding(.bottom, 10)
                     }
-                    .padding(.horizontal, 15)
                 }
                 .padding(.top, 30)
             }
@@ -413,20 +477,32 @@ struct TaskTimeline: View {
         }
     }
 
-    // Визуализация индикатора текущего времени
+    // ОБНОВЛЯЕМ timeIndicatorView ДЛЯ ИСПОЛЬЗОВАНИЯ НОВОЙ ФУНКЦИИ
     private func timeIndicatorView(in geometry: GeometryProxy) -> AnyView {
         let isToday = Calendar.current.isDateInToday(selectedDate)
 
         if isToday {
-            let yPosition = timelineManager.calculateTimeIndicatorPosition(
-                for: timelineManager.currentTime,
-                in: geometry.size.height,
-                timeBlocks: timeBlocks
-            )
+            let yPosition: CGFloat
+            
+            if !blockPositions.isEmpty {
+                // Используем реальные позиции блоков
+                yPosition = timelineManager.calculateTimeIndicatorPositionWithBlocks(
+                    for: timelineManager.currentTime,
+                    blockPositions: blockPositions
+                )
+            } else {
+                // Fallback к старому методу
+                yPosition = timelineManager.calculateTimeIndicatorPosition(
+                    for: timelineManager.currentTime,
+                    in: geometry.size.height,
+                    timeBlocks: timeBlocks
+                )
+            }
 
             return AnyView(
                 HStack(alignment: .center, spacing: 0) {
-                    // Метка времени слева от линии
+
+                    // Метка времени справа от линии
                     Text(formatTime(timelineManager.currentTime))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(themeManager.isDarkMode ? .white : .black)
@@ -435,28 +511,40 @@ struct TaskTimeline: View {
                                 .fill(.ultraThickMaterial)
                                 .stroke(
                                     LinearGradient(
-                                        colors: [themeManager.isDarkMode ? .white.opacity(0.5) : .black.opacity(0.5), 
-                                        themeManager.isDarkMode ? .white.opacity(0.2) : .black.opacity(0.2)],
+                                        colors: [.red.opacity(0.5), .red.opacity(0.2)],
                                         startPoint: .top,
                                         endPoint: .bottom
                                     ),
                                     lineWidth: 1
                                 )
-                                .frame(width: 40, height: 20)
-                                .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
+                                .frame(width: 50, height: 22)
+                                .shadow(color: Color.red.opacity(0.15), radius: 5, x: 0, y: 2)
                         )
-                        .frame(width: 40, alignment: .trailing)
+                        // .padding(.leading)
+
+                    // Линия времени
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [.red.opacity(0.8), .red],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(height: 2)
+                        .shadow(color: .red.opacity(0.3), radius: 2, x: 0, y: 1)
+                        .padding(.leading, 7)
                 }
-                .offset(y: yPosition - 5)
-                .padding(.leading)
-                .zIndex(1001) // Еще больший приоритет
+                .offset(y: yPosition - 11)
+                .padding(.leading, 22) // Уменьшаем с 22 до 2 пикселей
+                .zIndex(1001)
             )
         } else {
             return AnyView(Color.clear.frame(height: 0))
         }
     }
 
-    // Содержимое временной шкалы
+    // ОБНОВЛЯЕМ timelineContentView ДЛЯ ОТСЛЕЖИВАНИЯ ПОЗИЦИЙ
     private var timelineContentView: some View {
         ZStack(alignment: .leading) {
             // Вертикальная линия с иконками
@@ -470,6 +558,19 @@ struct TaskTimeline: View {
                 // Блоки времени с задачами
                 ForEach(timeBlocks) { block in
                     timeBlockView(for: block)
+                        .background(
+                            GeometryReader { geometry in
+                                Color.clear
+                                    .preference(
+                                        key: BlockPositionPreferenceKey.self,
+                                        value: [BlockPosition(
+                                            hour: block.hour,
+                                            yPosition: geometry.frame(in: .named("timelineContainer")).minY,
+                                            height: geometry.size.height
+                                        )]
+                                    )
+                            }
+                        )
                 }
 
                 // Отступ для иконки луны
@@ -478,6 +579,10 @@ struct TaskTimeline: View {
             .padding(.leading, 15)
         }
         .padding(.leading, 10)
+        .coordinateSpace(name: "timelineContainer")
+        .onPreferenceChange(BlockPositionPreferenceKey.self) { positions in
+            self.blockPositions = positions
+        }
     }
 
     // Ось времени с иконками
@@ -602,7 +707,7 @@ struct TaskTimeline: View {
                                     allTimelineTasksForCategory: allCategoryTasks,
                                     slotId: slotId
                                 )
-                                .padding(.leading, 10)
+                                .padding(.horizontal, 11)
                                 .background(
                                     GeometryReader { geometry in
                                         Color.clear
