@@ -429,15 +429,23 @@ struct TaskTimeline: View {
                     // Метка времени слева от линии
                     Text(formatTime(timelineManager.currentTime))
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.black)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(.ultraThickMaterial)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [themeManager.isDarkMode ? .white.opacity(0.5) : .black.opacity(0.5), 
+                                        themeManager.isDarkMode ? .white.opacity(0.2) : .black.opacity(0.2)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 1
+                                )
                                 .frame(width: 40, height: 20)
-                                .shadow(color: Color.black.opacity(0.25), radius: 5, x: 0, y: 2)
+                                .shadow(color: Color.black.opacity(0.15), radius: 5, x: 0, y: 2)
                         )
                         .frame(width: 40, alignment: .trailing)
-                        // .padding(.trailing, 20)
                 }
                 .offset(y: yPosition - 5)
                 .padding(.leading)
@@ -566,7 +574,7 @@ struct TaskTimeline: View {
                                     Rectangle()
                                         .fill(firstTask.category.color)
                                         .frame(width: 30, height: blockHeight)
-                                        .cornerRadius(5)
+                                        .cornerRadius(10)
                                     
                                     VStack {
                                         Spacer()
