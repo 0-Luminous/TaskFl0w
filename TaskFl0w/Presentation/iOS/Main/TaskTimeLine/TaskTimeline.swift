@@ -153,12 +153,11 @@ class TimelineManager: ObservableObject {
         var tasksByHour: [Int: [TaskOnRing]] = [:]
         var startHours: Set<Int> = []
         var endHours: Set<Int> = []
-        var processedTasks = Set<UUID>()  // Добавляем множество для отслеживания обработанных задач
-        var processedTasksAt0Hour = Set<UUID>()  // Добавляем отслеживание задач для 0-го часа
+        var processedTasks = Set<UUID>()
+        var processedTasksAt0Hour = Set<UUID>()
 
         // Анализируем задачи и создаем временные диапазоны
         for task in tasks {
-            // Убедимся, что задача действительно на этот день
             guard calendar.isDate(task.startTime, inSameDayAs: selectedDate) else {
                 continue
             }
@@ -171,24 +170,19 @@ class TimelineManager: ObservableObject {
             // Интеллектуальная корректировка часа окончания
             let adjustedEndHour: Int
             if endMinute > 0 {
-                adjustedEndHour = (endHour + 1) % 24  // Увеличиваем на 1, если есть минуты
+                adjustedEndHour = (endHour + 1) % 24
             } else if startHour == endHour && startMinute == 0 && endMinute == 0 {
                 adjustedEndHour = (endHour + 1) % 24
             } else {
                 adjustedEndHour = endHour
             }
 
-            // Аккуратно обрабатываем граничные случаи с 0 часами
-            // Если задача начинается в 0 часов и она уже была обработана для 24 часов (или наоборот)
-            // то пропускаем её, чтобы избежать дублирования
             if (startHour == 0 || adjustedEndHour == 0) && processedTasks.contains(task.id) {
                 continue
             }
 
-            // Отмечаем задачу как обработанную
             processedTasks.insert(task.id)
 
-            // Добавляем задачу в соответствующий час
             if tasksByHour[startHour] == nil {
                 tasksByHour[startHour] = []
             }
@@ -197,35 +191,26 @@ class TimelineManager: ObservableObject {
             startHours.insert(startHour)
             endHours.insert(adjustedEndHour)
 
-            // Создаем диапазон для задачи
             taskRanges.append(TimeRange(start: startHour, end: adjustedEndHour, task: task))
         }
 
         // Создаем блоки времени с интеллектуальной группировкой
         var blocks: [TimeBlock] = []
 
-        // Показываем полные сутки и еще час для наглядности
         for hour in 0...24 {
             let hourMod24 = hour % 24
 
-            // Получаем задачи для текущего часа
             var tasksAtHour = tasksByHour[hourMod24] ?? []
 
-            // Специальная обработка для 24-го часа (полночь следующего дня)
             if hour == 24 {
-                // Фильтруем задачи, исключая те, которые уже были в 0-м часу
                 tasksAtHour = tasksAtHour.filter { !processedTasksAt0Hour.contains($0.id) }
             } else if hourMod24 == 0 {
-                // Запоминаем ID задач 0-го часа для исключения их при обработке 24-го часа
                 processedTasksAt0Hour = Set(tasksAtHour.map { $0.id })
             }
 
-            // Если это 0-й или другие часы, проверяем на дубликаты внутри текущего блока
             if tasksAtHour.count > 1 {
-                // Фильтруем дубликаты внутри текущего блока
                 let uniqueTaskIds = Set(tasksAtHour.map { $0.id })
                 if uniqueTaskIds.count != tasksAtHour.count {
-                    // Оставляем только уникальные задачи
                     var seenIds = Set<UUID>()
                     tasksAtHour = tasksAtHour.filter { task in
                         if seenIds.contains(task.id) {
@@ -237,18 +222,27 @@ class TimelineManager: ObservableObject {
                 }
             }
 
-            // Определяем статус часа для визуализации
             let isInsideTask = taskRanges.contains { $0.contains(hourMod24) }
             let isStartHour = startHours.contains(hourMod24)
             let isEndHour = endHours.contains(hourMod24)
-            let isSignificantHour = hour % 3 == 0  // Каждый третий час
-            let isImportantHour = hour == 0 || hour == 12 || hour == 24  // Полночь и полдень
+            let isSignificantHour = hour % 3 == 0
+            let isImportantHour = hour == 0 || hour == 12 || hour == 24
 
-            // Интеллектуальный алгоритм показа меток
-            let showHourLabel =
-                isStartHour || isEndHour
-                || ((isSignificantHour || isImportantHour) && !isInsideTask
-                    && !endHours.contains((hour + 23) % 24))
+            // ДОБАВЛЯЕМ ФУНКЦИЮ для проверки промежутков между задачами в одном часе
+            let hasGapsInThisHour = hasGapsBetweenTasksInHour(hourMod24, tasks: tasks, calendar: calendar)
+
+            // ОБНОВЛЕННАЯ логика показа меток с учетом промежутков
+            let showHourLabel = {
+                // Если есть промежутки между задачами в этом часе - НЕ показываем метку
+                if hasGapsInThisHour {
+                    return false
+                }
+                
+                // Обычная логика для остальных случаев
+                return isStartHour || isEndHour ||
+                       ((isSignificantHour || isImportantHour) && !isInsideTask &&
+                        !endHours.contains((hour + 23) % 24))
+            }()
 
             blocks.append(
                 TimeBlock(
@@ -362,6 +356,42 @@ class TimelineManager: ObservableObject {
         let totalDistance = endPosition - startPosition
         
         return startPosition + totalDistance * hourProgress
+    }
+
+    // ДОБАВЛЯЕМ ФУНКЦИЮ для проверки промежутков между задачами в одном часе
+    private func hasGapsBetweenTasksInHour(_ hour: Int, tasks: [TaskOnRing], calendar: Calendar) -> Bool {
+        // Получаем все задачи, которые начинаются или заканчиваются в данном часе
+        let tasksInHour = tasks.filter { task in
+            let startHour = calendar.component(.hour, from: task.startTime)
+            let endHour = calendar.component(.hour, from: task.endTime)
+            return startHour == hour || endHour == hour
+        }
+        
+        guard tasksInHour.count > 1 else {
+            return false // Если задач меньше 2, промежутков быть не может
+        }
+        
+        // Сортируем задачи по времени начала
+        let sortedTasks = tasksInHour.sorted { $0.startTime < $1.startTime }
+        
+        // Проверяем наличие промежутков между задачами
+        for i in 0..<(sortedTasks.count - 1) {
+            let currentTask = sortedTasks[i]
+            let nextTask = sortedTasks[i + 1]
+            
+            // Если между концом одной задачи и началом следующей есть промежуток
+            if currentTask.endTime < nextTask.startTime {
+                let currentEndHour = calendar.component(.hour, from: currentTask.endTime)
+                let nextStartHour = calendar.component(.hour, from: nextTask.startTime)
+                
+                // Если промежуток находится в том же часе
+                if currentEndHour == hour && nextStartHour == hour {
+                    return true
+                }
+            }
+        }
+        
+        return false
     }
 }
 
@@ -862,7 +892,7 @@ struct TaskTimeline: View {
         .padding(.leading, 15)
     }
 
-    // ОБНОВЛЯЕМ timeBlockView (убираем print из тела View)
+    // ОБНОВЛЯЕМ timeBlockView с увеличенными отступами
     private func timeBlockView(for timeBlock: TimeBlock) -> some View {
         VStack(spacing: 0) {
             // Метка часа (если нужно показать)
@@ -891,9 +921,9 @@ struct TaskTimeline: View {
                 }
             }
 
-            // ЛЕВЫЕ ИНДИКАТОРЫ С ДИНАМИЧЕСКОЙ ВЫСОТОЙ
+            // ЛЕВЫЕ ИНДИКАТОРЫ С ДИНАМИЧЕСКОЙ ВЫСОТОЙ И УВЕЛИЧЕННЫМИ ОТСТУПАМИ
             if !timeBlock.tasks.isEmpty {
-                VStack(spacing: 15) {
+                VStack(spacing: 25) { // УВЕЛИЧИВАЕМ отступ с 15 до 25
                     ForEach(timelineManager.groupTasksByCategory(timeBlock.tasks), id: \.key) {
                         category, tasksInCategory in
                         if let firstTask = tasksInCategory.first {
@@ -967,9 +997,11 @@ struct TaskTimeline: View {
                                     }
                                 )
                             }
+                            .padding(.bottom, 8) // ДОБАВЛЯЕМ дополнительный отступ снизу для каждого блока
                         }
                     }
                 }
+                .padding(.top, 8) // ДОБАВЛЯЕМ отступ сверху для группы блоков
             }
         }
         .onPreferenceChange(BlockHeightPreferenceKey.self) { heights in
