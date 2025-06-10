@@ -64,6 +64,25 @@ struct BlockHourPreferenceKey: PreferenceKey {
     }
 }
 
+// ДОБАВЛЯЕМ новую структуру для хранения позиций часовых меток
+struct HourLabelPosition: Equatable {
+    let hour: Int
+    let yPosition: CGFloat
+    
+    static func == (lhs: HourLabelPosition, rhs: HourLabelPosition) -> Bool {
+        return lhs.hour == rhs.hour && abs(lhs.yPosition - rhs.yPosition) < 0.1
+    }
+}
+
+// ДОБАВЛЯЕМ PreferenceKey для передачи позиций часовых меток
+struct HourLabelPositionPreferenceKey: PreferenceKey {
+    static var defaultValue: [HourLabelPosition] = []
+    
+    static func reduce(value: inout [HourLabelPosition], nextValue: () -> [HourLabelPosition]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
 // Абстрагируем логику работы с таймлайном в отдельный класс
 class TimelineManager: ObservableObject {
     @Published var currentTime = Date()
@@ -361,6 +380,9 @@ struct TaskTimeline: View {
         timelineManager.calculateTimeUntilEndOfDay(from: timelineManager.currentTime)
     }
 
+    // ДОБАВЛЯЕМ в TaskTimeline состояние для хранения позиций часовых меток
+    @State private var hourLabelPositions: [HourLabelPosition] = []
+
     var body: some View {
         ZStack(alignment: .top) {
             // Основное содержимое
@@ -489,59 +511,73 @@ struct TaskTimeline: View {
         }
     }
 
-    // УЛУЧШЕННАЯ ФУНКЦИЯ ДЛЯ РАСЧЕТА ПОЗИЦИИ НА ОСНОВЕ РЕАЛЬНЫХ ПОЗИЦИЙ БЛОКОВ
-    private func calculatePositionFromBlockHours(
+    // ИСПРАВЛЯЕМ метод для корректного учета минут
+    private func calculateTimeIndicatorPositionFromHourLabels(
         currentHour: Int,
         currentMinute: Int,
-        blockHours: [Int],
+        hourLabelPositions: [HourLabelPosition],
         totalHeight: CGFloat
     ) -> CGFloat {
-        // Используем реальные позиции блоков вместо расчетных
-        guard !blockPositions.isEmpty else {
+        guard !hourLabelPositions.isEmpty else {
             // Fallback к пропорциональному расчету
             let progress = (CGFloat(currentHour) + CGFloat(currentMinute) / 60.0) / 24.0
             return totalHeight * progress
         }
         
-        // Сортируем позиции блоков по часам
-        let sortedPositions = blockPositions.sorted { $0.hour < $1.hour }
+        // Сортируем позиции меток по часам
+        let sortedLabels = hourLabelPositions.sorted { $0.hour < $1.hour }
         
-        // Находим блоки до и после текущего времени
-        let lowerBlock = sortedPositions.filter { $0.hour <= currentHour }.last
-        let upperBlock = sortedPositions.first { $0.hour > currentHour }
-        
-        // Если текущий час точно совпадает с часом блока
-        if let exactBlock = sortedPositions.first(where: { $0.hour == currentHour }) {
-            // Вычисляем точную позицию внутри блока на основе минут
-            let minuteProgress = CGFloat(currentMinute) / 60.0
-            return exactBlock.yPosition + (exactBlock.height * minuteProgress)
+        // Ищем точное совпадение по часу
+        if let exactLabel = sortedLabels.first(where: { $0.hour == currentHour }) {
+            // ИСПРАВЛЕНИЕ: Даже при точном совпадении часа нужно учитывать минуты
+            // Ищем следующую метку для интерполяции
+            if let nextLabel = sortedLabels.first(where: { $0.hour > currentHour }) {
+                let minuteProgress = CGFloat(currentMinute) / 60.0
+                let positionDifference = nextLabel.yPosition - exactLabel.yPosition
+                return exactLabel.yPosition + (positionDifference * minuteProgress)
+            } else {
+                // Если нет следующей метки, используем среднее расстояние
+                let averageDistance = calculateAverageDistanceBetweenLabels(sortedLabels)
+                let minuteProgress = CGFloat(currentMinute) / 60.0
+                return exactLabel.yPosition + (averageDistance * minuteProgress)
+            }
         }
         
-        // Если есть блок до и после текущего времени
-        if let lower = lowerBlock, let upper = upperBlock, lower.hour != upper.hour {
+        // Ищем ближайшие метки до и после текущего времени
+        let lowerLabel = sortedLabels.filter { $0.hour < currentHour }.last
+        let upperLabel = sortedLabels.first { $0.hour > currentHour }
+        
+        // Если есть метки до и после текущего времени
+        if let lower = lowerLabel, let upper = upperLabel {
             let hourDifference = upper.hour - lower.hour
             let minuteProgress = CGFloat(currentMinute) / 60.0
             let hourProgress = (CGFloat(currentHour - lower.hour) + minuteProgress) / CGFloat(hourDifference)
             
-            // Интерполируем между концом нижнего блока и началом верхнего
-            let startPosition = lower.yPosition + lower.height
-            let endPosition = upper.yPosition
-            
-            return startPosition + (endPosition - startPosition) * hourProgress
+            // Линейная интерполяция между метками
+            let positionDifference = upper.yPosition - lower.yPosition
+            return lower.yPosition + (positionDifference * hourProgress)
         }
         
-        // Если есть только нижний блок (время после последнего блока)
-        if let lower = lowerBlock, upperBlock == nil {
+        // Если есть только нижняя метка (время после последней метки)
+        if let lower = lowerLabel, upperLabel == nil {
+            // Используем среднее расстояние между метками для экстраполяции
+            let averageDistance = calculateAverageDistanceBetweenLabels(sortedLabels)
+            let hoursAfterLastLabel = currentHour - lower.hour
             let minuteProgress = CGFloat(currentMinute) / 60.0
-            return lower.yPosition + lower.height + (minuteProgress * 30) // Примерная высота часа
+            let timeProgress = CGFloat(hoursAfterLastLabel) + minuteProgress
+            
+            return lower.yPosition + (averageDistance * timeProgress)
         }
         
-        // Если есть только верхний блок (время до первого блока)
-        if let upper = upperBlock, lowerBlock == nil {
-            let totalMinutes = CGFloat(currentHour * 60 + currentMinute)
-            let upperMinutes = CGFloat(upper.hour * 60)
-            let progress = totalMinutes / upperMinutes
-            return upper.yPosition * progress
+        // Если есть только верхняя метка (время до первой метки)
+        if let upper = upperLabel, lowerLabel == nil {
+            // Используем среднее расстояние для экстраполяции назад
+            let averageDistance = calculateAverageDistanceBetweenLabels(sortedLabels)
+            let hoursBeforeFirstLabel = upper.hour - currentHour
+            let minuteProgress = CGFloat(currentMinute) / 60.0
+            let timeProgress = CGFloat(hoursBeforeFirstLabel) - minuteProgress
+            
+            return upper.yPosition - (averageDistance * timeProgress)
         }
         
         // Fallback
@@ -549,7 +585,26 @@ struct TaskTimeline: View {
         return totalHeight * progress
     }
 
-    // ОБНОВЛЯЕМ timeIndicatorView С УЛУЧШЕННОЙ ЛОГИКОЙ
+    // ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ для расчета среднего расстояния между метками
+    private func calculateAverageDistanceBetweenLabels(_ labels: [HourLabelPosition]) -> CGFloat {
+        guard labels.count > 1 else { return 60.0 } // Значение по умолчанию
+        
+        var totalDistance: CGFloat = 0
+        var count = 0
+        
+        for i in 0..<(labels.count - 1) {
+            let distance = labels[i + 1].yPosition - labels[i].yPosition
+            let hourDiff = labels[i + 1].hour - labels[i].hour
+            if hourDiff > 0 {
+                totalDistance += distance / CGFloat(hourDiff) // Расстояние на час
+                count += 1
+            }
+        }
+        
+        return count > 0 ? totalDistance / CGFloat(count) : 60.0
+    }
+
+    // ОБНОВЛЯЕМ timeIndicatorView для использования нового метода
     private func timeIndicatorView(in geometry: GeometryProxy) -> AnyView {
         let isToday = Calendar.current.isDateInToday(selectedDate)
 
@@ -557,23 +612,13 @@ struct TaskTimeline: View {
             let currentHour = Calendar.current.component(.hour, from: timelineManager.currentTime)
             let currentMinute = Calendar.current.component(.minute, from: timelineManager.currentTime)
             
-            // Используем улучшенный расчет позиции
-            let yPosition: CGFloat
-            if !blockPositions.isEmpty {
-                yPosition = calculatePositionFromBlockHours(
-                    currentHour: currentHour,
-                    currentMinute: currentMinute,
-                    blockHours: blockHours,
-                    totalHeight: geometry.size.height
-                )
-            } else {
-                // Fallback к старому методу, если позиции еще не получены
-                yPosition = timelineManager.calculateTimeIndicatorPosition(
-                    for: timelineManager.currentTime,
-                    in: geometry.size.height,
-                    timeBlocks: timeBlocks
-                )
-            }
+            // Используем новый точный расчет на основе позиций часовых меток
+            let yPosition = calculateTimeIndicatorPositionFromHourLabels(
+                currentHour: currentHour,
+                currentMinute: currentMinute,
+                hourLabelPositions: hourLabelPositions,
+                totalHeight: geometry.size.height
+            )
 
             return AnyView(
                 HStack(alignment: .center, spacing: 0) {
@@ -618,7 +663,7 @@ struct TaskTimeline: View {
         }
     }
 
-    // ОБНОВЛЯЕМ timelineContentView ДЛЯ ПЕРЕДАЧИ ЧАСОВ БЛОКОВ
+    // ОБНОВЛЯЕМ timelineContentView для сбора позиций часовых меток
     private var timelineContentView: some View {
         ZStack(alignment: .leading) {
             // Вертикальная линия с иконками
@@ -663,6 +708,9 @@ struct TaskTimeline: View {
         }
         .onPreferenceChange(BlockHourPreferenceKey.self) { hours in
             self.blockHours = hours
+        }
+        .onPreferenceChange(HourLabelPositionPreferenceKey.self) { positions in
+            self.hourLabelPositions = positions
         }
     }
 
@@ -720,7 +768,7 @@ struct TaskTimeline: View {
         .padding(.leading, 15)
     }
 
-    // ОБНОВЛЯЕМ timeBlockView ДЛЯ РАБОТЫ С ВЫСОТАМИ
+    // ОБНОВЛЯЕМ timeBlockView для передачи позиций часовых меток
     private func timeBlockView(for timeBlock: TimeBlock) -> some View {
         VStack(spacing: 0) {
             // Метка часа (если нужно показать)
@@ -734,6 +782,18 @@ struct TaskTimeline: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.leading, 45)
                         .padding(.top, 10)
+                        .background(
+                            GeometryReader { labelGeometry in
+                                Color.clear
+                                    .preference(
+                                        key: HourLabelPositionPreferenceKey.self,
+                                        value: [HourLabelPosition(
+                                            hour: timeBlock.hour,
+                                            yPosition: labelGeometry.frame(in: .named("timelineContainer")).midY
+                                        )]
+                                    )
+                            }
+                        )
                 }
             }
 
