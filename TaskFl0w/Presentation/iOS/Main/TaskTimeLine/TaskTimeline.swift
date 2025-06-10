@@ -83,6 +83,32 @@ struct HourLabelPositionPreferenceKey: PreferenceKey {
     }
 }
 
+// ДОБАВЛЯЕМ структуру для хранения позиций блоков категорий
+struct CategoryBlockPosition: Equatable {
+    let categoryId: UUID
+    let startTime: Date
+    let endTime: Date
+    let yPosition: CGFloat
+    let height: CGFloat
+    
+    static func == (lhs: CategoryBlockPosition, rhs: CategoryBlockPosition) -> Bool {
+        return lhs.categoryId == rhs.categoryId &&
+               lhs.startTime == rhs.startTime &&
+               lhs.endTime == rhs.endTime &&
+               abs(lhs.yPosition - rhs.yPosition) < 0.1 &&
+               abs(lhs.height - rhs.height) < 0.1
+    }
+}
+
+// ДОБАВЛЯЕМ PreferenceKey для передачи позиций блоков категорий
+struct CategoryBlockPositionPreferenceKey: PreferenceKey {
+    static var defaultValue: [CategoryBlockPosition] = []
+    
+    static func reduce(value: inout [CategoryBlockPosition], nextValue: () -> [CategoryBlockPosition]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
 // Абстрагируем логику работы с таймлайном в отдельный класс
 class TimelineManager: ObservableObject {
     @Published var currentTime = Date()
@@ -383,6 +409,9 @@ struct TaskTimeline: View {
     // ДОБАВЛЯЕМ в TaskTimeline состояние для хранения позиций часовых меток
     @State private var hourLabelPositions: [HourLabelPosition] = []
 
+    // ДОБАВЛЯЕМ в TaskTimeline состояние для хранения позиций блоков категорий
+    @State private var categoryBlockPositions: [CategoryBlockPosition] = []
+
     var body: some View {
         ZStack(alignment: .top) {
             // Основное содержимое
@@ -511,8 +540,73 @@ struct TaskTimeline: View {
         }
     }
 
-    // ИСПРАВЛЯЕМ метод для корректного учета минут
+    // ОБНОВЛЯЕМ ГЛАВНЫЙ МЕТОД расчета позиции с учетом всех трех кейсов
     private func calculateTimeIndicatorPositionFromHourLabels(
+        currentHour: Int,
+        currentMinute: Int,
+        hourLabelPositions: [HourLabelPosition],
+        totalHeight: CGFloat
+    ) -> CGFloat {
+        let currentTime = timelineManager.currentTime
+        
+        // ВЫЗЫВАЕМ ОТЛАДКУ ТОЛЬКО КОГДА НУЖНО (можно закомментировать)
+        // debugIntermediatePositions(currentTime)
+        
+        // ПРОВЕРЯЕМ, находится ли текущее время в зоне категории (кейс 2)
+        if let categoryBlock = findCategoryBlockForCurrentTime(currentTime) {
+            return calculatePositionWithinCategoryBlock(currentTime: currentTime, categoryBlock: categoryBlock)
+        }
+        
+        // НОВАЯ ЛОГИКА: проверяем промежуточные зоны (кейс 3)
+        if let intermediatePosition = calculateIntermediatePosition(
+            currentTime: currentTime,
+            currentHour: currentHour,
+            currentMinute: currentMinute,
+            hourLabelPositions: hourLabelPositions
+        ) {
+            return intermediatePosition
+        }
+        
+        // Кейс 1: используем существующую логику с временными метками
+        return calculatePositionFromHourLabels(
+            currentHour: currentHour,
+            currentMinute: currentMinute,
+            hourLabelPositions: hourLabelPositions,
+            totalHeight: totalHeight
+        )
+    }
+
+    // ИСПРАВЛЯЕМ ФУНКЦИЮ для поиска блока категории (убираем print из View контекста)
+    private func findCategoryBlockForCurrentTime(_ currentTime: Date) -> CategoryBlockPosition? {
+        return categoryBlockPositions.first { block in
+            // ИСПРАВЛЯЕМ ЛОГИКУ: время должно быть строго внутри интервала
+            return currentTime >= block.startTime && currentTime < block.endTime
+        }
+    }
+
+    // ФУНКЦИЯ для расчета позиции внутри блока категории
+    private func calculatePositionWithinCategoryBlock(
+        currentTime: Date, 
+        categoryBlock: CategoryBlockPosition
+    ) -> CGFloat {
+        let totalDuration = categoryBlock.endTime.timeIntervalSince(categoryBlock.startTime)
+        let elapsedDuration = currentTime.timeIntervalSince(categoryBlock.startTime)
+        
+        // Избегаем деления на ноль
+        guard totalDuration > 0 else {
+            return categoryBlock.yPosition
+        }
+        
+        let progress = CGFloat(elapsedDuration / totalDuration)
+        
+        // Ограничиваем прогресс от 0 до 1
+        let clampedProgress = max(0, min(1, progress))
+        
+        return categoryBlock.yPosition + (categoryBlock.height * clampedProgress)
+    }
+
+    // ВЫДЕЛЯЕМ ЛОГИКУ расчета по временным меткам в отдельную функцию
+    private func calculatePositionFromHourLabels(
         currentHour: Int,
         currentMinute: Int,
         hourLabelPositions: [HourLabelPosition],
@@ -529,7 +623,6 @@ struct TaskTimeline: View {
         
         // Ищем точное совпадение по часу
         if let exactLabel = sortedLabels.first(where: { $0.hour == currentHour }) {
-            // ИСПРАВЛЕНИЕ: Даже при точном совпадении часа нужно учитывать минуты
             // Ищем следующую метку для интерполяции
             if let nextLabel = sortedLabels.first(where: { $0.hour > currentHour }) {
                 let minuteProgress = CGFloat(currentMinute) / 60.0
@@ -560,7 +653,6 @@ struct TaskTimeline: View {
         
         // Если есть только нижняя метка (время после последней метки)
         if let lower = lowerLabel, upperLabel == nil {
-            // Используем среднее расстояние между метками для экстраполяции
             let averageDistance = calculateAverageDistanceBetweenLabels(sortedLabels)
             let hoursAfterLastLabel = currentHour - lower.hour
             let minuteProgress = CGFloat(currentMinute) / 60.0
@@ -571,7 +663,6 @@ struct TaskTimeline: View {
         
         // Если есть только верхняя метка (время до первой метки)
         if let upper = upperLabel, lowerLabel == nil {
-            // Используем среднее расстояние для экстраполяции назад
             let averageDistance = calculateAverageDistanceBetweenLabels(sortedLabels)
             let hoursBeforeFirstLabel = upper.hour - currentHour
             let minuteProgress = CGFloat(currentMinute) / 60.0
@@ -663,7 +754,7 @@ struct TaskTimeline: View {
         }
     }
 
-    // ОБНОВЛЯЕМ timelineContentView для сбора позиций часовых меток
+    // ОБНОВЛЯЕМ timelineContentView для сбора позиций блоков категорий
     private var timelineContentView: some View {
         ZStack(alignment: .leading) {
             // Вертикальная линия с иконками
@@ -711,6 +802,9 @@ struct TaskTimeline: View {
         }
         .onPreferenceChange(HourLabelPositionPreferenceKey.self) { positions in
             self.hourLabelPositions = positions
+        }
+        .onPreferenceChange(CategoryBlockPositionPreferenceKey.self) { positions in
+            self.categoryBlockPositions = positions
         }
     }
 
@@ -768,7 +862,7 @@ struct TaskTimeline: View {
         .padding(.leading, 15)
     }
 
-    // ОБНОВЛЯЕМ timeBlockView для передачи позиций часовых меток
+    // ОБНОВЛЯЕМ timeBlockView (убираем print из тела View)
     private func timeBlockView(for timeBlock: TimeBlock) -> some View {
         VStack(spacing: 0) {
             // Метка часа (если нужно показать)
@@ -814,6 +908,10 @@ struct TaskTimeline: View {
                             // ПОЛУЧАЕМ ВЫСОТУ БЛОКА
                             let blockHeight = blockHeights[slotId] ?? 60.0
                             
+                            // ПРАВИЛЬНО ОПРЕДЕЛЯЕМ ВРЕМЕНА БЛОКА
+                            let blockStartTime = getEarliestStartTime(for: tasksInCategory)
+                            let blockEndTime = getLatestEndTime(for: tasksInCategory)
+                            
                             HStack(alignment: .top, spacing: 0) {
                                 // Левый индикатор с динамической высотой
                                 ZStack {
@@ -829,7 +927,7 @@ struct TaskTimeline: View {
                                             .foregroundColor(themeManager.isDarkMode ? .white : .black)
                                             .font(.system(size: 14))
                                         
-                                        Spacer() // Пушит иконку вверх
+                                        Spacer()
                                     }
                 
                                 }
@@ -843,8 +941,8 @@ struct TaskTimeline: View {
                                     selectedDate: selectedDate,
                                     categoryManager: categoryManager,
                                     selectedCategoryID: firstTask.category.id,
-                                    startTime: getEarliestStartTime(for: tasksInCategory),
-                                    endTime: getLatestEndTime(for: tasksInCategory),
+                                    startTime: blockStartTime,
+                                    endTime: blockEndTime,
                                     allTimelineTasksForCategory: allCategoryTasks,
                                     slotId: slotId
                                 )
@@ -856,13 +954,22 @@ struct TaskTimeline: View {
                                                 key: BlockHeightPreferenceKey.self,
                                                 value: [slotId: geometry.size.height]
                                             )
+                                            .preference(
+                                                key: CategoryBlockPositionPreferenceKey.self,
+                                                value: [CategoryBlockPosition(
+                                                    categoryId: firstTask.category.id,
+                                                    startTime: blockStartTime,
+                                                    endTime: blockEndTime,
+                                                    yPosition: geometry.frame(in: .named("timelineContainer")).minY,
+                                                    height: geometry.size.height
+                                                )]
+                                            )
                                     }
                                 )
                             }
                         }
                     }
                 }
-                .zIndex(1000)
             }
         }
         .onPreferenceChange(BlockHeightPreferenceKey.self) { heights in
@@ -913,6 +1020,189 @@ struct TaskTimeline: View {
         }
         print("Block Hours: \(blockHours.sorted())")
         print("=============================")
+    }
+
+    // ДОБАВЛЯЕМ ОТДЕЛЬНУЮ ФУНКЦИЮ ДЛЯ ОТЛАДКИ (вызываем только при необходимости)
+    private func debugCategoryBlocks(_ currentTime: Date) {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        
+        print("=== DEBUG: Поиск блока категории для времени \(formatter.string(from: currentTime)) ===")
+        
+        for block in categoryBlockPositions {
+            print("Блок категории: \(formatter.string(from: block.startTime)) - \(formatter.string(from: block.endTime))")
+            print("Проверка: \(currentTime) >= \(block.startTime) && \(currentTime) < \(block.endTime)")
+            print("Результат: \(currentTime >= block.startTime && currentTime < block.endTime)")
+        }
+        
+        let result = findCategoryBlockForCurrentTime(currentTime)
+        if let foundBlock = result {
+            print("Найден блок: \(formatter.string(from: foundBlock.startTime)) - \(formatter.string(from: foundBlock.endTime))")
+        } else {
+            print("Блок не найден - используем временные метки")
+        }
+        print("===============================")
+    }
+
+    // НОВАЯ ФУНКЦИЯ для расчета промежуточных позиций (кейс 3)
+    private func calculateIntermediatePosition(
+        currentTime: Date,
+        currentHour: Int,
+        currentMinute: Int,
+        hourLabelPositions: [HourLabelPosition]
+    ) -> CGFloat? {
+        
+        // Находим все блоки категорий для текущего часа
+        let categoryBlocksInCurrentHour = categoryBlockPositions.filter { block in
+            let calendar = Calendar.current
+            let blockStartHour = calendar.component(.hour, from: block.startTime)
+            let blockEndHour = calendar.component(.hour, from: block.endTime)
+            
+            // Блок может начинаться в текущем часе или заканчиваться в нем
+            return blockStartHour == currentHour || blockEndHour == currentHour ||
+                   (blockStartHour < currentHour && blockEndHour > currentHour)
+        }
+        
+        guard !categoryBlocksInCurrentHour.isEmpty else {
+            return nil // Нет блоков категорий для текущего часа
+        }
+        
+        // Сортируем блоки по времени начала
+        let sortedBlocks = categoryBlocksInCurrentHour.sorted { $0.startTime < $1.startTime }
+        
+        // Находим позицию временной метки для текущего часа
+        guard let currentHourLabel = hourLabelPositions.first(where: { $0.hour == currentHour }) else {
+            return nil
+        }
+        
+        // Находим следующую временную метку
+        let nextHourLabel = hourLabelPositions.first { $0.hour > currentHour }
+        
+        // Кейс 3.1: Время ДО начала первого блока категории
+        if let firstBlock = sortedBlocks.first, currentTime < firstBlock.startTime {
+            let calendar = Calendar.current
+            let blockStartHour = calendar.component(.hour, from: firstBlock.startTime)
+            let blockStartMinute = calendar.component(.minute, from: firstBlock.startTime)
+            
+            if blockStartHour == currentHour {
+                // Блок начинается в том же часе - интерполируем между началом часа и началом блока
+                let totalMinutesInSegment = CGFloat(blockStartMinute)
+                let currentMinutesInSegment = CGFloat(currentMinute)
+                
+                guard totalMinutesInSegment > 0 else { return currentHourLabel.yPosition }
+                
+                let progress = currentMinutesInSegment / totalMinutesInSegment
+                let segmentHeight = firstBlock.yPosition - currentHourLabel.yPosition
+                
+                return currentHourLabel.yPosition + (segmentHeight * progress)
+            }
+        }
+        
+        // Кейс 3.2: Время ПОСЛЕ конца последнего блока категории
+        if let lastBlock = sortedBlocks.last, currentTime > lastBlock.endTime {
+            let calendar = Calendar.current
+            let blockEndHour = calendar.component(.hour, from: lastBlock.endTime)
+            let blockEndMinute = calendar.component(.minute, from: lastBlock.endTime)
+            
+            if blockEndHour == currentHour {
+                // Блок заканчивается в том же часе
+                let blockEndPosition = lastBlock.yPosition + lastBlock.height
+                
+                if let nextLabel = nextHourLabel {
+                    // Интерполируем между концом блока и следующей временной меткой
+                    let totalMinutesInSegment = CGFloat(60 - blockEndMinute)
+                    let currentMinutesInSegment = CGFloat(currentMinute - blockEndMinute)
+                    
+                    guard totalMinutesInSegment > 0 && currentMinutesInSegment >= 0 else {
+                        return blockEndPosition
+                    }
+                    
+                    let progress = currentMinutesInSegment / totalMinutesInSegment
+                    let segmentHeight = nextLabel.yPosition - blockEndPosition
+                    
+                    return blockEndPosition + (segmentHeight * progress)
+                } else {
+                    // Нет следующей метки - используем среднее расстояние
+                    let averageDistance = calculateAverageDistanceBetweenLabels(hourLabelPositions)
+                    let totalMinutesInSegment = CGFloat(60 - blockEndMinute)
+                    let currentMinutesInSegment = CGFloat(currentMinute - blockEndMinute)
+                    
+                    guard totalMinutesInSegment > 0 && currentMinutesInSegment >= 0 else {
+                        return blockEndPosition
+                    }
+                    
+                    let progress = currentMinutesInSegment / totalMinutesInSegment
+                    
+                    return blockEndPosition + (averageDistance * progress)
+                }
+            }
+        }
+        
+        // Кейс 3.3: Время между блоками категорий в одном часе
+        for i in 0..<(sortedBlocks.count - 1) {
+            let currentBlock = sortedBlocks[i]
+            let nextBlock = sortedBlocks[i + 1]
+            
+            if currentTime > currentBlock.endTime && currentTime < nextBlock.startTime {
+                let calendar = Calendar.current
+                let currentBlockEndMinute = calendar.component(.minute, from: currentBlock.endTime)
+                let nextBlockStartMinute = calendar.component(.minute, from: nextBlock.startTime)
+                
+                let currentBlockEndPosition = currentBlock.yPosition + currentBlock.height
+                let nextBlockStartPosition = nextBlock.yPosition
+                
+                let totalMinutesInSegment = CGFloat(nextBlockStartMinute - currentBlockEndMinute)
+                let currentMinutesInSegment = CGFloat(currentMinute - currentBlockEndMinute)
+                
+                guard totalMinutesInSegment > 0 && currentMinutesInSegment >= 0 else {
+                    return currentBlockEndPosition
+                }
+                
+                let progress = currentMinutesInSegment / totalMinutesInSegment
+                let segmentHeight = nextBlockStartPosition - currentBlockEndPosition
+                
+                return currentBlockEndPosition + (segmentHeight * progress)
+            }
+        }
+        
+        return nil // Не попадает ни в один промежуточный кейс
+    }
+
+    // ДОБАВЛЯЕМ ОТЛАДОЧНУЮ ФУНКЦИЮ для лучшего понимания логики
+    private func debugIntermediatePositions(_ currentTime: Date) {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: currentTime)
+        let currentMinute = calendar.component(.minute, from: currentTime)
+        
+        print("=== DEBUG: Промежуточные позиции для \(formatter.string(from: currentTime)) ===")
+        print("Текущий час: \(currentHour), минута: \(currentMinute)")
+        
+        let categoryBlocksInCurrentHour = categoryBlockPositions.filter { block in
+            let blockStartHour = calendar.component(.hour, from: block.startTime)
+            let blockEndHour = calendar.component(.hour, from: block.endTime)
+            return blockStartHour == currentHour || blockEndHour == currentHour ||
+                   (blockStartHour < currentHour && blockEndHour > currentHour)
+        }
+        
+        print("Блоки категорий в текущем часе: \(categoryBlocksInCurrentHour.count)")
+        for block in categoryBlocksInCurrentHour.sorted(by: { $0.startTime < $1.startTime }) {
+            print("  \(formatter.string(from: block.startTime)) - \(formatter.string(from: block.endTime))")
+        }
+        
+        if let result = calculateIntermediatePosition(
+            currentTime: currentTime,
+            currentHour: currentHour,
+            currentMinute: currentMinute,
+            hourLabelPositions: hourLabelPositions
+        ) {
+            print("Найдена промежуточная позиция: \(result)")
+        } else {
+            print("Промежуточная позиция не найдена")
+        }
+        print("==============================================")
     }
 }
 
