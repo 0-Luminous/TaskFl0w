@@ -74,7 +74,7 @@ struct ToDoTaskRow: View {
     
     private var taskBackground: some View {
         RoundedRectangle(cornerRadius: 10)
-            .fill(themeManager.isDarkMode ? Color(red: 0.35, green: 0.35, blue: 0.35) : Color(red: 0.9, green: 0.9, blue: 0.9))
+            .fill(themeManager.isDarkMode ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.9, green: 0.9, blue: 0.9))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
                     .strokeBorder(priorityBorderColor, lineWidth: task.priority != .none ? 1.5 : 0)

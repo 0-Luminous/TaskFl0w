@@ -79,12 +79,12 @@ struct TaskDragHandle: View {
                         lineWidth: 1
                     )
             )
-            .overlay(
-                Capsule().stroke(
-                    Color(red: 0.6, green: 0.6, blue: 0.6), 
-                    lineWidth: TaskArcConstants.handleStrokeWidth * geometry.shortTaskScale
-                )
-            )
+            // .overlay(
+            //     Capsule().stroke(
+            //         Color(red: 0.6, green: 0.6, blue: 0.6), 
+            //         // lineWidth: TaskArcConstants.handleStrokeWidth * geometry.shortTaskScale
+            //     )
+//            )
             // Внешняя тень
             .shadow(
                 color: Color.black.opacity(0.25),

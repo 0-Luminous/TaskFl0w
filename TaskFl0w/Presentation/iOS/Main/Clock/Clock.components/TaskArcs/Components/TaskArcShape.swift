@@ -367,8 +367,8 @@ struct TaskTimeLabelForPreview: View {
                 return AnyShapeStyle(
                     LinearGradient(
                         gradient: Gradient(colors: uniqueColors),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
                 )
             } else {
@@ -405,14 +405,14 @@ struct TaskTimeLabelForPreview: View {
                             lineWidth: 1
                         )
                 )
-                .overlay(
-                    Capsule().stroke(
-                        touchingTasks.isEmpty ? 
-                            Color(red: 0.6, green: 0.6, blue: 0.6) :
-                            Color(red: 0.75, green: 0.75, blue: 0.75),
-                        lineWidth: 1
-                    )
-                )
+                // .overlay(
+                //     Capsule().stroke(
+                //         touchingTasks.isEmpty ? 
+                //             Color(red: 0.6, green: 0.6, blue: 0.6) :
+                //             Color(red: 0.75, green: 0.75, blue: 0.75),
+                //         // lineWidth: 1
+                //     )
+                // )
                 .shadow(color: Color.black.opacity(0.25), radius: 2, x: 1, y: 1)
             
             if !isThin {
