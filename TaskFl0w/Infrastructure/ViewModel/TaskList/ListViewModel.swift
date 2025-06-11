@@ -184,6 +184,18 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
         isSelectionMode = false
     }
     
+    // Метод для переноса выбранных задач на новую дату
+    func moveSelectedTasksToDate(_ targetDate: Date) {
+        for taskId in selectedTasks {
+            presenter?.updateTaskDate(id: taskId, newDate: targetDate)
+        }
+        selectedTasks.removeAll()
+        // Выходим из режима выбора после переноса
+        isSelectionMode = false
+        // Обновляем данные
+        refreshData()
+    }
+    
     // Вспомогательные методы для приоритетов
     func getPriorityColor(for priority: TaskPriority) -> Color {
         switch priority {

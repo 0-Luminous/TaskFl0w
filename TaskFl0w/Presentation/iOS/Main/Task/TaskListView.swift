@@ -21,6 +21,9 @@ struct TaskListView: View {
     @State private var showingPrioritySheet = false
     @State private var newTaskPriority: TaskPriority = .none
     @State private var showPrioritySelection = false
+    // Добавляем состояние для календаря переноса задач
+    @State private var showingDatePicker = false
+    @State private var selectedTargetDate = Date()
     @Binding var selectedDate: Date
     
     // Заменяем локальные состояния на ObservedObject
@@ -229,7 +232,12 @@ struct TaskListView: View {
                                 onUnarchiveSelectedTasks: {
                                     viewModel.unarchiveSelectedTasks()
                                 },
-                                showCompletedTasksOnly: $viewModel.showCompletedTasksOnly
+                                showCompletedTasksOnly: $viewModel.showCompletedTasksOnly,
+                                // Добавляем обработчик для календаря
+                                onCalendarSelectedTasks: {
+                                    selectedTargetDate = Date()
+                                    showingDatePicker = true
+                                }
                             )
                             .transition(AnyTransition.opacity.animation(.easeInOut(duration: 2.2)))
                             .padding(.bottom, 60)
@@ -348,6 +356,57 @@ struct TaskListView: View {
             withAnimation {
                 // Дополнительная логика обновления при необходимости
             }
+        }
+        // Добавляем модальный календарь для выбора даты переноса задач
+        .sheet(isPresented: $showingDatePicker) {
+            NavigationView {
+                VStack(spacing: 20) {
+                    Text("Выберите дату для переноса задач")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    MonthCalendarView(
+                        selectedDate: $selectedTargetDate,
+                        onHideCalendar: {
+                            showingDatePicker = false
+                        }
+                    )
+                    .frame(maxWidth: .infinity)
+                    // .padding(.horizontal, 5)
+                    
+                    HStack(spacing: 20) {
+                        Button("Отмена") {
+                            showingDatePicker = false
+                        }
+                        .foregroundColor(.red)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(themeManager.isDarkMode ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.9, green: 0.9, blue: 0.9))
+                        )
+                        
+                        Button("Перенести") {
+                            generateHapticFeedback()
+                            viewModel.moveSelectedTasksToDate(selectedTargetDate)
+                            showingDatePicker = false
+                        }
+                        .foregroundColor(.blue)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(themeManager.isDarkMode ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.9, green: 0.9, blue: 0.9))
+                        )
+                        .disabled(viewModel.selectedTasks.isEmpty)
+                        .opacity(viewModel.selectedTasks.isEmpty ? 0.5 : 1.0)
+                    }
+                    .padding()
+                    
+                    Spacer()
+                }
+                .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95))
+                .navigationBarHidden(true)
+            }
+            .presentationDetents([.large])
         }
     }
 }
