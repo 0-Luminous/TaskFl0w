@@ -6,6 +6,12 @@
 
 import SwiftUI
 
+// Перечисление для режимов фильтрации дат
+enum DateFilterMode {
+    case currentAndFuture  // Текущие и будущие даты
+    case pastOnly         // Только прошлые даты
+}
+
 struct SearchView: View {
     let items: [ToDoItem]
     let categoryColor: Color
@@ -22,7 +28,7 @@ struct SearchView: View {
     @State private var isSearchActive: Bool = false
     @State private var selectedDate: Date? = nil
     @State private var isDatePanelVisible: Bool = false
-    @State private var showPastDates: Bool = false
+    @State private var dateFilterMode: DateFilterMode = .currentAndFuture
     @Environment(\.dismiss) private var dismiss
 
     // Кэшированные цвета для производительности
@@ -49,13 +55,17 @@ struct SearchView: View {
             searchText.isEmpty
             ? items : items.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
 
-        // Фильтруем по датам в зависимости от настройки
-        if showPastDates {
-            return filteredByText
-        } else {
+        // Фильтруем по датам в зависимости от режима
+        switch dateFilterMode {
+        case .currentAndFuture:
             return filteredByText.filter { item in
                 let itemDate = Calendar.current.startOfDay(for: item.date)
                 return itemDate >= today
+            }
+        case .pastOnly:
+            return filteredByText.filter { item in
+                let itemDate = Calendar.current.startOfDay(for: item.date)
+                return itemDate < today
             }
         }
     }
@@ -70,11 +80,6 @@ struct SearchView: View {
         }
 
         return dateGrouped.compactMap { (date, tasks) in
-            // Фильтруем прошлые даты если не включена соответствующая опция
-            if !showPastDates && date < today {
-                return nil
-            }
-
             let categoryGrouped = Dictionary(grouping: tasks) { item in
                 item.categoryName ?? "Без категории"
             }
@@ -89,10 +94,11 @@ struct SearchView: View {
 
             return (date: date, categories: categories)
         }.sorted {
-            if showPastDates {
+            switch dateFilterMode {
+            case .pastOnly:
                 return $0.date > $1.date  // При показе прошлых дат - сначала новые
-            } else {
-                return $0.date < $1.date  // При скрытии прошлых дат - сначала сегодня
+            case .currentAndFuture:
+                return $0.date < $1.date  // При показе текущих/будущих дат - сначала сегодня
             }
         }
     }
@@ -261,13 +267,13 @@ struct SearchView: View {
             }
             .padding(.leading, 10)
 
-            // Кнопка переключения прошлых дат
+            // Кнопка переключения режимов дат
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.3)) {
-                    showPastDates.toggle()
+                    dateFilterMode = dateFilterMode == .currentAndFuture ? .pastOnly : .currentAndFuture
                 }
             }) {
-                Image(systemName: showPastDates ? "clock.fill" : "clock")
+                Image(systemName: clockIconName)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
                     .frame(width: 36, height: 36)
@@ -277,7 +283,7 @@ struct SearchView: View {
                     )
                     .overlay(
                         Circle()
-                            .stroke(showPastDates ? Color.orange : Color.clear, lineWidth: 1.5)
+                            .stroke(clockBorderColor, lineWidth: 1.5)
                     )
             }
 
@@ -291,6 +297,25 @@ struct SearchView: View {
         .padding(.top, 8)
         .padding(.horizontal, 10)
         .zIndex(3)
+    }
+
+    // Вычисляемые свойства для иконки и цвета кнопки часов
+    private var clockIconName: String {
+        switch dateFilterMode {
+        case .currentAndFuture:
+            return "clock"
+        case .pastOnly:
+            return "clock.badge.checkmark.fill"
+        }
+    }
+
+    private var clockBorderColor: Color {
+        switch dateFilterMode {
+        case .currentAndFuture:
+            return Color.clear
+        case .pastOnly:
+            return Color.orange
+        }
     }
 
     // MARK: - Вспомогательные функции
