@@ -29,6 +29,7 @@ struct SearchView: View {
     @State private var selectedDate: Date? = nil
     @State private var isDatePanelVisible: Bool = false
     @State private var dateFilterMode: DateFilterMode = .currentAndFuture
+    @State private var scrollID = UUID()
     @Environment(\.dismiss) private var dismiss
 
     // Кэшированные цвета для производительности
@@ -119,6 +120,7 @@ struct SearchView: View {
     var body: some View {
         ZStack(alignment: .top) {
             mainContentWithSwipe
+                .id(scrollID)
 
             slidingDatePanel
 
@@ -135,12 +137,17 @@ struct SearchView: View {
 
             topPanel
         }
+        .onAppear {
+            scrollID = UUID()
+        }
     }
 
     // MARK: - Компоненты интерфейса
 
     private var slidingDatePanel: some View {
         HStack {
+            Spacer()
+            
             VStack(spacing: 0) {
                 Spacer().frame(height: 60)
 
@@ -165,11 +172,20 @@ struct SearchView: View {
             }
             .frame(width: 80)
             .background(themeManager.isDarkMode ? darkModeColors.panel : lightModeColors.panel)
-            .shadow(color: .black.opacity(0.2), radius: 8, x: 2, y: 0)
-
-            Spacer()
+            .shadow(color: .black.opacity(0.2), radius: 8, x: -2, y: 0)
+            .gesture(
+                DragGesture()
+                    .onEnded { value in
+                        let threshold: CGFloat = 30
+                        if value.translation.width > threshold {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                isDatePanelVisible = false
+                            }
+                        }
+                    }
+            )
         }
-        .offset(x: isDatePanelVisible ? 0 : -80)
+        .offset(x: isDatePanelVisible ? 0 : 80)
         .animation(.easeInOut(duration: 0.3), value: isDatePanelVisible)
         .zIndex(2)
     }
@@ -179,6 +195,7 @@ struct SearchView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     Spacer().frame(height: 100)
+                        .id("topAnchor")
 
                     if filteredItems.isEmpty {
                         EmptyStateView()
@@ -203,14 +220,13 @@ struct SearchView: View {
                     }
                 }
                 .onAppear {
-                    if selectedDate == nil {
-                        selectedDate = allUniqueDates.first
-                    }
-                    if let targetDate = selectedDate {
-                        withAnimation {
-                            proxy.scrollTo(targetDate, anchor: .top)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation(.easeInOut(duration: 0.5)) {
+                            proxy.scrollTo("topAnchor", anchor: .top)
                         }
                     }
+                    
+                    initializeSelectedDate()
                 }
                 .onChange(of: selectedDate) { newDate in
                     if let targetDate = newDate {
@@ -229,13 +245,14 @@ struct SearchView: View {
                 .onEnded { value in
                     let threshold: CGFloat = 50
                     let startX = value.startLocation.x
+                    let screenWidth = UIScreen.main.bounds.width
 
-                    if startX < 50 {
-                        if value.translation.width > threshold && !isDatePanelVisible {
+                    if startX > screenWidth - 50 {
+                        if value.translation.width < -threshold && !isDatePanelVisible {
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 isDatePanelVisible = true
                             }
-                        } else if value.translation.width < -threshold && isDatePanelVisible {
+                        } else if value.translation.width > threshold && isDatePanelVisible {
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 isDatePanelVisible = false
                             }
@@ -247,26 +264,13 @@ struct SearchView: View {
 
     private var topPanel: some View {
         HStack(spacing: 8) {
-            Button(action: {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    isDatePanelVisible.toggle()
-                }
-            }) {
-                Image(systemName: "calendar")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                    .frame(width: 40, height: 40)
-                    .background(
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                    )
-                    .overlay(
-                        Circle()
-                            .stroke(isDatePanelVisible ? Color.blue : Color.clear, lineWidth: 2)
-                    )
-            }
-            .padding(.leading, 10)
 
+            BackButton {
+                dismiss()
+            }
+
+            SearchBar(text: $searchText, isActive: $isSearchActive)
+         
             // Кнопка переключения режимов дат
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.3)) {
@@ -286,13 +290,25 @@ struct SearchView: View {
                             .stroke(clockBorderColor, lineWidth: 1.5)
                     )
             }
-
-            BackButton {
-                dismiss()
+            
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isDatePanelVisible.toggle()
+                }
+            }) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(isDatePanelVisible ? Color.blue : Color.clear, lineWidth: 2)
+                    )
             }
-
-            SearchBar(text: $searchText, isActive: $isSearchActive)
-                .padding(.leading, 20)
         }
         .padding(.top, 8)
         .padding(.horizontal, 10)

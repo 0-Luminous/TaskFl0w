@@ -92,6 +92,7 @@ struct TopBarView: View {
                             .font(.system(size: 20))
                             .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                             .padding(4)
+                            .frame(width: 35, height: 35)
                     }
                     .background(
                         Circle()
@@ -149,6 +150,7 @@ struct TopBarView: View {
                                 .font(.system(size: 20))
                                 .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                                 .padding(4)
+                                .frame(width: 35, height: 35)
                         }
                         .background(
                             Circle()
