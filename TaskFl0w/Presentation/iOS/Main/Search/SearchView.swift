@@ -86,9 +86,20 @@ struct SearchView: View {
             }
 
             let categories = categoryGrouped.map { (categoryName, categoryTasks) in
-                (
+                // Сортируем задачи внутри категории по приоритету и выполнению
+                let sortedTasks = categoryTasks.sorted { task1, task2 in
+                    // Сначала сортируем по статусу выполнения (невыполненные сначала)
+                    if task1.isCompleted != task2.isCompleted {
+                        return !task1.isCompleted && task2.isCompleted
+                    }
+                    
+                    // Затем по приоритету (высокий приоритет сначала)
+                    return getPriorityOrder(task1.priority) < getPriorityOrder(task2.priority)
+                }
+                
+                return (
                     name: categoryName,
-                    tasks: categoryTasks,
+                    tasks: sortedTasks,
                     color: getCategoryColor(for: categoryName)
                 )
             }.sorted { $0.name < $1.name }
@@ -335,6 +346,16 @@ struct SearchView: View {
     }
 
     // MARK: - Вспомогательные функции
+
+    // Функция для определения порядка приоритетов (меньше число = выше приоритет)
+    private func getPriorityOrder(_ priority: TaskPriority) -> Int {
+        switch priority {
+        case .high: return 0
+        case .medium: return 1
+        case .low: return 2
+        case .none: return 3
+        }
+    }
 
     private func initializeSelectedDate() {
         if selectedDate == nil {
