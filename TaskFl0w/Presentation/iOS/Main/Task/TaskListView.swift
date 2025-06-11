@@ -20,6 +20,7 @@ struct TaskListView: View {
     @FocusState private var isNewTaskFocused: Bool
     @State private var showingPrioritySheet = false
     @State private var newTaskPriority: TaskPriority = .none
+    @State private var showPrioritySelection = false
     @Binding var selectedDate: Date
     
     // Заменяем локальные состояния на ObservedObject
@@ -239,29 +240,52 @@ struct TaskListView: View {
                 if isAddingNewTask {
                     VStack {
                         Spacer().frame(height: UIScreen.main.bounds.height * 0.32)
-                        // Изменяем расположение панели приоритетов
-                        NewTaskPriorityBar(
-                            selectedPriority: $newTaskPriority,
-                            onSave: {
-                                if !newTaskTitle.isEmpty {
-                                    viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                        
+                        // Показываем PrioritySelectionView если активен
+                        if showPrioritySelection {
+                            PrioritySelectionView(
+                                selectedPriority: $newTaskPriority,
+                                onSave: {
+                                    showPrioritySelection = false
+                                    if !newTaskTitle.isEmpty {
+                                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                                        newTaskTitle = ""
+                                        newTaskPriority = .none
+                                        isAddingNewTask = false
+                                        isNewTaskFocused = false
+                                    }
+                                },
+                                onCancel: {
+                                    showPrioritySelection = false
+                                }
+                            )
+                            .transition(.scale)
+                            .padding(.bottom, 20)
+                        } else {
+                            // Показываем основную панель с calendar и flag
+                            NewTaskPriorityBar(
+                                selectedPriority: $newTaskPriority,
+                                showPrioritySelection: $showPrioritySelection,
+                                onSave: {
+                                    if !newTaskTitle.isEmpty {
+                                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                                        newTaskTitle = ""
+                                        newTaskPriority = .none
+                                        isAddingNewTask = false
+                                        isNewTaskFocused = false
+                                    }
+                                },
+                                onCancel: {
                                     newTaskTitle = ""
                                     newTaskPriority = .none
                                     isAddingNewTask = false
                                     isNewTaskFocused = false
                                 }
-                            },
-                            onCancel: {
-                                newTaskTitle = ""
-                                newTaskPriority = .none
-                                isAddingNewTask = false
-                                isNewTaskFocused = false
-                            }
-                        )
-                        .transition(.scale)
-                        .padding(.bottom, 20) // Добавляем небольшой отступ снизу
+                            )
+                            .transition(.scale)
+                            .padding(.bottom, 20)
+                        }
                     }
-                    .padding(.horizontal, 20)
                 }
             }
             

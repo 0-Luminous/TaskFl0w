@@ -56,7 +56,12 @@ struct SearchView: View {
             searchText.isEmpty
             ? items : items.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
 
-        // Фильтруем по датам в зависимости от режима
+        // Если есть поисковый текст, показываем все результаты независимо от дат
+        if !searchText.isEmpty {
+            return filteredByText
+        }
+
+        // Фильтруем по датам только когда нет поискового текста
         switch dateFilterMode {
         case .currentAndFuture:
             return filteredByText.filter { item in

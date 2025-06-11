@@ -30,7 +30,7 @@ struct NewTaskInput: View {
                 .autocapitalization(.sentences)
                 .disableAutocorrection(false)
                 .padding(.leading, 5) // Добавляем отступ слева 5 пикселей
-                .padding(.vertical, 8) // Добавляем вертикальный отступ
+                .padding(.vertical, 2) // Добавляем вертикальный отступ
                 // Специальный модификатор для обработки ввода
                 .onChange(of: newTaskTitle) { oldValue, newValue in
                     // Если в тексте есть символ новой строки, значит была нажата кнопка Return
@@ -48,25 +48,23 @@ struct NewTaskInput: View {
                 priorityIcon
             }
         }
-        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 6) // Добавляем правый отступ как у обычных задач
         .listRowBackground(
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
                     .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
-                    .padding(.vertical, 5)
-                    .padding(.horizontal, 8)
                 
                 // Добавляем бордер для выбранного приоритета
                 if selectedPriority != .none {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(getPriorityColor(for: selectedPriority), lineWidth: 1.5)
-                        .padding(.vertical, 5)
-                        .padding(.horizontal, 8)
                 }
             }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 12) // Используем те же отступы, что и у обычных задач
         )
-        .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0)) // Добавляем верхний и нижний отступы для строки
         .listRowSeparator(.hidden)
     }
     
@@ -82,7 +80,7 @@ struct NewTaskInput: View {
         }
         .padding(.vertical, 2)
         .padding(.horizontal, 3)
-        .padding(.trailing, 12)
+        // .padding(.trailing, 5)
     }
     
     // Цвет для приоритета
