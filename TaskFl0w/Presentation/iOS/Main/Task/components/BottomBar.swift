@@ -45,10 +45,9 @@ struct BottomBar: View {
                         // Левая кнопка
                         ZStack {
                             Color.clear
-                                .frame(width: 38, height: 38)
                             archiveButton
                         }
-                        .frame(width: 38, height: 38)
+
                         
                         Spacer()
                             .frame(width: 25)
@@ -56,10 +55,8 @@ struct BottomBar: View {
                         // Центральная кнопка
                         ZStack {
                             Color.clear
-                                .frame(width: 38, height: 38)
                             selectionModeToggleButton
                         }
-                        .frame(width: 38, height: 38)
                         
                         Spacer()
                             .frame(width: 25)
@@ -67,10 +64,8 @@ struct BottomBar: View {
                         // Правая кнопка
                         ZStack {
                             Color.clear
-                                .frame(width: 38, height: 38)
                             addButton
                         }
-                        .frame(width: 38, height: 38)
                     }
                     .frame(width: 165)
                 } else {
@@ -79,59 +74,47 @@ struct BottomBar: View {
                         // Кнопка флага
                         ZStack {
                             Color.clear
-                                .frame(width: 38, height: 38)
-                            calendarButton
-                            
+                            calendarButton     
                         }
-                        .frame(width: 38, height: 38)
                         
                         // Кнопка чеклиста
                         ZStack {
                             Color.clear
-                                .frame(width: 38, height: 38)
                             flagButton
                         }
-                        .frame(width: 38, height: 38)
                         
                         // Кнопка календаря
                         ZStack {
                             Color.clear
-                                .frame(width: 38, height: 38)
                             checklistButton
                         }
-                        .frame(width: 38, height: 38)
                         
                         // Кнопка приоритета или архива (в зависимости от showCompletedTasksOnly)
                         ZStack {
                             Color.clear
-                                .frame(width: 38, height: 38)
                             if showCompletedTasksOnly {
                                 archiveActionButton
                             } else {
                                 priorityButton
                             }
                         }
-                        .frame(width: 38, height: 38)
                         
                         // Кнопка выхода из режима выбора
                         ZStack {
                             Color.clear
-                                .frame(width: 38, height: 38)
                             exitSelectionModeButton
                         }
-                        .frame(width: 38, height: 38)
                         
                         // Кнопка удаления или разархивирования
                         ZStack {
                             Color.clear
-                                .frame(width: 38, height: 38)
                             if showCompletedTasksOnly {
                                 unarchiveButton
                             } else {
                                 deleteButton
                             }
                         }
-                        .frame(width: 38, height: 38)
+                        
                     }
                     .frame(width: 308)
                 }
@@ -213,7 +196,7 @@ struct BottomBar: View {
         }) {
             toolbarIcon(content: {
                 priorityIconContent
-            }, color: .orange)
+            }, color: .gray)
         }
         .disabled(selectedTasks.isEmpty)
         .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
@@ -225,11 +208,11 @@ struct BottomBar: View {
             // Показываем три столбца для общей иконки приоритета
             ForEach(0..<3, id: \.self) { index in
                 Rectangle()
-                    .fill(Color.orange)
+                    .fill(Color.gray)
                     .frame(width: 12, height: 3)
             }
         }
-        .frame(width: 20, height: 20)
+        .frame(width: 24, height: 24)
     }
     
     private var exitSelectionModeButton: some View {
@@ -239,6 +222,7 @@ struct BottomBar: View {
         }) {
             toolbarIcon(systemName: "checkmark.circle", color: themeManager.isDarkMode ? .coral1 : .red1)
         }
+        .frame(width: 38, height: 38)
     }
     
     private var unarchiveButton: some View {
@@ -249,6 +233,7 @@ struct BottomBar: View {
         }) {
             toolbarIcon(systemName: "arrow.uturn.backward", color: .green)
         }
+        .frame(width: 38, height: 38)
         .disabled(selectedTasks.isEmpty)
         .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
     }
@@ -272,6 +257,7 @@ struct BottomBar: View {
         }) {
             toolbarIcon(systemName: "plus", color: themeManager.isDarkMode ? showCompletedTasksOnly ? .gray : .coral1 : showCompletedTasksOnly ? .gray : .red1)
         }
+        .frame(width: 38, height: 38)
         .disabled(showCompletedTasksOnly)
         .opacity(showCompletedTasksOnly ? 0.5 : 1.0)
     }
@@ -284,8 +270,9 @@ struct BottomBar: View {
                 onFlagSelectedTasks()
             }
         }) {
-            toolbarIcon(systemName: "flag.fill", color: .yellow)
+            toolbarIcon(systemName: "flag.fill", color: .purple)
         }
+        .frame(width: 38, height: 38)
         .disabled(selectedTasks.isEmpty)
         .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
     }
@@ -299,6 +286,7 @@ struct BottomBar: View {
         }) {
             toolbarIcon(systemName: "checklist", color: .green)
         }
+        .frame(width: 38, height: 38)
         .disabled(selectedTasks.isEmpty)
         .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
     }
@@ -310,8 +298,9 @@ struct BottomBar: View {
                 onCalendarSelectedTasks()
             }
         }) {
-            toolbarIcon(systemName: "calendar", color: .red1)
+            toolbarIcon(systemName: "calendar", color: .blue)
         }
+        .frame(width: 38, height: 38)
         .disabled(selectedTasks.isEmpty)
         .opacity(selectedTasks.isEmpty ? 0.5 : 1.0)
     }
