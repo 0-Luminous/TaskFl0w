@@ -1,4 +1,3 @@
-//
 //  SearchView.swift
 //  TaskFl0w
 //
@@ -23,6 +22,7 @@ struct SearchView: View {
     @State private var isSearchActive: Bool = false
     @State private var selectedDate: Date? = nil
     @State private var isDatePanelVisible: Bool = false
+    @State private var showPastDates: Bool = false
     @Environment(\.dismiss) private var dismiss
 
     // Кэшированные цвета для производительности
@@ -33,7 +33,7 @@ struct SearchView: View {
             panel: Color(red: 0.1, green: 0.1, blue: 0.1)
         )
     }
-    
+
     private var lightModeColors: (background: Color, surface: Color, panel: Color) {
         (
             background: Color(red: 0.9, green: 0.9, blue: 0.9),
@@ -42,22 +42,43 @@ struct SearchView: View {
         )
     }
 
-    // Фильтрация задач только по поисковому тексту (без фильтра по дате)
+    // Фильтрация задач только по поисковому тексту и дате
     private var filteredItems: [ToDoItem] {
-        searchText.isEmpty ? items : items.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+        let today = Calendar.current.startOfDay(for: Date())
+        let filteredByText =
+            searchText.isEmpty
+            ? items : items.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
+
+        // Фильтруем по датам в зависимости от настройки
+        if showPastDates {
+            return filteredByText
+        } else {
+            return filteredByText.filter { item in
+                let itemDate = Calendar.current.startOfDay(for: item.date)
+                return itemDate >= today
+            }
+        }
     }
 
     // Оптимизированная группировка задач сначала по датам, затем по категориям
-    private var tasksByDate: [(date: Date, categories: [(name: String, tasks: [ToDoItem], color: Color)])] {
+    private var tasksByDate:
+        [(date: Date, categories: [(name: String, tasks: [ToDoItem], color: Color)])]
+    {
+        let today = Calendar.current.startOfDay(for: Date())
         let dateGrouped = Dictionary(grouping: filteredItems) { item in
             Calendar.current.startOfDay(for: item.date)
         }
-        
-        return dateGrouped.map { (date, tasks) in
+
+        return dateGrouped.compactMap { (date, tasks) in
+            // Фильтруем прошлые даты если не включена соответствующая опция
+            if !showPastDates && date < today {
+                return nil
+            }
+
             let categoryGrouped = Dictionary(grouping: tasks) { item in
                 item.categoryName ?? "Без категории"
             }
-            
+
             let categories = categoryGrouped.map { (categoryName, categoryTasks) in
                 (
                     name: categoryName,
@@ -65,27 +86,36 @@ struct SearchView: View {
                     color: getCategoryColor(for: categoryName)
                 )
             }.sorted { $0.name < $1.name }
-            
+
             return (date: date, categories: categories)
-        }.sorted { $0.date > $1.date }
+        }.sorted {
+            if showPastDates {
+                return $0.date > $1.date  // При показе прошлых дат - сначала новые
+            } else {
+                return $0.date < $1.date  // При скрытии прошлых дат - сначала сегодня
+            }
+        }
     }
 
-    // Получаем уникальные даты
+    // Получаем уникальные даты (только текущие и будущие)
     private var allUniqueDates: [Date] {
         tasksByDate.map { $0.date }
     }
 
     // Инициализация selectedDate с текущей датой
     private var currentSelectedDate: Date {
-        selectedDate ?? allUniqueDates.first ?? Date()
+        let today = Calendar.current.startOfDay(for: Date())
+        return selectedDate ?? allUniqueDates.first {
+            Calendar.current.isDate($0, inSameDayAs: today)
+        } ?? allUniqueDates.first ?? today
     }
 
     var body: some View {
         ZStack(alignment: .top) {
             mainContentWithSwipe
-            
+
             slidingDatePanel
-            
+
             if isDatePanelVisible {
                 Color.black.opacity(0.3)
                     .ignoresSafeArea()
@@ -95,26 +125,26 @@ struct SearchView: View {
                         }
                     }
                     .zIndex(1)
-            } 
+            }
 
             topPanel
         }
     }
 
     // MARK: - Компоненты интерфейса
-    
+
     private var slidingDatePanel: some View {
         HStack {
             VStack(spacing: 0) {
                 Spacer().frame(height: 60)
-                
+
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(allUniqueDates, id: \.self) { date in
                             DateButton(
                                 date: date,
-                                isSelected: Calendar.current.isDate(date, inSameDayAs: currentSelectedDate),
-                                themeManager: themeManager
+                                isSelected: Calendar.current.isDate(
+                                    date, inSameDayAs: currentSelectedDate)
                             ) {
                                 selectedDate = date
                                 withAnimation(.easeInOut(duration: 0.3)) {
@@ -130,14 +160,14 @@ struct SearchView: View {
             .frame(width: 80)
             .background(themeManager.isDarkMode ? darkModeColors.panel : lightModeColors.panel)
             .shadow(color: .black.opacity(0.2), radius: 8, x: 2, y: 0)
-            
+
             Spacer()
         }
         .offset(x: isDatePanelVisible ? 0 : -80)
         .animation(.easeInOut(duration: 0.3), value: isDatePanelVisible)
         .zIndex(2)
     }
-    
+
     private var mainContentWithSwipe: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
@@ -145,20 +175,20 @@ struct SearchView: View {
                     Spacer().frame(height: 100)
 
                     if filteredItems.isEmpty {
-                        EmptyStateView(themeManager: themeManager)
+                        EmptyStateView()
                     } else {
                         LazyVStack(spacing: 20) {
                             ForEach(tasksByDate, id: \.date) { dateGroup in
                                 DateSectionView(
                                     dateGroup: dateGroup,
-                                    themeManager: themeManager,
                                     isSelectionMode: isSelectionMode,
                                     selectedTasks: $selectedTasks,
                                     onToggle: onToggle,
                                     onEdit: onEdit,
                                     onDelete: onDelete,
                                     onShare: onShare,
-                                    categoryColor: categoryColor
+                                    categoryColor: categoryColor,
+                                    categoryManagement: categoryManagement
                                 )
                                 .id(dateGroup.date)
                             }
@@ -185,13 +215,15 @@ struct SearchView: View {
                 }
             }
         }
-        .background(themeManager.isDarkMode ? darkModeColors.background : lightModeColors.background)
+        .background(
+            themeManager.isDarkMode ? darkModeColors.background : lightModeColors.background
+        )
         .gesture(
             DragGesture()
                 .onEnded { value in
                     let threshold: CGFloat = 50
                     let startX = value.startLocation.x
-                    
+
                     if startX < 50 {
                         if value.translation.width > threshold && !isDatePanelVisible {
                             withAnimation(.easeInOut(duration: 0.3)) {
@@ -206,7 +238,7 @@ struct SearchView: View {
                 }
         )
     }
-    
+
     private var topPanel: some View {
         HStack(spacing: 8) {
             Button(action: {
@@ -220,9 +252,7 @@ struct SearchView: View {
                     .frame(width: 40, height: 40)
                     .background(
                         Circle()
-                            .fill(themeManager.isDarkMode ? 
-                                Color(red: 0.18, green: 0.18, blue: 0.18) : 
-                                Color(red: 0.9, green: 0.9, blue: 0.9))
+                            .fill(.ultraThinMaterial)
                     )
                     .overlay(
                         Circle()
@@ -230,11 +260,31 @@ struct SearchView: View {
                     )
             }
             .padding(.leading, 10)
-            
-            BackButton(themeManager: themeManager) {
+
+            // Кнопка переключения прошлых дат
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    showPastDates.toggle()
+                }
+            }) {
+                Image(systemName: showPastDates ? "clock.fill" : "clock")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(showPastDates ? Color.orange : Color.clear, lineWidth: 1.5)
+                    )
+            }
+
+            BackButton {
                 dismiss()
             }
-            
+
             SearchBar(text: $searchText, isActive: $isSearchActive)
                 .padding(.leading, 20)
         }
@@ -242,9 +292,9 @@ struct SearchView: View {
         .padding(.horizontal, 10)
         .zIndex(3)
     }
-    
+
     // MARK: - Вспомогательные функции
-    
+
     private func initializeSelectedDate() {
         if selectedDate == nil {
             selectedDate = allUniqueDates.first
@@ -270,9 +320,9 @@ struct SearchView: View {
 private struct DateButton: View {
     let date: Date
     let isSelected: Bool
-    let themeManager: ThemeManager
+    @ObservedObject private var themeManager = ThemeManager.shared
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 4) {
@@ -287,13 +337,15 @@ private struct DateButton: View {
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(themeManager.isDarkMode ? 
-                        Color(red: 0.18, green: 0.18, blue: 0.18) : 
-                        Color(red: 0.9, green: 0.9, blue: 0.9))
+                    .fill(
+                        themeManager.isDarkMode
+                            ? Color(red: 0.18, green: 0.18, blue: 0.18)
+                            : Color(red: 0.9, green: 0.9, blue: 0.9)
+                    )
                     .overlay(
-                        isSelected ? 
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.blue, lineWidth: 1) : nil
+                        isSelected
+                            ? RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.blue, lineWidth: 1) : nil
                     )
             )
             .padding(.horizontal, 2)
@@ -303,8 +355,8 @@ private struct DateButton: View {
 }
 
 private struct EmptyStateView: View {
-    let themeManager: ThemeManager
-    
+    @ObservedObject private var themeManager = ThemeManager.shared
+
     var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "magnifyingglass")
@@ -321,7 +373,7 @@ private struct EmptyStateView: View {
 
 private struct DateSectionView: View {
     let dateGroup: (date: Date, categories: [(name: String, tasks: [ToDoItem], color: Color)])
-    let themeManager: ThemeManager
+    @ObservedObject private var themeManager = ThemeManager.shared
     let isSelectionMode: Bool
     @Binding var selectedTasks: Set<UUID>
     let onToggle: (UUID) -> Void
@@ -329,30 +381,36 @@ private struct DateSectionView: View {
     let onDelete: (UUID) -> Void
     let onShare: (UUID) -> Void
     let categoryColor: Color
-    
+    let categoryManagement: CategoryManagementProtocol
+
     var body: some View {
         VStack(spacing: 0) {
-            DateHeaderView(date: dateGroup.date, taskCount: dateGroup.categories.flatMap { $0.tasks }.count, themeManager: themeManager)
-            
+            DateHeaderView(
+                date: dateGroup.date,
+                taskCount: dateGroup.categories.flatMap { $0.tasks }.count
+            )
+
             ForEach(dateGroup.categories, id: \.name) { category in
                 CategoryContainerView(
                     category: category,
-                    themeManager: themeManager,
                     isSelectionMode: isSelectionMode,
                     selectedTasks: $selectedTasks,
                     onToggle: onToggle,
                     onEdit: onEdit,
                     onDelete: onDelete,
                     onShare: onShare,
-                    categoryColor: categoryColor
+                    categoryColor: categoryColor,
+                    categoryManagement: categoryManagement
                 )
             }
         }
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(themeManager.isDarkMode ? 
-                    Color(red: 0.1, green: 0.1, blue: 0.1) : 
-                    Color(red: 0.95, green: 0.95, blue: 0.95))
+                .fill(
+                    themeManager.isDarkMode
+                        ? Color(red: 0.25, green: 0.25, blue: 0.25)
+                        : Color(red: 0.95, green: 0.95, blue: 0.95)
+                )
                 .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
         )
         .padding(.horizontal, 10)
@@ -362,22 +420,37 @@ private struct DateSectionView: View {
 private struct DateHeaderView: View {
     let date: Date
     let taskCount: Int
-    let themeManager: ThemeManager
-    
+    @ObservedObject private var themeManager = ThemeManager.shared
+
+    // Расширенная функция для получения названия дня
+    private func getDayName(for date: Date) -> String {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let targetDate = calendar.startOfDay(for: date)
+
+        let daysDifference = calendar.dateComponents([.day], from: today, to: targetDate).day ?? 0
+
+        switch daysDifference {
+        case -1:
+            return "Вчера"
+        case 0:
+            return "Сегодня"
+        case 1:
+            return "Завтра"
+        default:
+            return date.formatted(.dateTime.weekday(.wide))
+        }
+    }
+
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(date.formatted(.dateTime.weekday(.wide)))
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                Text(date.formatted(.dateTime.day(.twoDigits).month(.abbreviated).year()))
-                    .font(.system(size: 14))
-                    .foregroundColor(themeManager.isDarkMode ? .gray : .gray)
-            }
+        HStack(alignment: .center, spacing: 4) {
+            Text(getDayName(for: date))
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(themeManager.isDarkMode ? .white : .black)
             Spacer()
-            Text("\(taskCount)")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(themeManager.isDarkMode ? .gray : .black)
+            Text(date.formatted(.dateTime.day(.twoDigits).month(.abbreviated).year()))
+                .font(.system(size: 14))
+                .foregroundColor(themeManager.isDarkMode ? .gray : .gray)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
@@ -386,7 +459,7 @@ private struct DateHeaderView: View {
 
 private struct CategoryContainerView: View {
     let category: (name: String, tasks: [ToDoItem], color: Color)
-    let themeManager: ThemeManager
+    @ObservedObject private var themeManager = ThemeManager.shared
     let isSelectionMode: Bool
     @Binding var selectedTasks: Set<UUID>
     let onToggle: (UUID) -> Void
@@ -394,17 +467,29 @@ private struct CategoryContainerView: View {
     let onDelete: (UUID) -> Void
     let onShare: (UUID) -> Void
     let categoryColor: Color
-    
+    let categoryManagement: CategoryManagementProtocol
+
+    // Функция для получения иконки категории
+    private func getCategoryIcon(for categoryName: String) -> String {
+        return categoryManagement.categories.first { $0.rawValue == categoryName }?.iconName
+            ?? "folder.fill"
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
+                // Название категории слева
                 Text(category.name)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
+
                 Spacer()
-                Text("\(category.tasks.count)")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(themeManager.isDarkMode ? .gray : .black)
+
+                // Иконка категории справа
+                Image(systemName: getCategoryIcon(for: category.name))
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.5))
+                    .frame(width: 20, height: 20)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
@@ -425,10 +510,7 @@ private struct CategoryContainerView: View {
                     .padding(.horizontal, 5)
                     .padding(.vertical, 3)
                     .background(
-                        TaskRowBackground(
-                            themeManager: themeManager,
-                            priority: item.priority
-                        )
+                        TaskRowBackground(priority: item.priority)
                     )
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -440,12 +522,12 @@ private struct CategoryContainerView: View {
             .padding(.vertical, 16)
         }
         .background(
-            CategoryBackground(color: category.color, themeManager: themeManager)
+            CategoryBackground(color: category.color)
         )
         .padding(.vertical, 8)
         .padding(.horizontal, 10)
     }
-    
+
     private func handleTaskTap(_ itemId: UUID) {
         if isSelectionMode {
             if selectedTasks.contains(itemId) {
@@ -460,17 +542,19 @@ private struct CategoryContainerView: View {
 }
 
 private struct TaskRowBackground: View {
-    let themeManager: ThemeManager
+    @ObservedObject private var themeManager = ThemeManager.shared
     let priority: TaskPriority
-    
+
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 10)
-                .fill(themeManager.isDarkMode ? 
-                    Color(red: 0.18, green: 0.18, blue: 0.18) : 
-                    Color(red: 0.9, green: 0.9, blue: 0.9))
+                .fill(
+                    themeManager.isDarkMode
+                        ? Color(red: 0.18, green: 0.18, blue: 0.18)
+                        : Color(red: 0.9, green: 0.9, blue: 0.9)
+                )
                 .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
-            
+
             if priority != .none {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(getPriorityColor(for: priority), lineWidth: 1.5)
@@ -478,7 +562,7 @@ private struct TaskRowBackground: View {
             }
         }
     }
-    
+
     private func getPriorityColor(for priority: TaskPriority) -> Color {
         switch priority {
         case .high: return .red
@@ -491,24 +575,29 @@ private struct TaskRowBackground: View {
 
 private struct CategoryBackground: View {
     let color: Color
-    let themeManager: ThemeManager
-    
+    @ObservedObject private var themeManager = ThemeManager.shared
+
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
                 .fill(
-                    themeManager.isDarkMode ? 
-                        Color(red: 0.13, green: 0.13, blue: 0.13) : 
-                        Color(red: 0.9, green: 0.9, blue: 0.9)
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            color,
+                            color.opacity(0.8),
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
                 .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
-            
+
             RoundedRectangle(cornerRadius: 16)
                 .stroke(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            color,
-                            Color.gray.opacity(0.6),
+                            Color.gray.opacity(0.5),
+                            Color.gray.opacity(0.3),
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -520,9 +609,9 @@ private struct CategoryBackground: View {
 }
 
 private struct BackButton: View {
-    let themeManager: ThemeManager
+    @ObservedObject private var themeManager = ThemeManager.shared
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             Image(systemName: "chevron.backward")
@@ -531,9 +620,7 @@ private struct BackButton: View {
                 .frame(width: 40, height: 40)
                 .background(
                     Circle()
-                        .fill(themeManager.isDarkMode ? 
-                            Color(red: 0.18, green: 0.18, blue: 0.18) : 
-                            Color(red: 0.9, green: 0.9, blue: 0.9))
+                        .fill(.ultraThinMaterial)
                 )
         }
         .padding(.leading, 10)
