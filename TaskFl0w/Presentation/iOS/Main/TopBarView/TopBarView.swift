@@ -88,7 +88,7 @@ struct TopBarView: View {
                         hapticFeedback()
                         isSearchViewPresented = true
                     }) {
-                        Image(systemName: "magnifyingglass")
+                        Image(systemName: "calendar")
                             .font(.system(size: 20))
                             .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
                             .padding(4)
