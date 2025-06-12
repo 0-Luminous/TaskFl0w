@@ -27,6 +27,8 @@ struct TaskListView: View {
     // Добавляем состояние для deadline picker
     @State private var showingDeadlinePicker = false
     @State private var selectedDeadlineDate = Date()
+    // Добавляем состояние для предупреждения об удалении
+    @State private var showingDeleteAlert = false
     @Binding var selectedDate: Date
     
     // Заменяем локальные состояния на ObservedObject
@@ -93,6 +95,14 @@ struct TaskListView: View {
             }
             .sheet(isPresented: $showingDeadlinePicker) {
                 deadlineTaskSheet
+            }
+            .alert("Удаление задач", isPresented: $showingDeleteAlert) {
+                Button("Отмена", role: .cancel) { }
+                Button("Удалить", role: .destructive) {
+                    viewModel.deleteSelectedTasks()
+                }
+            } message: {
+                Text("Вы уверены, что хотите удалить выбранные задачи (\(viewModel.selectedTasks.count))?")
             }
         }
     }
@@ -352,7 +362,7 @@ struct TaskListView: View {
             isSelectionMode: $viewModel.isSelectionMode,
             selectedTasks: $viewModel.selectedTasks,
             onDeleteSelectedTasks: {
-                viewModel.deleteSelectedTasks()
+                showingDeleteAlert = true
             },
             onChangePriorityForSelectedTasks: {
                 showingPrioritySheet = true

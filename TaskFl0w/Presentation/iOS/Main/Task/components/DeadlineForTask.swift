@@ -16,7 +16,7 @@ struct DeadlineForTaskView: View {
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var showingContent = false
     @State private var selectedTime = Date()
-    @State private var includeTime = false
+    @State private var hasReminder = false
 
     // Функция для генерации виброотдачи
     private func generateHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
@@ -100,30 +100,64 @@ struct DeadlineForTaskView: View {
                         isSwipeToHideEnabled: false
                     )
 
-                    // Переключатель времени
+                    // Кнопка добавления напоминания
                     VStack(spacing: 16) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Включить время")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(themeManager.isDarkMode ? .white : .primary)
-
-                                Text("Добавить конкретное время к deadline")
-                                    .font(.system(size: 14, weight: .regular))
-                                    .foregroundColor(
-                                        themeManager.isDarkMode
-                                            ? Color.white.opacity(0.7) : Color.secondary)
+                        Button {
+                            generateHapticFeedback(style: .light)
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                hasReminder.toggle()
                             }
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Добавить напоминание")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(themeManager.isDarkMode ? .white : .primary)
 
-                            Spacer()
+                                    Text(hasReminder ? "Напоминание установлено" : "Уведомить перед окончанием задачи")
+                                        .font(.system(size: 14, weight: .regular))
+                                        .foregroundColor(
+                                            themeManager.isDarkMode
+                                                ? Color.white.opacity(0.7) : Color.secondary)
+                                }
 
-                            Toggle("", isOn: $includeTime)
-                                .toggleStyle(SwitchToggleStyle(tint: .orange))
+                                Spacer()
+
+                                Image(systemName: hasReminder ? "bell.fill" : "bell")
+                                    .font(.system(size: 20, weight: .medium))
+                                    .foregroundColor(hasReminder ? .orange : (themeManager.isDarkMode ? .white.opacity(0.7) : .secondary))
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(
+                                        hasReminder 
+                                            ? (themeManager.isDarkMode 
+                                                ? Color.orange.opacity(0.1) 
+                                                : Color.orange.opacity(0.05))
+                                            : (themeManager.isDarkMode
+                                                ? Color(red: 0.08, green: 0.08, blue: 0.12)
+                                                : Color(red: 0.98, green: 0.98, blue: 0.98))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(
+                                                hasReminder 
+                                                    ? Color.orange.opacity(0.3)
+                                                    : (themeManager.isDarkMode
+                                                        ? Color.white.opacity(0.1)
+                                                        : Color.gray.opacity(0.2)),
+                                                lineWidth: 1
+                                            )
+                                    )
+                            )
                         }
+                        .buttonStyle(PlainButtonStyle())
 
-                        if includeTime {
+                        if hasReminder {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("Время deadline")
+                                Text("Время напоминания")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(
                                         themeManager.isDarkMode
@@ -149,7 +183,8 @@ struct DeadlineForTaskView: View {
                             .transition(.scale.combined(with: .opacity))
                         }
                     }
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, 10)
+                    .padding(.top, 30)
 
                     Spacer(minLength: 30)
 
@@ -194,7 +229,7 @@ struct DeadlineForTaskView: View {
                         Button {
                             generateHapticFeedback(style: .medium)
                             let finalDate =
-                                includeTime
+                                hasReminder
                                 ? combineDateAndTime(date: selectedDate, time: selectedTime)
                                 : selectedDate
                             withAnimation(.easeInOut(duration: 0.3)) {
@@ -255,10 +290,10 @@ struct DeadlineForTaskView: View {
                 withAnimation(.easeOut(duration: 0.4)) {
                     showingContent = true
                 }
-                // Устанавливаем время по умолчанию на 23:59
+                // Устанавливаем время по умолчанию на 9:00 для напоминания
                 let calendar = Calendar.current
                 selectedTime =
-                    calendar.date(bySettingHour: 23, minute: 59, second: 0, of: Date()) ?? Date()
+                    calendar.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
             }
         }
         .presentationDetents([.large])

@@ -167,7 +167,6 @@ struct BottomBar: View {
         Button(action: {
             feedbackGenerator.impactOccurred()
             onDeleteSelectedTasks()
-            toggleSelectionMode()
         }) {
             toolbarIcon(systemName: "trash", color: .red)
         }
