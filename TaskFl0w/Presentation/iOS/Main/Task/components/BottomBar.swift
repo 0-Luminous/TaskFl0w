@@ -34,15 +34,11 @@ struct BottomBar: View {
     // MARK: - Body
     var body: some View {
         ZStack {
-            // Основной контейнер с размытым фоном
             HStack(spacing: 0) {
                 Spacer()
                 
-                // Используем разные layouts для обычного и selection режимов
                 if !isSelectionMode {
-                    // Обычный режим - 3 кнопки
                     HStack {
-                        // Левая кнопка
                         ZStack {
                             Color.clear
                             archiveButton
@@ -52,7 +48,6 @@ struct BottomBar: View {
                         Spacer()
                             .frame(width: 25)
                         
-                        // Центральная кнопка
                         ZStack {
                             Color.clear
                             selectionModeToggleButton
@@ -61,7 +56,6 @@ struct BottomBar: View {
                         Spacer()
                             .frame(width: 25)
                         
-                        // Правая кнопка
                         ZStack {
                             Color.clear
                             addButton
@@ -69,49 +63,43 @@ struct BottomBar: View {
                     }
                     .frame(width: 165)
                 } else {
-                    // Режим выбора - 6 кнопок
                     HStack(spacing: 16) {
-                        // Кнопка флага
+
                         ZStack {
                             Color.clear
                             calendarButton     
                         }
-                        
-                        // Кнопка чеклиста
+                    
                         ZStack {
                             Color.clear
                             flagButton
                         }
+
+                        // ZStack {
+                        //     Color.clear
+                        //     checklistButton
+                        // }
                         
-                        // Кнопка календаря
-                        ZStack {
-                            Color.clear
-                            checklistButton
-                        }
-                        
-                        // Кнопка приоритета или архива (в зависимости от showCompletedTasksOnly)
-                        ZStack {
-                            Color.clear
-                            if showCompletedTasksOnly {
-                                archiveActionButton
-                            } else {
-                                priorityButton
-                            }
-                        }
-                        
-                        // Кнопка выхода из режима выбора
                         ZStack {
                             Color.clear
                             exitSelectionModeButton
                         }
-                        
-                        // Кнопка удаления или разархивирования
+
                         ZStack {
                             Color.clear
                             if showCompletedTasksOnly {
                                 unarchiveButton
                             } else {
                                 deleteButton
+                            }
+                        }
+
+                        ZStack {
+                            Color.clear
+                            if showCompletedTasksOnly {
+                                archiveActionButton
+                            } else {
+                                priorityButton
                             }
                         }
                         

@@ -250,7 +250,7 @@ struct TaskListView: View {
                         Spacer().frame(height: UIScreen.main.bounds.height * 0.32)
                         
                         // Показываем PrioritySelectionView если активен
-                        if showPrioritySelection {
+                        // if showPrioritySelection {
                             PrioritySelectionView(
                                 selectedPriority: $newTaskPriority,
                                 onSave: {
@@ -269,30 +269,31 @@ struct TaskListView: View {
                             )
                             .transition(.scale)
                             .padding(.bottom, 20)
-                        } else {
-                            // Показываем основную панель с calendar и flag
-                            NewTaskPriorityBar(
-                                selectedPriority: $newTaskPriority,
-                                showPrioritySelection: $showPrioritySelection,
-                                onSave: {
-                                    if !newTaskTitle.isEmpty {
-                                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
-                                        newTaskTitle = ""
-                                        newTaskPriority = .none
-                                        isAddingNewTask = false
-                                        isNewTaskFocused = false
-                                    }
-                                },
-                                onCancel: {
-                                    newTaskTitle = ""
-                                    newTaskPriority = .none
-                                    isAddingNewTask = false
-                                    isNewTaskFocused = false
-                                }
-                            )
-                            .transition(.scale)
-                            .padding(.bottom, 20)
-                        }
+                        // } 
+                        // else {
+                        //     // Показываем основную панель с calendar и flag
+                        //     NewTaskPriorityBar(
+                        //         selectedPriority: $newTaskPriority,
+                        //         showPrioritySelection: $showPrioritySelection,
+                        //         onSave: {
+                        //             if !newTaskTitle.isEmpty {
+                        //                 viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                        //                 newTaskTitle = ""
+                        //                 newTaskPriority = .none
+                        //                 isAddingNewTask = false
+                        //                 isNewTaskFocused = false
+                        //             }
+                        //         },
+                        //         onCancel: {
+                        //             newTaskTitle = ""
+                        //             newTaskPriority = .none
+                        //             isAddingNewTask = false
+                        //             isNewTaskFocused = false
+                        //         }
+                        //     )
+                        //     .transition(.scale)
+                        //     .padding(.bottom, 20)
+                        // }
                     }
                 }
             }
