@@ -17,6 +17,13 @@ struct DeadlineForTaskView: View {
     @State private var showingContent = false
     @State private var selectedTime = Date()
     @State private var hasReminder = false
+    @State private var selectedReminderOption = "за 15 минут"
+    
+    // Варианты времени для напоминания заранее
+    private let reminderOptions = [
+        "нет", "за 5 минут", "за 10 минут", "за 15 минут", "за 20 минут", 
+        "за 30 минут", "за 1 час", "за 2 часа", "за 1 день", "за 2 дня"
+    ]
 
     // Функция для генерации виброотдачи
     private func generateHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
@@ -75,7 +82,7 @@ struct DeadlineForTaskView: View {
                                 .font(.system(size: 28, weight: .bold, design: .rounded))
                                 .foregroundColor(themeManager.isDarkMode ? .white : .primary)
 
-                            Text("Установите deadline для \(selectedTasksCount) задач(и)")
+                            Text("Установите крайний срок для \(selectedTasksCount) задач(и)")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(
                                     themeManager.isDarkMode
@@ -89,16 +96,19 @@ struct DeadlineForTaskView: View {
 
                     Spacer(minLength: 20)
 
-                    // Календарь
-                    MonthCalendarView(
-                        selectedDate: $selectedDate,
-                        onHideCalendar: {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                isPresented = false
-                            }
-                        },
-                        isSwipeToHideEnabled: false
-                    )
+                    // Календарь - скрываем при hasReminder = true
+                    if !hasReminder {
+                        MonthCalendarView(
+                            selectedDate: $selectedDate,
+                            onHideCalendar: {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    isPresented = false
+                                }
+                            },
+                            isSwipeToHideEnabled: false
+                        )
+                        .transition(.scale.combined(with: .opacity))
+                    }
 
                     // Кнопка добавления напоминания
                     VStack(spacing: 16) {
@@ -156,12 +166,11 @@ struct DeadlineForTaskView: View {
                         .buttonStyle(PlainButtonStyle())
 
                         if hasReminder {
-                            VStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 16) {
                                 Text("Время напоминания")
-                                    .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(
-                                        themeManager.isDarkMode
-                                            ? Color.white.opacity(0.8) : Color.secondary)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(themeManager.isDarkMode ? .white : .primary)
+                                    .frame(maxWidth: .infinity, alignment: .center)
 
                                 DatePicker(
                                     "",
@@ -170,7 +179,7 @@ struct DeadlineForTaskView: View {
                                 )
                                 .datePickerStyle(WheelDatePickerStyle())
                                 .labelsHidden()
-                                .frame(height: 120)
+                                .frame(maxWidth: .infinity)
                                 .background(
                                     RoundedRectangle(cornerRadius: 12)
                                         .fill(
@@ -179,6 +188,154 @@ struct DeadlineForTaskView: View {
                                                 : Color(red: 0.98, green: 0.98, blue: 0.98)
                                         )
                                 )
+                                
+                                // Выбор времени заблаговременного напоминания
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Напомнить заранее")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(themeManager.isDarkMode ? .white : .primary)
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                    
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 8) {
+                                            ForEach(reminderOptions, id: \.self) { option in
+                                                Button {
+                                                    generateHapticFeedback(style: .light)
+                                                    selectedReminderOption = option
+                                                } label: {
+                                                    Text(option)
+                                                        .font(.system(size: 14, weight: .medium))
+                                                        .foregroundColor(
+                                                            selectedReminderOption == option 
+                                                                ? .white 
+                                                                : (themeManager.isDarkMode ? .white.opacity(0.8) : .primary)
+                                                        )
+                                                        .padding(.horizontal, 16)
+                                                        .padding(.vertical, 8)
+                                                        .background(
+                                                            RoundedRectangle(cornerRadius: 20)
+                                                                .fill(
+                                                                    selectedReminderOption == option
+                                                                        ? LinearGradient(
+                                                                            gradient: Gradient(colors: [
+                                                                                Color.orange.opacity(0.8),
+                                                                                Color.red.opacity(0.6)
+                                                                            ]),
+                                                                            startPoint: .topLeading,
+                                                                            endPoint: .bottomTrailing
+                                                                        )
+                                                                        : LinearGradient(
+                                                                            gradient: Gradient(colors: [
+                                                                                themeManager.isDarkMode 
+                                                                                    ? Color(red: 0.12, green: 0.12, blue: 0.15)
+                                                                                    : Color(red: 0.96, green: 0.96, blue: 0.98),
+                                                                                themeManager.isDarkMode 
+                                                                                    ? Color(red: 0.08, green: 0.08, blue: 0.12)
+                                                                                    : Color(red: 0.94, green: 0.94, blue: 0.96)
+                                                                            ]),
+                                                                            startPoint: .topLeading,
+                                                                            endPoint: .bottomTrailing
+                                                                        )
+                                                                )
+                                                                .overlay(
+                                                                    RoundedRectangle(cornerRadius: 20)
+                                                                        .stroke(
+                                                                            selectedReminderOption == option
+                                                                                ? Color.orange.opacity(0.4)
+                                                                                : (themeManager.isDarkMode 
+                                                                                    ? Color.white.opacity(0.1)
+                                                                                    : Color.gray.opacity(0.2)),
+                                                                            lineWidth: 1
+                                                                        )
+                                                                )
+                                                        )
+                                                }
+                                                .buttonStyle(PlainButtonStyle())
+                                            }
+                                        }
+                                        .padding(.horizontal, 4)
+                                    }
+                                }
+                                
+                                // Кнопки "Отмена" и "Установить" для режима напоминания
+                                HStack(spacing: 16) {
+                                    // Кнопка отмены
+                                    Button {
+                                        generateHapticFeedback(style: .light)
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            hasReminder = false
+                                        }
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "xmark")
+                                                .font(.system(size: 16, weight: .semibold))
+                                            Text("Отмена")
+                                                .font(.system(size: 16, weight: .semibold))
+                                        }
+                                        .foregroundColor(themeManager.isDarkMode ? .white : .primary)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 56)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .fill(
+                                                    themeManager.isDarkMode
+                                                        ? Color(red: 0.15, green: 0.15, blue: 0.18)
+                                                        : Color(red: 0.95, green: 0.95, blue: 0.97)
+                                                )
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 16)
+                                                        .stroke(
+                                                            themeManager.isDarkMode
+                                                                ? Color.white.opacity(0.1)
+                                                                : Color.gray.opacity(0.2),
+                                                            lineWidth: 1
+                                                        )
+                                                )
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+
+                                    // Кнопка установки
+                                    Button {
+                                        generateHapticFeedback(style: .medium)
+                                        let baseDate = combineDateAndTime(date: selectedDate, time: selectedTime)
+                                        let finalDate = calculateReminderDate(baseDate: baseDate, reminderOption: selectedReminderOption)
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            onSetDeadlineForTasks(finalDate)
+                                            isPresented = false
+                                        }
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 16, weight: .semibold))
+                                            Text("Установить")
+                                                .font(.system(size: 16, weight: .semibold))
+                                        }
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 56)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .fill(
+                                                    LinearGradient(
+                                                        gradient: Gradient(colors: [
+                                                            Color.green, Color.blue.opacity(0.8),
+                                                        ]),
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    )
+                                                )
+                                                .shadow(
+                                                    color: Color.green.opacity(0.4),
+                                                    radius: 8,
+                                                    x: 0,
+                                                    y: 4
+                                                )
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                                .padding(.top, 20)
                             }
                             .transition(.scale.combined(with: .opacity))
                         }
@@ -188,99 +345,99 @@ struct DeadlineForTaskView: View {
 
                     Spacer(minLength: 30)
 
-                    // Стильные кнопки
-                    HStack(spacing: 16) {
-                        // Кнопка отмены
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                isPresented = false
+                    // Стильные кнопки - скрываем при hasReminder = true
+                    if !hasReminder {
+                        HStack(spacing: 16) {
+                            // Кнопка отмены
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    isPresented = false
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 16, weight: .semibold))
+                                    Text("Отмена")
+                                        .font(.system(size: 16, weight: .semibold))
+                                }
+                                .foregroundColor(themeManager.isDarkMode ? .white : .primary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(
+                                            themeManager.isDarkMode
+                                                ? Color(red: 0.15, green: 0.15, blue: 0.18)
+                                                : Color(red: 0.95, green: 0.95, blue: 0.97)
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .stroke(
+                                                    themeManager.isDarkMode
+                                                        ? Color.white.opacity(0.1)
+                                                        : Color.gray.opacity(0.2),
+                                                    lineWidth: 1
+                                                )
+                                        )
+                                )
                             }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 16, weight: .semibold))
-                                Text("Отмена")
-                                    .font(.system(size: 16, weight: .semibold))
-                            }
-                            .foregroundColor(themeManager.isDarkMode ? .white : .primary)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(
-                                        themeManager.isDarkMode
-                                            ? Color(red: 0.15, green: 0.15, blue: 0.18)
-                                            : Color(red: 0.95, green: 0.95, blue: 0.97)
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(
-                                                themeManager.isDarkMode
-                                                    ? Color.white.opacity(0.1)
-                                                    : Color.gray.opacity(0.2),
-                                                lineWidth: 1
-                                            )
-                                    )
-                            )
-                        }
-                        .buttonStyle(ScaleButtonStyle())
+                            .buttonStyle(PlainButtonStyle())
 
-                        // Кнопка установки deadline
-                        Button {
-                            generateHapticFeedback(style: .medium)
-                            let finalDate =
-                                hasReminder
-                                ? combineDateAndTime(date: selectedDate, time: selectedTime)
-                                : selectedDate
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                onSetDeadlineForTasks(finalDate)
-                                isPresented = false
+                            // Кнопка установки deadline
+                            Button {
+                                generateHapticFeedback(style: .medium)
+                                let finalDate = selectedDate
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    onSetDeadlineForTasks(finalDate)
+                                    isPresented = false
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "flag.fill")
+                                        .font(.system(size: 16, weight: .semibold))
+                                    Text("Установить")
+                                        .font(.system(size: 16, weight: .semibold))
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(
+                                            selectedTasksCount == 0
+                                                ? LinearGradient(
+                                                    gradient: Gradient(colors: [
+                                                        Color.gray.opacity(0.5),
+                                                        Color.gray.opacity(0.3),
+                                                    ]),
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                                : LinearGradient(
+                                                    gradient: Gradient(colors: [
+                                                        Color.red, Color.orange,
+                                                    ]),
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                        )
+                                        .shadow(
+                                            color: selectedTasksCount == 0
+                                                ? Color.clear : Color.red.opacity(0.4),
+                                            radius: 8,
+                                            x: 0,
+                                            y: 4
+                                        )
+                                )
                             }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "flag.fill")
-                                    .font(.system(size: 16, weight: .semibold))
-                                Text("Установить")
-                                    .font(.system(size: 16, weight: .semibold))
-                            }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(
-                                        selectedTasksCount == 0
-                                            ? LinearGradient(
-                                                gradient: Gradient(colors: [
-                                                    Color.gray.opacity(0.5),
-                                                    Color.gray.opacity(0.3),
-                                                ]),
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                            : LinearGradient(
-                                                gradient: Gradient(colors: [
-                                                    Color.red, Color.orange,
-                                                ]),
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                    )
-                                    .shadow(
-                                        color: selectedTasksCount == 0
-                                            ? Color.clear : Color.red.opacity(0.4),
-                                        radius: 8,
-                                        x: 0,
-                                        y: 4
-                                    )
-                            )
+                            .disabled(selectedTasksCount == 0)
+                            .buttonStyle(PlainButtonStyle())
+                            .opacity(selectedTasksCount == 0 ? 0.6 : 1.0)
                         }
-                        .disabled(selectedTasksCount == 0)
-                        .buttonStyle(ScaleButtonStyle())
-                        .opacity(selectedTasksCount == 0 ? 0.6 : 1.0)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 30)
+                        .transition(.scale.combined(with: .opacity))
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 30)
                 }
             }
             .navigationBarHidden(true)
@@ -314,6 +471,37 @@ struct DeadlineForTaskView: View {
         combinedComponents.second = 0
 
         return calendar.date(from: combinedComponents) ?? date
+    }
+
+    // Функция для расчета даты напоминания
+    private func calculateReminderDate(baseDate: Date, reminderOption: String) -> Date {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: baseDate)
+        
+        switch reminderOption {
+        case "за 5 минут":
+            components.minute = components.minute! - 5
+        case "за 10 минут":
+            components.minute = components.minute! - 10
+        case "за 15 минут":
+            components.minute = components.minute! - 15
+        case "за 20 минут":
+            components.minute = components.minute! - 20
+        case "за 30 минут":
+            components.minute = components.minute! - 30
+        case "за 1 час":
+            components.hour = components.hour! - 1
+        case "за 2 часа":
+            components.hour = components.hour! - 2
+        case "за 1 день":
+            components.day = components.day! - 1
+        case "за 2 дня":
+            components.day = components.day! - 2
+        default:
+            break
+        }
+        
+        return calendar.date(from: components) ?? baseDate
     }
 }
 
