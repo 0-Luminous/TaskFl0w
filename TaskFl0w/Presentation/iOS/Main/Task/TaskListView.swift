@@ -15,6 +15,7 @@ struct TaskListView: View {
     @State private var showingAddForm = false
     @State private var isSearchActive = false
     @State private var newTaskTitle = ""
+    @State private var newTaskNotes = ""
     @State private var isAddingNewTask = false
     @State private var isKeyboardVisible = false
     @FocusState private var isNewTaskFocused: Bool
@@ -279,10 +280,11 @@ struct TaskListView: View {
             if isAddingNewTask {
                 NewTaskInput(
                     newTaskTitle: $newTaskTitle,
+                    newTaskNotes: $newTaskNotes,
                     isNewTaskFocused: _isNewTaskFocused,
                     selectedPriority: $newTaskPriority,
                     onSave: {
-                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                        viewModel.saveNewTask(title: newTaskTitle, notes: newTaskNotes, priority: newTaskPriority)
                         resetNewTask()
                     }
                 )
@@ -322,7 +324,7 @@ struct TaskListView: View {
                 onSave: {
                     showPrioritySelection = false
                     if !newTaskTitle.isEmpty {
-                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                        viewModel.saveNewTask(title: newTaskTitle, notes: newTaskNotes, priority: newTaskPriority)
                         resetNewTask()
                     }
                 },
@@ -478,6 +480,7 @@ struct TaskListView: View {
     
     private func resetNewTask() {
         newTaskTitle = ""
+        newTaskNotes = ""
         newTaskPriority = .none
         isAddingNewTask = false
         isNewTaskFocused = false

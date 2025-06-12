@@ -9,7 +9,9 @@ import SwiftUI
 
 struct NewTaskInput: View {
     @Binding var newTaskTitle: String
+    @Binding var newTaskNotes: String
     @FocusState var isNewTaskFocused: Bool
+    @FocusState var isNotesFocused: Bool
     @Binding var selectedPriority: TaskPriority
     var onSave: () -> Void
 
@@ -17,39 +19,67 @@ struct NewTaskInput: View {
     
     
     var body: some View {
-        HStack(alignment: .center) {
-            TextField("task.newTask".localized(), text: $newTaskTitle, axis: .vertical)
-                .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                .lineLimit(3) // Разрешить до 3 строк
+        VStack(spacing: 8) {
+            // Основное поле ввода задачи
+            HStack(alignment: .center) {
+                TextField("task.newTask".localized(), text: $newTaskTitle, axis: .vertical)
+                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                    .lineLimit(3) // Разрешить до 3 строк
+                    .onSubmit {
+                        // При нажатии Done переходим к заметкам или сохраняем
+                        if newTaskNotes.isEmpty {
+                            isNotesFocused = true
+                        } else {
+                            onSave()
+                        }
+                    }
+                    .submitLabel(.next)
+                    .focused($isNewTaskFocused)
+                    .keyboardType(.default)
+                    .autocapitalization(.sentences)
+                    .disableAutocorrection(false)
+                    .padding(.leading, 5)
+                    .padding(.vertical, 2)
+                    .onChange(of: newTaskTitle) { oldValue, newValue in
+                        if newValue.contains("\n") {
+                            newTaskTitle = newValue.replacingOccurrences(of: "\n", with: "")
+                            // Переходим к заметкам вместо сохранения
+                            isNotesFocused = true
+                        }
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                // Иконка приоритета, если приоритет выбран
+                if selectedPriority != .none {
+                    priorityIcon
+                }
+            }
+            
+            // Поле для заметок
+            TextField("Заметки (необязательно)", text: $newTaskNotes, axis: .vertical)
+                .foregroundColor(themeManager.isDarkMode ? .white.opacity(0.8) : .black.opacity(0.7))
+                .font(.system(size: 14))
+                .lineLimit(2)
                 .onSubmit {
                     onSave()
                 }
                 .submitLabel(.done)
-                .focused($isNewTaskFocused)
+                .focused($isNotesFocused)
                 .keyboardType(.default)
                 .autocapitalization(.sentences)
                 .disableAutocorrection(false)
-                .padding(.leading, 5) // Добавляем отступ слева 5 пикселей
-                .padding(.vertical, 2) // Добавляем вертикальный отступ
-                // Специальный модификатор для обработки ввода
-                .onChange(of: newTaskTitle) { oldValue, newValue in
-                    // Если в тексте есть символ новой строки, значит была нажата кнопка Return
+                .padding(.leading, 5)
+                .padding(.vertical, 2)
+                .onChange(of: newTaskNotes) { oldValue, newValue in
                     if newValue.contains("\n") {
-                        // Удаляем символ новой строки
-                        newTaskTitle = newValue.replacingOccurrences(of: "\n", with: "")
-                        // Сохраняем задачу
+                        newTaskNotes = newValue.replacingOccurrences(of: "\n", with: "")
                         onSave()
                     }
                 }
-                .fixedSize(horizontal: false, vertical: true) // Позволяет расширяться по вертикали
-            
-            // Иконка приоритета, если приоритет выбран
-            if selectedPriority != .none {
-                priorityIcon
-            }
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 6)
-        .padding(.horizontal, 6) // Добавляем правый отступ как у обычных задач
+        .padding(.horizontal, 6)
         .listRowBackground(
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
@@ -63,7 +93,7 @@ struct NewTaskInput: View {
                 }
             }
             .padding(.vertical, 10)
-            .padding(.horizontal, 12) // Используем те же отступы, что и у обычных задач
+            .padding(.horizontal, 12)
         )
         .listRowSeparator(.hidden)
     }
@@ -100,12 +130,16 @@ struct NewTaskInput: View {
 
 #Preview {
     @State var text = ""
+    @State var notes = ""
     @State var priority: TaskPriority = .none
     @FocusState var focus
+    @FocusState var notesFocus
     
     NewTaskInput(
         newTaskTitle: $text,
+        newTaskNotes: $notes,
         isNewTaskFocused: _focus,
+        isNotesFocused: _notesFocus,
         selectedPriority: $priority,
         onSave: {}
     )
