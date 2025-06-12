@@ -18,10 +18,10 @@ struct BottomBar: View {
     var onUnarchiveSelectedTasks: () -> Void
     @Binding var showCompletedTasksOnly: Bool
     
-    // Новые обработчики для дополнительных кнопок
-    var onFlagSelectedTasks: () -> Void = {}
+    // Обновляем порядок обработчиков для дополнительных кнопок
+    var onFlagSelectedTasks: () -> Void
+    var onCalendarSelectedTasks: () -> Void
     var onChecklistSelectedTasks: () -> Void = {}
-    var onCalendarSelectedTasks: () -> Void = {}
 
     @ObservedObject private var themeManager = ThemeManager.shared
     

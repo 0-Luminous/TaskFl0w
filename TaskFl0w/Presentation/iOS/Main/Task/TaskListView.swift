@@ -24,13 +24,14 @@ struct TaskListView: View {
     // Добавляем состояние для календаря переноса задач
     @State private var showingDatePicker = false
     @State private var selectedTargetDate = Date()
+    // Добавляем состояние для deadline picker
+    @State private var showingDeadlinePicker = false
+    @State private var selectedDeadlineDate = Date()
     @Binding var selectedDate: Date
     
     // Заменяем локальные состояния на ObservedObject
     @ObservedObject private var calendarState = CalendarState.shared
-
     @ObservedObject private var themeManager = ThemeManager.shared
-   
     
     private let topID = "top_of_list"
     
@@ -44,334 +45,399 @@ struct TaskListView: View {
     var body: some View {
         NavigationView {
             ZStack(alignment: .top) {
-                // Добавляем явный фоновый цвет на весь экран для устранения черного мерцания
-                themeManager.isDarkMode 
-                    ? Color(red: 0.098, green: 0.098, blue: 0.098).ignoresSafeArea()
-                    : Color(red: 0.95, green: 0.95, blue: 0.95).ignoresSafeArea()
+                backgroundView
                 
                 VStack(spacing: 0) {
-                    
-                    ScrollViewReader { scrollProxy in
-                        List {
-                            EmptyView()
-                                .id(topID)
-                                .frame(width: 0, height: 0)
-                                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                            
-                            if viewModel.showCompletedTasksOnly {
-                                Color.clear
-                                .frame(height: 20)
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                            }
-
-                             // Заменяем локальные состояния на свойства CalendarState
-                            if calendarState.isWeekCalendarVisible {
-                                Color.clear
-                                    .frame(height: 70)
-                                    .listRowBackground(Color.clear)
-                                    .listRowSeparator(.hidden)
-                            }
-
-                            if calendarState.isMonthCalendarVisible {
-                                Color.clear
-                                    .frame(height: 300)
-                                    .listRowBackground(Color.clear)
-                                    .listRowSeparator(.hidden)
-                            }
-                            
-                            let items = viewModel.showCompletedTasksOnly 
-                                ? viewModel.getAllArchivedItems()
-                                : viewModel.getFilteredItems()
-                            
-                            if viewModel.showCompletedTasksOnly {
-                                ArchivedTasksGroupView(
-                                    items: items,
-                                    categoryColor: viewModel.selectedCategory?.color ?? .blue,
-                                    isSelectionMode: viewModel.isSelectionMode,
-                                    selectedTasks: $viewModel.selectedTasks,
-                                    onToggle: { taskId in
-                                        viewModel.presenter?.toggleItem(id: taskId)
-                                    },
-                                    onEdit: { item in
-                                        viewModel.editingItem = item
-                                    },
-                                    onDelete: { taskId in
-                                        viewModel.presenter?.deleteItem(id: taskId)
-                                    },
-                                    onShare: { taskId in
-                                        viewModel.presenter?.shareItem(id: taskId)
-                                    }
-                                )
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                            } else {
-                                ForEach(items) { item in
-                                    TaskRow(
-                                        item: item,
-                                        onToggle: {
-                                            viewModel.presenter?.toggleItem(id: item.id)
-                                        },
-                                        onEdit: {
-                                            viewModel.editingItem = item
-                                        },
-                                        onDelete: {
-                                            viewModel.presenter?.deleteItem(id: item.id)
-                                        },
-                                        onShare: {
-                                            viewModel.presenter?.shareItem(id: item.id)
-                                        },
-                                        categoryColor: viewModel.selectedCategory?.color ?? .blue,
-                                        isSelectionMode: viewModel.isSelectionMode,
-                                        isInArchiveMode: viewModel.showCompletedTasksOnly,
-                                        selectedTasks: $viewModel.selectedTasks
-                                    )
-                                    .padding(.trailing, 5)
-                                    .listRowBackground(
-                                        ZStack {
-                                            RoundedRectangle(cornerRadius: 10)
-                                                .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
-                                                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
-                                            if item.priority != .none {
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
-                                                    .opacity(item.isCompleted && !viewModel.isSelectionMode && !viewModel.showCompletedTasksOnly ? 0.5 : 1.0)
-                                            }
-                                        }
-                                        .padding(.vertical, 5)
-                                        .padding(.horizontal, 12)
-                                    )
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        generateHapticFeedback()
-                                        if viewModel.isSelectionMode {
-                                            viewModel.toggleTaskSelection(taskId: item.id)
-                                        } else {
-                                            viewModel.presenter?.toggleItem(id: item.id)
-                                        }
-                                    }
-                                    .listRowSeparator(.hidden)
-                                }
-                            }
-                            
-                            // Перемещаем добавление новой задачи сюда, в конец списка
-                            if isAddingNewTask {                         
-                                NewTaskInput(
-                                    newTaskTitle: $newTaskTitle,
-                                    isNewTaskFocused: _isNewTaskFocused,
-                                    selectedPriority: $newTaskPriority,
-                                    onSave: {
-                                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
-                                        newTaskTitle = ""
-                                        newTaskPriority = .none
-                                        isAddingNewTask = false
-                                        isNewTaskFocused = false
-                                    }
-                                )
-                                .id("new_task_input")
-                            }
-                            
-                            Color.clear
-                                .frame(height: 160)
-                                .listRowBackground(Color.clear)
-                                .listRowSeparator(.hidden)
-                            
-                        }
-                        .listStyle(GroupedListStyle())
-                        .onAppear {
-                            if let selectedCategory = selectedCategory {
-                                viewModel.selectedCategory = selectedCategory
-                            }
-                            viewModel.refreshData()
-                        }
-                        .onChange(of: isAddingNewTask) { oldValue, newValue in
-                            if newValue == true {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    scrollProxy.scrollTo("new_task_input", anchor: .bottom)
-                                }
-                            }
-                        }
-                    }
+                    mainScrollView
                 }
                 
-                if viewModel.showCompletedTasksOnly {
-                    VStack {
-                        ArchiveView()
-                        Spacer()
+                overlayViews
+                bottomBarContainer
+            }
+            .scrollContentBackground(.hidden)
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                isKeyboardVisible = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                isKeyboardVisible = false
+            }
+            .onChange(of: isSearchActive) { oldValue, newValue in
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("SearchActiveStateChanged"),
+                    object: nil,
+                    userInfo: ["isActive": newValue]
+                )
+            }
+            .onChange(of: isAddingNewTask) { oldValue, newValue in
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("AddingTaskStateChanged"),
+                    object: nil,
+                    userInfo: ["isAddingTask": newValue]
+                )
+            }
+            .onChange(of: selectedDate) { oldValue, newValue in
+                viewModel.selectedDate = newValue
+                viewModel.refreshData()
+            }
+            .onChange(of: calendarState.isWeekCalendarVisible) { oldValue, newValue in
+                print("isWeekCalendarVisible изменилось: \(oldValue) -> \(newValue)")
+            }
+            .onChange(of: calendarState.isMonthCalendarVisible) { oldValue, newValue in
+                // Дополнительная логика обновления при необходимости
+            }
+            .actionSheet(isPresented: $showingPrioritySheet) {
+                priorityActionSheet
+            }
+            .sheet(isPresented: $showingDatePicker) {
+                transferTaskSheet
+            }
+            .sheet(isPresented: $showingDeadlinePicker) {
+                deadlineTaskSheet
+            }
+        }
+    }
+    
+    // MARK: - Computed Properties для разбивки сложного body
+    
+    private var backgroundView: some View {
+        (themeManager.isDarkMode 
+            ? Color(red: 0.098, green: 0.098, blue: 0.098)
+            : Color(red: 0.95, green: 0.95, blue: 0.95))
+        .ignoresSafeArea()
+    }
+    
+    private var mainScrollView: some View {
+        ScrollViewReader { scrollProxy in
+            List {
+                listHeader
+                calendarSpacers
+                taskContent
+                newTaskSection
+                bottomSpacer
+            }
+            .listStyle(GroupedListStyle())
+            .onAppear {
+                setupInitialState()
+            }
+            .onChange(of: isAddingNewTask) { oldValue, newValue in
+                if newValue == true {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        scrollProxy.scrollTo("new_task_input", anchor: .bottom)
                     }
                 }
-                
-                if !isSearchActive && !isKeyboardVisible {
-                    if !isAddingNewTask {
-                        VStack {
-                            Spacer()
-                            BottomBar(
-                                onAddTap: {
-                                    if let selectedCategory = selectedCategory {
-                                        viewModel.selectedCategory = selectedCategory
-                                    }
-                                    isAddingNewTask = true
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                        isNewTaskFocused = true
-                                    }
-                                },
-                                isSelectionMode: $viewModel.isSelectionMode,
-                                selectedTasks: $viewModel.selectedTasks,
-                                onDeleteSelectedTasks: {
-                                    viewModel.deleteSelectedTasks()
-                                },
-                                onChangePriorityForSelectedTasks: {
-                                    showingPrioritySheet = true
-                                },
-                                onArchiveTapped: {
-                                    generateHapticFeedback()
-                                    viewModel.showCompletedTasksOnly.toggle()
-                                },
-                                onUnarchiveSelectedTasks: {
-                                    viewModel.unarchiveSelectedTasks()
-                                },
-                                showCompletedTasksOnly: $viewModel.showCompletedTasksOnly,
-                                // Добавляем обработчик для календаря
-                                onCalendarSelectedTasks: {
-                                    selectedTargetDate = Date()
-                                    showingDatePicker = true
-                                }
-                            )
-                            .transition(AnyTransition.opacity.animation(.easeInOut(duration: 2.2)))
-                            .padding(.bottom, 60)
-                        }
-                    }
-                }
+            }
+        }
+    }
+    
+    private var listHeader: some View {
+        Group {
+            EmptyView()
+                .id(topID)
+                .frame(width: 0, height: 0)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            
+            if viewModel.showCompletedTasksOnly {
+                Color.clear
+                    .frame(height: 20)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
+        }
+    }
+    
+    private var calendarSpacers: some View {
+        Group {
+            if calendarState.isWeekCalendarVisible {
+                Color.clear
+                    .frame(height: 70)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
 
-                if isAddingNewTask {
-                    VStack {
-                        Spacer().frame(height: UIScreen.main.bounds.height * 0.32)
-                        
-                        // Показываем PrioritySelectionView если активен
-                        // if showPrioritySelection {
-                            PrioritySelectionView(
-                                selectedPriority: $newTaskPriority,
-                                onSave: {
-                                    showPrioritySelection = false
-                                    if !newTaskTitle.isEmpty {
-                                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
-                                        newTaskTitle = ""
-                                        newTaskPriority = .none
-                                        isAddingNewTask = false
-                                        isNewTaskFocused = false
-                                    }
-                                },
-                                onCancel: {
-                                    showPrioritySelection = false
-                                }
-                            )
-                            .transition(.scale)
-                            .padding(.bottom, 20)
-                        // } 
-                        // else {
-                        //     // Показываем основную панель с calendar и flag
-                        //     NewTaskPriorityBar(
-                        //         selectedPriority: $newTaskPriority,
-                        //         showPrioritySelection: $showPrioritySelection,
-                        //         onSave: {
-                        //             if !newTaskTitle.isEmpty {
-                        //                 viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
-                        //                 newTaskTitle = ""
-                        //                 newTaskPriority = .none
-                        //                 isAddingNewTask = false
-                        //                 isNewTaskFocused = false
-                        //             }
-                        //         },
-                        //         onCancel: {
-                        //             newTaskTitle = ""
-                        //             newTaskPriority = .none
-                        //             isAddingNewTask = false
-                        //             isNewTaskFocused = false
-                        //         }
-                        //     )
-                        //     .transition(.scale)
-                        //     .padding(.bottom, 20)
-                        // }
+            if calendarState.isMonthCalendarVisible {
+                Color.clear
+                    .frame(height: 300)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
+        }
+    }
+    
+    private var taskContent: some View {
+        let items = viewModel.showCompletedTasksOnly 
+            ? viewModel.getAllArchivedItems()
+            : viewModel.getFilteredItems()
+        
+        return Group {
+            if viewModel.showCompletedTasksOnly {
+                archivedTasksView(items: items)
+            } else {
+                regularTasksView(items: items)
+            }
+        }
+    }
+    
+    private func archivedTasksView(items: [ToDoItem]) -> some View {
+        ArchivedTasksGroupView(
+            items: items,
+            categoryColor: viewModel.selectedCategory?.color ?? .blue,
+            isSelectionMode: viewModel.isSelectionMode,
+            selectedTasks: $viewModel.selectedTasks,
+            onToggle: { taskId in
+                viewModel.presenter?.toggleItem(id: taskId)
+            },
+            onEdit: { item in
+                viewModel.editingItem = item
+            },
+            onDelete: { taskId in
+                viewModel.presenter?.deleteItem(id: taskId)
+            },
+            onShare: { taskId in
+                viewModel.presenter?.shareItem(id: taskId)
+            }
+        )
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
+    
+    private func regularTasksView(items: [ToDoItem]) -> some View {
+        ForEach(items) { item in
+            TaskRow(
+                item: item,
+                onToggle: {
+                    viewModel.presenter?.toggleItem(id: item.id)
+                },
+                onEdit: {
+                    viewModel.editingItem = item
+                },
+                onDelete: {
+                    viewModel.presenter?.deleteItem(id: item.id)
+                },
+                onShare: {
+                    viewModel.presenter?.shareItem(id: item.id)
+                },
+                categoryColor: viewModel.selectedCategory?.color ?? .blue,
+                isSelectionMode: viewModel.isSelectionMode,
+                isInArchiveMode: viewModel.showCompletedTasksOnly,
+                selectedTasks: $viewModel.selectedTasks
+            )
+            .padding(.trailing, 5)
+            .listRowBackground(taskRowBackground(for: item))
+            .contentShape(Rectangle())
+            .onTapGesture {
+                generateHapticFeedback()
+                if viewModel.isSelectionMode {
+                    viewModel.toggleTaskSelection(taskId: item.id)
+                } else {
+                    viewModel.presenter?.toggleItem(id: item.id)
+                }
+            }
+            .listRowSeparator(.hidden)
+        }
+    }
+    
+    private func taskRowBackground(for item: ToDoItem) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(backgroundFillColor)
+                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+            
+            if item.priority != .none {
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
+                    .opacity(priorityOpacity(for: item))
+            }
+        }
+        .padding(.vertical, 5)
+        .padding(.horizontal, 12)
+    }
+    
+    private var backgroundFillColor: Color {
+        themeManager.isDarkMode 
+            ? Color(red: 0.18, green: 0.18, blue: 0.18) 
+            : Color(red: 0.9, green: 0.9, blue: 0.9)
+    }
+    
+    private func priorityOpacity(for item: ToDoItem) -> Double {
+        item.isCompleted && !viewModel.isSelectionMode && !viewModel.showCompletedTasksOnly ? 0.5 : 1.0
+    }
+    
+    private var newTaskSection: some View {
+        Group {
+            if isAddingNewTask {
+                NewTaskInput(
+                    newTaskTitle: $newTaskTitle,
+                    isNewTaskFocused: _isNewTaskFocused,
+                    selectedPriority: $newTaskPriority,
+                    onSave: {
+                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                        resetNewTask()
                     }
+                )
+                .id("new_task_input")
+            }
+        }
+    }
+    
+    private var bottomSpacer: some View {
+        Color.clear
+            .frame(height: 160)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+    }
+    
+    private var overlayViews: some View {
+        Group {
+            if viewModel.showCompletedTasksOnly {
+                VStack {
+                    ArchiveView()
+                    Spacer()
                 }
             }
             
-            .scrollContentBackground(.hidden)
-            .actionSheet(isPresented: $showingPrioritySheet) {
-                ActionSheet(
-                    title: Text("Выберите приоритет"),
-                    message: Text("Установить приоритет для выбранных задач"),
-                    buttons: [
-                        .default(Text("Высокий")) { 
-                            viewModel.setPriorityForSelectedTasks(.high) 
-                        },
-                        .default(Text("Средний")) { 
-                            viewModel.setPriorityForSelectedTasks(.medium) 
-                        },
-                        .default(Text("Низкий")) { 
-                            viewModel.setPriorityForSelectedTasks(.low) 
-                        },
-                        .default(Text("Нет")) { 
-                            viewModel.setPriorityForSelectedTasks(.none) 
-                        },
-                        .cancel(Text("Отмена"))
-                    ]
-                )
+            if isAddingNewTask {
+                newTaskOverlay
             }
-        }
-        
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-            isKeyboardVisible = true
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            isKeyboardVisible = false
-        }
-        
-        .onChange(of: isSearchActive) { oldValue, newValue in
-            NotificationCenter.default.post(
-                name: NSNotification.Name("SearchActiveStateChanged"),
-                object: nil,
-                userInfo: ["isActive": newValue]
-            )
-        }
-        .onChange(of: isAddingNewTask) { oldValue, newValue in
-            NotificationCenter.default.post(
-                name: NSNotification.Name("AddingTaskStateChanged"),
-                object: nil,
-                userInfo: ["isAddingTask": newValue]
-            )
-        }
-        .onChange(of: selectedDate) { oldValue, newValue in
-            viewModel.selectedDate = newValue
-            viewModel.refreshData()
-        }
-        .onChange(of: calendarState.isWeekCalendarVisible) { oldValue, newValue in
-            print("isWeekCalendarVisible изменилось: \(oldValue) -> \(newValue)")
-            withAnimation {
-                // Можно добавить принудительное обновление
-            }
-        }
-        .onChange(of: calendarState.isMonthCalendarVisible) { oldValue, newValue in
-            withAnimation {
-                // Дополнительная логика обновления при необходимости
-            }
-        }
-        // Добавляем модальный календарь для выбора даты переноса задач
-        .sheet(isPresented: $showingDatePicker) {
-            TransferTaskView(
-                selectedDate: $selectedTargetDate,
-                isPresented: $showingDatePicker,
-                selectedTasksCount: viewModel.selectedTasks.count,
-                onMoveTasksToDate: { date in
-                    viewModel.moveSelectedTasksToDate(date)
-                }
-            )
         }
     }
+    
+    private var newTaskOverlay: some View {
+        VStack {
+            Spacer().frame(height: UIScreen.main.bounds.height * 0.32)
+            
+            PrioritySelectionView(
+                selectedPriority: $newTaskPriority,
+                onSave: {
+                    showPrioritySelection = false
+                    if !newTaskTitle.isEmpty {
+                        viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                        resetNewTask()
+                    }
+                },
+                onCancel: {
+                    showPrioritySelection = false
+                }
+            )
+            .transition(.scale)
+            .padding(.bottom, 20)
+        }
+    }
+    
+    private var bottomBarContainer: some View {
+        Group {
+            if !isSearchActive && !isKeyboardVisible && !isAddingNewTask {
+                VStack {
+                    Spacer()
+                    bottomBarView
+                        .transition(AnyTransition.opacity.animation(.easeInOut(duration: 2.2)))
+                        .padding(.bottom, 60)
+                }
+            }
+        }
+    }
+    
+    private var bottomBarView: some View {
+        BottomBar(
+            onAddTap: {
+                if let selectedCategory = selectedCategory {
+                    viewModel.selectedCategory = selectedCategory
+                }
+                isAddingNewTask = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isNewTaskFocused = true
+                }
+            },
+            isSelectionMode: $viewModel.isSelectionMode,
+            selectedTasks: $viewModel.selectedTasks,
+            onDeleteSelectedTasks: {
+                viewModel.deleteSelectedTasks()
+            },
+            onChangePriorityForSelectedTasks: {
+                showingPrioritySheet = true
+            },
+            onArchiveTapped: {
+                generateHapticFeedback()
+                viewModel.showCompletedTasksOnly.toggle()
+            },
+            onUnarchiveSelectedTasks: {
+                viewModel.unarchiveSelectedTasks()
+            },
+            showCompletedTasksOnly: $viewModel.showCompletedTasksOnly,
+            onFlagSelectedTasks: {
+                selectedDeadlineDate = Date()
+                showingDeadlinePicker = true
+            },
+            onCalendarSelectedTasks: {
+                selectedTargetDate = Date()
+                showingDatePicker = true
+            }
+        )
+    }
+    
+    private var priorityActionSheet: ActionSheet {
+        ActionSheet(
+            title: Text("Выберите приоритет"),
+            message: Text("Установить приоритет для выбранных задач"),
+            buttons: [
+                .default(Text("Высокий")) { 
+                    viewModel.setPriorityForSelectedTasks(.high) 
+                },
+                .default(Text("Средний")) { 
+                    viewModel.setPriorityForSelectedTasks(.medium) 
+                },
+                .default(Text("Низкий")) { 
+                    viewModel.setPriorityForSelectedTasks(.low) 
+                },
+                .default(Text("Нет")) { 
+                    viewModel.setPriorityForSelectedTasks(.none) 
+                },
+                .cancel(Text("Отмена"))
+            ]
+        )
+    }
+    
+    private var transferTaskSheet: some View {
+        TransferTaskView(
+            selectedDate: $selectedTargetDate,
+            isPresented: $showingDatePicker,
+            selectedTasksCount: viewModel.selectedTasks.count,
+            onMoveTasksToDate: { date in
+                viewModel.moveSelectedTasksToDate(date)
+            }
+        )
+    }
+    
+    private var deadlineTaskSheet: some View {
+        DeadlineForTaskView(
+            selectedDate: $selectedDeadlineDate,
+            isPresented: $showingDeadlinePicker,
+            selectedTasksCount: viewModel.selectedTasks.count,
+            onSetDeadlineForTasks: { date in
+                // Пока что просто переносим задачи на эту дату
+                // В будущем можно добавить поле deadline в модель задачи
+                viewModel.moveSelectedTasksToDate(date)
+            }
+        )
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func setupInitialState() {
+        if let selectedCategory = selectedCategory {
+            viewModel.selectedCategory = selectedCategory
+        }
+        viewModel.refreshData()
+    }
+    
+    private func resetNewTask() {
+        newTaskTitle = ""
+        newTaskPriority = .none
+        isAddingNewTask = false
+        isNewTaskFocused = false
+    }
 }
-
 
 #Preview {
     TaskListView(viewModel: ListViewModel(), selectedCategory: nil, selectedDate: .constant(Date()))
