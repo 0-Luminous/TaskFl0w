@@ -360,54 +360,14 @@ struct TaskListView: View {
         }
         // Добавляем модальный календарь для выбора даты переноса задач
         .sheet(isPresented: $showingDatePicker) {
-            NavigationView {
-                VStack(spacing: 20) {
-                    Text("Выберите дату для переноса задач")
-                        .font(.headline)
-                        .padding(.top)
-                    
-                    MonthCalendarView(
-                        selectedDate: $selectedTargetDate,
-                        onHideCalendar: {
-                            showingDatePicker = false
-                        }
-                    )
-                    .frame(maxWidth: .infinity)
-                    // .padding(.horizontal, 5)
-                    
-                    HStack(spacing: 20) {
-                        Button("Отмена") {
-                            showingDatePicker = false
-                        }
-                        .foregroundColor(.red)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(themeManager.isDarkMode ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.9, green: 0.9, blue: 0.9))
-                        )
-                        
-                        Button("Перенести") {
-                            generateHapticFeedback()
-                            viewModel.moveSelectedTasksToDate(selectedTargetDate)
-                            showingDatePicker = false
-                        }
-                        .foregroundColor(.blue)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(themeManager.isDarkMode ? Color(red: 0.2, green: 0.2, blue: 0.2) : Color(red: 0.9, green: 0.9, blue: 0.9))
-                        )
-                        .disabled(viewModel.selectedTasks.isEmpty)
-                        .opacity(viewModel.selectedTasks.isEmpty ? 0.5 : 1.0)
-                    }
-                    .padding()
-                    
-                    Spacer()
+            TransferTaskView(
+                selectedDate: $selectedTargetDate,
+                isPresented: $showingDatePicker,
+                selectedTasksCount: viewModel.selectedTasks.count,
+                onMoveTasksToDate: { date in
+                    viewModel.moveSelectedTasksToDate(date)
                 }
-                .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95))
-                .navigationBarHidden(true)
-            }
-            .presentationDetents([.large])
+            )
         }
     }
 }

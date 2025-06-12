@@ -31,11 +31,15 @@ struct MonthCalendarView: View {
     // Добавьте переменную состояния для управления прозрачностью
     @State private var opacity: Double = 1.0
     
+    // Добавляем параметр для отключения свайпа
+    let isSwipeToHideEnabled: Bool
+    
     // Инициализатор для установки начального значения visibleMonth
-    init(selectedDate: Binding<Date>, onHideCalendar: (() -> Void)? = nil) {
+    init(selectedDate: Binding<Date>, onHideCalendar: (() -> Void)? = nil, isSwipeToHideEnabled: Bool = true) {
         self._selectedDate = selectedDate
         self.onHideCalendar = onHideCalendar
         self._visibleMonth = State(initialValue: selectedDate.wrappedValue)
+        self.isSwipeToHideEnabled = isSwipeToHideEnabled
     }
     
     var body: some View {
@@ -86,28 +90,32 @@ struct MonthCalendarView: View {
         .padding(.horizontal, 10)
         .offset(y: monthCalendarOffset)
         .opacity(opacity)
+        // Условно добавляем жест только если свайп включен
         .gesture(
-            DragGesture()
-                .onChanged { value in
-                    if value.translation.height < 0 {
-                        // Позволяем перемещать календарь вверх при свайпе
-                        monthCalendarOffset = value.translation.height
-                    }
-                }
-                .onEnded { value in
-                    // Если свайп вверх достаточно сильный или достигает половины высоты - скрываем календарь
-                    // Добавляем проверку на "половину пути"
-                    let halfwayPoint: CGFloat = -100 // Примерная половина высоты календаря
-                    
-                    if value.translation.height < -20 || (value.translation.height < 0 && value.predictedEndTranslation.height < halfwayPoint) {
-                        hideCalendar()
-                    } else {
-                        // Возвращаем в исходное положение
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            monthCalendarOffset = 0
+            isSwipeToHideEnabled ? 
+            AnyGesture(
+                DragGesture()
+                    .onChanged { value in
+                        if value.translation.height < 0 {
+                            // Позволяем перемещать календарь вверх при свайпе
+                            monthCalendarOffset = value.translation.height
                         }
                     }
-                }
+                    .onEnded { value in
+                        // Если свайп вверх достаточно сильный или достигает половины высоты - скрываем календарь
+                        // Добавляем проверку на "половину пути"
+                        let halfwayPoint: CGFloat = -100 // Примерная половина высоты календаря
+                        
+                        if value.translation.height < -20 || (value.translation.height < 0 && value.predictedEndTranslation.height < halfwayPoint) {
+                            hideCalendar()
+                        } else {
+                            // Возвращаем в исходное положение
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                monthCalendarOffset = 0
+                            }
+                        }
+                    }
+            ) : nil
         )
         .onChange(of: selectedDate) { _, newValue in
             visibleMonth = newValue
