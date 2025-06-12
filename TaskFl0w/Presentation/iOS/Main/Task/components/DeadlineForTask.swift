@@ -22,6 +22,9 @@ struct DeadlineForTaskView: View {
     @State private var hasReminder = false
     @State private var selectedReminderOption = "нет"
     
+    // Добавляем локальное состояние для отслеживания установленного deadline
+    @State private var currentDeadline: Date?
+    
     // Варианты времени для напоминания заранее
     private let reminderOptions = [
         "нет", "за 5 минут", "за 10 минут", "за 15 минут", "за 20 минут", 
@@ -116,8 +119,8 @@ struct DeadlineForTaskView: View {
                                 )
                                 .multilineTextAlignment(.center)
                             
-                            // Добавляем информацию о текущем deadline
-                            if let deadline = existingDeadline {
+                            // Обновляем отображение информации о deadline
+                            if let deadline = currentDeadline ?? existingDeadline {
                                 HStack(spacing: 6) {
                                     Image(systemName: "clock.fill")
                                         .font(.system(size: 14, weight: .medium))
@@ -351,8 +354,8 @@ struct DeadlineForTaskView: View {
                                             // Здесь в будущем можно добавить логику создания локального уведомления
                                         }
                                         
-                                        // Сохраняем deadline
-                                        onSetDeadlineForTasks(baseDate)
+                                        // Обновляем локальное состояние для показа информации о deadline
+                                        currentDeadline = baseDate
                                         
                                         // Обновляем selectedDate чтобы календарь показывал установленную дату
                                         selectedDate = baseDate
@@ -443,8 +446,20 @@ struct DeadlineForTaskView: View {
                             // Кнопка установки deadline без напоминания
                             Button {
                                 generateHapticFeedback(style: .medium)
-                                // Используем только выбранную дату без времени (00:00)
-                                let finalDate = selectedDate
+                                
+                                // Определяем финальную дату в зависимости от того, было ли установлено время
+                                let finalDate: Date
+                                if let current = currentDeadline {
+                                    // Если время было установлено через напоминание, используем его
+                                    finalDate = current
+                                } else {
+                                    // Иначе используем только выбранную дату без времени (00:00)
+                                    finalDate = selectedDate
+                                }
+                                
+                                // Обновляем локальное состояние для показа информации о deadline
+                                currentDeadline = finalDate
+                                
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     onSetDeadlineForTasks(finalDate)
                                     isPresented = false
@@ -505,6 +520,9 @@ struct DeadlineForTaskView: View {
                 withAnimation(.easeOut(duration: 0.4)) {
                     showingContent = true
                 }
+                
+                // Инициализируем currentDeadline
+                currentDeadline = existingDeadline
                 
                 // Если есть существующий deadline, устанавливаем время от него
                 if let existingDeadline = existingDeadline {
