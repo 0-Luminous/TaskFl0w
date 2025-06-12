@@ -52,6 +52,7 @@ struct ToDoTaskRow: View {
     
     private var taskContent: some View {
         VStack(alignment: .leading, spacing: 4) {
+            // Название задачи
             Text(task.title)
                 .font(.subheadline)
                 .fontWeight(.medium)
@@ -59,6 +60,20 @@ struct ToDoTaskRow: View {
                 .strikethrough(task.isCompleted)
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
+            
+            // Крайний срок, если установлен
+            if let deadline = task.deadline {
+                HStack(spacing: 4) {
+                    Image(systemName: "flag.fill")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(deadlineColor(for: deadline))
+                    
+                    Text(formatDeadline(deadline))
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(deadlineColor(for: deadline))
+                }
+                .opacity(task.isCompleted ? 0.5 : 1.0)
+            }
         }
     }
     
@@ -102,6 +117,100 @@ struct ToDoTaskRow: View {
         }
     }
     
+    // MARK: - Deadline Functions
+    
+    // Форматирование даты крайнего срока (адаптированно для timeline)
+    private func formatDeadline(_ deadline: Date) -> String {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Проверяем, установлено ли конкретное время (не 00:00)
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: deadline)
+        let hasSpecificTime = timeComponents.hour != 0 || timeComponents.minute != 0
+        
+        // Проверяем, сегодня ли deadline
+        if calendar.isDateInToday(deadline) {
+            if hasSpecificTime {
+                let timeFormatter = DateFormatter()
+                timeFormatter.timeStyle = .short
+                return timeFormatter.string(from: deadline)
+            } else {
+                return "сегодня"
+            }
+        }
+        
+        // Проверяем, завтра ли deadline
+        if calendar.isDateInTomorrow(deadline) {
+            if hasSpecificTime {
+                let timeFormatter = DateFormatter()
+                timeFormatter.timeStyle = .short
+                return "завтра \(timeFormatter.string(from: deadline))"
+            } else {
+                return "завтра"
+            }
+        }
+        
+        // Проверяем, на этой неделе ли deadline
+        let weekOfYear = calendar.component(.weekOfYear, from: now)
+        let deadlineWeek = calendar.component(.weekOfYear, from: deadline)
+        let year = calendar.component(.year, from: now)
+        let deadlineYear = calendar.component(.year, from: deadline)
+        
+        if weekOfYear == deadlineWeek && year == deadlineYear {
+            let weekdayFormatter = DateFormatter()
+            weekdayFormatter.dateFormat = "EEE"
+            
+            if hasSpecificTime {
+                let timeFormatter = DateFormatter()
+                timeFormatter.timeStyle = .short
+                return "\(weekdayFormatter.string(from: deadline)) \(timeFormatter.string(from: deadline))"
+            } else {
+                return weekdayFormatter.string(from: deadline)
+            }
+        }
+        
+        // Обычное форматирование для более отдаленных дат (короткий формат для timeline)
+        if hasSpecificTime {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateStyle = .short
+            dateFormatter.timeStyle = .short
+            return dateFormatter.string(from: deadline)
+        } else {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateStyle = .short
+            return dateFormatter.string(from: deadline)
+        }
+    }
+    
+    // Цвет для отображения deadline в зависимости от срочности
+    private func deadlineColor(for deadline: Date) -> Color {
+        let now = Date()
+        let timeInterval = deadline.timeIntervalSince(now)
+        
+        // Прошедший deadline - красный
+        if timeInterval < 0 {
+            return .red
+        }
+        
+        // Меньше часа - красный
+        if timeInterval < 3600 {
+            return .red
+        }
+        
+        // Меньше 6 часов - оранжевый
+        if timeInterval < 21600 {
+            return .orange
+        }
+        
+        // Меньше дня - желтый
+        if timeInterval < 86400 {
+            return .yellow
+        }
+        
+        // Обычный цвет для дальних deadline
+        return themeManager.isDarkMode ? .white.opacity(0.7) : .secondary
+    }
+    
     // MARK: - Private Methods
     
     private func handleTap() {
@@ -112,5 +221,12 @@ struct ToDoTaskRow: View {
 }
 
 #Preview {
-    ToDoTaskRow(task: ToDoItem(title: "Test", priority: .high), categoryColor: .red)
+    ToDoTaskRow(
+        task: ToDoItem(
+            title: "Test task with deadline", 
+            priority: .high, 
+            deadline: Date().addingTimeInterval(3600) // Deadline через час
+        ), 
+        categoryColor: .red
+    )
 }

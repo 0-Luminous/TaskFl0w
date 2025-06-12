@@ -241,6 +241,8 @@ struct TopBarView: View {
                 categoryManagement: viewModel.categoryManagement
             )
             .onAppear {
+                // Принудительно обновляем данные при открытии поиска
+                listViewModel.refreshData()
                 listViewModel.onViewDidLoad()
             }
         }

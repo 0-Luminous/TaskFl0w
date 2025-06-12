@@ -101,5 +101,9 @@ class ToDoPresenter: ToDoPresenterProtocol {
 
     func setDeadlineForTask(id: UUID, deadline: Date) {
         interactor?.setDeadlineForTask(id: id, deadline: deadline)
+        // Добавляем принудительное обновление с небольшой задержкой
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.refreshItems()
+        }
     }
 }

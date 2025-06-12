@@ -292,8 +292,9 @@ class ToDoInteractor: ToDoInteractorProtocol {
         taskDeadlines[id] = deadline
         
         print("✅ Deadline установлен в памяти успешно")
-        // Обновляем UI
-        presenter?.didChangePriority()
+        
+        // ВАЖНО: сразу обновляем список, чтобы UI получил новые данные
+        fetchItems()
     }
 
     // Вспомогательный метод для сохранения контекста

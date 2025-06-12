@@ -65,46 +65,51 @@ struct BottomBar: View {
                 } else {
                     HStack(spacing: 16) {
 
-                        ZStack {
-                            Color.clear
-                            calendarButton     
-                        }
-                    
-                        ZStack {
-                            Color.clear
-                            flagButton
-                        }
-
-                        // ZStack {
-                        //     Color.clear
-                        //     checklistButton
-                        // }
+                        if !showCompletedTasksOnly {
+                            ZStack {
+                                Color.clear
+                                calendarButton     
+                            }
                         
-                        ZStack {
-                            Color.clear
-                            exitSelectionModeButton
-                        }
+                            ZStack {
+                                Color.clear
+                                flagButton
+                            }
+                            
+                            ZStack {
+                                Color.clear
+                                exitSelectionModeButton
+                            }
 
-                        ZStack {
-                            Color.clear
-                            if showCompletedTasksOnly {
-                                unarchiveButton
-                            } else {
+                            ZStack {
+                                Color.clear
                                 deleteButton
                             }
-                        }
 
-                        ZStack {
-                            Color.clear
-                            if showCompletedTasksOnly {
-                                archiveActionButton
-                            } else {
+                            ZStack {
+                                Color.clear
                                 priorityButton
+                            }
+                        } else {
+                            // Режим архива - кнопка архива слева
+                            ZStack {
+                                Color.clear
+                                archiveActionButton
+                            }
+                            
+                            ZStack {
+                                Color.clear
+                                exitSelectionModeButton
+                            }
+
+                            ZStack {
+                                Color.clear
+                                unarchiveButton
                             }
                         }
                         
                     }
-                    .frame(width: 308)
+                    .frame(width: showCompletedTasksOnly ? 180 : 308)
                 }
                 
                 Spacer()
@@ -112,7 +117,7 @@ struct BottomBar: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 8)
             .frame(height: 52)
-            .frame(maxWidth: isSelectionMode ? 340 : 220)
+            .frame(maxWidth: isSelectionMode ? (showCompletedTasksOnly ? 240 : 340) : 220)
             .background {
                 ZStack {
                     // Размытый фон
@@ -148,8 +153,8 @@ struct BottomBar: View {
             feedbackGenerator.impactOccurred()
             onArchiveTapped()
         }) {
-            toolbarIcon(systemName: "archivebox", 
-                        color: themeManager.isDarkMode ? showCompletedTasksOnly ? .coral1 : .gray : showCompletedTasksOnly ? .red1 : .black)
+            toolbarIcon(systemName: showCompletedTasksOnly ? "archivebox.fill" : "archivebox", 
+                        color: themeManager.isDarkMode ? showCompletedTasksOnly ? .white : .gray : showCompletedTasksOnly ? .black : .gray)
         }
     }
     
@@ -158,7 +163,7 @@ struct BottomBar: View {
             feedbackGenerator.impactOccurred()
             toggleSelectionMode()
         }) {
-            toolbarIcon(systemName: "checkmark.circle", color: themeManager.isDarkMode ? .gray : .black)
+            toolbarIcon(systemName: "checkmark.circle", color: .gray)
         }
     }
     
@@ -207,7 +212,7 @@ struct BottomBar: View {
             feedbackGenerator.impactOccurred()
             toggleSelectionMode()
         }) {
-            toolbarIcon(systemName: "checkmark.circle", color: themeManager.isDarkMode ? .coral1 : .red1)
+            toolbarIcon(systemName: "checkmark.circle.fill", color: themeManager.isDarkMode ? .white : .black)
         }
         .frame(width: 38, height: 38)
     }
@@ -231,7 +236,7 @@ struct BottomBar: View {
             onArchiveTapped()
             toggleSelectionMode()
         }) {
-            toolbarIcon(systemName: "archivebox", color: themeManager.isDarkMode ? .coral1 : .red1)
+            toolbarIcon(systemName: "archivebox.fill", color: themeManager.isDarkMode ? .white : .black)
         }
     }
     
@@ -242,7 +247,7 @@ struct BottomBar: View {
                 onAddTap()
             }
         }) {
-            toolbarIcon(systemName: "plus", color: themeManager.isDarkMode ? showCompletedTasksOnly ? .gray : .coral1 : showCompletedTasksOnly ? .gray : .red1)
+            toolbarIcon(systemName: "plus", color: themeManager.isDarkMode ? showCompletedTasksOnly ? .gray : .white : showCompletedTasksOnly ? .gray : .black)
         }
         .frame(width: 38, height: 38)
         .disabled(showCompletedTasksOnly)
@@ -257,7 +262,14 @@ struct BottomBar: View {
                 onFlagSelectedTasks()
             }
         }) {
-            toolbarIcon(systemName: "flag.fill", color: .purple)
+            toolbarIconWithGradient(
+                systemName: "flag.fill", 
+                gradient: LinearGradient(
+                    gradient: Gradient(colors: [.red, .orange]), 
+                    startPoint: .topLeading, 
+                    endPoint: .bottomTrailing
+                )
+            )
         }
         .frame(width: 38, height: 38)
         .disabled(selectedTasks.isEmpty)
@@ -285,7 +297,14 @@ struct BottomBar: View {
                 onCalendarSelectedTasks()
             }
         }) {
-            toolbarIcon(systemName: "calendar", color: .blue)
+            toolbarIconWithGradient(
+                systemName: "calendar", 
+                gradient: LinearGradient(
+                    gradient: Gradient(colors: [.blue, .purple]), 
+                    startPoint: .topLeading, 
+                    endPoint: .bottomTrailing
+                )
+            )
         }
         .frame(width: 38, height: 38)
         .disabled(selectedTasks.isEmpty)
@@ -346,4 +365,29 @@ struct BottomBar: View {
             )
             .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
     }
+    
+    // Новая версия toolbarIcon для градиентов
+    private func toolbarIconWithGradient(systemName: String, gradient: LinearGradient) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 20))
+            .foregroundStyle(gradient)
+            .padding(6)
+            .background(
+                Circle()
+                    .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
+            )
+            .overlay(
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1.0
+                    )
+            )
+            .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+    }
 }
+
