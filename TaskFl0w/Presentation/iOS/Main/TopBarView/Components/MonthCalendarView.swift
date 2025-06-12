@@ -11,6 +11,7 @@ import UIKit
 // Компонент для отображения месячного календаря
 struct MonthCalendarView: View {
     @Binding var selectedDate: Date
+    let deadlineDate: Date?
     private let calendar = Calendar.current
     @State private var monthStartDate = Date()
     @State private var currentMonthIndex = 0
@@ -35,8 +36,9 @@ struct MonthCalendarView: View {
     let isSwipeToHideEnabled: Bool
     
     // Инициализатор для установки начального значения visibleMonth
-    init(selectedDate: Binding<Date>, onHideCalendar: (() -> Void)? = nil, isSwipeToHideEnabled: Bool = true) {
+    init(selectedDate: Binding<Date>, deadlineDate: Date? = nil, onHideCalendar: (() -> Void)? = nil, isSwipeToHideEnabled: Bool = true) {
         self._selectedDate = selectedDate
+        self.deadlineDate = deadlineDate
         self.onHideCalendar = onHideCalendar
         self._visibleMonth = State(initialValue: selectedDate.wrappedValue)
         self.isSwipeToHideEnabled = isSwipeToHideEnabled
@@ -138,6 +140,7 @@ struct MonthCalendarView: View {
                             monthIndex: monthIndex,
                             baseDate: monthStartDate,
                             selectedDate: $selectedDate,
+                            deadlineDate: deadlineDate,
                             onDateSelected: { date in
                                 withAnimation(.spring(response: 0.3)) {
                                     selectedDate = date
@@ -213,6 +216,7 @@ struct MonthGrid: View {
     let monthIndex: Int
     let baseDate: Date
     @Binding var selectedDate: Date
+    let deadlineDate: Date?
     let onDateSelected: (Date) -> Void
     let onVisibleMonthChanged: (Date) -> Void
 
@@ -243,22 +247,43 @@ struct MonthGrid: View {
                 ForEach(0..<daysInMonth.count, id: \.self) { index in
                     let day = daysInMonth[index]
                     if day.belongsToMonth {
-                        // Модифицируем ячейку, чтобы она содержала только число
+                        // Модифицируем ячейку, чтобы показать даты до deadline
                         ZStack {
+                            // Основной фон ячейки
                             Circle()
-                                .fill(calendar.isDate(day.date, inSameDayAs: selectedDate) ? 
-                                      Color.blue : 
-                                      themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.9, green: 0.9, blue: 0.9))
+                                .fill(backgroundColorForDate(day.date))
                                 .frame(width: 36, height: 36)
-                                .shadow(color: calendar.isDate(day.date, inSameDayAs: selectedDate) ? 
-                                        Color.blue.opacity(0.5) : 
-                                        Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+                                .shadow(color: shadowColorForDate(day.date), radius: 2, x: 0, y: 1)
+                            
+                            // Специальный градиентный фон для выбранной даты в режиме deadline
+                            if calendar.isDate(day.date, inSameDayAs: selectedDate) && deadlineDate != nil {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                Color.red.opacity(0.8),
+                                                Color.orange.opacity(0.6)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 36, height: 36)
+                                    .shadow(color: Color.red.opacity(0.4), radius: 4, x: 0, y: 2)
+                            }
                             
                             // Дополнительный круг для сегодняшнего дня
                             if Calendar.current.isDateInToday(day.date) && !calendar.isDate(day.date, inSameDayAs: selectedDate) {
                                 Circle()
                                     .stroke(Color.blue, lineWidth: 1.5)
                                     .frame(width: 36, height: 36)
+                            }
+                            
+                            // Дополнительная визуализация для deadline
+                            if let deadline = deadlineDate, calendar.isDate(day.date, inSameDayAs: deadline) && !calendar.isDate(day.date, inSameDayAs: selectedDate) {
+                                Circle()
+                                    .stroke(Color.red, lineWidth: 2)
+                                    .frame(width: 38, height: 38)
                             }
                             
                             // Число
@@ -268,10 +293,17 @@ struct MonthGrid: View {
                         }
                         .frame(width: 38, height: 38)
                         .onTapGesture {
-                            // Виброотдача при нажатии
-                            let impactMed = UIImpactFeedbackGenerator(style: .medium)
-                            impactMed.impactOccurred()
-                            onDateSelected(day.date)
+                            // Проверяем, можно ли выбрать дату
+                            if canSelectDate(day.date) {
+                                // Виброотдача при нажатии
+                                let impactMed = UIImpactFeedbackGenerator(style: .medium)
+                                impactMed.impactOccurred()
+                                onDateSelected(day.date)
+                            } else {
+                                // Легкая виброотдача для индикации невозможности выбора
+                                let impactLight = UIImpactFeedbackGenerator(style: .light)
+                                impactLight.impactOccurred()
+                            }
                         }
                     } else {
                         // Пустая ячейка для дней не из текущего месяца
@@ -339,10 +371,95 @@ struct MonthGrid: View {
         ]
     }
     
+    private func backgroundColorForDate(_ date: Date) -> Color {
+        let today = Date()
+        let startOfToday = calendar.startOfDay(for: today)
+        let startOfDate = calendar.startOfDay(for: date)
+        
+        // Прошедшие даты - полупрозрачный фон
+        if startOfDate < startOfToday {
+            return (themeManager.isDarkMode 
+                ? Color(red: 0.098, green: 0.098, blue: 0.098) 
+                : Color(red: 0.9, green: 0.9, blue: 0.9)).opacity(0.3)
+        }
+        
+        // Выбранная дата - используем разные цвета в зависимости от контекста
+        if calendar.isDate(date, inSameDayAs: selectedDate) {
+            // Если это календарь для deadline (deadlineDate передан), используем красно-оранжевый градиент
+            if deadlineDate != nil {
+                return Color.clear // Возвращаем прозрачный, так как градиент будет в ZStack
+            } else {
+                return Color.blue // Обычный синий для других календарей
+            }
+        }
+        
+        // Даты в диапазоне от сегодня до deadline
+        if let deadline = deadlineDate {
+            let startOfDeadline = calendar.startOfDay(for: deadline)
+            
+            // Проверяем, находится ли дата в диапазоне от сегодня до deadline (включительно)
+            if startOfDate >= startOfToday && startOfDate <= startOfDeadline {
+                return themeManager.isDarkMode 
+                    ? Color.red.opacity(0.3) 
+                    : Color.red.opacity(0.2)
+            }
+        }
+        
+        // Обычный фон
+        return themeManager.isDarkMode 
+            ? Color(red: 0.098, green: 0.098, blue: 0.098) 
+            : Color(red: 0.9, green: 0.9, blue: 0.9)
+    }
+    
+    private func shadowColorForDate(_ date: Date) -> Color {
+        let today = Date()
+        let startOfToday = calendar.startOfDay(for: today)
+        let startOfDate = calendar.startOfDay(for: date)
+        
+        // Прошедшие даты - полупрозрачная тень
+        if startOfDate < startOfToday {
+            return Color.black.opacity(0.1)
+        }
+        
+        if calendar.isDate(date, inSameDayAs: selectedDate) {
+            return deadlineDate != nil ? Color.red.opacity(0.5) : Color.blue.opacity(0.5)
+        }
+        
+        // Тень для дат в диапазоне от сегодня до deadline
+        if let deadline = deadlineDate {
+            let startOfDeadline = calendar.startOfDay(for: deadline)
+            
+            if startOfDate >= startOfToday && startOfDate <= startOfDeadline {
+                return Color.red.opacity(0.3)
+            }
+        }
+        
+        return Color.black.opacity(0.2)
+    }
+    
     private func textColorForDate(_ date: Date, isSelected: Bool) -> Color {
+        let today = Date()
+        let startOfToday = calendar.startOfDay(for: today)
+        let startOfDate = calendar.startOfDay(for: date)
+        
+        // Прошедшие даты - полупрозрачный текст
+        if startOfDate < startOfToday {
+            let baseColor = themeManager.isDarkMode ? Color.white : Color.black
+            return baseColor.opacity(0.3)
+        }
+        
         // Выбранная ячейка имеет белый текст (для контраста с синим фоном)
         if isSelected {
             return .white
+        }
+        
+        // Для дат в диапазоне от сегодня до deadline используем белый текст для лучшего контраста
+        if let deadline = deadlineDate {
+            let startOfDeadline = calendar.startOfDay(for: deadline)
+            
+            if startOfDate >= startOfToday && startOfDate <= startOfDeadline {
+                return .white
+            }
         }
         
         // Проверяем, является ли день выходным
@@ -356,6 +473,15 @@ struct MonthGrid: View {
             // Для будних дней используем белый цвет
             return themeManager.isDarkMode ? .white : .black
         }
+    }
+    
+    private func canSelectDate(_ date: Date) -> Bool {
+        let today = Date()
+        let startOfToday = calendar.startOfDay(for: today)
+        let startOfDate = calendar.startOfDay(for: date)
+        
+        // Нельзя выбирать прошедшие даты
+        return startOfDate >= startOfToday
     }
 }
 

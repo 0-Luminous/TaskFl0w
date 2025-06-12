@@ -100,6 +100,7 @@ struct DeadlineForTaskView: View {
                     if !hasReminder {
                         MonthCalendarView(
                             selectedDate: $selectedDate,
+                            deadlineDate: selectedDate,
                             onHideCalendar: {
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     isPresented = false
