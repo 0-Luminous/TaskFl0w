@@ -98,4 +98,8 @@ class ToDoPresenter: ToDoPresenterProtocol {
         interactor?.updateTaskDate(id: id, newDate: newDate)
         // Не вызываем refreshItems() здесь, так как это может привести к нежелательному поведению
     }
+
+    func setDeadlineForTask(id: UUID, deadline: Date) {
+        interactor?.setDeadlineForTask(id: id, deadline: deadline)
+    }
 }

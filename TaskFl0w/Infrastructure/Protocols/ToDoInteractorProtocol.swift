@@ -25,4 +25,7 @@ protocol ToDoInteractorProtocol: AnyObject {
 
     // Добавляем новый метод
     func updateTaskDate(id: UUID, newDate: Date)
+    
+    // Метод для установки deadline
+    func setDeadlineForTask(id: UUID, deadline: Date)
 }

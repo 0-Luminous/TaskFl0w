@@ -12,12 +12,15 @@ struct DeadlineForTaskView: View {
     @Binding var isPresented: Bool
     let selectedTasksCount: Int
     let onSetDeadlineForTasks: (Date) -> Void
+    
+    // Добавляем параметр для текущего deadline
+    let existingDeadline: Date?
 
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var showingContent = false
     @State private var selectedTime = Date()
     @State private var hasReminder = false
-    @State private var selectedReminderOption = "за 15 минут"
+    @State private var selectedReminderOption = "нет"
     
     // Варианты времени для напоминания заранее
     private let reminderOptions = [
@@ -89,6 +92,20 @@ struct DeadlineForTaskView: View {
                                         ? Color.white.opacity(0.7) : Color.secondary
                                 )
                                 .multilineTextAlignment(.center)
+                            
+                            // Добавляем информацию о текущем deadline
+                            if let deadline = existingDeadline {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "clock.fill")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.orange)
+                                    
+                                    Text("Текущий: \(formatExistingDeadline(deadline))")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(.orange)
+                                }
+                                .padding(.top, 4)
+                            }
                         }
                     }
                     .padding(.top, 30)
@@ -448,10 +465,15 @@ struct DeadlineForTaskView: View {
                 withAnimation(.easeOut(duration: 0.4)) {
                     showingContent = true
                 }
-                // Устанавливаем время по умолчанию на 9:00 для напоминания
-                let calendar = Calendar.current
-                selectedTime =
-                    calendar.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
+                
+                // Если есть существующий deadline, устанавливаем время от него
+                if let existingDeadline = existingDeadline {
+                    selectedTime = existingDeadline
+                } else {
+                    // Устанавливаем время по умолчанию на 9:00 для напоминания
+                    let calendar = Calendar.current
+                    selectedTime = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
+                }
             }
         }
         .presentationDetents([.large])
@@ -504,6 +526,26 @@ struct DeadlineForTaskView: View {
         
         return calendar.date(from: components) ?? baseDate
     }
+
+    // Обновляем метод для форматирования существующего deadline
+    private func formatExistingDeadline(_ deadline: Date) -> String {
+        let calendar = Calendar.current
+        
+        // Проверяем, установлено ли конкретное время (не 00:00)
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: deadline)
+        let hasSpecificTime = timeComponents.hour != 0 || timeComponents.minute != 0
+        
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        
+        if hasSpecificTime {
+            formatter.timeStyle = .short
+        } else {
+            formatter.timeStyle = .none
+        }
+        
+        return formatter.string(from: deadline)
+    }
 }
 
 #Preview {
@@ -511,6 +553,7 @@ struct DeadlineForTaskView: View {
         selectedDate: .constant(Date()),
         isPresented: .constant(true),
         selectedTasksCount: 5,
-        onSetDeadlineForTasks: { _ in }
+        onSetDeadlineForTasks: { _ in },
+        existingDeadline: Date() // Добавляем для preview
     )
 }

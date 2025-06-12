@@ -10,6 +10,9 @@ import Foundation
 class ToDoInteractor: ToDoInteractorProtocol {
     weak var presenter: ToDoPresenterProtocol?
     private let viewContext = PersistenceController.shared.container.viewContext
+    
+    // Временное хранение deadline в памяти до обновления CoreData модели
+    private var taskDeadlines: [UUID: Date] = [:]
 
     init() {
         // Стандартный инициализатор
@@ -26,11 +29,14 @@ class ToDoInteractor: ToDoInteractorProtocol {
         let categoryName = entity.value(forKey: "categoryName") as? String
         let priorityRaw = entity.value(forKey: "priority") as? Int ?? 0
         let priority = TaskPriority(rawValue: priorityRaw) ?? .none
+        
+        // Получаем deadline из временного хранилища
+        let deadline = taskDeadlines[id]
 
         return ToDoItem(
             id: id, title: title, date: date, 
             isCompleted: isCompleted, categoryID: categoryID, categoryName: categoryName,
-            priority: priority)
+            priority: priority, deadline: deadline)
     }
 
     func fetchItems() {
@@ -277,6 +283,17 @@ class ToDoInteractor: ToDoInteractorProtocol {
         } catch {
             print("❌ Ошибка при обновлении даты задачи: \(error)")
         }
+    }
+
+    func setDeadlineForTask(id: UUID, deadline: Date) {
+        print("⏰ Установка deadline для задачи: ID=\(id), deadline=\(deadline)")
+        
+        // Временно сохраняем deadline в памяти
+        taskDeadlines[id] = deadline
+        
+        print("✅ Deadline установлен в памяти успешно")
+        // Обновляем UI
+        presenter?.didChangePriority()
     }
 
     // Вспомогательный метод для сохранения контекста

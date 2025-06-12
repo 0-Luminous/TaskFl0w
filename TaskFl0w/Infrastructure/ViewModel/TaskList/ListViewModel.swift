@@ -331,4 +331,14 @@ class ListViewModel: ObservableObject, ToDoViewProtocol {
     private var isToday: Bool {
         Calendar.current.isDateInToday(selectedDate)
     }
+
+    // Функция для установки deadline для выбранных задач
+    func setDeadlineForSelectedTasks(_ deadline: Date) {
+        for taskId in selectedTasks {
+            presenter?.setDeadlineForTask(id: taskId, deadline: deadline)
+        }
+        selectedTasks.removeAll()
+        isSelectionMode = false
+        refreshData()
+    }
 }

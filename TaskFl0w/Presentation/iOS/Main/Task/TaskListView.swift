@@ -425,11 +425,32 @@ struct TaskListView: View {
             isPresented: $showingDeadlinePicker,
             selectedTasksCount: viewModel.selectedTasks.count,
             onSetDeadlineForTasks: { date in
-                // Пока что просто переносим задачи на эту дату
-                // В будущем можно добавить поле deadline в модель задачи
-                viewModel.moveSelectedTasksToDate(date)
-            }
+                viewModel.setDeadlineForSelectedTasks(date)
+            },
+            existingDeadline: getExistingDeadlineForSelectedTasks()
         )
+        .onAppear {
+            if let existingDeadline = getExistingDeadlineForSelectedTasks() {
+                selectedDeadlineDate = existingDeadline
+            } else {
+                selectedDeadlineDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+            }
+        }
+    }
+    
+    // Добавляем вспомогательный метод для получения существующего deadline
+    private func getExistingDeadlineForSelectedTasks() -> Date? {
+        // Получаем deadline'ы всех выбранных задач
+        let selectedTaskItems = viewModel.items.filter { viewModel.selectedTasks.contains($0.id) }
+        let deadlines = selectedTaskItems.compactMap { $0.deadline }
+        
+        // Если у всех задач одинаковый deadline, используем его
+        if !deadlines.isEmpty && deadlines.allSatisfy({ Calendar.current.isDate($0, inSameDayAs: deadlines.first!) }) {
+            return deadlines.first
+        }
+        
+        // Если deadline'ы разные или нет ни одного, возвращаем nil
+        return nil
     }
     
     // MARK: - Helper Methods

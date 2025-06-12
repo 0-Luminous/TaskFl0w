@@ -33,4 +33,7 @@ protocol ToDoPresenterProtocol: AnyObject {
     func didArchiveTasks()
 
     func updateTaskDate(id: UUID, newDate: Date)
+    
+    // Метод для установки deadline
+    func setDeadlineForTask(id: UUID, deadline: Date)
 }
