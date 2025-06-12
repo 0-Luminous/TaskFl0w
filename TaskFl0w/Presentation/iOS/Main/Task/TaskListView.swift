@@ -433,7 +433,7 @@ struct TaskListView: View {
             if let existingDeadline = getExistingDeadlineForSelectedTasks() {
                 selectedDeadlineDate = existingDeadline
             } else {
-                selectedDeadlineDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+                selectedDeadlineDate = Date()
             }
         }
     }

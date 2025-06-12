@@ -35,6 +35,29 @@ struct DeadlineForTaskView: View {
         generator.impactOccurred()
     }
 
+    // Добавляем вычисляемое свойство для диапазона времени
+    private var timePickerDateRange: ClosedRange<Date> {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Если выбранная дата - сегодня
+        if calendar.isDate(selectedDate, inSameDayAs: now) {
+            // Минимальное время - текущее время (плюс несколько минут для безопасности)
+            let minTime = calendar.date(byAdding: .minute, value: 1, to: now) ?? now
+            
+            // Максимальное время - конец дня
+            let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: selectedDate) ?? selectedDate
+            
+            return minTime...endOfDay
+        } else {
+            // Для будущих дат - можно выбирать любое время в течение дня
+            let startOfDay = calendar.date(bySettingHour: 0, minute: 0, second: 0, of: selectedDate) ?? selectedDate
+            let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: selectedDate) ?? selectedDate
+            
+            return startOfDay...endOfDay
+        }
+    }
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -193,6 +216,7 @@ struct DeadlineForTaskView: View {
                                 DatePicker(
                                     "",
                                     selection: $selectedTime,
+                                    in: timePickerDateRange,
                                     displayedComponents: .hourAndMinute
                                 )
                                 .datePickerStyle(WheelDatePickerStyle())
@@ -313,14 +337,29 @@ struct DeadlineForTaskView: View {
                                     }
                                     .buttonStyle(PlainButtonStyle())
 
-                                    // Кнопка установки
+                                    // Кнопка установки для режима напоминания
                                     Button {
                                         generateHapticFeedback(style: .medium)
+                                        // Создаем финальную дату deadline без вычитания времени напоминания
                                         let baseDate = combineDateAndTime(date: selectedDate, time: selectedTime)
-                                        let finalDate = calculateReminderDate(baseDate: baseDate, reminderOption: selectedReminderOption)
+                                        
+                                        // Если нужно настроить напоминание заранее, это должно быть отдельно
+                                        if selectedReminderOption != "нет" {
+                                            let reminderDate = calculateReminderDate(baseDate: baseDate, reminderOption: selectedReminderOption)
+                                            print("📅 Deadline установлен на: \(baseDate)")
+                                            print("⏰ Напоминание запланировано на: \(reminderDate)")
+                                            // Здесь в будущем можно добавить логику создания локального уведомления
+                                        }
+                                        
+                                        // Сохраняем deadline
+                                        onSetDeadlineForTasks(baseDate)
+                                        
+                                        // Обновляем selectedDate чтобы календарь показывал установленную дату
+                                        selectedDate = baseDate
+                                        
+                                        // Возвращаемся к календарю вместо закрытия экрана
                                         withAnimation(.easeInOut(duration: 0.3)) {
-                                            onSetDeadlineForTasks(finalDate)
-                                            isPresented = false
+                                            hasReminder = false
                                         }
                                     } label: {
                                         HStack(spacing: 8) {
@@ -401,9 +440,10 @@ struct DeadlineForTaskView: View {
                             }
                             .buttonStyle(PlainButtonStyle())
 
-                            // Кнопка установки deadline
+                            // Кнопка установки deadline без напоминания
                             Button {
                                 generateHapticFeedback(style: .medium)
+                                // Используем только выбранную дату без времени (00:00)
                                 let finalDate = selectedDate
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     onSetDeadlineForTasks(finalDate)
@@ -470,9 +510,20 @@ struct DeadlineForTaskView: View {
                 if let existingDeadline = existingDeadline {
                     selectedTime = existingDeadline
                 } else {
-                    // Устанавливаем время по умолчанию на 9:00 для напоминания
-                    let calendar = Calendar.current
-                    selectedTime = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
+                    // Устанавливаем время с учетом ограничений
+                    setDefaultTime()
+                }
+            }
+            .onChange(of: selectedDate) { _, newValue in
+                // Если время становится недоступным при новой дате, обновляем его
+                let calendar = Calendar.current
+                let now = Date()
+                
+                if calendar.isDate(newValue, inSameDayAs: now) {
+                    // Если выбрали сегодняшнюю дату и текущее время уже прошло
+                    if selectedTime <= now {
+                        selectedTime = calendar.date(byAdding: .hour, value: 1, to: now) ?? now
+                    }
                 }
             }
         }
@@ -545,6 +596,20 @@ struct DeadlineForTaskView: View {
         }
         
         return formatter.string(from: deadline)
+    }
+
+    // Добавляем метод для установки времени по умолчанию
+    private func setDefaultTime() {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        if calendar.isDate(selectedDate, inSameDayAs: now) {
+            // Для сегодняшней даты - устанавливаем время через час от текущего
+            selectedTime = calendar.date(byAdding: .hour, value: 1, to: now) ?? now
+        } else {
+            // Для будущих дат - устанавливаем 9:00
+            selectedTime = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate) ?? selectedDate
+        }
     }
 }
 
