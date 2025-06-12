@@ -6,11 +6,20 @@
 //
 
 import SwiftUI
+import UserNotifications // Добавляем импорт для уведомлений
+
+// Добавляем структуру для информации о выбранных задачах
+struct SelectedTaskInfo {
+    let id: UUID
+    let title: String
+    let priority: TaskPriority
+}
 
 struct DeadlineForTaskView: View {
     @Binding var selectedDate: Date
     @Binding var isPresented: Bool
     let selectedTasksCount: Int
+    let selectedTasks: [SelectedTaskInfo] // Добавляем информацию о задачах
     let onSetDeadlineForTasks: (Date) -> Void
     
     // Добавляем параметр для текущего deadline
@@ -24,6 +33,9 @@ struct DeadlineForTaskView: View {
     
     // Добавляем локальное состояние для отслеживания установленного deadline
     @State private var currentDeadline: Date?
+    
+    // Добавляем состояние для разрешений уведомлений
+    @State private var notificationPermissionGranted = false
     
     // Варианты времени для напоминания заранее
     private let reminderOptions = [
@@ -158,8 +170,25 @@ struct DeadlineForTaskView: View {
                     VStack(spacing: 16) {
                         Button {
                             generateHapticFeedback(style: .light)
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                hasReminder.toggle()
+                            if !hasReminder {
+                                // Запрашиваем разрешение на уведомления при первом включении
+                                requestNotificationPermission { granted in
+                                    DispatchQueue.main.async {
+                                        notificationPermissionGranted = granted
+                                        if granted {
+                                            withAnimation(.easeInOut(duration: 0.3)) {
+                                                hasReminder.toggle()
+                                            }
+                                        } else {
+                                            // Показываем alert о необходимости разрешений
+                                            showNotificationPermissionAlert()
+                                        }
+                                    }
+                                }
+                            } else {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    hasReminder.toggle()
+                                }
                             }
                         } label: {
                             HStack {
@@ -346,13 +375,8 @@ struct DeadlineForTaskView: View {
                                         // Создаем финальную дату deadline без вычитания времени напоминания
                                         let baseDate = combineDateAndTime(date: selectedDate, time: selectedTime)
                                         
-                                        // Если нужно настроить напоминание заранее, это должно быть отдельно
-                                        if selectedReminderOption != "нет" {
-                                            let reminderDate = calculateReminderDate(baseDate: baseDate, reminderOption: selectedReminderOption)
-                                            print("📅 Deadline установлен на: \(baseDate)")
-                                            print("⏰ Напоминание запланировано на: \(reminderDate)")
-                                            // Здесь в будущем можно добавить логику создания локального уведомления
-                                        }
+                                        // Создаем системное уведомление
+                                        createNotificationForDeadline(baseDate: baseDate, reminderOption: selectedReminderOption)
                                         
                                         // Обновляем локальное состояние для показа информации о deadline
                                         currentDeadline = baseDate
@@ -531,6 +555,9 @@ struct DeadlineForTaskView: View {
                     // Устанавливаем время с учетом ограничений
                     setDefaultTime()
                 }
+                
+                // Проверяем текущие разрешения на уведомления
+                checkNotificationPermission()
             }
             .onChange(of: selectedDate) { _, newValue in
                 // Если время становится недоступным при новой дате, обновляем его
@@ -546,6 +573,177 @@ struct DeadlineForTaskView: View {
             }
         }
         .presentationDetents([.large])
+    }
+
+    // MARK: - Notification Methods
+    
+    /// Запрашивает разрешение на уведомления
+    private func requestNotificationPermission(completion: @escaping (Bool) -> Void) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                print("❌ Ошибка запроса разрешений: \(error.localizedDescription)")
+            }
+            completion(granted)
+        }
+    }
+    
+    /// Проверяет текущие разрешения на уведомления
+    private func checkNotificationPermission() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                notificationPermissionGranted = settings.authorizationStatus == .authorized
+            }
+        }
+    }
+    
+    /// Показывает alert о необходимости разрешений
+    private func showNotificationPermissionAlert() {
+        // Можно добавить alert или направить в настройки
+        print("⚠️ Разрешения на уведомления не предоставлены")
+    }
+    
+    /// Создает уведомление для deadline
+    private func createNotificationForDeadline(baseDate: Date, reminderOption: String) {
+        // Удаляем предыдущие уведомления для этих задач
+        removeExistingNotifications()
+        
+        let notificationCenter = UNUserNotificationCenter.current()
+        
+        // Создаем уведомление на сам deadline
+        createDeadlineNotification(date: baseDate, notificationCenter: notificationCenter)
+        
+        // Создаем уведомление заранее, если выбрано
+        if reminderOption != "нет" {
+            let reminderDate = calculateReminderDate(baseDate: baseDate, reminderOption: reminderOption)
+            createReminderNotification(date: reminderDate, reminderOption: reminderOption, deadlineDate: baseDate, notificationCenter: notificationCenter)
+        }
+        
+        print("📱 Уведомления созданы для deadline: \(baseDate)")
+    }
+    
+    /// Создает уведомление на сам deadline
+    private func createDeadlineNotification(date: Date, notificationCenter: UNUserNotificationCenter) {
+        let content = UNMutableNotificationContent()
+        content.title = "⏰ Крайний срок!"
+        
+        // Формируем текст с названиями задач
+        if selectedTasks.count == 1 {
+            content.body = "Пора выполнить задачу: \"\(selectedTasks.first!.title)\""
+        } else if selectedTasks.count <= 3 {
+            let taskTitles = selectedTasks.map { $0.title }.joined(separator: ", ")
+            content.body = "Пора выполнить задачи: \(taskTitles)"
+        } else {
+            let firstTasks = selectedTasks.prefix(2).map { $0.title }.joined(separator: ", ")
+            content.body = "Пора выполнить задачи: \(firstTasks) и еще \(selectedTasks.count - 2)"
+        }
+        
+        content.sound = .default
+        content.badge = NSNumber(value: selectedTasks.count)
+        
+        // Добавляем категорию для интерактивных действий
+        content.categoryIdentifier = "DEADLINE_CATEGORY"
+        
+        // Добавляем пользовательские данные
+        content.userInfo = [
+            "taskIds": selectedTasks.map { $0.id.uuidString },
+            "taskTitles": selectedTasks.map { $0.title },
+            "notificationType": "deadline"
+        ]
+        
+        // Создаем trigger для конкретной даты
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        
+        let request = UNNotificationRequest(
+            identifier: "deadline_\(selectedTasks.map { $0.id.uuidString }.joined(separator: "_"))_\(date.timeIntervalSince1970)",
+            content: content,
+            trigger: trigger
+        )
+        
+        notificationCenter.add(request) { error in
+            if let error = error {
+                print("❌ Ошибка создания уведомления deadline: \(error.localizedDescription)")
+            } else {
+                print("✅ Уведомление deadline создано на: \(date)")
+            }
+        }
+    }
+    
+    /// Создает уведомление заранее
+    private func createReminderNotification(date: Date, reminderOption: String, deadlineDate: Date, notificationCenter: UNUserNotificationCenter) {
+        let content = UNMutableNotificationContent()
+        content.title = "🔔 Напоминание о крайнем сроке"
+        
+        // Формируем текст напоминания с названиями задач
+        let timeUntilDeadline = reminderOption.replacingOccurrences(of: "за ", with: "через ")
+        
+        if selectedTasks.count == 1 {
+            content.body = "\(timeUntilDeadline) нужно выполнить: \"\(selectedTasks.first!.title)\""
+        } else if selectedTasks.count <= 3 {
+            let taskTitles = selectedTasks.map { $0.title }.joined(separator: "\n• ")
+            content.body = "\(timeUntilDeadline) нужно выполнить:\n• \(taskTitles)"
+        } else {
+            let firstTasks = selectedTasks.prefix(3).map { $0.title }.joined(separator: "\n• ")
+            content.body = "\(timeUntilDeadline) нужно выполнить:\n• \(firstTasks)\n• и еще \(selectedTasks.count - 3) задач(и)"
+        }
+        
+        content.sound = .default
+        content.badge = NSNumber(value: selectedTasks.count)
+        
+        // Добавляем категорию для интерактивных действий
+        content.categoryIdentifier = "REMINDER_CATEGORY"
+        
+        // Добавляем пользовательские данные
+        content.userInfo = [
+            "taskIds": selectedTasks.map { $0.id.uuidString },
+            "taskTitles": selectedTasks.map { $0.title },
+            "notificationType": "reminder",
+            "reminderOption": reminderOption,
+            "deadlineDate": deadlineDate.timeIntervalSince1970
+        ]
+        
+        // Создаем trigger для даты напоминания
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        
+        let request = UNNotificationRequest(
+            identifier: "reminder_\(selectedTasks.map { $0.id.uuidString }.joined(separator: "_"))_\(date.timeIntervalSince1970)",
+            content: content,
+            trigger: trigger
+        )
+        
+        notificationCenter.add(request) { error in
+            if let error = error {
+                print("❌ Ошибка создания напоминания: \(error.localizedDescription)")
+            } else {
+                print("✅ Напоминание создано на: \(date) (\(reminderOption))")
+                print("📝 Задачи: \(selectedTasks.map { $0.title }.joined(separator: ", "))")
+            }
+        }
+    }
+    
+    /// Удаляет существующие уведомления для этих задач
+    private func removeExistingNotifications() {
+        let taskIds = selectedTasks.map { $0.id.uuidString }
+        
+        UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
+            let identifiersToRemove = requests.compactMap { request in
+                // Проверяем, содержит ли идентификатор ID наших задач
+                for taskId in taskIds {
+                    if request.identifier.contains(taskId) {
+                        return request.identifier
+                    }
+                }
+                return nil
+            }
+            
+            if !identifiersToRemove.isEmpty {
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: identifiersToRemove)
+                print("🗑️ Удалено \(identifiersToRemove.count) старых уведомлений для задач")
+            }
+        }
     }
 
     // Функция для объединения даты и времени
@@ -635,8 +833,12 @@ struct DeadlineForTaskView: View {
     DeadlineForTaskView(
         selectedDate: .constant(Date()),
         isPresented: .constant(true),
-        selectedTasksCount: 5,
+        selectedTasksCount: 2,
+        selectedTasks: [
+            SelectedTaskInfo(id: UUID(), title: "Купить продукты", priority: .high),
+            SelectedTaskInfo(id: UUID(), title: "Подготовить презентацию", priority: .medium)
+        ],
         onSetDeadlineForTasks: { _ in },
-        existingDeadline: Date() // Добавляем для preview
+        existingDeadline: Date()
     )
 }

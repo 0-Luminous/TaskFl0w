@@ -424,6 +424,7 @@ struct TaskListView: View {
             selectedDate: $selectedDeadlineDate,
             isPresented: $showingDeadlinePicker,
             selectedTasksCount: viewModel.selectedTasks.count,
+            selectedTasks: getSelectedTasksInfo(),
             onSetDeadlineForTasks: { date in
                 viewModel.setDeadlineForSelectedTasks(date)
             },
@@ -436,6 +437,19 @@ struct TaskListView: View {
                 selectedDeadlineDate = Date()
             }
         }
+    }
+    
+    // Добавляем новый метод для получения информации о выбранных задачах
+    private func getSelectedTasksInfo() -> [SelectedTaskInfo] {
+        return viewModel.items
+            .filter { viewModel.selectedTasks.contains($0.id) }
+            .map { task in
+                SelectedTaskInfo(
+                    id: task.id,
+                    title: task.title,
+                    priority: task.priority
+                )
+            }
     }
     
     // Добавляем вспомогательный метод для получения существующего deadline
