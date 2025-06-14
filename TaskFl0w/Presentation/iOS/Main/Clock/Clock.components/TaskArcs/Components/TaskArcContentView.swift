@@ -24,9 +24,9 @@ struct TaskArcContentView: View {
             TaskArcShape(
                 geometry: geometry, 
                 timeFormatter: timeFormatter,
+                hapticsManager: hapticsManager,
                 animationManager: animationManager,
                 gestureHandler: gestureHandler,
-                hapticsManager: hapticsManager,
                 viewModel: viewModel
             )
                 .gesture(createTapGesture())
