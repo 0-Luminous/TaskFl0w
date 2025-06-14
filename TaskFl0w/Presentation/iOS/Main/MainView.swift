@@ -205,9 +205,7 @@ struct ClockViewIOS: View {
     }
     
     private var clockFaceView: some View {
-        Spacer()
-        
-        return ZStack {
+        ZStack {
             RingPlanner(
                 color: ThemeManager.shared.currentOuterRingColor,
                 viewModel: viewModel,

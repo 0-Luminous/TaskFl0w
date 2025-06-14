@@ -32,8 +32,7 @@ struct TaskArcContentView: View {
             )
                 .gesture(createTapGesture())
                 .onDrag {
-                    handleDragStart()
-                    return NSItemProvider(object: task.id.uuidString as NSString)
+                    return handleDragStart()
                 } preview: {
                     CategoryDragPreview(task: task)
                 }

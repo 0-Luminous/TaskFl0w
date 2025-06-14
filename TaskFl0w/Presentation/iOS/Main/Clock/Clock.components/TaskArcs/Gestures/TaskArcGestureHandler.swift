@@ -72,13 +72,7 @@ class TaskArcGestureHandler: ObservableObject {
             highFrequencyManager.startHighFrequencyUpdates()
         }
         
-        guard let task = currentTask else { return }  // ✅ Получаем актуальную задачу
-        
-        // Вычисляем смещение пальца от начальной позиции
-        let fingerOffset = CGVector(
-            dx: value.location.x - initialDragLocation.x,
-            dy: value.location.y - initialDragLocation.y
-        )
+        guard let task = currentTask else { return }
         
         // Конвертируем смещение пальца в смещение угла
         let currentFingerAngle = atan2(value.location.y - center.y, value.location.x - center.x)

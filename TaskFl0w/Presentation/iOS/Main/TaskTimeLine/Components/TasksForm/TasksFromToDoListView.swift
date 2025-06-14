@@ -157,7 +157,7 @@ struct TasksFromView: View {
     }
     
     private func getTransferMessage(activeSlot: TaskOnRing?) -> String {
-        guard let slot = activeSlot else {
+        if activeSlot == nil {
             return "Будущий слот"
         }
         

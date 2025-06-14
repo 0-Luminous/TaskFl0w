@@ -79,7 +79,6 @@ struct SearchView: View {
     private var tasksByDate:
         [(date: Date, categories: [(name: String, tasks: [ToDoItem], color: Color)])]
     {
-        let today = Calendar.current.startOfDay(for: Date())
         let dateGrouped = Dictionary(grouping: filteredItems) { item in
             Calendar.current.startOfDay(for: item.date)
         }

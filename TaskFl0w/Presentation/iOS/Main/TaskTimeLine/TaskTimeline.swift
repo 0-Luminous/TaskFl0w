@@ -565,7 +565,7 @@ struct TaskTimeline: View {
             clockViewModel.selectedDate = selectedDate
             listViewModel.refreshData()
         }
-        .onChange(of: clockViewModel.selectedDate) { newValue in
+        .onChange(of: clockViewModel.selectedDate) { oldValue, newValue in
             selectedDate = newValue
         }
     }

@@ -147,13 +147,6 @@ struct SelectWatch: View {
                 // Кнопка внизу для продолжения
                 VStack {
                     Spacer()
-                    NavigationLink(
-                        destination: SelectCategory(), isActive: $navigateToSelectCategory
-                    ) {
-                        EmptyView()
-                    }
-                    .hidden()
-
                     Button(action: {
                         // Проверяем, был ли выбран циферблат
                         if let selectedID = localSelectedFaceID {
@@ -212,6 +205,9 @@ struct SelectWatch: View {
             .navigationBarBackButtonHidden(true)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbarColorScheme(themeManager.isDarkMode ? .dark : .light, for: .navigationBar)
+            .navigationDestination(isPresented: $navigateToSelectCategory) {
+                SelectCategory()
+            }
         }
     }
 }
