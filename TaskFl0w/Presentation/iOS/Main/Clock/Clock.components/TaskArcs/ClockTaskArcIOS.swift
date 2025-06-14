@@ -15,7 +15,7 @@ struct ClockTaskArcIOS: View {
     @State private var isVisible: Bool = true
     @StateObject private var animationManager = TaskArcAnimationManager()
     @StateObject private var gestureHandler: TaskArcGestureHandler
-    private let hapticsManager = TaskArcHapticsManager()
+    private let hapticsManager = HapticsManager()
     
     // Кэшируем форматтер
     private let timeFormatter = {

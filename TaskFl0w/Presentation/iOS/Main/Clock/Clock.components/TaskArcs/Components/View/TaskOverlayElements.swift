@@ -12,7 +12,7 @@ struct TaskOverlayElements: View {
     let geometry: TaskArcGeometry
     @ObservedObject var animationManager: TaskArcAnimationManager
     @ObservedObject var gestureHandler: TaskArcGestureHandler
-    let hapticsManager: TaskArcHapticsManager
+    let hapticsManager: HapticsManager
     let timeFormatter: DateFormatter
     
     var body: some View {
@@ -51,7 +51,7 @@ struct TaskDragHandle: View {
     let angle: Angle
     let geometry: TaskArcGeometry
     @ObservedObject var gestureHandler: TaskArcGestureHandler
-    let hapticsManager: TaskArcHapticsManager
+    let hapticsManager: HapticsManager
     @ObservedObject var viewModel: ClockViewModel
     let isDraggingStart: Bool
     

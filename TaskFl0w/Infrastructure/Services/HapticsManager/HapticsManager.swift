@@ -1,13 +1,12 @@
 //
-//  TaskArcHapticsManager.swift
+//  HapticsManager.swift
 //  TaskFl0w
 //
-//  Created by Yan on 24/12/24.
+//  Created by Yan on 15/6/25.
 //
-
 import UIKit
 
-struct TaskArcHapticsManager {
+struct HapticsManager {
     func triggerSoftFeedback() {
         let feedbackGenerator = UIImpactFeedbackGenerator(style: .soft)
         feedbackGenerator.prepare()

@@ -70,7 +70,7 @@ struct RingPlanner: View {
                         configuration: configuration,
                         animationManager: TaskArcAnimationManager(),
                         gestureHandler: TaskArcGestureHandler(viewModel: viewModel, task: previewTask),
-                        hapticsManager: TaskArcHapticsManager(),
+                        hapticsManager: HapticsManager(),
                         timeFormatter: {
                             let formatter = DateFormatter()
                             formatter.timeStyle = .short

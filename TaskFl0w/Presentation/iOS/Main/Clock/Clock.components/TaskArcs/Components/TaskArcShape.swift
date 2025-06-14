@@ -13,7 +13,7 @@ struct TaskArcShape: View {
     let timeFormatter: DateFormatter
     @ObservedObject var animationManager: TaskArcAnimationManager
     @ObservedObject var gestureHandler: TaskArcGestureHandler
-    let hapticsManager: TaskArcHapticsManager
+    let hapticsManager: HapticsManager
     @ObservedObject var viewModel: ClockViewModel
     
     var body: some View {
@@ -434,7 +434,7 @@ struct TaskIcon: View {
     let geometry: TaskArcGeometry
     @ObservedObject var animationManager: TaskArcAnimationManager
     @ObservedObject var gestureHandler: TaskArcGestureHandler
-    let hapticsManager: TaskArcHapticsManager
+    let hapticsManager: HapticsManager
     @ObservedObject var viewModel: ClockViewModel
     
     var body: some View {

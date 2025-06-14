@@ -15,7 +15,7 @@ struct TaskArcContentView: View {
     let configuration: TaskArcConfiguration
     @ObservedObject var animationManager: TaskArcAnimationManager
     @ObservedObject var gestureHandler: TaskArcGestureHandler
-    let hapticsManager: TaskArcHapticsManager
+    let hapticsManager: HapticsManager
     let timeFormatter: DateFormatter
     @Binding var isDragging: Bool
     
@@ -93,7 +93,7 @@ struct WholeArcDragIndicator: View {
     let midAngle: Angle
     let geometry: TaskArcGeometry
     @ObservedObject var gestureHandler: TaskArcGestureHandler
-    let hapticsManager: TaskArcHapticsManager
+    let hapticsManager: HapticsManager
     @ObservedObject var viewModel: ClockViewModel
     
     var body: some View {

@@ -11,7 +11,7 @@ import SwiftUI
 class TaskArcGestureHandler: ObservableObject {
     private let viewModel: ClockViewModel
     private let taskId: UUID  // ✅ Храним только ID вместо копии задачи
-    private let hapticsManager = TaskArcHapticsManager()
+    private let hapticsManager = HapticsManager()
     
     // Change from @StateObject to regular property
     private let highFrequencyManager: HighFrequencyUpdateManager
