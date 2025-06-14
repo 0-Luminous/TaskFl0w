@@ -19,47 +19,32 @@ struct TaskChainAnalyzer {
         tasks: [TaskOnRing],
         initiatingTask: TaskOnRing,
         dayBounds: (start: Date, end: Date)
-    ) -> ([(TaskOnRing, Date, Date)], Bool) {
+    ) -> (affectedTasks: [(TaskOnRing, Date, Date)], canMove: Bool) {
         
-        // Создаем индекс задач для быстрого поиска O(1)
-        let taskIndex = createTaskTimeIndex(tasks: tasks, excluding: initiatingTask.id)
+        var affectedTasks: [(TaskOnRing, Date, Date)] = []
+        var canMove = true
         
-        var tasksToUpdate: [(TaskOnRing, Date, Date)] = []
-        var processedTasks: Set<UUID> = [initiatingTask.id]
-        var tasksQueue: [(task: TaskOnRing, newStartTime: Date, newEndTime: Date)] = 
-            [(initiatingTask, initiatingTask.startTime, initiatingTask.endTime)]
+        // Найти задачи, которые пересекаются с обновленной задачей
+        let conflictingTasks = tasks.filter { task in
+            task.id != initiatingTask.id &&
+            task.startTime < initiatingTask.endTime &&
+            task.endTime > initiatingTask.startTime
+        }
         
-        var iterationCount = 0
-        
-        while !tasksQueue.isEmpty && iterationCount < TaskOverlapConstants.maxIterationsPerChain {
-            iterationCount += 1
-            let currentTaskInfo = tasksQueue.removeFirst()
+        // Попробовать переместить конфликтующие задачи
+        for task in conflictingTasks {
+            let newStartTime = initiatingTask.endTime
+            let newEndTime = newStartTime.addingTimeInterval(task.duration)
             
-            // Используем индекс для быстрого поиска пересекающихся задач
-            let overlappingTasks = findOverlappingTasks(
-                timeRange: (currentTaskInfo.newStartTime, currentTaskInfo.newEndTime),
-                taskIndex: taskIndex,
-                processedTasks: processedTasks
-            )
-            
-            for task in overlappingTasks {
-                let taskDuration = task.duration
-                let idealNewEndTime = currentTaskInfo.newStartTime
-                let idealNewStartTime = idealNewEndTime.addingTimeInterval(-taskDuration)
-                
-                // Критическая проверка границ
-                if idealNewStartTime < dayBounds.start {
-                    return ([], false)
-                }
-                
-                processedTasks.insert(task.id)
-                let newTaskInfo = (task: task, newStartTime: idealNewStartTime, newEndTime: idealNewEndTime)
-                tasksQueue.append(newTaskInfo)
-                tasksToUpdate.append((task, idealNewStartTime, idealNewEndTime))
+            if newEndTime <= dayBounds.end {
+                affectedTasks.append((task, newStartTime, newEndTime))
+            } else {
+                canMove = false
+                break
             }
         }
         
-        return (tasksToUpdate, iterationCount < TaskOverlapConstants.maxIterationsPerChain)
+        return (affectedTasks, canMove)
     }
     
     // MARK: - Оптимизированный анализ цепочки для времени окончания
@@ -67,44 +52,32 @@ struct TaskChainAnalyzer {
         tasks: [TaskOnRing],
         initiatingTask: TaskOnRing,
         dayBounds: (start: Date, end: Date)
-    ) -> ([(TaskOnRing, Date, Date)], Bool) {
+    ) -> (affectedTasks: [(TaskOnRing, Date, Date)], canMove: Bool) {
         
-        let taskIndex = createTaskTimeIndex(tasks: tasks, excluding: initiatingTask.id)
+        var affectedTasks: [(TaskOnRing, Date, Date)] = []
+        var canMove = true
         
-        var tasksToUpdate: [(TaskOnRing, Date, Date)] = []
-        var processedTasks: Set<UUID> = [initiatingTask.id]
-        var tasksQueue: [(task: TaskOnRing, newStartTime: Date, newEndTime: Date)] = 
-            [(initiatingTask, initiatingTask.startTime, initiatingTask.endTime)]
+        // Найти задачи, которые пересекаются с обновленной задачей
+        let conflictingTasks = tasks.filter { task in
+            task.id != initiatingTask.id &&
+            task.startTime < initiatingTask.endTime &&
+            task.endTime > initiatingTask.startTime
+        }
         
-        var iterationCount = 0
-        
-        while !tasksQueue.isEmpty && iterationCount < TaskOverlapConstants.maxIterationsPerChain {
-            iterationCount += 1
-            let currentTaskInfo = tasksQueue.removeFirst()
+        // Попробовать переместить конфликтующие задачи
+        for task in conflictingTasks {
+            let newEndTime = initiatingTask.startTime
+            let newStartTime = newEndTime.addingTimeInterval(-task.duration)
             
-            let overlappingTasks = findOverlappingTasks(
-                timeRange: (currentTaskInfo.newStartTime, currentTaskInfo.newEndTime),
-                taskIndex: taskIndex,
-                processedTasks: processedTasks
-            )
-            
-            for task in overlappingTasks {
-                let taskDuration = task.duration
-                let idealNewStartTime = currentTaskInfo.newEndTime
-                let idealNewEndTime = idealNewStartTime.addingTimeInterval(taskDuration)
-                
-                if idealNewEndTime > dayBounds.end {
-                    return ([], false)
-                }
-                
-                processedTasks.insert(task.id)
-                let newTaskInfo = (task: task, newStartTime: idealNewStartTime, newEndTime: idealNewEndTime)
-                tasksQueue.append(newTaskInfo)
-                tasksToUpdate.append((task, idealNewStartTime, idealNewEndTime))
+            if newStartTime >= dayBounds.start {
+                affectedTasks.append((task, newStartTime, newEndTime))
+            } else {
+                canMove = false
+                break
             }
         }
         
-        return (tasksToUpdate, iterationCount < TaskOverlapConstants.maxIterationsPerChain)
+        return (affectedTasks, canMove)
     }
     
     // MARK: - Производительные индексы (ОПТИМИЗИРОВАНО)

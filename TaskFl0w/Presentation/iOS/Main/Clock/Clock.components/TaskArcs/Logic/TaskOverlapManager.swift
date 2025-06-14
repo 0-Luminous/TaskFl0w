@@ -18,6 +18,7 @@ struct TaskOverlapManager {
     }
     
     // MARK: - Start Time Adjustment
+    @MainActor
     static func adjustTaskStartTimesForOverlap(
         viewModel: ClockViewModel, 
         currentTask: TaskOnRing, 
@@ -49,6 +50,7 @@ struct TaskOverlapManager {
     }
 
     // MARK: - End Time Adjustment
+    @MainActor
     static func adjustTaskEndTimesForOverlap(
         viewModel: ClockViewModel, 
         currentTask: TaskOnRing, 
@@ -79,6 +81,7 @@ struct TaskOverlapManager {
     }
 
     // MARK: - Whole Arc Movement
+    @MainActor
     static func adjustTaskTimesForWholeArcMove(
         viewModel: ClockViewModel, 
         currentTask: TaskOnRing, 
@@ -119,6 +122,7 @@ struct TaskOverlapManager {
     }
     
     // MARK: - Free Time Slot Finding
+    @MainActor
     static func findFreeTimeSlotForWholeArc(
         viewModel: ClockViewModel,
         currentTask: TaskOnRing,
@@ -136,6 +140,7 @@ struct TaskOverlapManager {
     }
     
     // MARK: - Smart Conflict Resolution
+    @MainActor
     static func resolveTaskConflicts(viewModel: ClockViewModel, conflictingGroups: [[TaskOnRing]]) {
         for group in conflictingGroups {
             guard group.count > 1 else { continue }
@@ -149,6 +154,7 @@ struct TaskOverlapManager {
     
     // MARK: - Private Helper Methods
     
+    @MainActor
     private static func batchUpdateTasks(
         viewModel: ClockViewModel, 
         taskUpdates: [(TaskOnRing, Date, Date)]
@@ -156,9 +162,11 @@ struct TaskOverlapManager {
         // Группируем обновления для улучшения производительности
         if taskUpdates.count >= TaskOverlapConstants.batchProcessingThreshold {
             // Батчевое обновление
-            DispatchQueue.global(qos: .userInitiated).async {
+            Task {
                 for (task, newStart, newEnd) in taskUpdates {
-                    viewModel.taskManagement.updateWholeTask(task, newStartTime: newStart, newEndTime: newEnd)
+                    await MainActor.run {
+                        viewModel.taskManagement.updateWholeTask(task, newStartTime: newStart, newEndTime: newEnd)
+                    }
                 }
             }
         } else {
@@ -178,6 +186,7 @@ struct TaskOverlapManager {
         }
     }
     
+    @MainActor
     private static func redistributeTasksInGroup(viewModel: ClockViewModel, tasks: [TaskOnRing]) {
         guard tasks.count > 1 else { return }
         
@@ -200,6 +209,7 @@ struct TaskOverlapManager {
         batchUpdateTasks(viewModel: viewModel, taskUpdates: taskUpdates)
     }
     
+    @MainActor
     private static func notifyTaskArcsAboutOverlapChanges(
         viewModel: ClockViewModel, 
         changedTasks: [(TaskOnRing, Date, Date)]
@@ -215,6 +225,7 @@ struct TaskOverlapManager {
         }
     }
     
+    @MainActor
     private static func scheduleUIUpdate(viewModel: ClockViewModel) {
         DispatchQueue.main.asyncAfter(deadline: .now() + Constants.uiUpdateDelay) {
             viewModel.objectWillChange.send()

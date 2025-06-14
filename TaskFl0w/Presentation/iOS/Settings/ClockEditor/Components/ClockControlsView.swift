@@ -90,7 +90,7 @@ struct ClockControlsView: View {
                         Button(action: {
                             if markersViewModel.digitalFontSize > 30 {
                                 markersViewModel.digitalFontSize -= 2
-                                viewModel.digitalFontSizeRaw = markersViewModel.digitalFontSize
+                                viewModel.digitalFontSize = markersViewModel.digitalFontSize
                             }
                         }) {
                             Text("Меньше")
@@ -106,7 +106,7 @@ struct ClockControlsView: View {
                         Button(action: {
                             if markersViewModel.digitalFontSize < 60 {
                                 markersViewModel.digitalFontSize += 2
-                                viewModel.digitalFontSizeRaw = markersViewModel.digitalFontSize
+                                viewModel.digitalFontSize = markersViewModel.digitalFontSize
                             }
                         }) {
                             Text("Больше")

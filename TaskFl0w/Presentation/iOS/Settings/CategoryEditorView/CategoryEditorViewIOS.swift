@@ -833,21 +833,3 @@ struct CategoryEditorViewIOS: View {
         }
     }
 }
-
-#Preview {
-    let viewModel = ClockViewModel()
-
-    // Добавляем тестовую категорию через categoryManagement
-    let testCategory = TaskCategoryModel(
-        id: UUID(),
-        rawValue: "Тестовая категория",
-        iconName: "star.fill",
-        color: .blue
-    )
-    viewModel.categoryManagement.addCategory(testCategory)
-
-    return CategoryEditorViewIOS(
-        viewModel: viewModel,
-        isPresented: .constant(true)
-    )
-}

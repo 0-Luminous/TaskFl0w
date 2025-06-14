@@ -9,12 +9,10 @@ import Foundation
 
 struct TaskTimeValidator {
     
+    @MainActor
     static func validateTimeChange(viewModel: ClockViewModel, newTime: Date) -> Bool {
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: viewModel.selectedDate)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!.addingTimeInterval(-60)
-        
-        return newTime >= startOfDay && newTime <= endOfDay
+        let dayBounds = getDayBounds(for: viewModel.selectedDate)
+        return newTime >= dayBounds.start && newTime <= dayBounds.end
     }
     
     static func isTimeSlotFree(

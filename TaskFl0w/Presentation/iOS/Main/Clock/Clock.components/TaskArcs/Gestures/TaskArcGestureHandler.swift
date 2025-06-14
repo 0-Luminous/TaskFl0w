@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 class TaskArcGestureHandler: ObservableObject {
     private let viewModel: ClockViewModel
     private let taskId: UUID  // ✅ Храним только ID вместо копии задачи

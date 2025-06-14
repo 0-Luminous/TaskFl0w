@@ -21,171 +21,77 @@ struct TaskPlacementOptimizer {
         selectedDate: Date
     ) -> (startTime: Date, endTime: Date) {
         
-        // Создаем ключ для кэша
-        let cacheKey = createCacheKey(
-            currentTaskId: currentTask.id,
-            preferredStartTime: preferredStartTime,
-            taskDuration: taskDuration,
-            tasksHash: tasks.hashValue
-        )
-        
-        // Проверяем кэш
-        if let cachedResult = placementCache[cacheKey] {
-            return cachedResult
-        }
-        
         let dayBounds = TaskTimeValidator.getDayBounds(for: selectedDate)
-        let otherTasks = tasks.filter { $0.id != currentTask.id }.sorted { $0.startTime < $1.startTime }
+        let otherTasks = tasks.filter { $0.id != currentTask.id }
         
-        let result = calculateOptimalPlacement(
-            preferredStartTime: preferredStartTime,
-            taskDuration: taskDuration,
-            otherTasks: otherTasks,
-            dayBounds: dayBounds,
-            currentTask: currentTask
-        )
-        
-        // Кэшируем результат
-        updateCache(cacheKey: cacheKey, result: result)
-        
-        return result
-    }
-    
-    private static func calculateOptimalPlacement(
-        preferredStartTime: Date,
-        taskDuration: TimeInterval,
-        otherTasks: [TaskOnRing],
-        dayBounds: (start: Date, end: Date),
-        currentTask: TaskOnRing
-    ) -> (startTime: Date, endTime: Date) {
-        
+        // Сначала пробуем предпочтительное время
         let preferredEndTime = preferredStartTime.addingTimeInterval(taskDuration)
         
-        // Проверяем предпочтительное время
-        if TaskTimeValidator.isTimeSlotFree(
+        if canPlaceTask(
             startTime: preferredStartTime,
             endTime: preferredEndTime,
-            excludingTask: currentTask,
-            tasks: otherTasks,
-            dayBounds: dayBounds
+            againstTasks: otherTasks,
+            withinBounds: dayBounds
         ) {
-            return (startTime: preferredStartTime, endTime: preferredEndTime)
+            return (preferredStartTime, preferredEndTime)
         }
         
-        // Используем оптимизированный поиск
-        return findNearestFreeSlotOptimized(
-            preferredStartTime: preferredStartTime,
-            taskDuration: taskDuration,
-            otherTasks: otherTasks,
-            dayBounds: dayBounds,
-            currentTask: currentTask
-        )
-    }
-    
-    private static func findNearestFreeSlotOptimized(
-        preferredStartTime: Date,
-        taskDuration: TimeInterval,
-        otherTasks: [TaskOnRing],
-        dayBounds: (start: Date, end: Date),
-        currentTask: TaskOnRing
-    ) -> (startTime: Date, endTime: Date) {
+        // Ищем ближайшее свободное место
+        let searchStep: TimeInterval = 15 * 60 // 15 минут
+        let maxSearchTime: TimeInterval = 12 * 60 * 60 // 12 часов
         
-        // Создаем список временных интервалов для более эффективного поиска
-        let timeIntervals = createTimeIntervalsList(from: otherTasks)
-        
-        // Бинарный поиск ближайшего свободного слота
-        if let nearbySlot = findSlotUsingBinarySearch(
-            preferredStartTime: preferredStartTime,
-            taskDuration: taskDuration,
-            timeIntervals: timeIntervals,
-            dayBounds: dayBounds
-        ) {
-            return nearbySlot
-        }
-        
-        // Fallback: традиционный поиск
-        return findFirstAvailableSlotOptimized(
-            taskDuration: taskDuration,
-            otherTasks: otherTasks,
-            dayBounds: dayBounds,
-            preferredStartTime: preferredStartTime
-        )
-    }
-    
-    private static func createTimeIntervalsList(from tasks: [TaskOnRing]) -> [(start: Date, end: Date)] {
-        return tasks.map { (start: $0.startTime, end: $0.endTime) }
-            .sorted { $0.start < $1.start }
-    }
-    
-    private static func findSlotUsingBinarySearch(
-        preferredStartTime: Date,
-        taskDuration: TimeInterval,
-        timeIntervals: [(start: Date, end: Date)],
-        dayBounds: (start: Date, end: Date)
-    ) -> (startTime: Date, endTime: Date)? {
-        
-        // Поиск подходящего промежутка между задачами
-        for i in 0..<timeIntervals.count - 1 {
-            let gapStart = timeIntervals[i].end
-            let gapEnd = timeIntervals[i + 1].start
-            let gapDuration = gapEnd.timeIntervalSince(gapStart)
+        for offset in stride(from: searchStep, through: maxSearchTime, by: searchStep) {
+            // Пробуем позже
+            let laterStart = preferredStartTime.addingTimeInterval(offset)
+            let laterEnd = laterStart.addingTimeInterval(taskDuration)
             
-            if gapDuration >= taskDuration {
-                let optimalStart = max(gapStart, min(preferredStartTime, gapEnd.addingTimeInterval(-taskDuration)))
-                let optimalEnd = optimalStart.addingTimeInterval(taskDuration)
-                
-                if optimalStart >= dayBounds.start && optimalEnd <= dayBounds.end {
-                    return (startTime: optimalStart, endTime: optimalEnd)
-                }
+            if canPlaceTask(
+                startTime: laterStart,
+                endTime: laterEnd,
+                againstTasks: otherTasks,
+                withinBounds: dayBounds
+            ) {
+                return (laterStart, laterEnd)
+            }
+            
+            // Пробуем раньше
+            let earlierStart = preferredStartTime.addingTimeInterval(-offset)
+            let earlierEnd = earlierStart.addingTimeInterval(taskDuration)
+            
+            if canPlaceTask(
+                startTime: earlierStart,
+                endTime: earlierEnd,
+                againstTasks: otherTasks,
+                withinBounds: dayBounds
+            ) {
+                return (earlierStart, earlierEnd)
             }
         }
         
-        return nil
+        // Если не нашли место, возвращаем предпочтительное время
+        return (preferredStartTime, preferredEndTime)
     }
     
-    private static func findFirstAvailableSlotOptimized(
-        taskDuration: TimeInterval,
-        otherTasks: [TaskOnRing],
-        dayBounds: (start: Date, end: Date),
-        preferredStartTime: Date
-    ) -> (startTime: Date, endTime: Date) {
+    private static func canPlaceTask(
+        startTime: Date,
+        endTime: Date,
+        againstTasks: [TaskOnRing],
+        withinBounds: (start: Date, end: Date)
+    ) -> Bool {
         
-        if otherTasks.isEmpty {
-            let startTime = max(dayBounds.start, preferredStartTime)
-            let endTime = startTime.addingTimeInterval(taskDuration)
-            return (startTime: startTime, endTime: min(endTime, dayBounds.end))
+        // Проверяем границы дня
+        guard startTime >= withinBounds.start && endTime <= withinBounds.end else {
+            return false
         }
         
-        // Проверяем место перед первой задачей
-        if let firstTask = otherTasks.first,
-           firstTask.startTime.timeIntervalSince(dayBounds.start) >= taskDuration {
-            let endTime = firstTask.startTime
-            let startTime = endTime.addingTimeInterval(-taskDuration)
-            if startTime >= dayBounds.start {
-                return (startTime: startTime, endTime: endTime)
+        // Проверяем пересечения с другими задачами
+        for task in againstTasks {
+            if startTime < task.endTime && endTime > task.startTime {
+                return false
             }
         }
         
-        // Ищем промежутки между задачами (оптимизированный поиск)
-        for i in 0..<(otherTasks.count - 1) {
-            let currentTaskEnd = otherTasks[i].endTime
-            let nextTaskStart = otherTasks[i + 1].startTime
-            let availableTime = nextTaskStart.timeIntervalSince(currentTaskEnd)
-            
-            if availableTime >= taskDuration {
-                return (startTime: currentTaskEnd, endTime: currentTaskEnd.addingTimeInterval(taskDuration))
-            }
-        }
-        
-        // Проверяем место после последней задачи
-        if let lastTask = otherTasks.last {
-            let availableTime = dayBounds.end.timeIntervalSince(lastTask.endTime)
-            if availableTime >= taskDuration {
-                return (startTime: lastTask.endTime, endTime: lastTask.endTime.addingTimeInterval(taskDuration))
-            }
-        }
-        
-        return (startTime: preferredStartTime, endTime: preferredStartTime.addingTimeInterval(taskDuration))
+        return true
     }
     
     // MARK: - Кэширование

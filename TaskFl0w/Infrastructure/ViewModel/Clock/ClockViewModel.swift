@@ -9,206 +9,285 @@ import Combine
 import CoreData
 import WidgetKit
 
-final class ClockViewModel: ObservableObject {
-    // MARK: - Constants
-    private enum Constants {
-        static let defaultFontName = "SF Pro"
-        static let defaultDigitalFontSize: Double = 42.0
-        static let defaultMarkersWidth: Double = 2.0
-        static let defaultNumbersSize: Double = 16.0
-        static let defaultNumberInterval: Int = 1
-    }
+// MARK: - Configuration Structs
+
+/// Настройки циферблата часов
+struct ClockSettings {
+    let defaultFontName = "SF Pro"
+    let defaultDigitalFontSize: Double = 42.0
+    let defaultMarkersWidth: Double = 2.0
+    let defaultNumbersSize: Double = 16.0
+    let defaultNumberInterval: Int = 1
+}
+
+/// Настройки маркеров циферблата
+struct MarkerSettings {
+    let width: Double
+    let offset: Double
+    let numbersSize: Double
+    let numberInterval: Int
+    let fontName: String
+    let style: MarkerStyle
+    let showHourNumbers: Bool
+    let showMarkers: Bool
+    let showIntermediateMarkers: Bool
+}
+
+/// Кастомные цвета темы для ClockViewModel
+struct ClockThemeColors {
+    let lightModeHandColor: String
+    let darkModeHandColor: String
+    let lightModeDigitalFontColor: String
+    let darkModeDigitalFontColor: String
+    let lightModeClockFaceColor: String
+    let darkModeClockFaceColor: String
+    let lightModeOuterRingColor: String
+    let darkModeOuterRingColor: String
+    let lightModeMarkersColor: String
+    let darkModeMarkersColor: String
+}
+
+// MARK: - Protocols
+
+protocol ClockViewModelProtocol: ObservableObject {
+    var currentDate: Date { get }
+    var selectedDate: Date { get set }
+    var tasks: [TaskOnRing] { get }
+    var isDarkMode: Bool { get set }
     
-    // MARK: - Services
-    let markersViewModel = ClockMarkersViewModel()
-    let dragAndDropManager: DragAndDropManager
-    let dockBarViewModel: DockBarViewModel
+    func updateCurrentTimeIfNeeded()
+    func startDragging(_ task: TaskOnRing)
+    func stopDragging(didReturnToClock: Bool)
+}
+
+// MARK: - Main ViewModel
+
+@MainActor
+final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
+    
+    // MARK: - Dependencies
+    
+    private let settings = ClockSettings()
     let sharedState: SharedStateService
     let taskManagement: TaskManagementProtocol
     let categoryManagement: CategoryManagementProtocol
+    private let notificationService: NotificationServiceProtocol
     let clockState: ClockStateManager
-    private let notificationService: NotificationServiceProtocol = NotificationService.shared
-
-    // MARK: - View State Properties
+    
+    // Child ViewModels
+    let markersViewModel = ClockMarkersViewModel()
+    let dragAndDropManager: DragAndDropManager
+    let dockBarViewModel: DockBarViewModel
+    
+    // MARK: - Published Properties
+    
+    // UI State
+    @Published var currentDate = Date()
+    @Published var selectedDate = Date()
+    @Published var searchText = ""
+    @Published var isDarkMode = false
+    
+    // Modal States
+    @Published var showingAddTask = false
+    @Published var showingSettings = false
+    @Published var showingCalendar = false
+    @Published var showingStatistics = false
+    @Published var showingTodayTasks = false
+    @Published var showingCategoryEditor = false
+    @Published var showingTaskDetail = false
+    
+    // Task Management
+    @Published var tasks: [TaskOnRing] = []
     @Published var previewTask: TaskOnRing?
-    @Published var currentDate: Date = Date()
-    @Published var isDockBarEditingEnabled: Bool = false
-    @Published var draggedTask: TaskOnRing?
-    @Published var isDraggingOutside: Bool = false
-    @Published var showingAddTask: Bool = false
-    @Published var showingSettings: Bool = false
-    @Published var showingCalendar: Bool = false
-    @Published var showingStatistics: Bool = false
-    @Published var showingTodayTasks: Bool = false
-    @Published var showingCategoryEditor: Bool = false
-    @Published var isEditingMode: Bool = false
+    @Published var selectedTask: TaskOnRing?
     @Published var editingTask: TaskOnRing?
-    @Published var isDraggingStart: Bool = false
-    @Published var isDraggingEnd: Bool = false
+    @Published var overlappingTaskGroups: [[TaskOnRing]] = []
+    
+    // Drag & Drop
+    @Published var draggedTask: TaskOnRing?
+    @Published var draggedCategory: TaskCategoryModel?
+    @Published var selectedCategory: TaskCategoryModel?
+    @Published var isDraggingOutside = false
+    @Published var isDraggingStart = false
+    @Published var isDraggingEnd = false
     @Published var previewTime: Date?
     @Published var dropLocation: CGPoint?
-    @Published var selectedTask: TaskOnRing?
-    @Published var showingTaskDetail: Bool = false
-    @Published var searchText: String = ""
-    @Published var zeroPosition: Double {
-        didSet {
-            UserDefaults.standard.set(zeroPosition, forKey: "zeroPosition")
-        }
+    
+    // Edit Mode
+    @Published var isEditingMode = false
+    @Published var isDockBarEditingEnabled = false
+    
+    // Clock Configuration
+    @Published var zeroPosition: Double = 0 {
+        didSet { saveZeroPosition() }
     }
-    @Published var draggedCategory: TaskCategoryModel? {
-        didSet {
-            print("🔥 DEBUG: ClockViewModel.draggedCategory changed from \(oldValue?.rawValue ?? "nil") to \(draggedCategory?.rawValue ?? "nil")")
-            dockBarViewModel.draggedCategory = draggedCategory
-        }
+    @Published var clockStyle = "Классический" {
+        didSet { saveClockStyle() }
     }
-    @Published var selectedCategory: TaskCategoryModel? {
-        didSet {
-            dockBarViewModel.selectedCategory = selectedCategory
-        }
-    }
-    @Published var isDarkMode: Bool = false {
-        didSet {
-            if isDarkMode != ThemeManager.shared.isDarkMode {
-                UserDefaults.standard.set(isDarkMode, forKey: "isDarkMode")
-                ThemeManager.shared.setTheme(isDarkMode)
-                markersViewModel.isDarkMode = isDarkMode
-                markersViewModel.updateCurrentThemeColors()
-            }
-        }
-    }
-    @Published var selectedDate: Date = Date() {
-        didSet {
-            (taskManagement as? TaskManagement)?.selectedDate = selectedDate
-            updateTasksForSelectedDate()
-            clockState.selectedDate = selectedDate
-        }
-    }
-    @Published var clockStyle: String = UserDefaults.standard.string(forKey: "clockStyle") ?? "Классический" {
-        didSet {
-            UserDefaults.standard.set(clockStyle, forKey: "clockStyle")
-            objectWillChange.send()
-        }
-    }
-    @Published var tasks: [TaskOnRing] = [] {
-        didSet {
-            handleTasksUpdate(oldValue: oldValue, newValue: tasks)
-        }
-    }
-    @Published var overlappingTaskGroups: [[TaskOnRing]] = []
-
+    
     // MARK: - AppStorage Properties
-    @AppStorage("lightModeHandColor") var lightModeHandColor: String = Color.blue.toHex()
-    @AppStorage("darkModeHandColor") var darkModeHandColor: String = Color.blue.toHex()
-    @AppStorage("lightModeDigitalFontColor") var lightModeDigitalFontColor: String = Color.gray.toHex()
-    @AppStorage("darkModeDigitalFontColor") var darkModeDigitalFontColor: String = Color.white.toHex()
-    @AppStorage("digitalFont") var digitalFont: String = Constants.defaultFontName
-    @AppStorage("showTimeOnlyForActiveTask") var showTimeOnlyForActiveTask: Bool = false
-    @AppStorage("notificationsEnabled") private var notificationsEnabled = true
-    @AppStorage("lightModeClockFaceColor") var lightModeClockFaceColor: String = Color.white.toHex()
-    @AppStorage("darkModeClockFaceColor") var darkModeClockFaceColor: String = Color.black.toHex()
-    @AppStorage("lightModeOuterRingColor") var lightModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
-    @AppStorage("darkModeOuterRingColor") var darkModeOuterRingColor: String = Color.gray.opacity(0.3).toHex()
-    @AppStorage("taskArcLineWidth") var taskArcLineWidthRaw: Double = 20
-    @AppStorage("isAnalogArcStyle") var isAnalogArcStyle: Bool = false
-    @AppStorage("outerRingLineWidth") var outerRingLineWidthRaw: Double = 20
-    @AppStorage("showHourNumbers") var showHourNumbers: Bool = true {
-        didSet {
-            markersViewModel.showHourNumbers = showHourNumbers
-        }
-    }
-    @AppStorage("markersWidth") var markersWidth: Double = Constants.defaultMarkersWidth {
-        didSet {
-            markersViewModel.markersWidth = markersWidth
-        }
-    }
-    @AppStorage("markersOffset") var markersOffset: Double = 0.0 {
-        didSet {
-            markersViewModel.markersOffset = markersOffset
-        }
-    }
-    @AppStorage("numbersSize") var numbersSize: Double = Constants.defaultNumbersSize {
-        didSet {
-            markersViewModel.numbersSize = numbersSize
-        }
-    }
-    @AppStorage("numberInterval") var numberInterval: Int = Constants.defaultNumberInterval {
-        didSet {
-            markersViewModel.numberInterval = numberInterval
-            updateMarkersViewModel()
-        }
-    }
-    @AppStorage("lightModeMarkersColor") var lightModeMarkersColor: String = Color.gray.toHex() {
-        didSet {
-            markersViewModel.lightModeMarkersColor = lightModeMarkersColor
-            updateMarkersViewModel()
-        }
-    }
-    @AppStorage("darkModeMarkersColor") var darkModeMarkersColor: String = Color.gray.toHex() {
-        didSet {
-            markersViewModel.darkModeMarkersColor = darkModeMarkersColor
-            updateMarkersViewModel()
-        }
-    }
-    @AppStorage("showMarkers") var showMarkers: Bool = true {
-        didSet {
-            markersViewModel.showMarkers = showMarkers
-        }
-    }
-    @AppStorage("fontName") var fontName: String = Constants.defaultFontName {
-        didSet {
-            markersViewModel.fontName = fontName
-        }
-    }
-    @AppStorage("markerStyle") var markerStyleRaw: String = MarkerStyle.lines.rawValue {
-        didSet {
-            if let style = MarkerStyle(rawValue: markerStyleRaw) {
-                markersViewModel.markerStyle = style
-            }
-        }
-    }
-    @AppStorage("showIntermediateMarkers") var showIntermediateMarkers: Bool = true {
-        didSet {
-            markersViewModel.showIntermediateMarkers = showIntermediateMarkers
-        }
-    }
-    @AppStorage("digitalFontSize") var digitalFontSizeRaw: Double = Constants.defaultDigitalFontSize {
-        didSet {
-            markersViewModel.digitalFontSize = digitalFontSizeRaw
-        }
-    }
-
+    
+    @AppStorage("notificationsEnabled") 
+    private var notificationsEnabled = true
+    
+    @AppStorage("showTimeOnlyForActiveTask") 
+    var showTimeOnlyForActiveTask = false
+    
+    @AppStorage("isAnalogArcStyle") 
+    var isAnalogArcStyle = false
+    
+    // Colors
+    @AppStorage("lightModeHandColor") 
+    var lightModeHandColor = Color.blue.toHex()
+    
+    @AppStorage("darkModeHandColor") 
+    var darkModeHandColor = Color.blue.toHex()
+    
+    @AppStorage("lightModeDigitalFontColor") 
+    var lightModeDigitalFontColor = Color.gray.toHex()
+    
+    @AppStorage("darkModeDigitalFontColor") 
+    var darkModeDigitalFontColor = Color.white.toHex()
+    
+    @AppStorage("lightModeClockFaceColor") 
+    var lightModeClockFaceColor = Color.white.toHex()
+    
+    @AppStorage("darkModeClockFaceColor") 
+    var darkModeClockFaceColor = Color.black.toHex()
+    
+    @AppStorage("lightModeOuterRingColor") 
+    var lightModeOuterRingColor = Color.gray.opacity(0.3).toHex()
+    
+    @AppStorage("darkModeOuterRingColor") 
+    var darkModeOuterRingColor = Color.gray.opacity(0.3).toHex()
+    
+    @AppStorage("lightModeMarkersColor") 
+    var lightModeMarkersColor = Color.gray.toHex()
+        
+    @AppStorage("darkModeMarkersColor") 
+    var darkModeMarkersColor = Color.gray.toHex()
+    
+    // Dimensions
+    @AppStorage("taskArcLineWidth") 
+    private var taskArcLineWidthRaw: Double = 20
+    
+    @AppStorage("outerRingLineWidth") 
+    private var outerRingLineWidthRaw: Double = 20
+    
+    // Markers
+    @AppStorage("showHourNumbers") 
+    var showHourNumbers = true
+    
+    @AppStorage("markersWidth") 
+    var markersWidth: Double = 2.0
+    
+    @AppStorage("markersOffset") 
+    var markersOffset: Double = 0.0
+    
+    @AppStorage("numbersSize") 
+    var numbersSize: Double = 16.0
+    
+    @AppStorage("numberInterval") 
+    var numberInterval = 1
+    
+    @AppStorage("showMarkers") 
+    var showMarkers = true
+    
+    @AppStorage("showIntermediateMarkers") 
+    var showIntermediateMarkers = true
+    
+    // Fonts
+    @AppStorage("digitalFont") 
+    var digitalFont = "SF Pro"
+    
+    @AppStorage("fontName") 
+    var fontName = "SF Pro"
+    
+    @AppStorage("digitalFontSize") 
+    var digitalFontSizeRaw: Double = 42.0
+    
+    @AppStorage("markerStyle") 
+    private var markerStyleRaw = MarkerStyle.lines.rawValue
+    
+    // MARK: - Computed Properties
     
     var taskArcLineWidth: CGFloat {
         get { CGFloat(taskArcLineWidthRaw) }
         set { taskArcLineWidthRaw = Double(newValue) }
     }
+    
     var outerRingLineWidth: CGFloat {
         get { CGFloat(outerRingLineWidthRaw) }
         set { outerRingLineWidthRaw = Double(newValue) }
     }
+    
     var markerStyle: MarkerStyle {
-        get {
-            MarkerStyle(rawValue: markerStyleRaw) ?? .lines
-        }
-        set {
-            markerStyleRaw = newValue.rawValue
-        }
+        get { MarkerStyle(rawValue: markerStyleRaw) ?? .lines }
+        set { markerStyleRaw = newValue.rawValue }
     }
+    
+    var digitalFontSize: Double {
+        get { digitalFontSizeRaw }
+        set { digitalFontSizeRaw = newValue }
+    }
+    
     var categories: [TaskCategoryModel] {
         categoryManagement.categories
     }
+    
+    var currentThemeColors: ClockThemeColors {
+        ClockThemeColors(
+            lightModeHandColor: lightModeHandColor,
+            darkModeHandColor: darkModeHandColor,
+            lightModeDigitalFontColor: lightModeDigitalFontColor,
+            darkModeDigitalFontColor: darkModeDigitalFontColor,
+            lightModeClockFaceColor: lightModeClockFaceColor,
+            darkModeClockFaceColor: darkModeClockFaceColor,
+            lightModeOuterRingColor: lightModeOuterRingColor,
+            darkModeOuterRingColor: darkModeOuterRingColor,
+            lightModeMarkersColor: lightModeMarkersColor,
+            darkModeMarkersColor: darkModeMarkersColor
+        )
+    }
+    
+    var currentMarkerSettings: MarkerSettings {
+        MarkerSettings(
+            width: markersWidth,
+            offset: markersOffset,
+            numbersSize: numbersSize,
+            numberInterval: numberInterval,
+            fontName: fontName,
+            style: markerStyle,
+            showHourNumbers: showHourNumbers,
+            showMarkers: showMarkers,
+            showIntermediateMarkers: showIntermediateMarkers
+        )
+    }
+    
+    // MARK: - Private Properties
+    
+    private var cancellables = Set<AnyCancellable>()
     private var currentActiveCategory: TaskCategoryModel?
-
-    // MARK: - Initialization    
-    init(sharedState: SharedStateService = .shared) {
+    
+    // MARK: - Initialization
+    
+    init(
+        sharedState: SharedStateService = .shared,
+        notificationService: NotificationServiceProtocol = NotificationService.shared
+    ) {
         self.sharedState = sharedState
+        self.notificationService = notificationService
         self.clockState = ClockStateManager()
+        
+        // Load saved settings
         self.zeroPosition = UserDefaults.standard.double(forKey: "zeroPosition")
         self.isDarkMode = ThemeManager.shared.isDarkMode
+        self.clockStyle = UserDefaults.standard.string(forKey: "clockStyle") ?? "Классический"
         
         let initialDate = Date()
         self.selectedDate = initialDate
         
+        // Initialize services with dependency injection
         let taskManagement = TaskManagement(sharedState: sharedState, selectedDate: initialDate)
         self.taskManagement = taskManagement
         
@@ -220,21 +299,37 @@ final class ClockViewModel: ObservableObject {
         
         self.tasks = sharedState.tasks
         
-        setupInitialState()
-        setupBindings()
-        setupNotifications()
+        Task {
+            await setupAsync()
+        }
     }
     
-    private func setupInitialState() {
-        initializeMarkersViewModel()
+    deinit {
+        // Метод deinit не может быть @MainActor
+        NotificationCenter.default.removeObserver(self)
     }
     
-    private func setupBindings() {
-        setupDockBarBindings()
-        setupTaskBindings()
+    // MARK: - Setup Methods
+    
+    private func setupAsync() async {
+        await setupInitialState()
+        await setupBindings()
+        await setupNotifications()
     }
     
-    private func setupNotifications() {
+    private func setupInitialState() async {
+        await configureMarkersViewModel()
+        await syncDockBarState()
+    }
+    
+    private func setupBindings() async {
+        await bindDockBarUpdates()
+        await bindTaskUpdates()
+        await bindDateChanges()
+        await bindThemeChanges()
+    }
+    
+    private func setupNotifications() async {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleZeroPositionChange),
@@ -250,165 +345,277 @@ final class ClockViewModel: ObservableObject {
         )
     }
     
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-        
-        NotificationCenter.default.removeObserver(
-            self,
-            name: NSNotification.Name("ClockStyleDidChange"),
-            object: nil
-        )
-    }
-    
     // MARK: - Public Methods
+    
     func updateCurrentTimeIfNeeded() {
         guard Calendar.current.isDate(selectedDate, inSameDayAs: Date()) else { return }
         
         currentDate = Date()
-        checkForCategoryChange()
+        Task {
+            await checkForCategoryChange()
+        }
     }
     
     func startDragging(_ task: TaskOnRing) {
         draggedTask = task
         dragAndDropManager.startDragging(task)
     }
+    
     func stopDragging(didReturnToClock: Bool) {
         dragAndDropManager.stopDragging(didReturnToClock: didReturnToClock)
         draggedTask = nil
         isDraggingOutside = false
     }
-
-
-    // MARK: - Private Methods
-    @objc private func handleZeroPositionChange() {
-        DispatchQueue.main.async { [weak self] in
-            let newPosition = ZeroPositionManager.shared.zeroPosition
-            self?.zeroPosition = newPosition
-            self?.markersViewModel.zeroPosition = newPosition
-            // Принудительно обновляем UI
-            self?.objectWillChange.send()
-        }
-    }
-    @objc private func handleClockStyleChange(_ notification: Notification) {
-        if let newStyle = notification.userInfo?["clockStyle"] as? String {
-            DispatchQueue.main.async { [weak self] in
-                // Проверяем, что стиль действительно изменился
-                if self?.clockStyle != newStyle {
-                    self?.clockStyle = newStyle
-                    // objectWillChange.send() 
-                }
-            }
-        }
-    }
-    private func initializeMarkersViewModel() {
-        markersViewModel.showHourNumbers = showHourNumbers
-        markersViewModel.markersWidth = markersWidth
-        markersViewModel.markersOffset = markersOffset
-        markersViewModel.numbersSize = numbersSize
-        markersViewModel.lightModeMarkersColor = lightModeMarkersColor
-        markersViewModel.darkModeMarkersColor = darkModeMarkersColor
-        markersViewModel.isDarkMode = isDarkMode
-        markersViewModel.zeroPosition = zeroPosition
-        markersViewModel.numberInterval = numberInterval
-        markersViewModel.showMarkers = showMarkers
-        markersViewModel.fontName = fontName
-        markersViewModel.markerStyle = markerStyle
-        markersViewModel.showIntermediateMarkers = showIntermediateMarkers
-        markersViewModel.digitalFontSize = digitalFontSizeRaw
-        markersViewModel.lightModeDigitalFontColor = lightModeDigitalFontColor
-        markersViewModel.darkModeDigitalFontColor = darkModeDigitalFontColor
-    }
     
-    // MARK: - Formatted Date Methods
-    var formattedDate: String {
-        switch Locale.current.language.languageCode?.identifier {
-        case "ru":
-            return selectedDate.formattedForClockDate()
-        case "zh":
-            return selectedDate.formattedForClockDateZh()
-        case "es":
-            return selectedDate.formattedForClockDateEs()
-        case "ja":
-            return selectedDate.formattedForClockDateJa()
-        case "fr":
-            return selectedDate.formattedForClockDateFr()
-        default:
-            return selectedDate.formattedForClockDateEn()
-        }
-    }
-    
-    var formattedWeekday: String {
-        switch Locale.current.language.languageCode?.identifier {
-        case "ru":
-            return selectedDate.formattedWeekday()
-        case "zh":
-            return selectedDate.formattedWeekdayZh()
-        case "es":
-            return selectedDate.formattedWeekdayEs()
-        case "ja":
-            return selectedDate.formattedWeekdayJa()
-        case "fr":
-            return selectedDate.formattedWeekdayFr()
-        default:
-            return selectedDate.formattedWeekdayEn()
-        }
-    }
-    
-    // MARK: - UI Update Methods
-    func updateMarkersViewModel() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            let tempValue = self.markersViewModel.markersWidth
-            self.markersViewModel.markersWidth = tempValue + 0.01
-            DispatchQueue.main.async {
-                self.markersViewModel.markersWidth = tempValue
-            }
-        }
-    }
-    
-    func updateUIForThemeChange() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            let currentThemeIsDark = ThemeManager.shared.isDarkMode
-            if self.isDarkMode != currentThemeIsDark {
-                self.isDarkMode = currentThemeIsDark
-            }
-            if self.markersViewModel.isDarkMode != currentThemeIsDark {
-                self.markersViewModel.isDarkMode = currentThemeIsDark
-            }
-            self.markersViewModel.updateCurrentThemeColors()
-            self.objectWillChange.send()
-            self.markersViewModel.objectWillChange.send()
-        }
-    }
-    
-    // MARK: - Task Management Methods
     func updateDragPosition(isOutsideClock: Bool) {
         dragAndDropManager.updateDragPosition(isOutsideClock: isOutsideClock)
     }
-
-    // MARK: - Time and Angle Methods
+    
     func updateZeroPosition(_ newPosition: Double) {
         ZeroPositionManager.shared.updateZeroPosition(newPosition)
         zeroPosition = newPosition
     }
-    func getTimeWithZeroOffset(_ date: Date, inverse: Bool = false) -> Date {
-        RingTimeCalculator.getTimeWithZeroOffset(date, baseDate: selectedDate, zeroPosition: zeroPosition, inverse: inverse)
+    
+    // Добавляем недостающие методы для совместимости с UI
+    func updateUIForThemeChange() {
+        Task {
+            await updateThemeState()
+        }
     }
+    
+    func updateMarkersViewModel() {
+        Task {
+            await configureMarkersViewModel()
+        }
+    }
+    
+    // MARK: - Time Calculation Methods
+    
+    func getTimeWithZeroOffset(_ date: Date, inverse: Bool = false) -> Date {
+        RingTimeCalculator.getTimeWithZeroOffset(
+            date, 
+            baseDate: selectedDate, 
+            zeroPosition: zeroPosition, 
+            inverse: inverse
+        )
+    }
+    
     func angleToTime(_ angle: Double) -> Date {
         RingTimeCalculator.angleToTime(angle, baseDate: selectedDate, zeroPosition: zeroPosition)
     }
+    
     func timeToAngle(_ date: Date) -> Double {
         RingTimeCalculator.timeToAngle(date, zeroPosition: zeroPosition)
     }
+    
     func tasksForSelectedDate(_ allTasks: [TaskOnRing]) -> [TaskOnRing] {
         allTasks.filter { task in
             Calendar.current.isDate(task.startTime, inSameDayAs: clockState.selectedDate)
         }
     }
     
-    // MARK: - Category Change Methods
-    private func checkForCategoryChange() {
+    func applyWatchFaceSettings() {
+        Task {
+            await refreshAllSettings()
+        }
+    }
+    
+    // MARK: - Private Methods
+    
+    @objc private func handleZeroPositionChange() {
+        let newPosition = ZeroPositionManager.shared.zeroPosition
+        zeroPosition = newPosition
+        markersViewModel.zeroPosition = newPosition
+        objectWillChange.send()
+    }
+    
+    @objc private func handleClockStyleChange(_ notification: Notification) {
+        guard let newStyle = notification.userInfo?["clockStyle"] as? String,
+              clockStyle != newStyle else { return }
+        
+        clockStyle = newStyle
+    }
+    
+    private func saveZeroPosition() {
+        UserDefaults.standard.set(zeroPosition, forKey: "zeroPosition")
+    }
+    
+    private func saveClockStyle() {
+        UserDefaults.standard.set(clockStyle, forKey: "clockStyle")
+        objectWillChange.send()
+    }
+    
+    private func updateThemeState() async {
+        let currentThemeIsDark = ThemeManager.shared.isDarkMode
+        
+        if isDarkMode != currentThemeIsDark {
+            isDarkMode = currentThemeIsDark
+        }
+        
+        if markersViewModel.isDarkMode != currentThemeIsDark {
+            markersViewModel.isDarkMode = currentThemeIsDark
+        }
+        
+        markersViewModel.updateCurrentThemeColors()
+        
+        await MainActor.run {
+            objectWillChange.send()
+            markersViewModel.objectWillChange.send()
+        }
+    }
+    
+    private func configureMarkersViewModel() async {
+        let settings = currentMarkerSettings
+        let colors = currentThemeColors
+        
+        markersViewModel.showHourNumbers = settings.showHourNumbers
+        markersViewModel.markersWidth = settings.width
+        markersViewModel.markersOffset = settings.offset
+        markersViewModel.numbersSize = settings.numbersSize
+        markersViewModel.lightModeMarkersColor = colors.lightModeMarkersColor
+        markersViewModel.darkModeMarkersColor = colors.darkModeMarkersColor
+        markersViewModel.isDarkMode = isDarkMode
+        markersViewModel.zeroPosition = zeroPosition
+        markersViewModel.numberInterval = settings.numberInterval
+        markersViewModel.showMarkers = settings.showMarkers
+        markersViewModel.fontName = settings.fontName
+        markersViewModel.markerStyle = settings.style
+        markersViewModel.showIntermediateMarkers = settings.showIntermediateMarkers
+        markersViewModel.digitalFontSize = digitalFontSize
+        markersViewModel.lightModeDigitalFontColor = colors.lightModeDigitalFontColor
+        markersViewModel.darkModeDigitalFontColor = colors.darkModeDigitalFontColor
+        
+        // Принудительно обновляем UI
+        await MainActor.run {
+            let tempValue = markersViewModel.markersWidth
+            markersViewModel.markersWidth = tempValue + 0.01
+            
+            Task {
+                await MainActor.run {
+                    markersViewModel.markersWidth = tempValue
+                }
+            }
+        }
+    }
+    
+    private func syncDockBarState() async {
+        dockBarViewModel.selectedCategory = selectedCategory
+        dockBarViewModel.draggedCategory = draggedCategory
+        dockBarViewModel.showingAddTask = showingAddTask
+        dockBarViewModel.showingCategoryEditor = showingCategoryEditor
+    }
+    
+    private func bindDockBarUpdates() async {
+        dockBarViewModel.$selectedCategory
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newCategory in
+                guard let self = self,
+                      self.selectedCategory != newCategory else { return }
+                self.selectedCategory = newCategory
+            }
+            .store(in: &cancellables)
+            
+        dockBarViewModel.$draggedCategory
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newCategory in
+                guard let self = self,
+                      self.draggedCategory != newCategory else { return }
+                self.draggedCategory = newCategory
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func bindTaskUpdates() async {
+        sharedState.subscribeToTasksUpdates { [weak self] in
+            guard let self = self else { return }
+            self.tasks = self.sharedState.tasks
+        }
+        
+        $tasks
+            .removeDuplicates { oldTasks, newTasks in
+                oldTasks.count == newTasks.count && 
+                zip(oldTasks, newTasks).allSatisfy { $0.id == $1.id }
+            }
+            .sink { [weak self] newTasks in
+                self?.handleTasksUpdate(newTasks)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func bindDateChanges() async {
+        $selectedDate
+            .removeDuplicates()
+            .sink { [weak self] newDate in
+                guard let self = self else { return }
+                (self.taskManagement as? TaskManagement)?.selectedDate = newDate
+                self.updateTasksForSelectedDate()
+                self.clockState.selectedDate = newDate
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func bindThemeChanges() async {
+        $isDarkMode
+            .removeDuplicates()
+            .sink { [weak self] isDark in
+                guard let self = self,
+                      isDark != ThemeManager.shared.isDarkMode else { return }
+                
+                UserDefaults.standard.set(isDark, forKey: "isDarkMode")
+                ThemeManager.shared.setTheme(isDark)
+                self.markersViewModel.isDarkMode = isDark
+                self.markersViewModel.updateCurrentThemeColors()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func handleTasksUpdate(_ newTasks: [TaskOnRing]) {
+        Task {
+            await updateEditingTaskIfNeeded(newTasks: newTasks)
+            await validateTaskOverlaps(newTasks)
+            await notifyTaskArcsComponents(newTasks: newTasks)
+            await updateCategoryStates(newTasks)
+        }
+    }
+    
+    private func updateEditingTaskIfNeeded(newTasks: [TaskOnRing]) async {
+        guard let editingTask = editingTask else { return }
+        
+        if let updatedTask = newTasks.first(where: { $0.id == editingTask.id }) {
+            guard !tasksAreEqual(editingTask, updatedTask) else { return }
+            self.editingTask = updatedTask
+        } else {
+            // Edited task was deleted
+            self.editingTask = nil
+            self.isEditingMode = false
+        }
+    }
+    
+    private func validateTaskOverlaps(_ newTasks: [TaskOnRing]) async {
+        let todayTasks = newTasks.filter { task in
+            Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
+        }
+        
+        overlappingTaskGroups = findOverlappingTaskGroups(todayTasks)
+    }
+    
+    private func notifyTaskArcsComponents(newTasks: [TaskOnRing]) async {
+        // This could be enhanced with specific change detection
+        NotificationCenter.default.post(
+            name: .taskArcsTasksModified,
+            object: self,
+            userInfo: ["modifiedTasks": newTasks]
+        )
+    }
+    
+    private func updateCategoryStates(_ newTasks: [TaskOnRing]) async {
+        await checkForCategoryChange()
+        updateCategoryStatistics(newTasks)
+    }
+    
+    private func checkForCategoryChange() async {
         guard notificationsEnabled else { return }
         
         let todayTasks = tasksForSelectedDate(tasks)
@@ -420,65 +627,19 @@ final class ClockViewModel: ObservableObject {
         
         let newActiveCategory = activeTask?.category
         
-        if let newCategory = newActiveCategory, newCategory != currentActiveCategory {
+        if let newCategory = newActiveCategory, 
+           newCategory != currentActiveCategory {
             currentActiveCategory = newCategory
-            Task { @MainActor in
-                do {
-                    try await notificationService.sendCategoryStartNotification(category: newCategory)
-                } catch {
-                    print("⚠️ Failed to send category notification: \(error.localizedDescription)")
-                }
+            
+            do {
+                try await notificationService.sendCategoryStartNotification(category: newCategory)
+            } catch {
+                print("⚠️ Failed to send category notification: \(error.localizedDescription)")
             }
         } else if newActiveCategory == nil && currentActiveCategory != nil {
             currentActiveCategory = nil
         }
     }
-
-    // MARK: - Dock Bar Binding Methods
-    private func setupDockBarBindings() {
-        dockBarViewModel.$selectedCategory
-            .sink { [weak self] newCategory in
-                if self?.selectedCategory != newCategory {
-                    self?.selectedCategory = newCategory
-                }
-            }
-            .store(in: &cancellables)
-            
-        dockBarViewModel.$draggedCategory
-            .sink { [weak self] newCategory in
-                print("🔄 DEBUG: DockBar draggedCategory changed to: \(newCategory?.rawValue ?? "nil")")
-                print("🔄 DEBUG: Current ClockViewModel draggedCategory: \(self?.draggedCategory?.rawValue ?? "nil")")
-                if self?.draggedCategory != newCategory {
-                    self?.draggedCategory = newCategory
-                    print("✅ DEBUG: ClockViewModel draggedCategory updated to: \(newCategory?.rawValue ?? "nil")")
-                }
-            }
-            .store(in: &cancellables)
-            
-        dockBarViewModel.$showingAddTask
-            .sink { [weak self] newValue in
-                if self?.showingAddTask != newValue {
-                    self?.showingAddTask = newValue
-                }
-            }
-            .store(in: &cancellables)
-            
-        dockBarViewModel.$showingCategoryEditor
-            .sink { [weak self] newValue in
-                if self?.showingCategoryEditor != newValue {
-                    self?.showingCategoryEditor = newValue
-                }
-            }
-            .store(in: &cancellables)
-            
-        dockBarViewModel.selectedCategory = selectedCategory
-        dockBarViewModel.draggedCategory = draggedCategory
-        dockBarViewModel.showingAddTask = showingAddTask
-        dockBarViewModel.showingCategoryEditor = showingCategoryEditor
-    }
-    
-    // MARK: - Task Management Methods
-    private var cancellables = Set<AnyCancellable>()
     
     private func updateTasksForSelectedDate() {
         let allTasks = sharedState.tasks
@@ -493,276 +654,65 @@ final class ClockViewModel: ObservableObject {
         }
         
         tasks = tasksOnSelectedDate + incompleteTasksFromPreviousDays
-        
         objectWillChange.send()
-        
-        // updateWidgetData()
     }
-
-    // MARK: - Widget Update Methods
-    // private func updateWidgetData() {
-    //     guard let defaults = UserDefaults(suiteName: "group.AbstractSoft.TaskFl0w") else {
-    //         print("Не удалось получить доступ к группе UserDefaults")
-    //         return
-    //     }
-        
-    //     updateWidgetCurrentCategory(defaults)
-    //     updateWidgetTasks(defaults)
-    //     updateWidgetCategories(defaults)
-        
-    //     WidgetCenter.shared.reloadAllTimelines()
-    // }
-
-    // private func updateWidgetCurrentCategory(_ defaults: UserDefaults) {
-    //     // Логика обновления текущей категории
-    // }
-
-    // private func updateWidgetTasks(_ defaults: UserDefaults) {
-    //     // Логика обновления задач
-    // }
-
-    // private func updateWidgetCategories(_ defaults: UserDefaults) {
-    //     // Логика обновления категорий
-    // }
-
-    // Модифицируем метод applyWatchFaceSettings() для обновления ThemeManager
-    func applyWatchFaceSettings() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            
-            // Получаем ThemeManager
-            let themeManager = ThemeManager.shared
-            
-            // Перезагружаем основные настройки
-            self.showHourNumbers = UserDefaults.standard.bool(forKey: "showHourNumbers")
-            self.markersWidth = UserDefaults.standard.double(forKey: "markersWidth")
-            self.markersOffset = UserDefaults.standard.double(forKey: "markersOffset")
-            self.numbersSize = UserDefaults.standard.double(forKey: "numbersSize")
-            self.zeroPosition = UserDefaults.standard.double(forKey: "zeroPosition")
-            self.numberInterval = UserDefaults.standard.integer(forKey: "numberInterval")
-            self.showMarkers = UserDefaults.standard.bool(forKey: "showMarkers")
-            self.fontName = UserDefaults.standard.string(forKey: "fontName") ?? "SF Pro"
-            self.outerRingLineWidthRaw = UserDefaults.standard.double(forKey: "outerRingLineWidth")
-            self.taskArcLineWidthRaw = UserDefaults.standard.double(forKey: "taskArcLineWidth")
-            self.isAnalogArcStyle = UserDefaults.standard.bool(forKey: "isAnalogArcStyle")
-            self.showTimeOnlyForActiveTask = UserDefaults.standard.bool(forKey: "showTimeOnlyForActiveTask")
-            self.digitalFont = UserDefaults.standard.string(forKey: "digitalFont") ?? "SF Pro"
-            self.digitalFontSizeRaw = UserDefaults.standard.double(forKey: "digitalFontSize")
-            
-            // Обновляем цвета в ThemeManager
-            if let lightFaceColorHex = UserDefaults.standard.string(forKey: "lightModeClockFaceColor"),
-               let lightFaceColor = Color(hex: lightFaceColorHex) {
-                self.lightModeClockFaceColor = lightFaceColorHex
-                themeManager.updateColor(lightFaceColor, for: ThemeManager.Constants.lightModeClockFaceColorKey)
-            }
-            
-            if let darkFaceColorHex = UserDefaults.standard.string(forKey: "darkModeClockFaceColor"),
-               let darkFaceColor = Color(hex: darkFaceColorHex) {
-                self.darkModeClockFaceColor = darkFaceColorHex
-                themeManager.updateColor(darkFaceColor, for: ThemeManager.Constants.darkModeClockFaceColorKey)
-            }
-            
-            if let lightRingColorHex = UserDefaults.standard.string(forKey: "lightModeOuterRingColor"),
-               let lightRingColor = Color(hex: lightRingColorHex) {
-                self.lightModeOuterRingColor = lightRingColorHex
-                themeManager.updateColor(lightRingColor, for: ThemeManager.Constants.lightModeOuterRingColorKey)
-            }
-            
-            if let darkRingColorHex = UserDefaults.standard.string(forKey: "darkModeOuterRingColor"),
-               let darkRingColor = Color(hex: darkRingColorHex) {
-                self.darkModeOuterRingColor = darkRingColorHex
-                themeManager.updateColor(darkRingColor, for: ThemeManager.Constants.darkModeOuterRingColorKey)
-            }
-            
-            if let lightMarkersColorHex = UserDefaults.standard.string(forKey: "lightModeMarkersColor"),
-               let lightMarkersColor = Color(hex: lightMarkersColorHex) {
-                self.lightModeMarkersColor = lightMarkersColorHex
-                themeManager.updateColor(lightMarkersColor, for: ThemeManager.Constants.lightModeMarkersColorKey)
-            }
-            
-            if let darkMarkersColorHex = UserDefaults.standard.string(forKey: "darkModeMarkersColor"),
-               let darkMarkersColor = Color(hex: darkMarkersColorHex) {
-                self.darkModeMarkersColor = darkMarkersColorHex
-                themeManager.updateColor(darkMarkersColor, for: ThemeManager.Constants.darkModeMarkersColorKey)
-            }
-            
-            if let lightDigitalFontColorHex = UserDefaults.standard.string(forKey: "lightModeDigitalFontColor") {
-                self.lightModeDigitalFontColor = lightDigitalFontColorHex
-            }
-            
-            if let darkDigitalFontColorHex = UserDefaults.standard.string(forKey: "darkModeDigitalFontColor") {
-                self.darkModeDigitalFontColor = darkDigitalFontColorHex
-            }
-            
-            if let lightHandColorHex = UserDefaults.standard.string(forKey: "lightModeHandColor") {
-                self.lightModeHandColor = lightHandColorHex
-            }
-            
-            if let darkHandColorHex = UserDefaults.standard.string(forKey: "darkModeHandColor") {
-                self.darkModeHandColor = darkHandColorHex
-            }
-            
-            if let savedStyle = UserDefaults.standard.string(forKey: "clockStyle") {
-                self.clockStyle = savedStyle
-            }
-            
-            if let rawStyle = UserDefaults.standard.string(forKey: "markerStyle"),
-               let style = MarkerStyle(rawValue: rawStyle) {
-                self.markerStyle = style
-            }
-            
-            self.showIntermediateMarkers = UserDefaults.standard.bool(forKey: "showIntermediateMarkers")
-            
-            self.initializeMarkersViewModel()
-            
-            DispatchQueue.main.async {
-                themeManager.objectWillChange.send()
-            }
-            
-            self.objectWillChange.send()
-            self.markersViewModel.objectWillChange.send()
-            
-            self.updateMarkersViewModel()
-        }
-    }
-
-    private func setupTaskBindings() {
-        self.sharedState.subscribeToTasksUpdates { [weak self] in
-            guard let self = self else { return }
-            self.tasks = self.sharedState.tasks
-        }
-        
-        $selectedDate
-            .sink { [weak self] newDate in
-                guard let self = self else { return }
-                // Обновляем selectedDate в TaskManagement
-                (self.taskManagement as? TaskManagement)?.selectedDate = newDate
-                // Обновляем задачи для выбранной даты
-                self.updateTasksForSelectedDate()
-                // Обновляем состояние clockState
-                self.clockState.selectedDate = newDate
-            }
-            .store(in: &cancellables)
-    }
-
-    // MARK: - Task Update Handling Methods
-    private func handleTasksUpdate(oldValue: [TaskOnRing], newValue: [TaskOnRing]) {
-        // Обновляем редактируемую задачу если она была изменена
-        updateEditingTaskIfNeeded(newTasks: newValue)
-        
-        // Проверяем наличие конфликтов и перекрытий
-        validateTaskOverlaps(newValue)
-        
-        // Уведомляем TaskArcs компоненты об изменениях
-        notifyTaskArcsComponents(oldTasks: oldValue, newTasks: newValue)
-        
-        // Обновляем состояние категорий
-        updateCategoryStates(newValue)
-    }
-
-    private func updateEditingTaskIfNeeded(newTasks: [TaskOnRing]) {
-        guard let editingTask = editingTask else { return }
-        
-        if let updatedTask = newTasks.first(where: { $0.id == editingTask.id }) {
-            // Обновляем редактируемую задачу только если она действительно изменилась
-            if !tasksAreEqual(editingTask, updatedTask) {
-                self.editingTask = updatedTask
-            }
-        } else {
-            // Редактируемая задача была удалена
-            self.editingTask = nil
-            self.isEditingMode = false
-        }
-    }
-
-    private func validateTaskOverlaps(_ newTasks: [TaskOnRing]) {
-        // Проверяем задачи только для выбранной даты
-        let todayTasks = newTasks.filter { task in
-            Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
-        }
-        
-        // Группируем перекрывающиеся задачи для дальнейшей обработки
-        let overlappingGroups = findOverlappingTaskGroups(todayTasks)
-        
-        // Сохраняем информацию о перекрытиях напрямую в ClockViewModel
-        self.overlappingTaskGroups = overlappingGroups
-    }
-
-    private func notifyTaskArcsComponents(oldTasks: [TaskOnRing], newTasks: [TaskOnRing]) {
-        // Находим добавленные задачи
-        let addedTasks = newTasks.filter { newTask in
-            !oldTasks.contains { $0.id == newTask.id }
-        }
-        
-        // Находим удаленные задачи
-        let removedTasks = oldTasks.filter { oldTask in
-            !newTasks.contains { $0.id == oldTask.id }
-        }
-        
-        // Находим измененные задачи
-        let modifiedTasks = newTasks.compactMap { newTask -> TaskOnRing? in
-            guard let oldTask = oldTasks.first(where: { $0.id == newTask.id }) else { return nil }
-            return tasksAreEqual(oldTask, newTask) ? nil : newTask
-        }
-        
-        // Отправляем уведомления компонентам TaskArcs
-        if !addedTasks.isEmpty {
-            NotificationCenter.default.post(
-                name: .taskArcsTasksAdded,
-                object: self,
-                userInfo: ["addedTasks": addedTasks]
-            )
-        }
-        
-        if !removedTasks.isEmpty {
-            NotificationCenter.default.post(
-                name: .taskArcsTasksRemoved,
-                object: self,
-                userInfo: ["removedTasks": removedTasks]
-            )
-        }
-        
-        if !modifiedTasks.isEmpty {
-            NotificationCenter.default.post(
-                name: .taskArcsTasksModified,
-                object: self,
-                userInfo: ["modifiedTasks": modifiedTasks]
-            )
-        }
-    }
-
-    private func updateCategoryStates(_ newTasks: [TaskOnRing]) {
-        // Обновляем информацию о текущей активной категории
-        checkForCategoryChange()
-        
-        // Обновляем статистику категорий для внутреннего использования
-        updateCategoryStatistics(newTasks)
-    }
-
+    
     private func updateCategoryStatistics(_ tasks: [TaskOnRing]) {
-        // Подсчитываем задачи по категориям для внутренней статистики
         let categoryTaskCounts = Dictionary(grouping: tasks) { $0.category }
             .mapValues { $0.count }
         
-        // Уведомляем об изменениях в статистике категорий
         NotificationCenter.default.post(
             name: .categoryStatisticsUpdated,
             object: self,
             userInfo: ["categoryTaskCounts": categoryTaskCounts]
         )
     }
-
+    
+    private func refreshAllSettings() async {
+        await configureMarkersViewModel()
+        
+        let themeManager = ThemeManager.shared
+        let colors = currentThemeColors
+        
+        // Update ThemeManager colors
+        await updateThemeManagerColors(themeManager, colors: colors)
+        
+        await MainActor.run {
+            themeManager.objectWillChange.send()
+            self.objectWillChange.send()
+            self.markersViewModel.objectWillChange.send()
+        }
+    }
+    
+    private func updateThemeManagerColors(_ themeManager: ThemeManager, colors: ClockThemeColors) async {
+        guard let lightFaceColor = Color(hex: colors.lightModeClockFaceColor),
+              let darkFaceColor = Color(hex: colors.darkModeClockFaceColor),
+              let lightRingColor = Color(hex: colors.lightModeOuterRingColor),
+              let darkRingColor = Color(hex: colors.darkModeOuterRingColor),
+              let lightMarkersColor = Color(hex: colors.lightModeMarkersColor),
+              let darkMarkersColor = Color(hex: colors.darkModeMarkersColor) else { return }
+        
+        themeManager.updateColor(lightFaceColor, for: ThemeManager.Constants.lightModeClockFaceColorKey)
+        themeManager.updateColor(darkFaceColor, for: ThemeManager.Constants.darkModeClockFaceColorKey)
+        themeManager.updateColor(lightRingColor, for: ThemeManager.Constants.lightModeOuterRingColorKey)
+        themeManager.updateColor(darkRingColor, for: ThemeManager.Constants.darkModeOuterRingColorKey)
+        themeManager.updateColor(lightMarkersColor, for: ThemeManager.Constants.lightModeMarkersColorKey)
+        themeManager.updateColor(darkMarkersColor, for: ThemeManager.Constants.darkModeMarkersColorKey)
+    }
+    
+    // MARK: - Helper Methods
+    
     private func findOverlappingTaskGroups(_ tasks: [TaskOnRing]) -> [[TaskOnRing]] {
         var overlappingGroups: [[TaskOnRing]] = []
         var processedTasks: Set<UUID> = []
         
         for task in tasks.sorted(by: { $0.startTime < $1.startTime }) {
-            if processedTasks.contains(task.id) { continue }
+            guard !processedTasks.contains(task.id) else { continue }
             
             var currentGroup: [TaskOnRing] = [task]
             processedTasks.insert(task.id)
             
-            // Ищем все задачи, которые пересекаются с текущей
+            // Find all tasks that overlap with current task
             for otherTask in tasks where !processedTasks.contains(otherTask.id) {
                 if tasksOverlap(task, otherTask) {
                     currentGroup.append(otherTask)
@@ -770,7 +720,7 @@ final class ClockViewModel: ObservableObject {
                 }
             }
             
-            // Добавляем группу только если в ней больше одной задачи
+            // Add group only if it contains more than one task
             if currentGroup.count > 1 {
                 overlappingGroups.append(currentGroup)
             }
@@ -778,31 +728,51 @@ final class ClockViewModel: ObservableObject {
         
         return overlappingGroups
     }
-
+    
     private func tasksOverlap(_ task1: TaskOnRing, _ task2: TaskOnRing) -> Bool {
-        return task1.startTime < task2.endTime && task1.endTime > task2.startTime
+        task1.startTime < task2.endTime && task1.endTime > task2.startTime
     }
-
+    
     private func tasksAreEqual(_ task1: TaskOnRing, _ task2: TaskOnRing) -> Bool {
-        return task1.id == task2.id &&
-               task1.startTime == task2.startTime &&
-               task1.endTime == task2.endTime &&
-               task1.category == task2.category &&
-               task1.isCompleted == task2.isCompleted
+        task1.id == task2.id &&
+        task1.startTime == task2.startTime &&
+        task1.endTime == task2.endTime &&
+        task1.category == task2.category &&
+        task1.isCompleted == task2.isCompleted
     }
+}
 
-    // Добавляем метод для принудительного обновления UI
-    func forceUIUpdate() {
-        DispatchQueue.main.async { [weak self] in
-            self?.objectWillChange.send()
+// MARK: - Formatted Date Computed Properties
+
+extension ClockViewModel {
+    var formattedDate: String {
+        switch Locale.current.language.languageCode?.identifier {
+        case "ru": return selectedDate.formattedForClockDate()
+        case "zh": return selectedDate.formattedForClockDateZh()
+        case "es": return selectedDate.formattedForClockDateEs()
+        case "ja": return selectedDate.formattedForClockDateJa()
+        case "fr": return selectedDate.formattedForClockDateFr()
+        default: return selectedDate.formattedForClockDateEn()
+        }
+    }
+    
+    var formattedWeekday: String {
+        switch Locale.current.language.languageCode?.identifier {
+        case "ru": return selectedDate.formattedWeekday()
+        case "zh": return selectedDate.formattedWeekdayZh()
+        case "es": return selectedDate.formattedWeekdayEs()
+        case "ja": return selectedDate.formattedWeekdayJa()
+        case "fr": return selectedDate.formattedWeekdayFr()
+        default: return selectedDate.formattedWeekdayEn()
         }
     }
 }
 
 // MARK: - TaskArcs Notification Extensions
+
 extension Notification.Name {
     static let taskArcsTasksAdded = Notification.Name("TaskArcsTasksAdded")
-    static let taskArcsTasksRemoved = Notification.Name("TaskArcsTasksRemoved")
+    static let taskArcsTasksRemoved = Notification.Name("TaskArcsTasksRemoved") 
     static let taskArcsTasksModified = Notification.Name("TaskArcsTasksModified")
     static let categoryStatisticsUpdated = Notification.Name("CategoryStatisticsUpdated")
 }
