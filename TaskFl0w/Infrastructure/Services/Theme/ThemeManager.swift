@@ -93,6 +93,7 @@ enum ThemeColorType: String, CaseIterable {
 }
 
 // MARK: - Theme Manager Protocol
+@MainActor
 protocol ThemeManagerProtocol: ObservableObject {
     var currentThemeMode: ThemeMode { get set }
     var isDarkMode: Bool { get }
@@ -104,6 +105,7 @@ protocol ThemeManagerProtocol: ObservableObject {
 }
 
 // MARK: - Theme Manager Implementation
+@MainActor
 final class ThemeManager: ThemeManagerProtocol {
     // MARK: - Constants
     struct Constants {

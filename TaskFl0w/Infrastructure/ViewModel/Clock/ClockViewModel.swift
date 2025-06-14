@@ -49,6 +49,7 @@ struct ClockThemeColors {
 
 // MARK: - Protocols
 
+@MainActor
 protocol ClockViewModelProtocol: ObservableObject {
     var currentDate: Date { get }
     var selectedDate: Date { get set }
@@ -272,32 +273,33 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     // MARK: - Initialization
     
     init(
-        sharedState: SharedStateService = .shared,
-        notificationService: NotificationServiceProtocol = NotificationService.shared
+        sharedState: SharedStateService? = nil,
+        notificationService: NotificationServiceProtocol? = nil
     ) {
-        self.sharedState = sharedState
-        self.notificationService = notificationService
+        // Инициализируем зависимости внутри инициализатора
+        self.sharedState = sharedState ?? .shared
+        self.notificationService = notificationService ?? NotificationService.shared
         self.clockState = ClockStateManager()
         
         // Load saved settings
         self.zeroPosition = UserDefaults.standard.double(forKey: "zeroPosition")
-        self.isDarkMode = ThemeManager.shared.isDarkMode
+        self.isDarkMode = false // Временно установим false, затем обновим асинхронно
         self.clockStyle = UserDefaults.standard.string(forKey: "clockStyle") ?? "Классический"
         
         let initialDate = Date()
         self.selectedDate = initialDate
         
         // Initialize services with dependency injection
-        let taskManagement = TaskManagement(sharedState: sharedState, selectedDate: initialDate)
+        let taskManagement = TaskManagement(sharedState: self.sharedState, selectedDate: initialDate)
         self.taskManagement = taskManagement
         
-        let categoryManager = CategoryManagement(context: sharedState.context, sharedState: sharedState)
+        let categoryManager = CategoryManagement(context: self.sharedState.context, sharedState: self.sharedState)
         self.categoryManagement = categoryManager
         
         self.dragAndDropManager = DragAndDropManager(taskManagement: taskManagement)
         self.dockBarViewModel = DockBarViewModel(categoryManagement: categoryManager)
         
-        self.tasks = sharedState.tasks
+        self.tasks = self.sharedState.tasks
         
         Task {
             await setupAsync()
@@ -312,6 +314,9 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     // MARK: - Setup Methods
     
     private func setupAsync() async {
+        // Обновляем isDarkMode после инициализации - убираем await так как это не async свойство
+        self.isDarkMode = ThemeManager.shared.isDarkMode
+        
         await setupInitialState()
         await setupBindings()
         await setupNotifications()
@@ -330,19 +335,21 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     }
     
     private func setupNotifications() async {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleZeroPositionChange),
-            name: .zeroPositionDidChange,
-            object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleClockStyleChange),
-            name: NSNotification.Name("ClockStyleDidChange"),
-            object: nil
-        )
+        await MainActor.run {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleZeroPositionChange),
+                name: .zeroPositionDidChange,
+                object: nil
+            )
+            
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleClockStyleChange),
+                name: NSNotification.Name("ClockStyleDidChange"),
+                object: nil
+            )
+        }
     }
     
     // MARK: - Public Methods
@@ -458,10 +465,8 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         
         markersViewModel.updateCurrentThemeColors()
         
-        await MainActor.run {
-            objectWillChange.send()
-            markersViewModel.objectWillChange.send()
-        }
+        objectWillChange.send()
+        markersViewModel.objectWillChange.send()
     }
     
     private func configureMarkersViewModel() async {

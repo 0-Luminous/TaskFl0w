@@ -8,6 +8,7 @@
 import SwiftUI
 
 // MARK: - Менеджер библиотеки циферблатов
+@MainActor
 class WatchFaceLibraryManager: ObservableObject {
     // Синглтон для доступа к менеджеру из любого места
     static let shared = WatchFaceLibraryManager()

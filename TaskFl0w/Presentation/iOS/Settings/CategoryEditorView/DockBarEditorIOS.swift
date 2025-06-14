@@ -311,10 +311,12 @@ struct CategoryPageView: View {
 
 // MARK: - Вспомогательные
 
+@MainActor
 private var backgroundColorForTheme: Color {
     ThemeManager.shared.isDarkMode ? Color(white: 0.2) : Color.white.opacity(0.95)
 }
 
+@MainActor
 private var shadowColorForTheme: Color {
     ThemeManager.shared.isDarkMode ? Color.black.opacity(0.3) : Color.black.opacity(0.08)
 }

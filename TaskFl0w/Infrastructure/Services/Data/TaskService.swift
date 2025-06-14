@@ -111,7 +111,6 @@ final class TaskService: TaskServiceProtocol, ObservableObject {
             return taskItems
             
         } catch {
-            let errorContext = ErrorContext(source: "TaskService", operation: "loadTasks")
             errorHandler.handleDataError(error, in: "TaskService", operation: "loadTasks")
             throw error
         }
@@ -133,7 +132,6 @@ final class TaskService: TaskServiceProtocol, ObservableObject {
             }
             
         } catch {
-            let errorContext = ErrorContext(source: "TaskService", operation: "saveTasks")
             errorHandler.handleDataError(error, in: "TaskService", operation: "saveTasks")
             throw error
         }
@@ -157,7 +155,6 @@ final class TaskService: TaskServiceProtocol, ObservableObject {
             logger.info("Задача удалена: \(id)")
             
         } catch {
-            let errorContext = ErrorContext(source: "TaskService", operation: "deleteTask")
             errorHandler.handleDataError(error, in: "TaskService", operation: "deleteTask")
             throw error
         }
@@ -179,7 +176,6 @@ final class TaskService: TaskServiceProtocol, ObservableObject {
             logger.info("Задача обновлена: \(task.id)")
             
         } catch {
-            let errorContext = ErrorContext(source: "TaskService", operation: "updateTask")
             errorHandler.handleDataError(error, in: "TaskService", operation: "updateTask")
             throw error
         }
@@ -199,7 +195,6 @@ final class TaskService: TaskServiceProtocol, ObservableObject {
             logger.info("Задача создана: \(task.id)")
             
         } catch {
-            let errorContext = ErrorContext(source: "TaskService", operation: "createTask")
             errorHandler.handleDataError(error, in: "TaskService", operation: "createTask")
             throw error
         }

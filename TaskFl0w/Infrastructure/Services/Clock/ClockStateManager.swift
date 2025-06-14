@@ -1,6 +1,7 @@
 import Combine
 import SwiftUI
 
+@MainActor
 final class ClockStateManager: ObservableObject {
     // MARK: - Published properties
     @Published var selectedDate: Date = Date()
@@ -11,7 +12,7 @@ final class ClockStateManager: ObservableObject {
     private let zeroPositionManager = ZeroPositionManager.shared
 
     // MARK: - Timer for current time updates
-    private var timer: Timer?
+    private var timerCancellable: AnyCancellable?
 
     // Кэшируем calendar для переиспользования
     private let calendar = Calendar.current
@@ -48,20 +49,22 @@ final class ClockStateManager: ObservableObject {
     }
 
     deinit {
-        timer?.invalidate()
+        timerCancellable?.cancel()
     }
 
     // MARK: - Time management
     private func startTimeUpdates() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self, self.needsTimeUpdate else { return }
-            self.currentDate = Date()
-        }
+        timerCancellable = Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self = self, self.needsTimeUpdate else { return }
+                self.currentDate = Date()
+            }
     }
 
     private func stopTimeUpdates() {
-        timer?.invalidate()
-        timer = nil
+        timerCancellable?.cancel()
+        timerCancellable = nil
     }
 
     // Методы для паузы/возобновления когда view неактивен

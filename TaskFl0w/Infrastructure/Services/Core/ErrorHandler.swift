@@ -72,6 +72,7 @@ struct ErrorContext {
 }
 
 // MARK: - Error Handler Protocol
+@MainActor
 protocol ErrorHandlerProtocol {
     func handle(_ error: Error, context: ErrorContext)
     func handle(_ error: AppError, context: ErrorContext)

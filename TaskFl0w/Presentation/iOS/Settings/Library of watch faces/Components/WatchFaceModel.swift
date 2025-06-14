@@ -387,6 +387,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
     }
     
     // Метод для применения циферблата
+    @MainActor
     func apply(to themeManager: ThemeManager, markersViewModel: ClockMarkersViewModel? = nil) {
         // Применяем цвета через метод ThemeManager
         let lightFaceColor = Color(hex: lightModeClockFaceColor) ?? .white
@@ -448,9 +449,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
             userInfo: ["clockStyle": displayStyleName]
         )
         
-        DispatchQueue.main.async {
-            themeManager.objectWillChange.send()
-        }
+        themeManager.objectWillChange.send()
         
         // Дополнительно обновляем ViewModel для маркеров
         if let markersViewModel = markersViewModel {
