@@ -72,9 +72,7 @@ struct SoundAndNotification: View {
             }
             Button("notifications.alert.cancel".localized, role: .cancel) {}
         } message: {
-            Text(
-                "notifications.alert.message".localized
-            )
+            Text("notifications.alert.message".localized)
         }
         .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
         .background(themeManager.isDarkMode ? 
@@ -85,16 +83,28 @@ struct SoundAndNotification: View {
     // MARK: - Вспомогательные функции
 
     private func requestNotificationPermission() {
-        notificationService.requestNotificationPermission { granted in
-            if !granted {
+        Task { @MainActor in
+            do {
+                let granted = try await notificationService.requestNotificationPermission()
+                if !granted {
+                    showingPermissionAlert = true
+                }
+            } catch {
+                print("⚠️ Ошибка запроса разрешения на уведомления: \(error.localizedDescription)")
                 showingPermissionAlert = true
             }
         }
     }
 
     private func requestCriticalAlertsPermission() {
-        notificationService.requestCriticalAlertsPermission { granted in
-            if !granted {
+        Task { @MainActor in
+            do {
+                let granted = try await notificationService.requestCriticalAlertsPermission()
+                if !granted {
+                    showingPermissionAlert = true
+                }
+            } catch {
+                print("⚠️ Ошибка запроса разрешения на критические уведомления: \(error.localizedDescription)")
                 showingPermissionAlert = true
             }
         }
@@ -104,8 +114,17 @@ struct SoundAndNotification: View {
         // Явно устанавливаем значение в UserDefaults, чтобы синхронизировать с интерфейсом
         UserDefaults.standard.set(true, forKey: "notificationsEnabled")
         
-        // Просто отправляем запрос на тестовое уведомление
-        notificationService.sendTestNotification()
+        // Отправляем запрос на тестовое уведомление с proper async handling
+        Task { @MainActor in
+            do {
+                try await notificationService.sendTestNotification()
+                print("✅ Тестовое уведомление успешно отправлено")
+            } catch {
+                print("⚠️ Ошибка отправки тестового уведомления: \(error.localizedDescription)")
+                // Можно показать alert пользователю об ошибке
+                showingPermissionAlert = true
+            }
+        }
     }
 
     private func openSettings() {

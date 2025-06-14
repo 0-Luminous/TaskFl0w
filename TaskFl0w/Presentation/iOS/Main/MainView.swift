@@ -8,7 +8,7 @@ import SwiftUI
 import Combine
 
 // MARK: - View States
-struct ClockViewState {
+struct MainViewState {
     var isSearchActive = false
     var isDockBarHidden = false
     var isOutsideArea = false
@@ -38,7 +38,7 @@ struct ClockViewIOS: View {
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     // MARK: - View States
-    @State private var clockState = ClockViewState()
+    @State private var clockState = MainViewState()
     @State private var dragState = DragState()
     @State private var zoomState = ZoomState()
     

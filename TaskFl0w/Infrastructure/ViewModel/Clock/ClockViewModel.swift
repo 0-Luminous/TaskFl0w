@@ -422,7 +422,13 @@ final class ClockViewModel: ObservableObject {
         
         if let newCategory = newActiveCategory, newCategory != currentActiveCategory {
             currentActiveCategory = newCategory
-            notificationService.sendCategoryStartNotification(category: newCategory)
+            Task { @MainActor in
+                do {
+                    try await notificationService.sendCategoryStartNotification(category: newCategory)
+                } catch {
+                    print("⚠️ Failed to send category notification: \(error.localizedDescription)")
+                }
+            }
         } else if newActiveCategory == nil && currentActiveCategory != nil {
             currentActiveCategory = nil
         }
