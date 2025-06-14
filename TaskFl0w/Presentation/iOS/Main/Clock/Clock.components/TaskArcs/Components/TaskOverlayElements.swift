@@ -17,7 +17,6 @@ struct TaskOverlayElements: View {
     
     var body: some View {
         ZStack {
-            // Маркеры редактирования
             if shouldShowDragHandles {
                 TaskDragHandle(
                     angle: geometry.angles.start,
@@ -64,7 +63,6 @@ struct TaskDragHandle: View {
             .fill(geometry.task.category.color)
             .frame(width: handleWidth, height: handleHeight)
             .overlay(
-                // Внутренняя тень
                 Capsule()
                     .stroke(
                         LinearGradient(
@@ -79,13 +77,6 @@ struct TaskDragHandle: View {
                         lineWidth: 1
                     )
             )
-            // .overlay(
-            //     Capsule().stroke(
-            //         Color(red: 0.6, green: 0.6, blue: 0.6), 
-            //         // lineWidth: TaskArcConstants.handleStrokeWidth * geometry.shortTaskScale
-            //     )
-//            )
-            // Внешняя тень
             .shadow(
                 color: Color.black.opacity(0.25),
                 radius: 3 * geometry.shortTaskScale,

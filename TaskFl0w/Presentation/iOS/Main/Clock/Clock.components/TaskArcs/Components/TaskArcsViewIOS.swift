@@ -13,12 +13,10 @@ struct TaskArcsViewIOS: View {
 
     var body: some View {
         ZStack {
-            // Не фильтруем задачи - этим будет заниматься сам ClockTaskArcIOS
             ForEach(tasks) { task in
                 ClockTaskArcIOS(task: task, viewModel: viewModel, arcLineWidth: arcLineWidth)
             }
         }
-        // Применяем вращение ко всем задачам сразу
         .rotationEffect(.degrees(viewModel.zeroPosition))
     }
 }
