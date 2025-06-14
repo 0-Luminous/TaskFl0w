@@ -321,7 +321,7 @@ final class ClockViewModel: ObservableObject {
     
     // MARK: - Formatted Date Methods
     var formattedDate: String {
-        switch Locale.current.languageCode {
+        switch Locale.current.language.languageCode?.identifier {
         case "ru":
             return selectedDate.formattedForClockDate()
         case "zh":
@@ -338,7 +338,7 @@ final class ClockViewModel: ObservableObject {
     }
     
     var formattedWeekday: String {
-        switch Locale.current.languageCode {
+        switch Locale.current.language.languageCode?.identifier {
         case "ru":
             return selectedDate.formattedWeekday()
         case "zh":

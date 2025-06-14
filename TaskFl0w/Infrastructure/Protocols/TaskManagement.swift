@@ -152,7 +152,8 @@ extension Notification.Name {
 }
 
 // MARK: - Updated TaskManagement Implementation
-class TaskManagement: TaskManagementProtocol {
+@available(iOS 13.0, *)
+class TaskManagement: TaskManagementProtocol, @unchecked Sendable {
     // MARK: - Properties
     private let context: NSManagedObjectContext
     private let sharedState: SharedStateService
@@ -222,7 +223,7 @@ class TaskManagement: TaskManagementProtocol {
             }
             
             let normalizedTask = self.normalizeTask(task)
-            let taskEntity = TaskEntity.from(normalizedTask, context: self.context)
+            _ = TaskEntity.from(normalizedTask, context: self.context) // Changed to use _ to explicitly ignore
             
             do {
                 try self.saveContext()
@@ -494,13 +495,14 @@ class TaskManagement: TaskManagementProtocol {
         }
         
         return try await withCheckedThrowingContinuation { continuation in
+            let task = newTask // Capture the task locally
             operationQueue.async { [weak self] in
                 guard let self = self else { 
                     continuation.resume(throwing: TaskManagementError.operationFailed)
                     return 
                 }
                 
-                self.addTask(newTask)
+                self.addTask(task)
                 continuation.resume()
             }
         }
@@ -523,13 +525,14 @@ class TaskManagement: TaskManagementProtocol {
         }
         
         return try await withCheckedThrowingContinuation { continuation in
+            let task = updatedTask // Capture the task locally
             operationQueue.async { [weak self] in
                 guard let self = self else { 
                     continuation.resume(throwing: TaskManagementError.operationFailed)
                     return 
                 }
                 
-                self.updateTask(updatedTask)
+                self.updateTask(task)
                 continuation.resume()
             }
         }
@@ -537,13 +540,14 @@ class TaskManagement: TaskManagementProtocol {
     
     func removeTask(_ task: TaskOnRing) async throws {
         return try await withCheckedThrowingContinuation { continuation in
+            let taskToRemove = task // Capture the task locally
             operationQueue.async { [weak self] in
                 guard let self = self else { 
                     continuation.resume(throwing: TaskManagementError.operationFailed)
                     return 
                 }
                 
-                self.removeTask(task)
+                self.removeTask(taskToRemove)
                 continuation.resume()
             }
         }
@@ -553,6 +557,7 @@ class TaskManagement: TaskManagementProtocol {
     
     func updateMultipleTasks(_ updates: [(TaskOnRing, Date, Date)]) async throws {
         return try await withCheckedThrowingContinuation { continuation in
+            let tasksToUpdate = updates // Capture the updates locally
             operationQueue.async { [weak self] in
                 guard let self = self else { 
                     continuation.resume(throwing: TaskManagementError.operationFailed)
@@ -560,7 +565,7 @@ class TaskManagement: TaskManagementProtocol {
                 }
                 
                 do {
-                    for (task, newStart, newEnd) in updates {
+                    for (task, newStart, newEnd) in tasksToUpdate {
                         var updatedTask = task
                         updatedTask.startTime = newStart
                         updatedTask.endTime = newEnd
@@ -583,13 +588,14 @@ class TaskManagement: TaskManagementProtocol {
     
     func removeMultipleTasks(_ tasks: [TaskOnRing]) async throws {
         return try await withCheckedThrowingContinuation { continuation in
+            let tasksToRemove = tasks // Capture the tasks locally
             operationQueue.async { [weak self] in
                 guard let self = self else { 
                     continuation.resume(throwing: TaskManagementError.operationFailed)
                     return 
                 }
                 
-                for task in tasks {
+                for task in tasksToRemove {
                     self.removeTask(task)
                 }
                 
