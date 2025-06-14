@@ -680,13 +680,10 @@ struct ColorControlsView: View {
             selectedColorHex = themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
             currentBaseColor = ColorUtils.getBaseColor(forColor: currentColor)
         case "handColor":
-            let currentColor = currentHandColor
             selectedColorHex = themeManager.isDarkMode ? darkModeHandColor : lightModeHandColor
         case "digitalFontColor":
-            // Добавляем обработку для типа "digitalFontColor"
-            let currentColor = currentDigitalFontColor
             selectedColorHex = themeManager.isDarkMode ? darkModeDigitalFontColor : lightModeDigitalFontColor
-            currentBaseColor = ColorUtils.getBaseColor(forColor: currentColor)
+            currentBaseColor = ColorUtils.getBaseColor(forColor: currentDigitalFontColor)
         default:
             break
         }

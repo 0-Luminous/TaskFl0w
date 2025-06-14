@@ -481,7 +481,7 @@ struct CategoryEditorViewIOS: View {
                                                 baseColor: currentBaseColor
                                             )
                                             selectedColor = newColor
-                                            selectedColorHex = newColor.toHex() ?? ""
+                                            selectedColorHex = newColor.toHex()
                                         }
                                 )
                         }
@@ -539,7 +539,7 @@ struct CategoryEditorViewIOS: View {
                                 set: { newCategory in
                                     if newCategory != selectedDockCategory {
                                         // Сохраняем изменения предыдущей категории
-                                        if let currentCategory = editingCategory {
+                                        if editingCategory != nil {
                                             saveCategory(autoClose: false)
                                         }
 
@@ -763,7 +763,7 @@ struct CategoryEditorViewIOS: View {
         
         return Button(action: {
             selectedColor = color
-            selectedColorHex = color.toHex() ?? ""
+            selectedColorHex = color.toHex()
             currentBaseColor = ColorUtils.getBaseColor(forColor: color)
             updateSliderPosition()
             feedbackGenerator.impactOccurred()

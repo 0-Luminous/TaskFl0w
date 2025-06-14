@@ -85,8 +85,8 @@ struct TasksFromView: View {
         // Если нет временных слотов или только один слот
         guard let allCategoryTasks = allTimelineTasksForCategory,
               allCategoryTasks.count > 1,
-              let currentStart = startTime,
-              let currentEnd = endTime,
+              let _ = startTime,
+              let _ = endTime,
               let slotId = slotId else {
             return (tasks: categoryTasks, shouldShow: true, message: nil)
         }
@@ -163,7 +163,6 @@ struct TasksFromView: View {
         
         let formatter = DateFormatter()
         formatter.timeStyle = .short
-        let timeRange = "\(formatter.string(from: slot.startTime)) - \(formatter.string(from: slot.endTime))"
         
         return "Слот завершён"
     }

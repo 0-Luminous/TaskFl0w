@@ -90,8 +90,7 @@ final class LocalizationManager {
     
     // MARK: - Language Management
     func setLanguage(_ languageCode: String) {
-        guard let languageBundle = Bundle.main.path(forResource: languageCode, ofType: "lproj"),
-              let bundle = Bundle(path: languageBundle) else {
+        guard let _ = Bundle.main.path(forResource: languageCode, ofType: "lproj") else {
             return
         }
         
@@ -100,7 +99,7 @@ final class LocalizationManager {
     }
     
     func currentLanguage() -> String {
-        return Locale.current.languageCode ?? "en"
+        return Locale.current.language.languageCode?.identifier ?? "en"
     }
     
     /// Получение списка поддерживаемых языков

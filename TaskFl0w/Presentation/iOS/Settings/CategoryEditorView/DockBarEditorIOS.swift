@@ -266,7 +266,7 @@ struct CategoryPageView: View {
                     .frame(width: categoryWidth, height: 70)
                     .scaleEffect(1.1)
                     .opacity(previewCategory.isHidden ? 0.5 : 1.0)
-                    .id(previewCategory.id.uuidString + previewCategory.iconName + (previewCategory.color.toHex() ?? ""))
+                    .id(previewCategory.id.uuidString + previewCategory.iconName + previewCategory.color.toHex())
                 }
                 
                 // Отображаем все существующие категории после кнопки добавления и/или новой категории
@@ -280,7 +280,7 @@ struct CategoryPageView: View {
                         .frame(width: categoryWidth, height: 70)
                         .scaleEffect(1.1)
                         .opacity(editingCategory.isHidden ? 0.5 : 1.0)
-                        .id(editingCategory.id.uuidString + editingCategory.iconName + (editingCategory.color.toHex() ?? ""))
+                        .id(editingCategory.id.uuidString + editingCategory.iconName + editingCategory.color.toHex())
                     } else {
                         CategoryButton(
                             category: category,

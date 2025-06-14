@@ -277,7 +277,7 @@ struct TaskListView: View {
     private var newTaskSection: some View {
         Group {
             if isAddingNewTask {
-                NewTaskInput(
+                TaskInput(
                     newTaskTitle: $newTaskTitle,
                     isNewTaskFocused: _isNewTaskFocused,
                     selectedPriority: $newTaskPriority,

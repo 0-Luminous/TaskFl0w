@@ -220,7 +220,7 @@ extension Date {
 
     // Локализованные форматы дат и дней недели
     func formattedForTodoListLocalized() -> String {
-        switch Locale.current.languageCode {
+        switch Locale.current.language.languageCode?.identifier {
         case "ru":
             return formattedForTodoList()
         case "zh":
@@ -237,7 +237,7 @@ extension Date {
     }
 
     func formattedForClockDateLocalized() -> String {
-        switch Locale.current.languageCode {
+        switch Locale.current.language.languageCode?.identifier {
         case "ru":
             return formattedForClockDate()
         case "zh":
@@ -254,7 +254,7 @@ extension Date {
     }
 
     func formattedWeekdayLocalized() -> String {
-        switch Locale.current.languageCode {
+        switch Locale.current.language.languageCode?.identifier {
         case "ru":
             return formattedWeekday()
         case "zh":

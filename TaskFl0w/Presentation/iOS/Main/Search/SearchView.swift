@@ -51,7 +51,6 @@ struct SearchView: View {
 
     // Фильтрация задач только по поисковому тексту и дате
     private var filteredItems: [ToDoItem] {
-        let today = Calendar.current.startOfDay(for: Date())
         let filteredByText =
             searchText.isEmpty
             ? items : items.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
@@ -66,12 +65,12 @@ struct SearchView: View {
         case .currentAndFuture:
             return filteredByText.filter { item in
                 let itemDate = Calendar.current.startOfDay(for: item.date)
-                return itemDate >= today
+                return itemDate >= Calendar.current.startOfDay(for: Date())
             }
         case .pastOnly:
             return filteredByText.filter { item in
                 let itemDate = Calendar.current.startOfDay(for: item.date)
-                return itemDate < today
+                return itemDate < Calendar.current.startOfDay(for: Date())
             }
         }
     }
@@ -244,7 +243,7 @@ struct SearchView: View {
                     
                     initializeSelectedDate()
                 }
-                .onChange(of: selectedDate) { newDate in
+                .onChange(of: selectedDate) { newDate, _ in
                     if let targetDate = newDate {
                         withAnimation(.easeInOut(duration: 0.5)) {
                             proxy.scrollTo(targetDate, anchor: .top)

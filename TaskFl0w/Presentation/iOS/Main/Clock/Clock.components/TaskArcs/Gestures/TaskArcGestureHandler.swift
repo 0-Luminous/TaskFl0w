@@ -12,8 +12,8 @@ class TaskArcGestureHandler: ObservableObject {
     private let taskId: UUID  // ✅ Храним только ID вместо копии задачи
     private let hapticsManager = TaskArcHapticsManager()
     
-    // Добавляем менеджер высокочастотного обновления
-    @StateObject private var highFrequencyManager: HighFrequencyUpdateManager
+    // Change from @StateObject to regular property
+    private let highFrequencyManager: HighFrequencyUpdateManager
     
     @Published var lastHourComponent: Int = -1
     @Published var isDraggingWholeArc: Bool = false
@@ -30,7 +30,8 @@ class TaskArcGestureHandler: ObservableObject {
     init(viewModel: ClockViewModel, task: TaskOnRing) {
         self.viewModel = viewModel
         self.taskId = task.id  // ✅ Сохраняем только ID
-        self._highFrequencyManager = StateObject(wrappedValue: HighFrequencyUpdateManager(viewModel: viewModel))
+        // Initialize highFrequencyManager directly
+        self.highFrequencyManager = HighFrequencyUpdateManager(viewModel: viewModel)
     }
     
     func handleDragGesture(value: DragGesture.Value, center: CGPoint, isDraggingStart: Bool) {

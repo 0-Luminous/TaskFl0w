@@ -430,7 +430,7 @@ struct IconSearchBar: View {
                     .font(.system(size: 15))
                     .foregroundColor(textColor)
                     .padding(.vertical, 8)
-                    .onChange(of: isTextFieldFocused) { newValue in
+                    .onChange(of: isTextFieldFocused) { newValue, _ in
                         withAnimation(.easeInOut(duration: 0.2)) {
                             isFocused = newValue
                             isActive = newValue
@@ -502,7 +502,7 @@ struct IconSearchBar: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isTextFieldFocused)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isFocused)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: text)
-        .onChange(of: isActive) { newValue in
+        .onChange(of: isActive) { newValue, _ in
             if newValue {
                 isTextFieldFocused = true
             }

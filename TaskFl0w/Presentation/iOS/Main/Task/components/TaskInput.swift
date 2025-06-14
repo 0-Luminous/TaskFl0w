@@ -1,5 +1,5 @@
 //
-//  NewTaskInput.swift
+//  TaskInput.swift
 //  TaskFl0w
 //
 //  Created by Yan on 30/4/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct NewTaskInput: View {
+struct TaskInput: View {
     @Binding var newTaskTitle: String
     @FocusState var isNewTaskFocused: Bool
     @Binding var selectedPriority: TaskPriority
@@ -97,18 +97,3 @@ struct NewTaskInput: View {
         }
     }
 }
-
-#Preview {
-    @State var text = ""
-    @State var priority: TaskPriority = .none
-    @FocusState var focus
-    
-    NewTaskInput(
-        newTaskTitle: $text,
-        isNewTaskFocused: _focus,
-        selectedPriority: $priority,
-        onSave: {}
-    )
-    .background(Color(red: 0.098, green: 0.098, blue: 0.098))
-}
-
