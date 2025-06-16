@@ -105,9 +105,9 @@ struct TaskDragHandle: View {
     
     private func handleDragStart() {
         if isDraggingStart {
-            viewModel.isDraggingStart = true
+            viewModel.startDraggingTaskStart()
         } else {
-            viewModel.isDraggingEnd = true
+            viewModel.startDraggingTaskEnd()
         }
         
         if gestureHandler.lastHourComponent == -1 {
@@ -138,11 +138,7 @@ struct TaskDragHandle: View {
     }
     
     private func resetDragState() {
-        if isDraggingStart {
-            viewModel.isDraggingStart = false
-        } else {
-            viewModel.isDraggingEnd = false
-        }
+        viewModel.stopDraggingTaskEdges()
         viewModel.previewTime = nil
     }
 }

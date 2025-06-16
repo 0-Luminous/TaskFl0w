@@ -66,6 +66,13 @@ protocol ClockViewModelProtocol: ObservableObject {
 @MainActor
 final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     
+    // MARK: - Specialized ViewModels (Декомпозиция)
+    
+    private let timeManager: TimeManagementViewModel
+    private let taskRenderer: TaskRenderingViewModel
+    private let userInteraction: UserInteractionViewModel
+    private let themeConfig: ThemeConfigurationViewModel
+    
     // MARK: - Dependencies
     
     private let settings = ClockSettings()
@@ -75,194 +82,498 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     private let notificationService: NotificationServiceProtocol
     let clockState: ClockStateManager
     
-    // Child ViewModels
+    // Child ViewModels (Legacy - для совместимости)
     let markersViewModel = ClockMarkersViewModel()
     let dragAndDropManager: DragAndDropManager
     let dockBarViewModel: DockBarViewModel
     
-    // MARK: - Published Properties
+    // MARK: - Published Properties (Delegation)
     
-    // UI State
-    @Published var currentDate = Date()
-    @Published var selectedDate = Date()
-    @Published var searchText = ""
-    @Published var isDarkMode = false
+    // Time Management (delegated to timeManager)
+    var currentDate: Date {
+        get { timeManager.currentDate }
+    }
     
-    // Modal States
-    @Published var showingAddTask = false
-    @Published var showingSettings = false
-    @Published var showingCalendar = false
-    @Published var showingStatistics = false
-    @Published var showingTodayTasks = false
-    @Published var showingCategoryEditor = false
-    @Published var showingTaskDetail = false
+    var selectedDate: Date {
+        get { timeManager.selectedDate }
+        set { 
+            timeManager.selectedDate = newValue
+            taskRenderer.updateTasksForSelectedDate(newValue)
+            clockState.selectedDate = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    var zeroPosition: Double {
+        get { timeManager.zeroPosition }
+        set { 
+            timeManager.zeroPosition = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    // Task Rendering (delegated to taskRenderer)
+    var tasks: [TaskOnRing] {
+        get { taskRenderer.tasks }
+    }
+    
+    var overlappingTaskGroups: [[TaskOnRing]] {
+        get { taskRenderer.overlappingTaskGroups }
+    }
+    
+    var previewTask: TaskOnRing? {
+        get { taskRenderer.previewTask }
+        set { 
+            taskRenderer.previewTask = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    var searchText: String {
+        get { taskRenderer.searchText }
+        set { 
+            taskRenderer.searchText = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    // Modal States (delegated to userInteraction)
+    var showingAddTask: Bool {
+        get { userInteraction.showingAddTask }
+        set { 
+            if newValue {
+                userInteraction.showAddTask()
+            } else {
+                userInteraction.hideAddTask()
+            }
+            objectWillChange.send()
+        }
+    }
+    
+    var showingSettings: Bool {
+        get { userInteraction.showingSettings }
+        set {
+            if newValue {
+                userInteraction.showSettings()
+            } else {
+                userInteraction.hideSettings()
+            }
+            objectWillChange.send()
+        }
+    }
+    
+    var showingCalendar: Bool {
+        get { userInteraction.showingCalendar }
+        set {
+            if newValue {
+                userInteraction.showCalendar()
+            } else {
+                userInteraction.hideCalendar()
+            }
+            objectWillChange.send()
+        }
+    }
+    
+    var showingStatistics: Bool {
+        get { userInteraction.showingStatistics }
+        set {
+            if newValue {
+                userInteraction.showStatistics()
+            } else {
+                userInteraction.hideStatistics()
+            }
+            objectWillChange.send()
+        }
+    }
+    
+    var showingTodayTasks: Bool {
+        get { userInteraction.showingTodayTasks }
+        set {
+            if newValue {
+                userInteraction.showTodayTasksList()
+            } else {
+                userInteraction.hideTodayTasksList()
+            }
+            objectWillChange.send()
+        }
+    }
+    
+    var showingCategoryEditor: Bool {
+        get { userInteraction.showingCategoryEditor }
+        set {
+            if newValue {
+                userInteraction.showCategoryEditor()
+            } else {
+                userInteraction.hideCategoryEditor()
+            }
+            objectWillChange.send()
+        }
+    }
+    
+    var showingTaskDetail: Bool {
+        get { userInteraction.showingTaskDetail }
+        set {
+            if !newValue {
+                userInteraction.hideTaskDetail()
+            }
+            objectWillChange.send()
+        }
+    }
     
     // Task Management
-    @Published var tasks: [TaskOnRing] = []
-    @Published var previewTask: TaskOnRing?
-    @Published var selectedTask: TaskOnRing?
-    @Published var editingTask: TaskOnRing?
-    @Published var overlappingTaskGroups: [[TaskOnRing]] = []
+    var selectedTask: TaskOnRing? {
+        get { userInteraction.selectedTask }
+        set { 
+            userInteraction.selectTask(newValue)
+            objectWillChange.send()
+        }
+    }
     
-    // Drag & Drop
-    @Published var draggedTask: TaskOnRing?
-    @Published var draggedCategory: TaskCategoryModel?
-    @Published var selectedCategory: TaskCategoryModel?
-    @Published var isDraggingOutside = false
-    @Published var isDraggingStart = false
-    @Published var isDraggingEnd = false
-    @Published var previewTime: Date?
-    @Published var dropLocation: CGPoint?
+    var editingTask: TaskOnRing? {
+        get { userInteraction.editingTask }
+        set { 
+            if let task = newValue {
+                userInteraction.startEditingTask(task)
+            } else {
+                userInteraction.finishEditingTask()
+            }
+            objectWillChange.send()
+        }
+    }
     
-    // Edit Mode
-    @Published var isEditingMode = false
-    @Published var isDockBarEditingEnabled = false
+    var draggedTask: TaskOnRing? {
+        get { userInteraction.draggedTask }
+    }
+    
+    var draggedCategory: TaskCategoryModel? {
+        get { userInteraction.draggedCategory }
+        set { 
+            if let category = newValue {
+                userInteraction.startDraggingCategory(category)
+            } else {
+                userInteraction.stopDraggingCategory()
+            }
+            objectWillChange.send()
+        }
+    }
+    
+    var selectedCategory: TaskCategoryModel? {
+        get { userInteraction.selectedCategory }
+        set { 
+            userInteraction.selectCategory(newValue)
+            objectWillChange.send()
+        }
+    }
+    
+    var isEditingMode: Bool {
+        get { userInteraction.isEditingMode }
+        set { 
+            if newValue {
+                userInteraction.enableEditMode()
+            } else {
+                userInteraction.disableEditMode()
+            }
+            objectWillChange.send()
+        }
+    }
+    
+    var isDraggingOutside: Bool {
+        get { userInteraction.isDraggingOutside }
+    }
+    
+    var isDraggingStart: Bool {
+        get { userInteraction.isDraggingStart }
+        set { 
+            if newValue {
+                if let task = draggedTask {
+                    userInteraction.startDraggingTaskStart(task)
+                }
+            } else {
+                // Сбрасываем состояние через stopDragging если оба false
+                if !userInteraction.isDraggingEnd {
+                    userInteraction.resetDragStates()
+                }
+            }
+            objectWillChange.send()
+        }
+    }
+    
+    var isDraggingEnd: Bool {
+        get { userInteraction.isDraggingEnd }
+        set { 
+            if newValue {
+                if let task = draggedTask {
+                    userInteraction.startDraggingTaskEnd(task)
+                }
+            } else {
+                // Сбрасываем состояние через stopDragging если оба false
+                if !userInteraction.isDraggingStart {
+                    userInteraction.resetDragStates()
+                }
+            }
+            objectWillChange.send()
+        }
+    }
+    
+    var previewTime: Date? {
+        get { userInteraction.previewTime }
+        set { 
+            userInteraction.updatePreviewTime(newValue)
+            objectWillChange.send()
+        }
+    }
+    
+    var dropLocation: CGPoint? {
+        get { userInteraction.dropLocation }
+    }
+    
+    var isDockBarEditingEnabled: Bool {
+        get { userInteraction.isDockBarEditingEnabled }
+        set {
+            if newValue {
+                userInteraction.enableDockBarEditing()
+            } else {
+                userInteraction.disableDockBarEditing()
+            }
+            objectWillChange.send()
+        }
+    }
     
     // Clock Configuration
-    @Published var zeroPosition: Double = 0 {
-        didSet { saveZeroPosition() }
-    }
-    @Published var clockStyle = "Классический" {
-        didSet { saveClockStyle() }
+    var clockStyle: String {
+        get { themeConfig.clockStyle }
+        set { 
+            themeConfig.clockStyle = newValue
+            objectWillChange.send()
+        }
     }
     
     // MARK: - AppStorage Properties
     
-    @AppStorage("notificationsEnabled") 
-    private var notificationsEnabled = true
+    var notificationsEnabled: Bool {
+        get { themeConfig.notificationsEnabled }
+        set { 
+            themeConfig.notificationsEnabled = newValue
+            objectWillChange.send()
+        }
+    }
     
-    @AppStorage("showTimeOnlyForActiveTask") 
-    var showTimeOnlyForActiveTask = false
+    var showTimeOnlyForActiveTask: Bool {
+        get { themeConfig.showTimeOnlyForActiveTask }
+        set { 
+            themeConfig.showTimeOnlyForActiveTask = newValue
+            objectWillChange.send()
+        }
+    }
     
-    @AppStorage("isAnalogArcStyle") 
-    var isAnalogArcStyle = false
+    var isAnalogArcStyle: Bool {
+        get { themeConfig.isAnalogArcStyle }
+        set { 
+            themeConfig.isAnalogArcStyle = newValue
+            objectWillChange.send()
+        }
+    }
     
     // Colors
-    @AppStorage("lightModeHandColor") 
-    var lightModeHandColor = Color.blue.toHex()
+    var lightModeHandColor: String {
+        get { themeConfig.lightModeHandColor }
+        set { 
+            themeConfig.lightModeHandColor = newValue
+            objectWillChange.send()
+        }
+    }
     
-    @AppStorage("darkModeHandColor") 
-    var darkModeHandColor = Color.blue.toHex()
+    var darkModeHandColor: String {
+        get { themeConfig.darkModeHandColor }
+        set { 
+            themeConfig.darkModeHandColor = newValue
+            objectWillChange.send()
+        }
+    }
     
-    @AppStorage("lightModeDigitalFontColor") 
-    var lightModeDigitalFontColor = Color.gray.toHex()
+    var lightModeDigitalFontColor: String {
+        get { themeConfig.lightModeDigitalFontColor }
+        set { 
+            themeConfig.lightModeDigitalFontColor = newValue
+            objectWillChange.send()
+        }
+    }
     
-    @AppStorage("darkModeDigitalFontColor") 
-    var darkModeDigitalFontColor = Color.white.toHex()
+    var darkModeDigitalFontColor: String {
+        get { themeConfig.darkModeDigitalFontColor }
+        set { 
+            themeConfig.darkModeDigitalFontColor = newValue
+            objectWillChange.send()
+        }
+    }
     
-    @AppStorage("lightModeClockFaceColor") 
-    var lightModeClockFaceColor = Color.white.toHex()
+    var lightModeClockFaceColor: String {
+        get { themeConfig.lightModeClockFaceColor }
+        set { 
+            themeConfig.lightModeClockFaceColor = newValue
+            objectWillChange.send()
+        }
+    }
     
-    @AppStorage("darkModeClockFaceColor") 
-    var darkModeClockFaceColor = Color.black.toHex()
+    var darkModeClockFaceColor: String {
+        get { themeConfig.darkModeClockFaceColor }
+        set { 
+            themeConfig.darkModeClockFaceColor = newValue
+            objectWillChange.send()
+        }
+    }
     
-    @AppStorage("lightModeOuterRingColor") 
-    var lightModeOuterRingColor = Color.gray.opacity(0.3).toHex()
+    var lightModeOuterRingColor: String {
+        get { themeConfig.lightModeOuterRingColor }
+        set { 
+            themeConfig.lightModeOuterRingColor = newValue
+            objectWillChange.send()
+        }
+    }
     
-    @AppStorage("darkModeOuterRingColor") 
-    var darkModeOuterRingColor = Color.gray.opacity(0.3).toHex()
+    var darkModeOuterRingColor: String {
+        get { themeConfig.darkModeOuterRingColor }
+        set { 
+            themeConfig.darkModeOuterRingColor = newValue
+            objectWillChange.send()
+        }
+    }
     
-    @AppStorage("lightModeMarkersColor") 
-    var lightModeMarkersColor = Color.gray.toHex()
-        
-    @AppStorage("darkModeMarkersColor") 
-    var darkModeMarkersColor = Color.gray.toHex()
+    var lightModeMarkersColor: String {
+        get { themeConfig.lightModeMarkersColor }
+        set { 
+            themeConfig.lightModeMarkersColor = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    var darkModeMarkersColor: String {
+        get { themeConfig.darkModeMarkersColor }
+        set { 
+            themeConfig.darkModeMarkersColor = newValue
+            objectWillChange.send()
+        }
+    }
     
     // Dimensions
-    @AppStorage("taskArcLineWidth") 
-    private var taskArcLineWidthRaw: Double = 20
-    
-    @AppStorage("outerRingLineWidth") 
-    private var outerRingLineWidthRaw: Double = 20
-    
-    // Markers
-    @AppStorage("showHourNumbers") 
-    var showHourNumbers = true
-    
-    @AppStorage("markersWidth") 
-    var markersWidth: Double = 2.0
-    
-    @AppStorage("markersOffset") 
-    var markersOffset: Double = 0.0
-    
-    @AppStorage("numbersSize") 
-    var numbersSize: Double = 16.0
-    
-    @AppStorage("numberInterval") 
-    var numberInterval = 1
-    
-    @AppStorage("showMarkers") 
-    var showMarkers = true
-    
-    @AppStorage("showIntermediateMarkers") 
-    var showIntermediateMarkers = true
-    
-    // Fonts
-    @AppStorage("digitalFont") 
-    var digitalFont = "SF Pro"
-    
-    @AppStorage("fontName") 
-    var fontName = "SF Pro"
-    
-    @AppStorage("digitalFontSize") 
-    var digitalFontSizeRaw: Double = 42.0
-    
-    @AppStorage("markerStyle") 
-    private var markerStyleRaw = MarkerStyle.lines.rawValue
-    
-    // MARK: - Computed Properties
-    
     var taskArcLineWidth: CGFloat {
-        get { CGFloat(taskArcLineWidthRaw) }
-        set { taskArcLineWidthRaw = Double(newValue) }
+        get { themeConfig.taskArcLineWidth }
+        set { 
+            themeConfig.taskArcLineWidth = newValue
+            objectWillChange.send()
+        }
     }
     
     var outerRingLineWidth: CGFloat {
-        get { CGFloat(outerRingLineWidthRaw) }
-        set { outerRingLineWidthRaw = Double(newValue) }
+        get { themeConfig.outerRingLineWidth }
+        set { 
+            themeConfig.outerRingLineWidth = newValue
+            objectWillChange.send()
+        }
     }
     
-    var markerStyle: MarkerStyle {
-        get { MarkerStyle(rawValue: markerStyleRaw) ?? .lines }
-        set { markerStyleRaw = newValue.rawValue }
+    // Markers
+    var showHourNumbers: Bool {
+        get { themeConfig.showHourNumbers }
+        set { 
+            themeConfig.showHourNumbers = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    var markersWidth: Double {
+        get { themeConfig.markersWidth }
+        set { 
+            themeConfig.markersWidth = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    var markersOffset: Double {
+        get { themeConfig.markersOffset }
+        set { 
+            themeConfig.markersOffset = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    var numbersSize: Double {
+        get { themeConfig.numbersSize }
+        set { 
+            themeConfig.numbersSize = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    var numberInterval: Int {
+        get { themeConfig.numberInterval }
+        set { 
+            themeConfig.numberInterval = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    var showMarkers: Bool {
+        get { themeConfig.showMarkers }
+        set { 
+            themeConfig.showMarkers = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    var showIntermediateMarkers: Bool {
+        get { themeConfig.showIntermediateMarkers }
+        set { 
+            themeConfig.showIntermediateMarkers = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    // Fonts
+    var digitalFont: String {
+        get { themeConfig.digitalFont }
+        set { 
+            themeConfig.digitalFont = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    var fontName: String {
+        get { themeConfig.fontName }
+        set { 
+            themeConfig.fontName = newValue
+            objectWillChange.send()
+        }
     }
     
     var digitalFontSize: Double {
-        get { digitalFontSizeRaw }
-        set { digitalFontSizeRaw = newValue }
+        get { themeConfig.digitalFontSize }
+        set { 
+            themeConfig.digitalFontSize = newValue
+            objectWillChange.send()
+        }
     }
+    
+    var markerStyle: MarkerStyle {
+        get { themeConfig.markerStyle }
+        set { 
+            themeConfig.markerStyle = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    // MARK: - Computed Properties
     
     var categories: [TaskCategoryModel] {
         categoryManagement.categories
     }
     
     var currentThemeColors: ClockThemeColors {
-        ClockThemeColors(
-            lightModeHandColor: lightModeHandColor,
-            darkModeHandColor: darkModeHandColor,
-            lightModeDigitalFontColor: lightModeDigitalFontColor,
-            darkModeDigitalFontColor: darkModeDigitalFontColor,
-            lightModeClockFaceColor: lightModeClockFaceColor,
-            darkModeClockFaceColor: darkModeClockFaceColor,
-            lightModeOuterRingColor: lightModeOuterRingColor,
-            darkModeOuterRingColor: darkModeOuterRingColor,
-            lightModeMarkersColor: lightModeMarkersColor,
-            darkModeMarkersColor: darkModeMarkersColor
-        )
+        themeConfig.currentThemeColors
     }
     
     var currentMarkerSettings: MarkerSettings {
-        MarkerSettings(
-            width: markersWidth,
-            offset: markersOffset,
-            numbersSize: numbersSize,
-            numberInterval: numberInterval,
-            fontName: fontName,
-            style: markerStyle,
-            showHourNumbers: showHourNumbers,
-            showMarkers: showMarkers,
-            showIntermediateMarkers: showIntermediateMarkers
-        )
+        themeConfig.currentMarkerSettings
     }
     
     // MARK: - Private Properties
@@ -276,18 +587,12 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         sharedState: SharedStateService? = nil,
         notificationService: NotificationServiceProtocol? = nil
     ) {
-        // Инициализируем зависимости внутри инициализатора
+        // Инициализируем зависимости
         self.sharedState = sharedState ?? .shared
         self.notificationService = notificationService ?? NotificationService.shared
         self.clockState = ClockStateManager()
         
-        // Load saved settings
-        self.zeroPosition = UserDefaults.standard.double(forKey: "zeroPosition")
-        self.isDarkMode = false // Временно установим false, затем обновим асинхронно
-        self.clockStyle = UserDefaults.standard.string(forKey: "clockStyle") ?? "Классический"
-        
         let initialDate = Date()
-        self.selectedDate = initialDate
         
         // Initialize services with dependency injection
         let taskManagement = TaskManagement(sharedState: self.sharedState, selectedDate: initialDate)
@@ -299,7 +604,11 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         self.dragAndDropManager = DragAndDropManager(taskManagement: taskManagement)
         self.dockBarViewModel = DockBarViewModel(categoryManagement: categoryManager)
         
-        self.tasks = self.sharedState.tasks
+        // Инициализируем специализированные ViewModels
+        self.timeManager = TimeManagementViewModel(initialDate: initialDate)
+        self.taskRenderer = TaskRenderingViewModel(sharedState: self.sharedState)
+        self.userInteraction = UserInteractionViewModel(taskManagement: taskManagement)
+        self.themeConfig = ThemeConfigurationViewModel()
         
         Task {
             await setupAsync()
@@ -307,31 +616,55 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     }
     
     deinit {
-        // Метод deinit не может быть @MainActor
         NotificationCenter.default.removeObserver(self)
     }
     
-    // MARK: - Setup Methods
+    // MARK: - Private Setup Methods
     
     private func setupAsync() async {
-        // Обновляем isDarkMode после инициализации - убираем await так как это не async свойство
-        self.isDarkMode = ThemeManager.shared.isDarkMode
-        
-        await setupInitialState()
         await setupBindings()
+        await setupInitialState()
         await setupNotifications()
+    }
+    
+    private func setupBindings() async {
+        // Привязываем изменения дочерних ViewModels к основному
+        timeManager.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+        
+        taskRenderer.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+        
+        userInteraction.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+        
+        themeConfig.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+        
+        await bindDockBarUpdates()
+        await bindDateChanges()
+        await bindThemeChanges()
     }
     
     private func setupInitialState() async {
         await configureMarkersViewModel()
         await syncDockBarState()
-    }
-    
-    private func setupBindings() async {
-        await bindDockBarUpdates()
-        await bindTaskUpdates()
-        await bindDateChanges()
-        await bindThemeChanges()
     }
     
     private func setupNotifications() async {
@@ -352,41 +685,51 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         }
     }
     
-    // MARK: - Public Methods
+    // MARK: - Public Methods (Delegation)
     
     func updateCurrentTimeIfNeeded() {
-        guard Calendar.current.isDate(selectedDate, inSameDayAs: Date()) else { return }
-        
-        currentDate = Date()
+        timeManager.updateCurrentTimeIfNeeded()
         Task {
             await checkForCategoryChange()
         }
     }
     
     func startDragging(_ task: TaskOnRing) {
-        draggedTask = task
-        dragAndDropManager.startDragging(task)
+        userInteraction.startDragging(task)
     }
     
     func stopDragging(didReturnToClock: Bool) {
-        dragAndDropManager.stopDragging(didReturnToClock: didReturnToClock)
-        draggedTask = nil
-        isDraggingOutside = false
+        userInteraction.stopDragging(didReturnToClock: didReturnToClock)
     }
     
     func updateDragPosition(isOutsideClock: Bool) {
-        dragAndDropManager.updateDragPosition(isOutsideClock: isOutsideClock)
+        userInteraction.updateDragPosition(isOutsideClock: isOutsideClock)
     }
     
     func updateZeroPosition(_ newPosition: Double) {
-        ZeroPositionManager.shared.updateZeroPosition(newPosition)
-        zeroPosition = newPosition
+        timeManager.updateZeroPosition(newPosition)
     }
     
-    // Добавляем недостающие методы для совместимости с UI
+    func getTimeWithZeroOffset(_ date: Date, inverse: Bool = false) -> Date {
+        timeManager.getTimeWithZeroOffset(date, inverse: inverse)
+    }
+    
+    func angleToTime(_ angle: Double) -> Date {
+        timeManager.angleToTime(angle)
+    }
+    
+    func timeToAngle(_ date: Date) -> Double {
+        timeManager.timeToAngle(date)
+    }
+    
+    func tasksForSelectedDate(_ allTasks: [TaskOnRing]) -> [TaskOnRing] {
+        taskRenderer.tasksForSelectedDate(selectedDate, allTasks: allTasks)
+    }
+    
     func updateUIForThemeChange() {
+        themeConfig.updateUIForThemeChange()
         Task {
-            await updateThemeState()
+            await configureMarkersViewModel()
         }
     }
     
@@ -396,42 +739,39 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         }
     }
     
-    // MARK: - Time Calculation Methods
-    
-    func getTimeWithZeroOffset(_ date: Date, inverse: Bool = false) -> Date {
-        RingTimeCalculator.getTimeWithZeroOffset(
-            date, 
-            baseDate: selectedDate, 
-            zeroPosition: zeroPosition, 
-            inverse: inverse
-        )
-    }
-    
-    func angleToTime(_ angle: Double) -> Date {
-        RingTimeCalculator.angleToTime(angle, baseDate: selectedDate, zeroPosition: zeroPosition)
-    }
-    
-    func timeToAngle(_ date: Date) -> Double {
-        RingTimeCalculator.timeToAngle(date, zeroPosition: zeroPosition)
-    }
-    
-    func tasksForSelectedDate(_ allTasks: [TaskOnRing]) -> [TaskOnRing] {
-        allTasks.filter { task in
-            Calendar.current.isDate(task.startTime, inSameDayAs: clockState.selectedDate)
-        }
-    }
-    
     func applyWatchFaceSettings() {
         Task {
-            await refreshAllSettings()
+            await themeConfig.applyWatchFaceSettings()
+            await configureMarkersViewModel()
         }
     }
+    
+    func startDraggingTaskStart() {
+        if let task = editingTask {
+            userInteraction.startDraggingTaskStart(task)
+            objectWillChange.send()
+        }
+    }
+    
+    func startDraggingTaskEnd() {
+        if let task = editingTask {
+            userInteraction.startDraggingTaskEnd(task)
+            objectWillChange.send()
+        }
+    }
+    
+    func stopDraggingTaskEdges() {
+        userInteraction.resetDragStates()
+        objectWillChange.send()
+    }
+    
+    // MARK: - Time Calculation Methods
     
     // MARK: - Private Methods
     
     @objc private func handleZeroPositionChange() {
         let newPosition = ZeroPositionManager.shared.zeroPosition
-        zeroPosition = newPosition
+        timeManager.zeroPosition = newPosition
         markersViewModel.zeroPosition = newPosition
         objectWillChange.send()
     }
@@ -479,14 +819,14 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         markersViewModel.numbersSize = settings.numbersSize
         markersViewModel.lightModeMarkersColor = colors.lightModeMarkersColor
         markersViewModel.darkModeMarkersColor = colors.darkModeMarkersColor
-        markersViewModel.isDarkMode = isDarkMode
-        markersViewModel.zeroPosition = zeroPosition
+        markersViewModel.isDarkMode = themeConfig.isDarkMode
+        markersViewModel.zeroPosition = timeManager.zeroPosition
         markersViewModel.numberInterval = settings.numberInterval
         markersViewModel.showMarkers = settings.showMarkers
         markersViewModel.fontName = settings.fontName
         markersViewModel.markerStyle = settings.style
         markersViewModel.showIntermediateMarkers = settings.showIntermediateMarkers
-        markersViewModel.digitalFontSize = digitalFontSize
+        markersViewModel.digitalFontSize = themeConfig.digitalFontSize
         markersViewModel.lightModeDigitalFontColor = colors.lightModeDigitalFontColor
         markersViewModel.darkModeDigitalFontColor = colors.darkModeDigitalFontColor
         
@@ -515,9 +855,8 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newCategory in
-                guard let self = self,
-                      self.selectedCategory != newCategory else { return }
-                self.selectedCategory = newCategory
+                guard let self = self else { return }
+                self.userInteraction.selectCategory(newCategory)
             }
             .store(in: &cancellables)
             
@@ -525,53 +864,36 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newCategory in
-                guard let self = self,
-                      self.draggedCategory != newCategory else { return }
-                self.draggedCategory = newCategory
-            }
-            .store(in: &cancellables)
-    }
-    
-    private func bindTaskUpdates() async {
-        sharedState.subscribeToTasksUpdates { [weak self] in
-            guard let self = self else { return }
-            self.tasks = self.sharedState.tasks
-        }
-        
-        $tasks
-            .removeDuplicates { oldTasks, newTasks in
-                oldTasks.count == newTasks.count && 
-                zip(oldTasks, newTasks).allSatisfy { $0.id == $1.id }
-            }
-            .sink { [weak self] newTasks in
-                self?.handleTasksUpdate(newTasks)
+                guard let self = self else { return }
+                if let category = newCategory {
+                    self.userInteraction.startDraggingCategory(category)
+                } else {
+                    self.userInteraction.stopDraggingCategory()
+                }
             }
             .store(in: &cancellables)
     }
     
     private func bindDateChanges() async {
-        $selectedDate
+        timeManager.$selectedDate
             .removeDuplicates()
             .sink { [weak self] newDate in
                 guard let self = self else { return }
                 (self.taskManagement as? TaskManagement)?.selectedDate = newDate
-                self.updateTasksForSelectedDate()
-                self.clockState.selectedDate = newDate
+                self.taskRenderer.updateTasksForSelectedDate(newDate)
             }
             .store(in: &cancellables)
     }
     
     private func bindThemeChanges() async {
-        $isDarkMode
+        themeConfig.$isDarkMode
             .removeDuplicates()
             .sink { [weak self] isDark in
-                guard let self = self,
-                      isDark != ThemeManager.shared.isDarkMode else { return }
-                
-                UserDefaults.standard.set(isDark, forKey: "isDarkMode")
-                ThemeManager.shared.setTheme(isDark)
+                guard let self = self else { return }
                 self.markersViewModel.isDarkMode = isDark
-                self.markersViewModel.updateCurrentThemeColors()
+                Task {
+                    await self.configureMarkersViewModel()
+                }
             }
             .store(in: &cancellables)
     }
@@ -599,11 +921,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     }
     
     private func validateTaskOverlaps(_ newTasks: [TaskOnRing]) async {
-        let todayTasks = newTasks.filter { task in
-            Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
-        }
-        
-        overlappingTaskGroups = findOverlappingTaskGroups(todayTasks)
+        taskRenderer.validateTaskOverlaps()
     }
     
     private func notifyTaskArcsComponents(newTasks: [TaskOnRing]) async {
@@ -647,18 +965,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     }
     
     private func updateTasksForSelectedDate() {
-        let allTasks = sharedState.tasks
-        
-        let tasksOnSelectedDate = allTasks.filter { task in
-            Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
-        }
-        
-        let incompleteTasksFromPreviousDays = allTasks.filter { task in
-            !task.isCompleted && 
-            Calendar.current.compare(task.startTime, to: selectedDate, toGranularity: .day) == .orderedAscending
-        }
-        
-        tasks = tasksOnSelectedDate + incompleteTasksFromPreviousDays
+        taskRenderer.updateTasksForSelectedDate(timeManager.selectedDate)
         objectWillChange.send()
     }
     
@@ -780,4 +1087,16 @@ extension Notification.Name {
     static let taskArcsTasksRemoved = Notification.Name("TaskArcsTasksRemoved") 
     static let taskArcsTasksModified = Notification.Name("TaskArcsTasksModified")
     static let categoryStatisticsUpdated = Notification.Name("CategoryStatisticsUpdated")
+}
+
+// MARK: - Theme Configuration
+
+extension ClockViewModel {
+    var isDarkMode: Bool {
+        get { themeConfig.isDarkMode }
+        set { 
+            themeConfig.setTheme(newValue)
+            objectWillChange.send()
+        }
+    }
 }
