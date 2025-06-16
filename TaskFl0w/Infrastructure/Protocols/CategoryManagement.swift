@@ -2,6 +2,7 @@ import CoreData
 import Foundation
 import SwiftUI
 
+@MainActor
 protocol CategoryManagementProtocol {
     var categories: [TaskCategoryModel] { get }  // Только get
     func addCategory(_ category: TaskCategoryModel)
@@ -10,6 +11,7 @@ protocol CategoryManagementProtocol {
     func fetchCategories()
 }
 
+@MainActor
 class CategoryManagement: CategoryManagementProtocol {
     private let context: NSManagedObjectContext
     private let sharedState: SharedStateService

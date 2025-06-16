@@ -66,7 +66,7 @@ final class ValidationService: ValidationServiceProtocol {
             return .valid
         } else {
             logger.info("Задача \(task.id) не прошла валидацию: \(reasons.joined(separator: ", "))")
-            return .invalid(reasons: reasons)
+            return .invalid(reasons.map { ValidationError.custom(message: $0) })
         }
     }
     
@@ -102,7 +102,7 @@ final class ValidationService: ValidationServiceProtocol {
             let hasOverlaps = validateTimeOverlap(task, with: tasks)
             
             if hasOverlaps {
-                return .invalid(reasons: ["Задача пересекается с другими задачами"])
+                return .invalid([ValidationError.custom(message: "Задача пересекается с другими задачами")])
             }
             
             return .valid

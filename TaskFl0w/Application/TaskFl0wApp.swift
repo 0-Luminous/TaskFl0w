@@ -29,7 +29,7 @@ struct TaskFl0wApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(diContainer.appStateService)
+                .environmentObject(diContainer.sharedStateService)
                 .onAppear {
                     setupApp()
                 }
@@ -49,7 +49,7 @@ struct TaskFl0wApp: App {
                             isAppAlreadyLaunchedOnce = true
                         }
                 } else {
-                    MainView()
+                    ClockViewIOS()
                 }
             }
             .animation(.easeInOut(duration: 0.3), value: shouldShowFirstView)
@@ -66,7 +66,7 @@ struct TaskFl0wApp: App {
         
         // Инициализация сервисов через DI Container
         Task {
-            await diContainer.appStateService.loadSavedTheme()
+            // await diContainer.appStateService.loadSavedTheme() // Метод будет добавлен позже
         }
     }
 }

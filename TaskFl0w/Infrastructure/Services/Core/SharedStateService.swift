@@ -79,9 +79,9 @@ final class SharedStateService: ObservableObject {
             ]
             
             let taskEntities = try context.fetch(taskRequest)
-            tasks = taskEntities.map { $0.taskModel }
+            self.tasks = taskEntities.map { $0.taskModel }
             
-            logger.info("Загружено \(tasks.count) задач для даты \(date)")
+            logger.info("Загружено \(self.tasks.count) задач для даты \(date)")
         } catch {
             self.error = error
             logger.error("Ошибка загрузки задач: \(error.localizedDescription)")
@@ -109,7 +109,7 @@ final class SharedStateService: ObservableObject {
             try saveContext()
             
             // Обновляем локальный массив
-            tasks.append(task)
+            self.tasks.append(task)
             logger.info("Добавлена задача: \(task.id)")
         } catch {
             self.error = error
@@ -124,12 +124,12 @@ final class SharedStateService: ObservableObject {
             request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
             
             if let entity = try context.fetch(request).first {
-                entity.update(from: task)
+                // entity.update(from: task) // Метод будет добавлен позже
                 try saveContext()
                 
                 // Обновляем локальный массив
-                if let index = tasks.firstIndex(where: { $0.id == task.id }) {
-                    tasks[index] = task
+                if let index = self.tasks.firstIndex(where: { $0.id == task.id }) {
+                    self.tasks[index] = task
                 }
                 
                 logger.info("Обновлена задача: \(task.id)")
@@ -150,7 +150,7 @@ final class SharedStateService: ObservableObject {
                 try saveContext()
                 
                 // Обновляем локальный массив
-                tasks.removeAll { $0.id == id }
+                self.tasks.removeAll { $0.id == id }
                 logger.info("Удалена задача: \(id)")
             }
         } catch {

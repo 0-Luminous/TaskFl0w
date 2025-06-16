@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 final class DockBarViewModel: ObservableObject {
     // MARK: - Services
     let categoryManagement: CategoryManagementProtocol

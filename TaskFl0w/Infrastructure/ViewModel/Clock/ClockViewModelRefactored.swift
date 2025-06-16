@@ -47,7 +47,7 @@ final class ClockViewModelRefactored: ObservableObject, ClockViewModelProtocol {
         notificationService: NotificationServiceProtocol? = nil
     ) {
         // Инициализируем зависимости
-        self.sharedState = sharedState ?? .shared
+        self.sharedState = sharedState ?? SharedStateService()
         self.notificationService = notificationService ?? NotificationService.shared
         self.clockState = ClockStateManager()
         
@@ -229,7 +229,7 @@ final class ClockViewModelRefactored: ObservableObject, ClockViewModelProtocol {
     var dropLocation: CGPoint? {
         get { userInteraction.dropLocation }
     }
-    
+   
     var isDockBarEditingEnabled: Bool {
         get { userInteraction.isDockBarEditingEnabled }
         set {

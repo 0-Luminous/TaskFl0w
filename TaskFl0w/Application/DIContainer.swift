@@ -40,7 +40,7 @@ final class DIContainer: ObservableObject {
     // var categoryRepository: CategoryRepositoryProtocol { _categoryRepository } // Временно отключено
     
     // MARK: - Services
-    private lazy var _appStateService: AppStateService = AppStateService()
+    private lazy var _sharedStateService: SharedStateService = SharedStateService(context: context)
     
     private lazy var _taskService: TaskServiceProtocol = TaskService(context: context)
     
@@ -48,7 +48,7 @@ final class DIContainer: ObservableObject {
     private lazy var _errorHandler: ErrorHandlerProtocol = ErrorHandler.shared
     private lazy var _notificationService: NotificationServiceProtocol = NotificationService.shared
     
-    var appStateService: AppStateService { _appStateService }
+    var sharedStateService: SharedStateService { _sharedStateService }
     var taskService: TaskServiceProtocol { _taskService }
     var validationService: ValidationServiceProtocol { _validationService }
     var errorHandler: ErrorHandlerProtocol { _errorHandler }
@@ -60,40 +60,30 @@ final class DIContainer: ObservableObject {
     
     // MARK: - ViewModels Factory
     func makeClockViewModel() -> ClockViewModel {
-        ClockViewModel(
-            appState: appStateService,
-            taskService: taskService,
-            validationService: validationService,
-            errorHandler: errorHandler,
-            notificationService: notificationService
-        )
+        // ClockViewModel() // Упрощенная инициализация до готовности всех зависимостей
+        return ClockViewModel()
     }
     
     func makeTaskListViewModel() -> TaskListViewModel {
-        TaskListViewModel(
-            appState: appStateService,
-            taskService: taskService,
-            errorHandler: errorHandler
-        )
+        // TaskListViewModel() // Упрощенная инициализация до готовности всех зависимостей
+        return TaskListViewModel(appState: _sharedStateService)
     }
     
     func makeTaskRenderingViewModel() -> TaskRenderingViewModel {
-        TaskRenderingViewModel(appState: appStateService)
+        // TaskRenderingViewModel() // Упрощенная инициализация
+        return TaskRenderingViewModel(sharedState: _sharedStateService)
     }
     
     func makeTimeManagementViewModel() -> TimeManagementViewModel {
-        TimeManagementViewModel(
-            appState: appStateService,
-            taskService: taskService
-        )
+        // TimeManagementViewModel() // Упрощенная инициализация
+        return TimeManagementViewModel()
     }
     
     func makeUserInteractionViewModel() -> UserInteractionViewModel {
-        UserInteractionViewModel(
-            appState: appStateService,
-            taskService: taskService,
-            validationService: validationService
-        )
+        // UserInteractionViewModel() // Упрощенная инициализация
+        // Create a basic TaskManagement instance for UserInteractionViewModel
+        let basicTaskManagement = TaskManagement(sharedState: _sharedStateService, selectedDate: Date())
+        return UserInteractionViewModel(taskManagement: basicTaskManagement)
     }
     
     func makeThemeConfigurationViewModel() -> ThemeConfigurationViewModel {
@@ -110,12 +100,12 @@ final class DIContainer: ObservableObject {
 extension DIContainer {
     func resolve<T>(_ type: T.Type) -> T {
         switch type {
-        case is TaskRepositoryProtocol.Type:
-            return taskRepository as! T
-        case is CategoryRepositoryProtocol.Type:
-            return categoryRepository as! T
-        case is AppStateService.Type:
-            return appStateService as! T
+        // case is TaskRepositoryProtocol.Type:
+        //     return taskRepository as! T // Временно отключено
+        // case is CategoryRepositoryProtocol.Type:
+        //     return categoryRepository as! T // Временно отключено
+        case is SharedStateService.Type:
+            return sharedStateService as! T
         case is TaskServiceProtocol.Type:
             return taskService as! T
         case is ValidationServiceProtocol.Type:

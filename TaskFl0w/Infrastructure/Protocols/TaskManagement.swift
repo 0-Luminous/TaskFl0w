@@ -4,6 +4,7 @@ import SwiftUI
 import Combine
 
 // MARK: - Task Management Protocol
+@MainActor
 protocol TaskManagementProtocol: AnyObject {
     // MARK: - Properties
     var selectedDate: Date { get set }
@@ -153,7 +154,8 @@ extension Notification.Name {
 
 // MARK: - Updated TaskManagement Implementation
 @available(iOS 13.0, *)
-class TaskManagement: TaskManagementProtocol, @unchecked Sendable {
+@MainActor
+class TaskManagement: TaskManagementProtocol {
     // MARK: - Properties
     private let context: NSManagedObjectContext
     private let sharedState: SharedStateService

@@ -348,6 +348,7 @@ struct TasksFromView: View {
 }
 
 // Получение информации о категории (цвет и иконка)
+@MainActor
 func getCategoryInfo(for categoryID: UUID, categoryManager: CategoryManagementProtocol) -> (Color, String) {
     // Ищем категорию в списке категорий
     if let category = categoryManager.categories.first(where: { $0.id == categoryID }) {

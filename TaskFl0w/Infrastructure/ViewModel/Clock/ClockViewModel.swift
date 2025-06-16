@@ -588,7 +588,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         notificationService: NotificationServiceProtocol? = nil
     ) {
         // Инициализируем зависимости
-        self.sharedState = sharedState ?? .shared
+        self.sharedState = sharedState ?? SharedStateService()
         self.notificationService = notificationService ?? NotificationService.shared
         self.clockState = ClockStateManager()
         

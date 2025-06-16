@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 class TaskArcAnimationManager: ObservableObject {
     @Published var appearanceScale: CGFloat = 0.6
     @Published var appearanceOpacity: Double = 1.0
