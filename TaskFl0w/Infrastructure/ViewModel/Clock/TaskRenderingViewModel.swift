@@ -9,36 +9,111 @@ import SwiftUI
 import Foundation
 import Combine
 
-/// ViewModel для управления отображением задач на циферблате
+// MARK: - View State
+struct TaskRenderingViewState {
+    var tasks: [TaskOnRing] = []
+    var overlappingTaskGroups: [[TaskOnRing]] = []
+    var previewTask: TaskOnRing?
+    var searchText = ""
+    var isLoading = false
+    var error: String?
+}
+
+// MARK: - View Actions
+enum TaskRenderingAction {
+    case loadTasks(Date)
+    case searchTasks(String)
+    case validateOverlaps
+    case clearError
+    case setPreviewTask(TaskOnRing?)
+}
+
+/// Улучшенный ViewModel для управления отображением задач на циферблате
 @MainActor
 final class TaskRenderingViewModel: ObservableObject {
     
     // MARK: - Published Properties
+    @Published private(set) var state = TaskRenderingViewState()
     
-    @Published var tasks: [TaskOnRing] = []
-    @Published var overlappingTaskGroups: [[TaskOnRing]] = []
-    @Published var previewTask: TaskOnRing?
-    @Published var searchText = ""
+    // MARK: - Computed Properties
+    var tasks: [TaskOnRing] { state.tasks }
+    var overlappingTaskGroups: [[TaskOnRing]] { state.overlappingTaskGroups }
+    var previewTask: TaskOnRing? { 
+        get { state.previewTask }
+        set { state.previewTask = newValue }
+    }
+    var searchText: String {
+        get { state.searchText }
+        set { 
+            state.searchText = newValue
+            handle(.searchTasks(newValue))
+        }
+    }
     
     // MARK: - Private Properties
-    
     private var cancellables = Set<AnyCancellable>()
     private weak var sharedState: SharedStateService?
     
     // MARK: - Initialization
-    
     init(sharedState: SharedStateService) {
         self.sharedState = sharedState
-        self.tasks = sharedState.tasks
+        self.state.tasks = sharedState.tasks
         
         setupBindings()
     }
     
+    // MARK: - Action Handler
+    func handle(_ action: TaskRenderingAction) {
+        switch action {
+        case .loadTasks(let date):
+            loadTasks(for: date)
+        case .searchTasks(let query):
+            searchTasks(with: query)
+        case .validateOverlaps:
+            validateTaskOverlaps()
+        case .clearError:
+            state.error = nil
+        case .setPreviewTask(let task):
+            state.previewTask = task
+        }
+    }
+    
     // MARK: - Public Methods
+    
+    // MARK: - Private Methods
+    
+    private func loadTasks(for date: Date) {
+        guard let sharedState = sharedState else { return }
+        
+        state.isLoading = true
+        state.error = nil
+        
+        Task {
+            await sharedState.loadTasks(for: date)
+            await MainActor.run {
+                self.state.tasks = self.tasksForSelectedDate(date, allTasks: sharedState.tasks)
+                self.state.isLoading = false
+                self.validateTaskOverlaps()
+            }
+        }
+    }
+    
+    private func searchTasks(with query: String) {
+        guard let sharedState = sharedState else { return }
+        
+        if query.isEmpty {
+            state.tasks = sharedState.tasks
+        } else {
+            state.tasks = sharedState.tasks.filter { task in
+                task.icon.localizedCaseInsensitiveContains(query) ||
+                task.category.rawValue.localizedCaseInsensitiveContains(query)
+            }
+        }
+    }
     
     /// Фильтрует задачи для указанной даты
     func tasksForSelectedDate(_ selectedDate: Date, allTasks: [TaskOnRing] = []) -> [TaskOnRing] {
-        let tasksToFilter = allTasks.isEmpty ? tasks : allTasks
+        let tasksToFilter = allTasks.isEmpty ? state.tasks : allTasks
         
         let tasksOnSelectedDate = tasksToFilter.filter { task in
             Calendar.current.isDate(task.startTime, inSameDayAs: selectedDate)
@@ -54,15 +129,7 @@ final class TaskRenderingViewModel: ObservableObject {
     
     /// Обновляет задачи для выбранной даты
     func updateTasksForSelectedDate(_ selectedDate: Date) {
-        guard let sharedState = sharedState else { return }
-        
-        let allTasks = sharedState.tasks
-        tasks = tasksForSelectedDate(selectedDate, allTasks: allTasks)
-        
-        // Валидируем пересечения задач
-        validateTaskOverlaps()
-        
-        objectWillChange.send()
+        handle(.loadTasks(selectedDate))
     }
     
     /// Находит пересекающиеся группы задач
@@ -95,39 +162,39 @@ final class TaskRenderingViewModel: ObservableObject {
     
     /// Валидирует пересечения задач
     func validateTaskOverlaps() {
-        let todayTasks = tasks.filter { task in
+        let todayTasks = state.tasks.filter { task in
             Calendar.current.isDate(task.startTime, inSameDayAs: Date())
         }
         
-        overlappingTaskGroups = findOverlappingTaskGroups(todayTasks)
+        state.overlappingTaskGroups = findOverlappingTaskGroups(todayTasks)
     }
     
     /// Фильтрует задачи по поисковому запросу
     func filteredTasks() -> [TaskOnRing] {
-        guard !searchText.isEmpty else { return tasks }
+        guard !state.searchText.isEmpty else { return state.tasks }
         
-        return tasks.filter { task in
-            task.icon.localizedCaseInsensitiveContains(searchText) ||
-            task.category.rawValue.localizedCaseInsensitiveContains(searchText)
+        return state.tasks.filter { task in
+            task.icon.localizedCaseInsensitiveContains(state.searchText) ||
+            task.category.rawValue.localizedCaseInsensitiveContains(state.searchText)
         }
     }
     
     /// Получает активную задачу на текущий момент
     func getCurrentActiveTask() -> TaskOnRing? {
         let now = Date()
-        return tasks.first { task in
+        return state.tasks.first { task in
             task.startTime <= now && task.endTime > now
         }
     }
     
     /// Получает задачи для конкретной категории
     func tasksForCategory(_ category: TaskCategoryModel) -> [TaskOnRing] {
-        return tasks.filter { $0.category.id == category.id }
+        return state.tasks.filter { $0.category.id == category.id }
     }
     
     /// Получает статистику по категориям
     func getCategoryStatistics() -> [TaskCategoryModel: Int] {
-        return Dictionary(grouping: tasks) { $0.category }
+        return Dictionary(grouping: state.tasks) { $0.category }
             .mapValues { $0.count }
     }
     
@@ -148,9 +215,9 @@ final class TaskRenderingViewModel: ObservableObject {
         let newTasks = sharedState.tasks
         
         // Проверяем, изменились ли задачи
-        guard !tasksAreEqual(tasks, newTasks) else { return }
+        guard !tasksAreEqual(state.tasks, newTasks) else { return }
         
-        tasks = newTasks
+        state.tasks = newTasks
         validateTaskOverlaps()
         
         // Уведомляем компоненты TaskArcs об изменениях
@@ -169,7 +236,7 @@ final class TaskRenderingViewModel: ObservableObject {
         NotificationCenter.default.post(
             name: .taskArcsTasksModified,
             object: self,
-            userInfo: ["modifiedTasks": tasks]
+            userInfo: ["modifiedTasks": state.tasks]
         )
     }
     

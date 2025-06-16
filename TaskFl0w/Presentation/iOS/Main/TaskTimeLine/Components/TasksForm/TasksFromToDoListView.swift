@@ -369,12 +369,13 @@ func getCategoryInfo(for categoryID: UUID, categoryManager: CategoryManagementPr
 
 #Preview {
     let context = PersistenceController.shared.container.viewContext
-    let categoryManager = CategoryManagement(context: context)
+    let sharedState = SharedStateService()
+    let categoryManager = CategoryManagement(context: context, sharedState: sharedState)
     let selectedDate = Date()
     let startTime = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate)
     let endTime = Calendar.current.date(bySettingHour: 10, minute: 30, second: 0, of: selectedDate)
     
-    return TasksFromView(
+    TasksFromView(
         listViewModel: ListViewModel(),
         selectedDate: selectedDate,
         categoryManager: categoryManager,

@@ -278,11 +278,17 @@ final class SelectCategoryViewModel: ObservableObject {
 
     let categoryManagement: CategoryManagementProtocol
 
-    init(
-        categoryManagement: CategoryManagementProtocol = CategoryManagement(
-            context: PersistenceController.shared.container.viewContext)
-    ) {
-        self.categoryManagement = categoryManagement
+          init(
+          categoryManagement: CategoryManagementProtocol? = nil
+            ) {
+          if let categoryManagement = categoryManagement {
+              self.categoryManagement = categoryManagement
+          } else {
+              // Создаем с базовой инициализацией для Preview
+              let context = PersistenceController.shared.container.viewContext
+              let sharedState = SharedStateService()
+              self.categoryManagement = CategoryManagement(context: context, sharedState: sharedState)
+          }
         setupDefaultCategories()
     }
 

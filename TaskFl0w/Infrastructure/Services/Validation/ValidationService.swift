@@ -7,6 +7,162 @@
 
 import Foundation
 import SwiftUI
+import OSLog
+
+/// Сервис для валидации задач и бизнес-логики
+final class ValidationService: ValidationServiceProtocol {
+    
+    // MARK: - Properties
+    private let logger = Logger(subsystem: "TaskFl0w", category: "ValidationService")
+    
+    // MARK: - Constants
+    private struct Constants {
+        static let minimumTaskDuration: TimeInterval = 60 // 1 минута
+        static let maximumTaskDuration: TimeInterval = 24 * 60 * 60 // 24 часа
+        static let overlapsToleranceSeconds: TimeInterval = 30 // 30 секунд толерантности
+    }
+    
+    // MARK: - ValidationServiceProtocol Implementation
+    
+    func validateTask(_ task: TaskOnRing) -> ValidationResult {
+        var reasons: [String] = []
+        
+        // Проверка базовой логики времени
+        if task.endTime <= task.startTime {
+            reasons.append("Время окончания должно быть позже времени начала")
+        }
+        
+        // Проверка минимальной длительности
+        let duration = task.duration
+        if duration < Constants.minimumTaskDuration {
+            reasons.append("Задача слишком короткая. Минимальная длительность: \(Int(Constants.minimumTaskDuration / 60)) минут")
+        }
+        
+        // Проверка максимальной длительности
+        if duration > Constants.maximumTaskDuration {
+            reasons.append("Задача слишком длинная. Максимальная длительность: \(Int(Constants.maximumTaskDuration / 3600)) часов")
+        }
+        
+        // Проверка разумности времени
+        let calendar = Calendar.current
+        let startHour = calendar.component(.hour, from: task.startTime)
+        let endHour = calendar.component(.hour, from: task.endTime)
+        
+        if startHour < 5 {
+            reasons.append("Очень раннее время начала (до 5:00)")
+        }
+        
+        if endHour > 23 {
+            reasons.append("Очень позднее время окончания (после 23:00)")
+        }
+        
+        // Проверка на будущее время (только предупреждение)
+        if task.startTime < Date() && !task.isCompleted {
+            reasons.append("Задача запланирована в прошлом")
+        }
+        
+        if reasons.isEmpty {
+            logger.debug("Задача \(task.id) прошла валидацию")
+            return .valid
+        } else {
+            logger.info("Задача \(task.id) не прошла валидацию: \(reasons.joined(separator: ", "))")
+            return .invalid(reasons: reasons)
+        }
+    }
+    
+    func validateTimeOverlap(_ task: TaskOnRing, with tasks: [TaskOnRing]) -> Bool {
+        for existingTask in tasks {
+            // Пропускаем ту же задачу
+            if existingTask.id == task.id {
+                continue
+            }
+            
+            // Проверяем пересечение времени
+            if hasTimeOverlap(task1: task, task2: existingTask) {
+                logger.info("Обнаружено пересечение задачи \(task.id) с задачей \(existingTask.id)")
+                return true
+            }
+        }
+        
+        logger.debug("Пересечений для задачи \(task.id) не найдено")
+        return false
+    }
+    
+    // MARK: - Additional Validation Methods
+    
+    /// Валидирует список задач на пересечения
+    func validateTaskList(_ tasks: [TaskOnRing]) -> [ValidationResult] {
+        return tasks.map { task in
+            let basicValidation = validateTask(task)
+            
+            // Если базовая валидация не прошла, возвращаем её
+            guard basicValidation.isValid else { return basicValidation }
+            
+            // Проверяем на пересечения
+            let hasOverlaps = validateTimeOverlap(task, with: tasks)
+            
+            if hasOverlaps {
+                return .invalid(reasons: ["Задача пересекается с другими задачами"])
+            }
+            
+            return .valid
+        }
+    }
+    
+    /// Находит все пересекающиеся задачи для данной задачи
+    func findOverlappingTasks(for task: TaskOnRing, in tasks: [TaskOnRing]) -> [TaskOnRing] {
+        return tasks.filter { existingTask in
+            existingTask.id != task.id && hasTimeOverlap(task1: task, task2: existingTask)
+        }
+    }
+    
+    /// Предлагает исправления для пересекающихся задач
+    func suggestTimeSlotFix(for task: TaskOnRing, avoiding tasks: [TaskOnRing]) -> TaskOnRing? {
+        let taskDuration = task.duration
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: task.startTime)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? task.startTime
+        
+        // Ищем свободный слот в тот же день
+        var currentTime = startOfDay
+        
+        while currentTime.addingTimeInterval(taskDuration) <= endOfDay {
+            let proposedTask = TaskOnRing(
+                id: task.id,
+                startTime: currentTime,
+                endTime: currentTime.addingTimeInterval(taskDuration),
+                color: task.color,
+                icon: task.icon,
+                category: task.category,
+                isCompleted: task.isCompleted
+            )
+            
+            if !validateTimeOverlap(proposedTask, with: tasks) {
+                logger.info("Найден подходящий слот для задачи \(task.id): \(currentTime)")
+                return proposedTask
+            }
+            
+            currentTime = currentTime.addingTimeInterval(15 * 60) // Проверяем каждые 15 минут
+        }
+        
+        logger.warning("Не удалось найти подходящий слот для задачи \(task.id)")
+        return nil
+    }
+    
+    // MARK: - Private Methods
+    
+    private func hasTimeOverlap(task1: TaskOnRing, task2: TaskOnRing) -> Bool {
+        // Добавляем небольшую толерантность для избежания конфликтов при точном соприкосновении
+        let tolerance = Constants.overlapsToleranceSeconds
+        
+        let task1Start = task1.startTime.addingTimeInterval(-tolerance)
+        let task1End = task1.endTime.addingTimeInterval(tolerance)
+        let task2Start = task2.startTime.addingTimeInterval(-tolerance)
+        let task2End = task2.endTime.addingTimeInterval(tolerance)
+        
+        return task1Start < task2End && task1End > task2Start
+    }
+}
 
 // MARK: - Validation Error Types
 enum ValidationError: Error, LocalizedError {
@@ -126,105 +282,7 @@ struct NumberRangeValidator<T: Comparable>: Validator {
     }
 }
 
-// MARK: - Validation Service
-struct ValidationService {
-    
-    // MARK: - Task Validation
-    static func validateTaskName(_ name: String) -> ValidationResult {
-        let nonEmptyValidator = NonEmptyStringValidator(fieldName: "Название задачи")
-        let lengthValidator = StringLengthValidator(fieldName: "Название задачи", minLength: 1, maxLength: 100)
-        
-        return combine(
-            nonEmptyValidator.validate(name),
-            lengthValidator.validate(name)
-        )
-    }
-    
-    static func validateTimeRange(start: Date, end: Date) -> ValidationResult {
-        let timeRangeValidator = TimeRangeValidator()
-        return timeRangeValidator.validate((start: start, end: end))
-    }
-    
-    static func validateTaskDuration(start: Date, end: Date, minMinutes: Int = 1, maxHours: Int = 24) -> ValidationResult {
-        let duration = end.timeIntervalSince(start)
-        let durationMinutes = Int(duration / 60)
-        let durationHours = Int(duration / 3600)
-        
-        var errors: [ValidationError] = []
-        
-        // Проверка времен последовательности
-        let timeRangeResult = validateTimeRange(start: start, end: end)
-        errors.append(contentsOf: timeRangeResult.errors)
-        
-        // Проверка минимальной длительности
-        if durationMinutes < minMinutes {
-            errors.append(.outOfRange(field: "Продолжительность задачи", min: "\(minMinutes) мин", max: "\(maxHours) ч"))
-        }
-        
-        // Проверка максимальной длительности
-        if durationHours > maxHours {
-            errors.append(.outOfRange(field: "Продолжительность задачи", min: "\(minMinutes) мин", max: "\(maxHours) ч"))
-        }
-        
-        return errors.isEmpty ? .valid : .invalid(errors)
-    }
-    
-    // MARK: - Category Validation
-    static func validateCategoryName(_ name: String, existingNames: [String] = []) -> ValidationResult {
-        let nonEmptyValidator = NonEmptyStringValidator(fieldName: "Название категории")
-        let lengthValidator = StringLengthValidator(fieldName: "Название категории", minLength: 1, maxLength: 50)
-        
-        var results = [
-            nonEmptyValidator.validate(name),
-            lengthValidator.validate(name)
-        ]
-        
-        // Проверка на дубликаты
-        if existingNames.contains(name.trimmingCharacters(in: .whitespacesAndNewlines)) {
-            results.append(.invalid([.duplicateValue(field: "Название категории", value: name)]))
-        }
-        
-        return combine(results)
-    }
-    
-    static func validateColor(_ color: Color?) -> ValidationResult {
-        guard color != nil else {
-            return .invalid([.requiredField(field: "Цвет категории")])
-        }
-        return .valid
-    }
-    
-    // MARK: - Settings Validation
-    static func validateZeroPosition(_ position: Double) -> ValidationResult {
-        let validator = NumberRangeValidator<Double>(fieldName: "Позиция нуля", min: 0.0, max: 360.0)
-        return validator.validate(position)
-    }
-    
-    static func validateLineWidth(_ width: Double) -> ValidationResult {
-        let validator = NumberRangeValidator<Double>(fieldName: "Ширина линии", min: 0.5, max: 50.0)
-        return validator.validate(width)
-    }
-    
-    static func validateFontSize(_ size: Double) -> ValidationResult {
-        let validator = NumberRangeValidator<Double>(fieldName: "Размер шрифта", min: 8.0, max: 72.0)
-        return validator.validate(size)
-    }
-    
-    static func validateReminderTime(_ minutes: Int) -> ValidationResult {
-        let validator = NumberRangeValidator<Int>(fieldName: "Время напоминания", min: 1, max: 60)
-        return validator.validate(minutes)
-    }
-    
-    // MARK: - Helper Methods
-    private static func combine(_ results: ValidationResult...) -> ValidationResult {
-        return combine(Array(results))
-    }
-    
-    private static func combine(_ results: [ValidationResult]) -> ValidationResult {
-        let allErrors = results.flatMap { $0.errors }
-        return allErrors.isEmpty ? .valid : .invalid(allErrors)
-    }
-}
+// MARK: - Static Validation Helpers (moved to main ValidationService class above)
 
 // MARK: - SwiftUI Extensions
 extension ValidationResult {

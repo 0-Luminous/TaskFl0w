@@ -19,7 +19,7 @@ class CategoryManagement: CategoryManagementProtocol {
 
     var categories: [TaskCategoryModel] { _categories }
 
-    init(context: NSManagedObjectContext, sharedState: SharedStateService = .shared) {
+    init(context: NSManagedObjectContext, sharedState: SharedStateService) {
         self.context = context
         self.sharedState = sharedState
         fetchCategories()
