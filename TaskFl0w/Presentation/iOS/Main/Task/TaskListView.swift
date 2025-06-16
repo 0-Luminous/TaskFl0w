@@ -30,13 +30,13 @@ struct TaskListView: View {
     // Добавляем состояние для предупреждения об удалении
     @State private var showingDeleteAlert = false
     @Binding var selectedDate: Date
-    
+
     // Заменяем локальные состояния на ObservedObject
     @ObservedObject private var calendarState = CalendarState.shared
     @ObservedObject private var themeManager = ThemeManager.shared
-    
+
     private let topID = "top_of_list"
-    
+
     // Функция для генерации виброотдачи
     private func generateHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
         let generator = UIImpactFeedbackGenerator(style: style)
@@ -45,77 +45,82 @@ struct TaskListView: View {
     }
 
     var body: some View {
-        NavigationView {
-            ZStack(alignment: .top) {
-                backgroundView
-                
-                VStack(spacing: 0) {
-                    mainScrollView
-                }
-                
-                overlayViews
-                bottomBarContainer
+
+        ZStack(alignment: .top) {
+            backgroundView
+
+            VStack(spacing: 0) {
+                mainScrollView
             }
-            .scrollContentBackground(.hidden)
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-                isKeyboardVisible = true
+
+            overlayViews
+            bottomBarContainer
+        }
+        .scrollContentBackground(.hidden)
+        .onReceive(
+            NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+        ) { _ in
+            isKeyboardVisible = true
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+        ) { _ in
+            isKeyboardVisible = false
+        }
+        .onChange(of: isSearchActive) { oldValue, newValue in
+            NotificationCenter.default.post(
+                name: NSNotification.Name("SearchActiveStateChanged"),
+                object: nil,
+                userInfo: ["isActive": newValue]
+            )
+        }
+        .onChange(of: isAddingNewTask) { oldValue, newValue in
+            NotificationCenter.default.post(
+                name: NSNotification.Name("AddingTaskStateChanged"),
+                object: nil,
+                userInfo: ["isAddingTask": newValue]
+            )
+        }
+        .onChange(of: selectedDate) { oldValue, newValue in
+            viewModel.selectedDate = newValue
+            viewModel.refreshData()
+        }
+        .onChange(of: calendarState.isWeekCalendarVisible) { oldValue, newValue in
+            print("isWeekCalendarVisible изменилось: \(oldValue) -> \(newValue)")
+        }
+        .onChange(of: calendarState.isMonthCalendarVisible) { oldValue, newValue in
+            // Дополнительная логика обновления при необходимости
+        }
+        .actionSheet(isPresented: $showingPrioritySheet) {
+            priorityActionSheet
+        }
+        .sheet(isPresented: $showingDatePicker) {
+            transferTaskSheet
+        }
+        .sheet(isPresented: $showingDeadlinePicker) {
+            deadlineTaskSheet
+        }
+        .alert("Удаление задач", isPresented: $showingDeleteAlert) {
+            Button("Отмена", role: .cancel) {}
+            Button("Удалить", role: .destructive) {
+                viewModel.deleteSelectedTasks()
             }
-            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-                isKeyboardVisible = false
-            }
-            .onChange(of: isSearchActive) { oldValue, newValue in
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("SearchActiveStateChanged"),
-                    object: nil,
-                    userInfo: ["isActive": newValue]
-                )
-            }
-            .onChange(of: isAddingNewTask) { oldValue, newValue in
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("AddingTaskStateChanged"),
-                    object: nil,
-                    userInfo: ["isAddingTask": newValue]
-                )
-            }
-            .onChange(of: selectedDate) { oldValue, newValue in
-                viewModel.selectedDate = newValue
-                viewModel.refreshData()
-            }
-            .onChange(of: calendarState.isWeekCalendarVisible) { oldValue, newValue in
-                print("isWeekCalendarVisible изменилось: \(oldValue) -> \(newValue)")
-            }
-            .onChange(of: calendarState.isMonthCalendarVisible) { oldValue, newValue in
-                // Дополнительная логика обновления при необходимости
-            }
-            .actionSheet(isPresented: $showingPrioritySheet) {
-                priorityActionSheet
-            }
-            .sheet(isPresented: $showingDatePicker) {
-                transferTaskSheet
-            }
-            .sheet(isPresented: $showingDeadlinePicker) {
-                deadlineTaskSheet
-            }
-            .alert("Удаление задач", isPresented: $showingDeleteAlert) {
-                Button("Отмена", role: .cancel) { }
-                Button("Удалить", role: .destructive) {
-                    viewModel.deleteSelectedTasks()
-                }
-            } message: {
-                Text("Вы уверены, что хотите удалить выбранные задачи (\(viewModel.selectedTasks.count))?")
-            }
+        } message: {
+            Text(
+                "Вы уверены, что хотите удалить выбранные задачи (\(viewModel.selectedTasks.count))?"
+            )
         }
     }
-    
+
     // MARK: - Computed Properties для разбивки сложного body
-    
+
     private var backgroundView: some View {
-        (themeManager.isDarkMode 
+        (themeManager.isDarkMode
             ? Color(red: 0.098, green: 0.098, blue: 0.098)
             : Color(red: 0.95, green: 0.95, blue: 0.95))
-        .ignoresSafeArea()
+            .ignoresSafeArea()
     }
-    
+
     private var mainScrollView: some View {
         ScrollViewReader { scrollProxy in
             List {
@@ -138,7 +143,7 @@ struct TaskListView: View {
             }
         }
     }
-    
+
     private var listHeader: some View {
         Group {
             EmptyView()
@@ -147,7 +152,7 @@ struct TaskListView: View {
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-            
+
             if viewModel.showCompletedTasksOnly {
                 Color.clear
                     .frame(height: 20)
@@ -156,7 +161,7 @@ struct TaskListView: View {
             }
         }
     }
-    
+
     private var calendarSpacers: some View {
         Group {
             if calendarState.isWeekCalendarVisible {
@@ -174,12 +179,13 @@ struct TaskListView: View {
             }
         }
     }
-    
+
     private var taskContent: some View {
-        let items = viewModel.showCompletedTasksOnly 
+        let items =
+            viewModel.showCompletedTasksOnly
             ? viewModel.getAllArchivedItems()
             : viewModel.getFilteredItems()
-        
+
         return Group {
             if viewModel.showCompletedTasksOnly {
                 archivedTasksView(items: items)
@@ -188,7 +194,7 @@ struct TaskListView: View {
             }
         }
     }
-    
+
     private func archivedTasksView(items: [ToDoItem]) -> some View {
         ArchivedTasksGroupView(
             items: items,
@@ -211,7 +217,7 @@ struct TaskListView: View {
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
     }
-    
+
     private func regularTasksView(items: [ToDoItem]) -> some View {
         ForEach(items) { item in
             TaskRow(
@@ -247,13 +253,13 @@ struct TaskListView: View {
             .listRowSeparator(.hidden)
         }
     }
-    
+
     private func taskRowBackground(for item: ToDoItem) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 10)
                 .fill(backgroundFillColor)
                 .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
-            
+
             if item.priority != .none {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
@@ -263,17 +269,18 @@ struct TaskListView: View {
         .padding(.vertical, 5)
         .padding(.horizontal, 12)
     }
-    
+
     private var backgroundFillColor: Color {
-        themeManager.isDarkMode 
-            ? Color(red: 0.18, green: 0.18, blue: 0.18) 
+        themeManager.isDarkMode
+            ? Color(red: 0.18, green: 0.18, blue: 0.18)
             : Color(red: 0.9, green: 0.9, blue: 0.9)
     }
-    
+
     private func priorityOpacity(for item: ToDoItem) -> Double {
-        item.isCompleted && !viewModel.isSelectionMode && !viewModel.showCompletedTasksOnly ? 0.5 : 1.0
+        item.isCompleted && !viewModel.isSelectionMode && !viewModel.showCompletedTasksOnly
+            ? 0.5 : 1.0
     }
-    
+
     private var newTaskSection: some View {
         Group {
             if isAddingNewTask {
@@ -290,14 +297,14 @@ struct TaskListView: View {
             }
         }
     }
-    
+
     private var bottomSpacer: some View {
         Color.clear
             .frame(height: 160)
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
     }
-    
+
     private var overlayViews: some View {
         Group {
             if viewModel.showCompletedTasksOnly {
@@ -306,17 +313,17 @@ struct TaskListView: View {
                     Spacer()
                 }
             }
-            
+
             if isAddingNewTask {
                 newTaskOverlay
             }
         }
     }
-    
+
     private var newTaskOverlay: some View {
         VStack {
             Spacer().frame(height: UIScreen.main.bounds.height * 0.32)
-            
+
             PrioritySelectionView(
                 selectedPriority: $newTaskPriority,
                 onSave: {
@@ -334,7 +341,7 @@ struct TaskListView: View {
             .padding(.bottom, 20)
         }
     }
-    
+
     private var bottomBarContainer: some View {
         Group {
             if !isSearchActive && !isKeyboardVisible && !isAddingNewTask {
@@ -347,7 +354,7 @@ struct TaskListView: View {
             }
         }
     }
-    
+
     private var bottomBarView: some View {
         BottomBar(
             onAddTap: {
@@ -385,29 +392,29 @@ struct TaskListView: View {
             }
         )
     }
-    
+
     private var priorityActionSheet: ActionSheet {
         ActionSheet(
             title: Text("Выберите приоритет"),
             message: Text("Установить приоритет для выбранных задач"),
             buttons: [
-                .default(Text("Высокий")) { 
-                    viewModel.setPriorityForSelectedTasks(.high) 
+                .default(Text("Высокий")) {
+                    viewModel.setPriorityForSelectedTasks(.high)
                 },
-                .default(Text("Средний")) { 
-                    viewModel.setPriorityForSelectedTasks(.medium) 
+                .default(Text("Средний")) {
+                    viewModel.setPriorityForSelectedTasks(.medium)
                 },
-                .default(Text("Низкий")) { 
-                    viewModel.setPriorityForSelectedTasks(.low) 
+                .default(Text("Низкий")) {
+                    viewModel.setPriorityForSelectedTasks(.low)
                 },
-                .default(Text("Нет")) { 
-                    viewModel.setPriorityForSelectedTasks(.none) 
+                .default(Text("Нет")) {
+                    viewModel.setPriorityForSelectedTasks(.none)
                 },
-                .cancel(Text("Отмена"))
+                .cancel(Text("Отмена")),
             ]
         )
     }
-    
+
     private var transferTaskSheet: some View {
         TransferTaskView(
             selectedDate: $selectedTargetDate,
@@ -418,7 +425,7 @@ struct TaskListView: View {
             }
         )
     }
-    
+
     private var deadlineTaskSheet: some View {
         DeadlineForTaskView(
             selectedDate: $selectedDeadlineDate,
@@ -438,7 +445,7 @@ struct TaskListView: View {
             }
         }
     }
-    
+
     // Добавляем новый метод для получения информации о выбранных задачах
     private func getSelectedTasksInfo() -> [SelectedTaskInfo] {
         return viewModel.items
@@ -451,31 +458,33 @@ struct TaskListView: View {
                 )
             }
     }
-    
+
     // Добавляем вспомогательный метод для получения существующего deadline
     private func getExistingDeadlineForSelectedTasks() -> Date? {
         // Получаем deadline'ы всех выбранных задач
         let selectedTaskItems = viewModel.items.filter { viewModel.selectedTasks.contains($0.id) }
         let deadlines = selectedTaskItems.compactMap { $0.deadline }
-        
+
         // Если у всех задач одинаковый deadline, используем его
-        if !deadlines.isEmpty && deadlines.allSatisfy({ Calendar.current.isDate($0, inSameDayAs: deadlines.first!) }) {
+        if !deadlines.isEmpty
+            && deadlines.allSatisfy({ Calendar.current.isDate($0, inSameDayAs: deadlines.first!) })
+        {
             return deadlines.first
         }
-        
+
         // Если deadline'ы разные или нет ни одного, возвращаем nil
         return nil
     }
-    
+
     // MARK: - Helper Methods
-    
+
     private func setupInitialState() {
         if let selectedCategory = selectedCategory {
             viewModel.selectedCategory = selectedCategory
         }
         viewModel.refreshData()
     }
-    
+
     private func resetNewTask() {
         newTaskTitle = ""
         newTaskPriority = .none
