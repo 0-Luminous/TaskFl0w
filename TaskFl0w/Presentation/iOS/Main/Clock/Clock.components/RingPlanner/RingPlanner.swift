@@ -89,8 +89,7 @@ struct RingPlanner: View {
     
     private func handleTaskDrop(at location: CGPoint) -> Bool {
         // 1. Быстрая проверка состояния
-        guard let category = viewModel.draggedCategory,
-              viewModel.previewTask == nil else {
+        guard let category = viewModel.draggedCategory else {
             return false
         }
         
@@ -101,18 +100,18 @@ struct RingPlanner: View {
                 checkCategoryExists(category)
             )
             
-            // 3. Обновляем UI и создаем задачу в одном асинхронном блоке
-            DispatchQueue.main.async {
+            // 3. Обновляем UI и создаем задачу
+            Task { @MainActor in
                 // Показываем предпросмотр
                 self.viewModel.previewTask = newPreviewTask
                 
-                // Создаем задачу сразу, без дополнительных задержек
+                // Создаем задачу
                 if categoryExists {
-                    self.createTask(newPreviewTask)
+                    try? await self.createTask(newPreviewTask)
                 } else {
                     // Если категории нет, добавляем её и создаем задачу
                     self.viewModel.categoryManagement.addCategory(category)
-                    self.createTask(newPreviewTask)
+                    try? await self.createTask(newPreviewTask)
                 }
             }
             
@@ -124,21 +123,35 @@ struct RingPlanner: View {
         }
     }
     
-    private func createTask(_ task: TaskOnRing) {
-        // Создаем задачу
-        viewModel.taskManagement.addTask(task)
+    private func createTask(_ task: TaskOnRing) async throws {
+        print("🔄 Начинаем создание задачи: \(task.startTime) - \(task.endTime)")
         
-        // Проверяем успешность создания с минимальной задержкой
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            let tasksForDate = self.viewModel.tasksForSelectedDate(self.viewModel.tasks)
-            if tasksForDate.contains(where: { $0.id == task.id }) {
-                // Включаем режим редактирования
+        // Создаем задачу
+        try await viewModel.taskManagement.createTask(
+            startTime: task.startTime,
+            endTime: task.endTime,
+            category: task.category
+        )
+        
+        print("✅ Задача успешно создана")
+        
+        // Проверяем успешность создания
+        await MainActor.run {
+            print("🔄 Обновляем UI")
+            // Находим созданную задачу в списке задач
+            if let createdTask = viewModel.tasks.first(where: { 
+                $0.startTime == task.startTime && 
+                $0.endTime == task.endTime && 
+                $0.category == task.category 
+            }) {
+                // Включаем режим редактирования с актуальной задачей
                 self.viewModel.isEditingMode = true
-                self.viewModel.editingTask = task
+                self.viewModel.editingTask = createdTask
             }
             
             // Очищаем предпросмотр
             self.viewModel.previewTask = nil
+            print("✅ UI обновлен")
         }
     }
     

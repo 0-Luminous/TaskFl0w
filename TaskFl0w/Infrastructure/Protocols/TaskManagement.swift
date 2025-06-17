@@ -208,39 +208,15 @@ class TaskManagement: TaskManagementProtocol {
     }
 
     func addTask(_ task: TaskOnRing) {
-        operationQueue.async { [weak self] in
-            guard let self = self else { return }
-            
-            // Валидация
-            let validationResult = self.validator.validate(task)
-            guard validationResult.isValid else {
-                DispatchQueue.main.async {
-                    NotificationCenter.default.post(
-                        name: .taskManagementValidationFailed,
-                        object: self,
-                        userInfo: ["task": task, "errors": validationResult.errors]
-                    )
-                }
-                return
-            }
-            
-            let normalizedTask = self.normalizeTask(task)
-            _ = TaskEntity.from(normalizedTask, context: self.context) // Changed to use _ to explicitly ignore
-            
+        Task {
             do {
-                try self.saveContext()
-            
-            DispatchQueue.main.async {
-                self.sharedState.tasks.append(normalizedTask)
-                    
-                    NotificationCenter.default.post(
-                        name: .taskManagementDidAddTask,
-                        object: self,
-                        userInfo: ["task": normalizedTask]
-                    )
-                }
+                try await createTask(
+                    startTime: task.startTime,
+                    endTime: task.endTime,
+                    category: task.category
+                )
             } catch {
-                self.handleError(error, operation: "addTask")
+                handleError(error, operation: "addTask")
             }
         }
     }
@@ -497,15 +473,35 @@ class TaskManagement: TaskManagementProtocol {
         }
         
         return try await withCheckedThrowingContinuation { continuation in
-            let task = newTask // Capture the task locally
+            let task = newTask
             operationQueue.async { [weak self] in
                 guard let self = self else { 
                     continuation.resume(throwing: TaskManagementError.operationFailed)
                     return 
                 }
                 
-                self.addTask(task)
-                continuation.resume()
+                do {
+                    // Создаем сущность задачи
+                    _ = TaskEntity.from(task, context: self.context)
+                    
+                    // Сохраняем контекст
+                    try self.saveContext()
+                    
+                    // Обновляем состояние
+                    DispatchQueue.main.async {
+                        self.sharedState.tasks.append(task)
+                        
+                        NotificationCenter.default.post(
+                            name: .taskManagementDidAddTask,
+                            object: self,
+                            userInfo: ["task": task]
+                        )
+                        
+                        continuation.resume()
+                    }
+                } catch {
+                    continuation.resume(throwing: TaskManagementError.saveFailed(error))
+                }
             }
         }
     }
