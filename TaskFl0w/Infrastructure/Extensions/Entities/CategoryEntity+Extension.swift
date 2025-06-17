@@ -13,7 +13,8 @@ extension CategoryEntity {
             id: id ?? UUID(),
             rawValue: name ?? "",
             iconName: iconName ?? "",
-            color: Color(hex: colorHex ?? "") ?? .blue
+            color: Color(hex: colorHex ?? "") ?? .blue,
+            order: Int(order)
         )
     }
     
@@ -23,6 +24,7 @@ extension CategoryEntity {
         entity.name = model.rawValue
         entity.iconName = model.iconName
         entity.colorHex = model.color.toHex()
+        entity.order = Int32(model.order)
         return entity
     }
 } 

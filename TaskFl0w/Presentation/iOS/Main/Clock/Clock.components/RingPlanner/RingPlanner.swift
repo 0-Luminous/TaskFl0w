@@ -31,8 +31,13 @@ struct RingPlanner: View {
         static let categoryValidationDelay: TimeInterval = 0.1
         static let taskCreationDelay: TimeInterval = 0.2
         static let previewOpacity: Double = 0.7
+        static let dropZoneSize: CGFloat = 20 // Размер зоны для определения попадания
     }
 
+    // MARK: - State
+    @State private var isTargeted: Bool = false
+    @State private var dragLocation: CGPoint?
+    
     var body: some View {
         ZStack {
             Circle()
@@ -41,9 +46,6 @@ struct RingPlanner: View {
                     width: UIScreen.main.bounds.width * 0.8,
                     height: UIScreen.main.bounds.width * 0.8
                 )
-                .onDrop(of: [.text], isTargeted: nil) { providers, location in
-                    handleTaskDrop(at: location)
-                }
             
             // Показываем previewTask, если он есть
             if let previewTask = viewModel.previewTask {
@@ -80,6 +82,7 @@ struct RingPlanner: View {
                         isDragging: .constant(false)
                     )
                     .opacity(Constants.previewOpacity)
+                    .transition(.opacity.combined(with: .scale))
                 }
             }
         }
@@ -87,46 +90,41 @@ struct RingPlanner: View {
     
     // MARK: - Private Methods
     
-    private func handleTaskDrop(at location: CGPoint) -> Bool {
-        // 1. Быстрая проверка состояния
-        guard let category = viewModel.draggedCategory else {
-            return false
-        }
+    private func handleDragEntered(at location: CGPoint) {
+        guard let category = viewModel.draggedCategory else { return }
         
         do {
-            // 2. Создаем задачу и проверяем категорию параллельно
-            let (newPreviewTask, categoryExists) = try (
-                createPreviewTask(for: category, at: location),
-                checkCategoryExists(category)
-            )
+            // Создаем предпросмотр задачи
+            let newPreviewTask = try createPreviewTask(for: category, at: location)
             
-            // 3. Обновляем UI и создаем задачу
             Task { @MainActor in
-                // Показываем предпросмотр
+                // Показываем предпросмотр с нулевой прозрачностью для плавной анимации
                 self.viewModel.previewTask = newPreviewTask
                 
-                // Создаем задачу
-                if categoryExists {
-                    try? await self.createTask(newPreviewTask)
+                // Немедленно создаем задачу
+                if try await checkCategoryExists(category) {
+                    try? await self.createTaskWithAnimation(newPreviewTask)
                 } else {
                     // Если категории нет, добавляем её и создаем задачу
                     self.viewModel.categoryManagement.addCategory(category)
-                    try? await self.createTask(newPreviewTask)
+                    try? await self.createTaskWithAnimation(newPreviewTask)
                 }
             }
-            
-            return true
-            
         } catch {
-            print("❌ DEBUG: Error in handleTaskDrop: \(error)")
-            return false
+            print("❌ DEBUG: Error in handleDragEntered: \(error)")
         }
     }
     
-    private func createTask(_ task: TaskOnRing) async throws {
+    private func handleDragExited() {
+        Task { @MainActor in
+            self.viewModel.previewTask = nil
+        }
+    }
+    
+    private func createTaskWithAnimation(_ task: TaskOnRing) async throws {
         print("🔄 Начинаем создание задачи: \(task.startTime) - \(task.endTime)")
         
-        // Создаем задачу
+        // Создаем задачу без задержки
         try await viewModel.taskManagement.createTask(
             startTime: task.startTime,
             endTime: task.endTime,
@@ -135,22 +133,23 @@ struct RingPlanner: View {
         
         print("✅ Задача успешно создана")
         
-        // Проверяем успешность создания
+        // Обновляем UI с анимацией
         await MainActor.run {
-            print("🔄 Обновляем UI")
-            // Находим созданную задачу в списке задач
-            if let createdTask = viewModel.tasks.first(where: { 
-                $0.startTime == task.startTime && 
-                $0.endTime == task.endTime && 
-                $0.category == task.category 
-            }) {
-                // Включаем режим редактирования с актуальной задачей
-                self.viewModel.isEditingMode = true
-                self.viewModel.editingTask = createdTask
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                // Находим созданную задачу
+                if let createdTask = viewModel.tasks.first(where: { 
+                    $0.startTime == task.startTime && 
+                    $0.endTime == task.endTime && 
+                    $0.category == task.category 
+                }) {
+                    // Включаем режим редактирования с актуальной задачей
+                    self.viewModel.isEditingMode = true
+                    self.viewModel.editingTask = createdTask
+                }
+                
+                // Очищаем предпросмотр
+                self.viewModel.previewTask = nil
             }
-            
-            // Очищаем предпросмотр
-            self.viewModel.previewTask = nil
             print("✅ UI обновлен")
         }
     }
@@ -221,3 +220,5 @@ enum TaskCreationError: LocalizedError {
         }
     }
 }
+
+

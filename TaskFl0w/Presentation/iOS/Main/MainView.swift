@@ -49,7 +49,6 @@ struct ClockViewIOS: View {
     var body: some View {
         NavigationView {
             ZStack {
-                backgroundView
                 mainContent
                 overlayViews
             }
@@ -93,17 +92,6 @@ struct ClockViewIOS: View {
                 updateUI()
             }
         }
-    }
-    
-    // MARK: - View Components
-    private var backgroundView: some View {
-        DropZoneView(
-            isTargeted: $clockState.isOutsideArea,
-            onEntered: handleDropZoneEntered,
-            onExited: handleDropZoneExited
-        )
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.clear)
     }
     
     private var mainContent: some View {

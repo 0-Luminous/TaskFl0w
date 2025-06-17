@@ -8,6 +8,7 @@ protocol CategoryManagementProtocol {
     func addCategory(_ category: TaskCategoryModel)
     func updateCategory(_ category: TaskCategoryModel)
     func removeCategory(_ category: TaskCategoryModel)
+    func moveCategory(from: Int, to: Int)  // Добавляем новый метод
     func fetchCategories()
 }
 
@@ -94,6 +95,24 @@ class CategoryManagement: CategoryManagementProtocol {
             }
         } catch {
             print("Ошибка при удалении категории: \(error)")
+        }
+    }
+
+    func moveCategory(from source: Int, to destination: Int) {
+        guard source != destination,
+              source >= 0, source < _categories.count,
+              destination >= 0, destination <= _categories.count else {
+            return
+        }
+
+        // Перемещаем категорию в массиве
+        let category = _categories.remove(at: source)
+        _categories.insert(category, at: destination)
+
+        // Обновляем order для всех категорий
+        for (index, var category) in _categories.enumerated() {
+            category.order = index
+            updateCategory(category)
         }
     }
 
