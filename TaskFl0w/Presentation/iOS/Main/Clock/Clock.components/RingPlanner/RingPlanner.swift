@@ -37,6 +37,7 @@ struct RingPlanner: View {
     // MARK: - State
     @State private var isTargeted: Bool = false
     @State private var dragLocation: CGPoint?
+    @State private var isTransformingToArc: Bool = false
     
     var body: some View {
         ZStack {
@@ -47,7 +48,7 @@ struct RingPlanner: View {
                     height: UIScreen.main.bounds.width * 0.8
                 )
             
-            // Показываем previewTask, если он есть
+            // Показываем previewTask с анимированной трансформацией
             if let previewTask = viewModel.previewTask {
                 GeometryReader { geometry in
                     let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
@@ -65,27 +66,54 @@ struct RingPlanner: View {
                         configuration: configuration,
                         task: previewTask
                     )
-                    TaskArcContentView(
-                        task: previewTask,
-                        viewModel: viewModel,
-                        geometry: taskGeometry,
-                        configuration: configuration,
-                        animationManager: TaskArcAnimationManager(),
-                        gestureHandler: TaskArcGestureHandler(viewModel: viewModel, task: previewTask),
-                        hapticsManager: HapticsManager(),
-                        timeFormatter: {
-                            let formatter = DateFormatter()
-                            formatter.timeStyle = .short
-                            formatter.dateStyle = .none
-                            return formatter
-                        }(),
-                        isDragging: .constant(false)
-                    )
-                    .opacity(Constants.previewOpacity)
-                    .transition(.opacity.combined(with: .scale))
+                    
+                    if isTransformingToArc {
+                        // Показываем TaskArcShape с анимацией
+                        TaskArcContentView(
+                            task: previewTask,
+                            viewModel: viewModel,
+                            geometry: taskGeometry,
+                            configuration: configuration,
+                            animationManager: TaskArcAnimationManager(),
+                            gestureHandler: TaskArcGestureHandler(viewModel: viewModel, task: previewTask),
+                            hapticsManager: HapticsManager(),
+                            timeFormatter: {
+                                let formatter = DateFormatter()
+                                formatter.timeStyle = .short
+                                formatter.dateStyle = .none
+                                return formatter
+                            }(),
+                            isDragging: .constant(false)
+                        )
+                        .transition(.opacity.combined(with: .scale))
+                    } else {
+                        // Исправленный вызов CategoryPreviewShape
+                        CategoryPreviewShape(
+                            category: viewModel.draggedCategory,
+                            color: previewTask.category.color
+                        )
+                        .frame(width: 60, height: 60)
+                    }
                 }
+                .opacity(Constants.previewOpacity)
             }
         }
+        .onDrop(of: [.text], delegate: RingPlannerDropDelegate(
+            isTargeted: $isTargeted,
+            dragLocation: $dragLocation,
+            onDragEntered: { location in
+                withAnimation(.spring()) {
+                    isTransformingToArc = true
+                }
+                handleDragEntered(at: location)
+            },
+            onDragExited: {
+                withAnimation(.spring()) {
+                    isTransformingToArc = false
+                }
+                handleDragExited()
+            }
+        ))
     }
     
     // MARK: - Private Methods
@@ -218,6 +246,61 @@ enum TaskCreationError: LocalizedError {
         case .taskNotCreated:
             return "Задача не была создана"
         }
+    }
+}
+
+// Исправленная структура для отображения превью категории
+struct CategoryPreviewShape: View {
+    let category: TaskCategoryModel?
+    let color: Color
+    
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(color) // Заполняем цветом здесь
+            Image(systemName: category?.iconName ?? "")
+                .foregroundColor(.white)
+                .font(.system(size: 24))
+        }
+    }
+}
+
+// Исправленный протокол для делегата
+protocol CustomDropDelegate {
+    var isTargeted: Bool { get set }
+    var dragLocation: CGPoint? { get set }
+    func onDragEntered(_ location: CGPoint)
+    func onDragExited()
+}
+
+// Исправленный делегат для обработки перетаскивания
+struct RingPlannerDropDelegate: DropDelegate {
+    @Binding var isTargeted: Bool
+    @Binding var dragLocation: CGPoint?
+    let onDragEntered: (CGPoint) -> Void
+    let onDragExited: () -> Void
+    
+    func dropEntered(info: DropInfo) {
+        isTargeted = true
+        dragLocation = info.location
+        onDragEntered(info.location)
+    }
+    
+    func dropExited(info: DropInfo) {
+        isTargeted = false
+        dragLocation = nil
+        onDragExited()
+    }
+    
+    func performDrop(info: DropInfo) -> Bool {
+        dragLocation = nil
+        isTargeted = false
+        return true
+    }
+    
+    // Необходимые методы протокола DropDelegate
+    func validateDrop(info: DropInfo) -> Bool {
+        return true
     }
 }
 
