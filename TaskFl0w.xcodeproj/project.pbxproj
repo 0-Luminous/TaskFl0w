@@ -38,52 +38,13 @@
 		2C9D00512DC1552200B6724A /* TaskFlowWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TaskFlowWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C9D00522DC1552200B6724A /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		2C9D00542DC1552200B6724A /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		2CD162222DCABEDB002DF810 /* TaskFlowWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TaskFlowWidgetsExtension.entitlements; sourceTree = "<group>"; };
 		2CDF440A2D1AC2C000149A0B /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		2C9D00672DC1552700B6724A /* Exceptions for "TaskFlowWidgets" folder in "TaskFlowWidgetsExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 2C9D00502DC1552200B6724A /* TaskFlowWidgetsExtension */;
-		};
-		2C9FDCB72DD0E89D00DF9783 /* Exceptions for "TaskFl0w" folder in "TaskFl0w" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 2C1DB3892D1AB92000C768B1 /* TaskFl0w */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2C1DB38C2D1AB92000C768B1 /* TaskFl0w */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				2C9FDCB72DD0E89D00DF9783 /* Exceptions for "TaskFl0w" folder in "TaskFl0w" target */,
-			);
 			path = TaskFl0w;
-			sourceTree = "<group>";
-		};
-		2C1DB3A22D1AB92300C768B1 /* TaskFl0wTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TaskFl0wTests;
-			sourceTree = "<group>";
-		};
-		2C1DB3AC2D1AB92400C768B1 /* TaskFl0wUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = TaskFl0wUITests;
-			sourceTree = "<group>";
-		};
-		2C9D00562DC1552200B6724A /* TaskFlowWidgets */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				2C9D00672DC1552700B6724A /* Exceptions for "TaskFlowWidgets" folder in "TaskFlowWidgetsExtension" target */,
-			);
-			path = TaskFlowWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -127,11 +88,7 @@
 		2C1DB3812D1AB92000C768B1 = {
 			isa = PBXGroup;
 			children = (
-				2CD162222DCABEDB002DF810 /* TaskFlowWidgetsExtension.entitlements */,
 				2C1DB38C2D1AB92000C768B1 /* TaskFl0w */,
-				2C1DB3A22D1AB92300C768B1 /* TaskFl0wTests */,
-				2C1DB3AC2D1AB92400C768B1 /* TaskFl0wUITests */,
-				2C9D00562DC1552200B6724A /* TaskFlowWidgets */,
 				2CDF44092D1AC2BF00149A0B /* Frameworks */,
 				2C1DB38B2D1AB92000C768B1 /* Products */,
 			);
@@ -197,9 +154,6 @@
 			dependencies = (
 				2C1DB3A12D1AB92300C768B1 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				2C1DB3A22D1AB92300C768B1 /* TaskFl0wTests */,
-			);
 			name = TaskFl0wTests;
 			packageProductDependencies = (
 			);
@@ -220,9 +174,6 @@
 			dependencies = (
 				2C1DB3AB2D1AB92400C768B1 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				2C1DB3AC2D1AB92400C768B1 /* TaskFl0wUITests */,
-			);
 			name = TaskFl0wUITests;
 			packageProductDependencies = (
 			);
@@ -241,9 +192,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				2C9D00562DC1552200B6724A /* TaskFlowWidgets */,
 			);
 			name = TaskFlowWidgetsExtension;
 			packageProductDependencies = (
@@ -513,10 +461,9 @@
 				CODE_SIGN_ENTITLEMENTS = TaskFl0w/TaskFl0w.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"TaskFl0w/\"";
+				DEVELOPMENT_ASSET_PATHS = "\"TaskFl0w/\" \"TaskFl0w/Resources\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = TaskFl0w/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TaskFl0w;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -550,10 +497,9 @@
 				CODE_SIGN_ENTITLEMENTS = TaskFl0w/TaskFl0w.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"TaskFl0w/\"";
+				DEVELOPMENT_ASSET_PATHS = "\"TaskFl0w/\" \"TaskFl0w/Resources\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = TaskFl0w/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TaskFl0w;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -656,7 +602,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = TaskFlowWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TaskFlowWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -687,7 +632,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = TaskFlowWidgets/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TaskFlowWidgets;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
