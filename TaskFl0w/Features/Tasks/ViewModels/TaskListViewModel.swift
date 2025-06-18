@@ -61,19 +61,32 @@ final class TaskListViewModel: ObservableObject {
     
     // MARK: - Private Properties
     private weak var appState: SharedStateService?
-    private let taskService: TaskService?
+    private let taskRepository: TaskRepositoryProtocol?
     private let logger = Logger(subsystem: "TaskFl0w", category: "TaskListViewModel")
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
-    init(appState: SharedStateService? = nil, taskService: TaskService? = nil) {
+    init(appState: SharedStateService? = nil, taskRepository: TaskRepositoryProtocol? = nil) {
         self.appState = appState
-        self.taskService = taskService
+        self.taskRepository = taskRepository
         
         setupBindings()
-        
+
         // Загружаем начальные данные
-        if let appState = appState {
+        if let repo = taskRepository {
+            Task { [weak self] in
+                do {
+                    let tasks = try await repo.fetchAll()
+                    await MainActor.run {
+                        self?.state.tasks = tasks
+                    }
+                } catch {
+                    await MainActor.run {
+                        self?.state.error = error.localizedDescription
+                    }
+                }
+            }
+        } else if let appState = appState {
             state.tasks = appState.tasks
         }
     }
@@ -127,9 +140,25 @@ final class TaskListViewModel: ObservableObject {
         state.error = nil
         
         Task {
-            await appState?.loadTasks(for: date)
-            await MainActor.run {
-                self.state.isLoading = false
+            if let repo = taskRepository {
+                do {
+                    let tasks = try await repo.fetch(for: date)
+                    await MainActor.run {
+                        self.state.tasks = tasks
+                        self.applyCurrentFilters()
+                        self.state.isLoading = false
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.state.error = error.localizedDescription
+                        self.state.isLoading = false
+                    }
+                }
+            } else {
+                await appState?.loadTasks(for: date)
+                await MainActor.run {
+                    self.state.isLoading = false
+                }
             }
         }
     }
@@ -165,29 +194,72 @@ final class TaskListViewModel: ObservableObject {
     
     private func addTask(_ task: TaskOnRing) {
         Task {
-            await appState?.addTask(task)
-            await MainActor.run {
-                self.state.showingAddTaskForm = false
-                self.logger.info("Добавлена новая задача: \(task.id)")
+            if let repo = taskRepository {
+                do {
+                    try await repo.save(task)
+                    await MainActor.run {
+                        self.state.tasks.append(task)
+                        self.applyCurrentFilters()
+                        self.state.showingAddTaskForm = false
+                        self.logger.info("Добавлена новая задача: \(task.id)")
+                    }
+                } catch {
+                    await MainActor.run { self.state.error = error.localizedDescription }
+                }
+            } else {
+                await appState?.addTask(task)
+                await MainActor.run {
+                    self.state.showingAddTaskForm = false
+                    self.logger.info("Добавлена новая задача: \(task.id)")
+                }
             }
         }
     }
     
     private func updateTask(_ task: TaskOnRing) {
         Task {
-            await appState?.updateTask(task)
-            await MainActor.run {
-                self.state.editingTask = nil
-                self.logger.info("Обновлена задача: \(task.id)")
+            if let repo = taskRepository {
+                do {
+                    try await repo.update(task)
+                    await MainActor.run {
+                        if let index = self.state.tasks.firstIndex(where: { $0.id == task.id }) {
+                            self.state.tasks[index] = task
+                        }
+                        self.applyCurrentFilters()
+                        self.state.editingTask = nil
+                        self.logger.info("Обновлена задача: \(task.id)")
+                    }
+                } catch {
+                    await MainActor.run { self.state.error = error.localizedDescription }
+                }
+            } else {
+                await appState?.updateTask(task)
+                await MainActor.run {
+                    self.state.editingTask = nil
+                    self.logger.info("Обновлена задача: \(task.id)")
+                }
             }
         }
     }
     
     private func deleteTask(with id: UUID) {
         Task {
-            await appState?.deleteTask(with: id)
-            await MainActor.run {
-                self.logger.info("Удалена задача: \(id)")
+            if let repo = taskRepository {
+                do {
+                    try await repo.delete(id: id)
+                    await MainActor.run {
+                        self.state.tasks.removeAll { $0.id == id }
+                        self.applyCurrentFilters()
+                        self.logger.info("Удалена задача: \(id)")
+                    }
+                } catch {
+                    await MainActor.run { self.state.error = error.localizedDescription }
+                }
+            } else {
+                await appState?.deleteTask(with: id)
+                await MainActor.run {
+                    self.logger.info("Удалена задача: \(id)")
+                }
             }
         }
     }

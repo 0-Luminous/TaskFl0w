@@ -33,11 +33,11 @@ final class DIContainer: ObservableObject {
     }
     
     // MARK: - Repositories
-    // private lazy var _taskRepository: TaskRepositoryProtocol = CoreDataTaskRepository(context: context) // Временно отключено
-    // private lazy var _categoryRepository: CategoryRepositoryProtocol = CoreDataCategoryRepository(context: context) // Временно отключено
-    
-    // var taskRepository: TaskRepositoryProtocol { _taskRepository } // Временно отключено
-    // var categoryRepository: CategoryRepositoryProtocol { _categoryRepository } // Временно отключено
+    private lazy var _taskRepository: TaskRepositoryProtocol = CoreDataTaskRepository(context: context)
+    private lazy var _categoryRepository: CategoryRepositoryProtocol = CoreDataCategoryRepository(context: context)
+
+    var taskRepository: TaskRepositoryProtocol { _taskRepository }
+    var categoryRepository: CategoryRepositoryProtocol { _categoryRepository }
     
     // MARK: - Services
     private lazy var _sharedStateService: SharedStateService = SharedStateService(context: context)
@@ -65,8 +65,7 @@ final class DIContainer: ObservableObject {
     }
     
     func makeTaskListViewModel() -> TaskListViewModel {
-        // TaskListViewModel() // Упрощенная инициализация до готовности всех зависимостей
-        return TaskListViewModel(appState: _sharedStateService)
+        TaskListViewModel(appState: _sharedStateService, taskRepository: _taskRepository)
     }
     
     func makeTaskRenderingViewModel() -> TaskRenderingViewModel {
@@ -100,10 +99,10 @@ final class DIContainer: ObservableObject {
 extension DIContainer {
     func resolve<T>(_ type: T.Type) -> T {
         switch type {
-        // case is TaskRepositoryProtocol.Type:
-        //     return taskRepository as! T // Временно отключено
-        // case is CategoryRepositoryProtocol.Type:
-        //     return categoryRepository as! T // Временно отключено
+        case is TaskRepositoryProtocol.Type:
+            return taskRepository as! T
+        case is CategoryRepositoryProtocol.Type:
+            return categoryRepository as! T
         case is SharedStateService.Type:
             return sharedStateService as! T
         case is TaskServiceProtocol.Type:
