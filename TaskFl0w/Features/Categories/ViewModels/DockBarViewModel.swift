@@ -11,6 +11,7 @@ import SwiftUI
 final class DockBarViewModel: ObservableObject {
     // MARK: - Services
     let categoryManagement: CategoryManagementProtocol
+    let hapticsManager = HapticsManager.shared
     
     // MARK: - Published properties
     @Published var showingAddTask: Bool = false
@@ -22,6 +23,7 @@ final class DockBarViewModel: ObservableObject {
     @Published var isEditMode: Bool = false
     @Published var currentPage: Int = 0
     @Published var lastNonEditPage: Int = 0
+
     
     // MARK: - Constants
     let categoriesPerPage = 4
@@ -104,19 +106,10 @@ final class DockBarViewModel: ObservableObject {
         print("🔄 DEBUG: clearDraggedCategory called")
         self.draggedCategory = nil
     }
-    
-    // MARK: - UI Feedback
-    func triggerHapticFeedback() {
-        #if os(iOS)
-        let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
-        feedbackGenerator.prepare()
-        feedbackGenerator.impactOccurred()
-        #endif
-    }
-    
+        
     // MARK: - Edit mode
     func toggleEditMode() {
-        triggerHapticFeedback()
+        hapticsManager.triggerMediumFeedback()
         
         if !isEditMode {
             lastNonEditPage = currentPage

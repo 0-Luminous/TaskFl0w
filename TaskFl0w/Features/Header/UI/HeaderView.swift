@@ -1,5 +1,5 @@
 //
-//  TopBarView.swift
+//  HeaderView.swift
 //  TaskFl0w
 //
 //  Created by Yan on 4/5/25.
@@ -8,7 +8,7 @@
 import SwiftUI
 import UIKit
 
-struct TopBarView: View {
+struct HeaderView: View {
     let viewModel: ClockViewModel
     let showSettingsAction: () -> Void
     let toggleCalendarAction: () -> Void
@@ -250,7 +250,7 @@ struct TopBarView: View {
 }
 
 #Preview {
-    TopBarView(
+    HeaderView(
         viewModel: ClockViewModel(), showSettingsAction: {}, toggleCalendarAction: {},
         isCalendarVisible: false, searchAction: {})
 }

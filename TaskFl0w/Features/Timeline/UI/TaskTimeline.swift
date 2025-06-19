@@ -499,9 +499,9 @@ struct TaskTimeline: View {
             // Интерфейсные элементы
             VStack {
                 VStack {
-                    // TopBarView когда календарь скрыт
+                    // HeaderView когда календарь скрыт
                     if !showWeekCalendar {
-                        TopBarView(
+                        HeaderView(
                             viewModel: clockViewModel,
                             showSettingsAction: { showSettings = true },
                             toggleCalendarAction: { toggleWeekCalendar() },

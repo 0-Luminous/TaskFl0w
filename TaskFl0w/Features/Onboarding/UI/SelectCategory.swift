@@ -163,6 +163,7 @@ struct CategoryCard: View {
     let category: TaskCategoryModel
     let isSelected: Bool
     let onTap: () -> Void
+    let hapticsManager = HapticsManager.shared
 
     @State private var isPressed = false
     @ObservedObject private var themeManager = ThemeManager.shared
@@ -170,7 +171,7 @@ struct CategoryCard: View {
     var body: some View {
         Button(action: {
             onTap()
-            generateHapticFeedback()
+            hapticsManager.triggerSelectionFeedback()
         }) {
             VStack(spacing: 20) {
                 ZStack {
@@ -232,14 +233,6 @@ struct CategoryCard: View {
                     isPressed = false
                 }
             })
-    }
-
-    private func generateHapticFeedback() {
-        #if os(iOS)
-            let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
-            feedbackGenerator.prepare()
-            feedbackGenerator.impactOccurred()
-        #endif
     }
 
     private func getDescription(for category: String) -> String {

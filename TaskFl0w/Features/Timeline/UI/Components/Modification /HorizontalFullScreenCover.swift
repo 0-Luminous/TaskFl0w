@@ -22,7 +22,7 @@ struct HorizontalFullScreenCover<ContentView: View>: ViewModifier {
                 Color(red: 0.098, green: 0.098, blue: 0.098)
                     .ignoresSafeArea()
                 
-                // Извлекаем только основное содержимое, не включая TopBarView
+                // Извлекаем только основное содержимое, не включая HeaderView
                 GeometryReader { geo in
                     contentBuilder()
                         .frame(width: geo.size.width, height: geo.size.height)

@@ -468,7 +468,7 @@ struct TaskIcon: View {
                         center: geometry.center,
                         indicatorPosition: currentPosition
                     )
-                    hapticsManager.triggerDragFeedback()
+                    hapticsManager.triggerLightFeedback()
                 }
 
                 gestureHandler.handleWholeArcDrag(value: value, center: geometry.center)

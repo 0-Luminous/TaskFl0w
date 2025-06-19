@@ -111,7 +111,7 @@ struct TaskDragHandle: View {
         }
         
         if gestureHandler.lastHourComponent == -1 {
-            hapticsManager.triggerDragFeedback()
+            hapticsManager.triggerLightFeedback()
         }
     }
     

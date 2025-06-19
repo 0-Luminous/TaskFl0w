@@ -78,7 +78,7 @@ struct TaskArcContentView: View {
         if !viewModel.isEditingMode && viewModel.editingTask == nil && !isDragging {
             viewModel.startDragging(task)
             isDragging = true
-            hapticsManager.triggerHardFeedback()
+            hapticsManager.triggerHeavyFeedback()
             return NSItemProvider(object: task.id.uuidString as NSString)
         }
         return NSItemProvider()
@@ -151,7 +151,7 @@ struct WholeArcDragIndicator: View {
                         center: geometry.center,
                         indicatorPosition: currentPosition
                     )
-                    hapticsManager.triggerDragFeedback()
+                    hapticsManager.triggerLightFeedback()
                 }
                 
                 gestureHandler.handleWholeArcDrag(value: value, center: geometry.center)

@@ -171,7 +171,7 @@ class TaskArcGestureHandler: ObservableObject {
     private func handleHourChange(_ hourComponent: Int) {
         if hourComponent != lastHourComponent {
             if lastHourComponent != -1 {
-                hapticsManager.triggerSelectionFeedback()
+                hapticsManager.triggerRigidFeedback()
             }
             lastHourComponent = hourComponent
         }
@@ -180,7 +180,7 @@ class TaskArcGestureHandler: ObservableObject {
     private func handleMinuteChange(_ minuteComponent: Int) {
         let currentMinuteBucket = minuteComponent / 5
         if currentMinuteBucket != (minuteComponent - 1) / 5 && lastHourComponent != -1 {
-            hapticsManager.triggerDragFeedback()
+            hapticsManager.triggerLightFeedback()
         }
     }
     
@@ -222,7 +222,7 @@ class TaskArcGestureHandler: ObservableObject {
         
         // Если другие задачи упираются в границы и не помещаются - БЛОКИРУЕМ маркер
         if !canMoveOtherTasks {
-            hapticsManager.triggerHardFeedback() // Тактильная обратная связь о блокировке
+            hapticsManager.triggerHeavyFeedback() // Тактильная обратная связь о блокировке
             return // НЕ ОБНОВЛЯЕМ позицию маркера
         }
         
@@ -253,7 +253,7 @@ class TaskArcGestureHandler: ObservableObject {
         
         // Если другие задачи упираются в границы и не помещаются - БЛОКИРУЕМ маркер
         if !canMoveOtherTasks {
-            hapticsManager.triggerHardFeedback() // Тактильная обратная связь о блокировке
+            hapticsManager.triggerHeavyFeedback() // Тактильная обратная связь о блокировке
             return // НЕ ОБНОВЛЯЕМ позицию маркера
         }
         
@@ -315,7 +315,7 @@ class TaskArcGestureHandler: ObservableObject {
             viewModel.taskManagement.updateWholeTask(task, newStartTime: freePlacement.startTime, newEndTime: freePlacement.endTime)
             
             // Дополнительная тактильная обратная связь для обозначения перепрыгивания
-            hapticsManager.triggerHardFeedback()
+            hapticsManager.triggerHeavyFeedback()
         }
     }
     

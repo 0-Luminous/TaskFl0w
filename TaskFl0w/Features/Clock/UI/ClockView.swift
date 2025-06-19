@@ -135,7 +135,7 @@ struct ClockViewIOS: View {
             
             if !clockState.showingWeekCalendar {
                 VStack {
-                    TopBarView(
+                    HeaderView(
                         viewModel: viewModel,
                         showSettingsAction: { clockState.showingNewSettings = true },
                         toggleCalendarAction: toggleWeekCalendar,
