@@ -155,9 +155,9 @@ struct ClockViewIOS: View {
                 .frame(height: 20)
             
             TaskListView(
-                viewModel: listViewModel,
                 selectedCategory: viewModel.selectedCategory,
-                selectedDate: $viewModel.selectedDate
+                selectedDate: $viewModel.selectedDate,
+                viewModel: listViewModel
             )
             .background(themeManager.isDarkMode 
                 ? Color(red: 0.098, green: 0.098, blue: 0.098) 

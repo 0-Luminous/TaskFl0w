@@ -14,6 +14,7 @@ struct HeaderView: View {
     let toggleCalendarAction: () -> Void
     let isCalendarVisible: Bool
     let searchAction: () -> Void
+    let hapticsManager = HapticsManager.shared
 
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var isSearchViewPresented = false
@@ -33,13 +34,6 @@ struct HeaderView: View {
         self.isCalendarVisible = isCalendarVisible
         self.searchAction = searchAction
         _calendarSelectedDate = State(initialValue: viewModel.selectedDate)
-    }
-
-    // Добавляем функцию для виброотдачи
-    private func hapticFeedback() {
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.prepare()
-        generator.impactOccurred()
     }
 
     var body: some View {
@@ -85,7 +79,7 @@ struct HeaderView: View {
                 HStack {
                     // Кнопка поиска слева
                     Button(action: {
-                        hapticFeedback()
+                        hapticsManager.triggerMediumFeedback()
                         isSearchViewPresented = true
                     }) {
                         Image(systemName: "magnifyingglass")
@@ -143,7 +137,7 @@ struct HeaderView: View {
                     // Кнопка настроек перенесена направо
                     if !isCalendarVisible {
                         Button(action: {
-                            hapticFeedback()
+                            hapticsManager.triggerMediumFeedback()
                             showSettingsAction()
                         }) {
                             Image(systemName: "gear")

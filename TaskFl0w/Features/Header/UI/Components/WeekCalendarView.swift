@@ -26,6 +26,7 @@ struct WeekCalendarView: View {
     
     var onHideCalendar: (() -> Void)?
     var disableMonthExpansion: Bool = false
+    let hapticsManager = HapticsManager.shared
     
     init(selectedDate: Binding<Date>, disableMonthExpansion: Bool = false, initialShowMonthCalendar: Bool = false, onHideCalendar: (() -> Void)? = nil) {
         self._selectedDate = selectedDate
@@ -162,9 +163,7 @@ struct WeekCalendarView: View {
                                     dayName: dayNames[dayIndex]
                                 )
                                 .onTapGesture {
-                                    // Виброотдача при нажатии
-                                    let impactMed = UIImpactFeedbackGenerator(style: .medium)
-                                    impactMed.impactOccurred()
+                                    hapticsManager.triggerMediumFeedback()
                                     withAnimation(.spring(response: 0.3)) {
                                         selectedDate = date
                                     }

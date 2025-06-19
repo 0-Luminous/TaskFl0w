@@ -14,9 +14,9 @@ class ToDoRouter: ToDoRouterProtocol {
     static func createModule(selectedCategory: TaskCategoryModel? = nil) -> TaskListView {
         let viewModel = ListViewModel(selectedCategory: selectedCategory)
         let view = TaskListView(
-            viewModel: viewModel, 
             selectedCategory: selectedCategory,
-            selectedDate: .constant(Date())
+            selectedDate: .constant(Date()),
+            viewModel: viewModel
         )
         let interactor = ToDoInteractor()
         let router = ToDoRouter()

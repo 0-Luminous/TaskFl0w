@@ -11,6 +11,7 @@ import SwiftUI
 struct ToDoTaskRow: View {
     let task: ToDoItem
     let categoryColor: Color
+    let hapticsManager = HapticsManager.shared
     var onToggle: (() -> Void)? = nil
     
     @ObservedObject private var themeManager = ThemeManager.shared
@@ -214,8 +215,7 @@ struct ToDoTaskRow: View {
     // MARK: - Private Methods
     
     private func handleTap() {
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
+        hapticsManager.triggerLightFeedback()
         onToggle?()
     }
 }

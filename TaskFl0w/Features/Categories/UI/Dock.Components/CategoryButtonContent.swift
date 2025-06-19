@@ -12,14 +12,15 @@ struct CategoryButtonContent: View {
     let category: TaskCategoryModel
     let categories: [TaskCategoryModel]
     let isSelected: Bool
-    @ObservedObject var themeManager: ThemeManager
     let categoryWidth: CGFloat
+    let moveCategory: (Int, Int) -> Void
+    let hapticsManager = HapticsManager.shared
+
+    @ObservedObject var themeManager: ThemeManager
+    
     @Binding var selectedCategory: TaskCategoryModel?
     @Binding var draggedCategory: TaskCategoryModel?
-    let moveCategory: (Int, Int) -> Void
     
-    // Добавляем генератор виброотдачи
-    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
 
     var body: some View {
         CategoryButton(
@@ -31,11 +32,9 @@ struct CategoryButtonContent: View {
         .scaleEffect(isSelected ? 1.1 : 1.0)
         .animation(.easeInOut(duration: 0.2), value: isSelected)
         .onTapGesture {
-            // Добавляем виброотдачу при нажатии
-            feedbackGenerator.impactOccurred()
+            hapticsManager.triggerLightFeedback()
             
             withAnimation {
-                // Если выбрана та же категория - убираем её
                 if selectedCategory?.id == category.id {
                     selectedCategory = nil
                 } else {

@@ -11,16 +11,10 @@ struct TransferTaskView: View {
     @Binding var isPresented: Bool
     let selectedTasksCount: Int
     let onMoveTasksToDate: (Date) -> Void
+    let hapticsManager = HapticsManager.shared
 
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var showingContent = false
-
-    // Функция для генерации виброотдачи
-    private func generateHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.prepare()
-        generator.impactOccurred()
-    }
 
     var body: some View {
         NavigationView {
@@ -136,7 +130,7 @@ struct TransferTaskView: View {
 
                         // Кнопка переноса
                         Button {
-                            generateHapticFeedback(style: .medium)
+                            hapticsManager.triggerMediumFeedback()
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 onMoveTasksToDate(selectedDate)
                                 isPresented = false

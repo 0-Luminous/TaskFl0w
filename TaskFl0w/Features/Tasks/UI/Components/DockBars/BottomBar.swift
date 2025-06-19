@@ -10,6 +10,7 @@ import UIKit
 struct BottomBar: View {
     // MARK: - Properties
     let onAddTap: () -> Void
+    let hapticsManager = HapticsManager.shared
     @Binding var isSelectionMode: Bool
     @Binding var selectedTasks: Set<UUID>
     var onDeleteSelectedTasks: () -> Void
@@ -27,9 +28,6 @@ struct BottomBar: View {
     
     // Добавляем состояние для отслеживания нажатий
     @State private var isAddButtonPressed = false
-    
-    // Генератор обратной связи для виброотдачи
-    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .medium)
     
     // MARK: - Body
     var body: some View {
@@ -150,7 +148,7 @@ struct BottomBar: View {
     
     private var archiveButton: some View {
         Button(action: {
-            feedbackGenerator.impactOccurred()
+            hapticsManager.triggerMediumFeedback()
             onArchiveTapped()
         }) {
             toolbarIcon(systemName: showCompletedTasksOnly ? "archivebox.fill" : "archivebox", 
@@ -160,7 +158,7 @@ struct BottomBar: View {
     
     private var selectionModeToggleButton: some View {
         Button(action: {
-            feedbackGenerator.impactOccurred()
+            hapticsManager.triggerMediumFeedback()
             toggleSelectionMode()
         }) {
             toolbarIcon(systemName: "checkmark.circle", color: .gray)
@@ -170,7 +168,7 @@ struct BottomBar: View {
     
     private var deleteButton: some View {
         Button(action: {
-            feedbackGenerator.impactOccurred()
+            hapticsManager.triggerMediumFeedback()
             onDeleteSelectedTasks()
         }) {
             toolbarIcon(systemName: "trash", color: .red)
@@ -182,7 +180,7 @@ struct BottomBar: View {
     private var priorityButton: some View {
         Button(action: {
             if !selectedTasks.isEmpty {
-                feedbackGenerator.impactOccurred()
+                hapticsManager.triggerMediumFeedback()
                 onChangePriorityForSelectedTasks()
             }
         }) {
@@ -209,7 +207,7 @@ struct BottomBar: View {
     
     private var exitSelectionModeButton: some View {
         Button(action: {
-            feedbackGenerator.impactOccurred()
+            hapticsManager.triggerMediumFeedback()
             toggleSelectionMode()
         }) {
             toolbarIcon(systemName: "checkmark.circle.fill", color: themeManager.isDarkMode ? .white : .black)
@@ -219,7 +217,7 @@ struct BottomBar: View {
     
     private var unarchiveButton: some View {
         Button(action: {
-            feedbackGenerator.impactOccurred()
+            hapticsManager.triggerMediumFeedback()
             onUnarchiveSelectedTasks()
             toggleSelectionMode()
         }) {
@@ -232,7 +230,7 @@ struct BottomBar: View {
     
     private var archiveActionButton: some View {
         Button(action: {
-            feedbackGenerator.impactOccurred()
+            hapticsManager.triggerMediumFeedback()
             onArchiveTapped()
             toggleSelectionMode()
         }) {
@@ -243,7 +241,7 @@ struct BottomBar: View {
     private var addButton: some View {
         Button(action: {
             if !showCompletedTasksOnly {
-                feedbackGenerator.impactOccurred()
+                hapticsManager.triggerMediumFeedback()
                 onAddTap()
             }
         }) {
@@ -258,7 +256,7 @@ struct BottomBar: View {
     private var flagButton: some View {
         Button(action: {
             if !selectedTasks.isEmpty {
-                feedbackGenerator.impactOccurred()
+                hapticsManager.triggerMediumFeedback()
                 onFlagSelectedTasks()
             }
         }) {
@@ -279,7 +277,7 @@ struct BottomBar: View {
     private var checklistButton: some View {
         Button(action: {
             if !selectedTasks.isEmpty {
-                feedbackGenerator.impactOccurred()
+                hapticsManager.triggerMediumFeedback()
                 onChecklistSelectedTasks()
             }
         }) {
@@ -293,7 +291,7 @@ struct BottomBar: View {
     private var calendarButton: some View {
         Button(action: {
             if !selectedTasks.isEmpty {
-                feedbackGenerator.impactOccurred()
+                hapticsManager.triggerMediumFeedback()
                 onCalendarSelectedTasks()
             }
         }) {

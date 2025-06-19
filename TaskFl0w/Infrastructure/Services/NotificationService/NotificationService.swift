@@ -39,7 +39,6 @@ protocol NotificationServiceProtocol: AnyObject {
     func scheduleNotification(for task: TaskOnRing) async throws
     func cancelNotification(for task: TaskOnRing) async
     func playSound(_ soundId: String, volume: Float) async throws
-    func vibrate()
     func sendCategoryStartNotification(category: TaskCategoryModel) async throws
     func sendTestNotification() async throws
 }
@@ -166,13 +165,6 @@ final class NotificationService: NotificationServiceProtocol {
             logger.error("Ошибка воспроизведения звука: \(error.localizedDescription)")
             throw NotificationError.audioPlayerCreationFailed(error)
         }
-    }
-
-    func vibrate() {
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.prepare()
-        generator.impactOccurred()
-        logger.info("Тактильная обратная связь выполнена")
     }
 
     func sendTestNotification() async throws {

@@ -21,11 +21,11 @@ import SwiftUI
                        category: category,
                        categories: categories,
                        isSelected: selectedCategory == category,
-                       themeManager: themeManager,
                        categoryWidth: categoryWidth,
+                       moveCategory: moveCategory,
+                       themeManager: themeManager,
                        selectedCategory: $selectedCategory,
-                       draggedCategory: $draggedCategory,
-                       moveCategory: moveCategory
+                       draggedCategory: $draggedCategory
                    )
                }
            }

@@ -10,32 +10,26 @@ import UIKit
 
 // Компонент для отображения месячного календаря
 struct MonthCalendarView: View {
+
     @Binding var selectedDate: Date
+
     let deadlineDate: Date?
+    let isSwipeToHideEnabled: Bool
+
     private let calendar = Calendar.current
+
     @State private var monthStartDate = Date()
     @State private var currentMonthIndex = 0
     @State private var monthCalendarOffset: CGFloat = 0
     @State private var visibleMonth: Date
-    
-    // Добавляем состояние для отображения выбора месяца/года
     @State private var showMonthYearPicker = false
-    
-    // Добавляем ссылку на общее состояние календаря
-    @ObservedObject private var calendarState = CalendarState.shared
-
-    @ObservedObject private var themeManager = ThemeManager.shared
-    
-    // Добавлена функция обратного вызова для сокрытия календаря
-    var onHideCalendar: (() -> Void)?
-    
-    // Добавьте переменную состояния для управления прозрачностью
     @State private var opacity: Double = 1.0
     
-    // Добавляем параметр для отключения свайпа
-    let isSwipeToHideEnabled: Bool
+    @ObservedObject private var calendarState = CalendarState.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     
-    // Инициализатор для установки начального значения visibleMonth
+    var onHideCalendar: (() -> Void)?
+    
     init(selectedDate: Binding<Date>, deadlineDate: Date? = nil, onHideCalendar: (() -> Void)? = nil, isSwipeToHideEnabled: Bool = true) {
         self._selectedDate = selectedDate
         self.deadlineDate = deadlineDate
@@ -46,7 +40,6 @@ struct MonthCalendarView: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            // Заголовок с текущим месяцем и годом как кнопка
             MonthYearHeaderButton(
                 date: visibleMonth,
                 onTap: {
@@ -57,11 +50,9 @@ struct MonthCalendarView: View {
             )
             
             if showMonthYearPicker {
-                // Компонент для выбора месяца и года
                 MonthYearPickerView(
                     selectedDate: $visibleMonth,
                     onDateSelected: { newDate in
-                        // Прокручиваем к выбранному месяцу
                         let components = calendar.dateComponents([.day], from: selectedDate)
                         var newComponents = calendar.dateComponents([.year, .month], from: newDate)
                         newComponents.day = components.day
@@ -77,7 +68,6 @@ struct MonthCalendarView: View {
                 )
                 .transition(.scale.combined(with: .opacity))
             } else {
-                // Секция с календарем - показываем только если не открыт выбор месяца и года
                 CalendarSection
                     .cornerRadius(16)
             }
@@ -92,20 +82,16 @@ struct MonthCalendarView: View {
         .padding(.horizontal, 10)
         .offset(y: monthCalendarOffset)
         .opacity(opacity)
-        // Условно добавляем жест только если свайп включен
         .gesture(
             isSwipeToHideEnabled ? 
             AnyGesture(
                 DragGesture()
                     .onChanged { value in
                         if value.translation.height < 0 {
-                            // Позволяем перемещать календарь вверх при свайпе
                             monthCalendarOffset = value.translation.height
                         }
                     }
                     .onEnded { value in
-                        // Если свайп вверх достаточно сильный или достигает половины высоты - скрываем календарь
-                        // Добавляем проверку на "половину пути"
                         let halfwayPoint: CGFloat = -100 // Примерная половина высоты календаря
                         
                         if value.translation.height < -20 || (value.translation.height < 0 && value.predictedEndTranslation.height < halfwayPoint) {
@@ -123,7 +109,6 @@ struct MonthCalendarView: View {
             visibleMonth = newValue
         }
         .onAppear {
-            // Используем метод вместо прямого присваивания
             calendarState.setMonthCalendarVisible(true)
         }
         .onDisappear {
@@ -139,7 +124,6 @@ struct MonthCalendarView: View {
                         MonthGrid(
                             monthIndex: monthIndex,
                             baseDate: monthStartDate,
-                            selectedDate: $selectedDate,
                             deadlineDate: deadlineDate,
                             onDateSelected: { date in
                                 withAnimation(.spring(response: 0.3)) {
@@ -150,7 +134,8 @@ struct MonthCalendarView: View {
                                 if !calendar.isDate(date, equalTo: visibleMonth, toGranularity: .month) {
                                     visibleMonth = date
                                 }
-                            }
+                            },
+                            selectedDate: $selectedDate
                         )
                         .id(monthIndex)
                     }
@@ -165,9 +150,7 @@ struct MonthCalendarView: View {
             .scrollTargetLayout()
             .onAppear {
                 updateMonthStartDate()
-                // Вычисляем индекс месяца для selectedDate
                 let monthIdx = getMonthIndex(for: selectedDate)
-                // Прокручиваем к месяцу с выбранной датой без анимации и задержки
                 scrollProxy.scrollTo(monthIdx, anchor: .center)
             }
         }
@@ -215,13 +198,14 @@ struct MonthCalendarView: View {
 struct MonthGrid: View {
     let monthIndex: Int
     let baseDate: Date
-    @Binding var selectedDate: Date
     let deadlineDate: Date?
     let onDateSelected: (Date) -> Void
     let onVisibleMonthChanged: (Date) -> Void
+    let hapticsManager = HapticsManager.shared
 
     @ObservedObject private var themeManager = ThemeManager.shared
-    
+    @Binding var selectedDate: Date
+
     private let calendar = Calendar.current
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 7)
     
@@ -295,14 +279,10 @@ struct MonthGrid: View {
                         .onTapGesture {
                             // Проверяем, можно ли выбрать дату
                             if canSelectDate(day.date) {
-                                // Виброотдача при нажатии
-                                let impactMed = UIImpactFeedbackGenerator(style: .medium)
-                                impactMed.impactOccurred()
+                                hapticsManager.triggerMediumFeedback()
                                 onDateSelected(day.date)
                             } else {
-                                // Легкая виброотдача для индикации невозможности выбора
-                                let impactLight = UIImpactFeedbackGenerator(style: .light)
-                                impactLight.impactOccurred()
+                                hapticsManager.triggerLightFeedback()
                             }
                         }
                     } else {

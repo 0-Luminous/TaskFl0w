@@ -21,34 +21,21 @@ struct DeadlineForTaskView: View {
     let selectedTasksCount: Int
     let selectedTasks: [SelectedTaskInfo] // Добавляем информацию о задачах
     let onSetDeadlineForTasks: (Date) -> Void
-    
-    // Добавляем параметр для текущего deadline
     let existingDeadline: Date?
+    let hapticsManager = HapticsManager.shared
 
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var showingContent = false
     @State private var selectedTime = Date()
     @State private var hasReminder = false
     @State private var selectedReminderOption = "нет"
-    
-    // Добавляем локальное состояние для отслеживания установленного deadline
     @State private var currentDeadline: Date?
-    
-    // Добавляем состояние для разрешений уведомлений
     @State private var notificationPermissionGranted = false
     
-    // Варианты времени для напоминания заранее
     private let reminderOptions = [
         "нет", "за 5 минут", "за 10 минут", "за 15 минут", "за 20 минут", 
         "за 30 минут", "за 1 час", "за 2 часа", "за 1 день", "за 2 дня"
     ]
-
-    // Функция для генерации виброотдачи
-    private func generateHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.prepare()
-        generator.impactOccurred()
-    }
 
     // Добавляем вычисляемое свойство для диапазона времени
     private var timePickerDateRange: ClosedRange<Date> {
@@ -169,7 +156,7 @@ struct DeadlineForTaskView: View {
                     // Кнопка добавления напоминания
                     VStack(spacing: 16) {
                         Button {
-                            generateHapticFeedback(style: .light)
+                            hapticsManager.triggerLightFeedback()
                             if !hasReminder {
                                 // Запрашиваем разрешение на уведомления при первом включении
                                 requestNotificationPermission { granted in
@@ -274,7 +261,7 @@ struct DeadlineForTaskView: View {
                                         HStack(spacing: 8) {
                                             ForEach(reminderOptions, id: \.self) { option in
                                                 Button {
-                                                    generateHapticFeedback(style: .light)
+                                                    hapticsManager.triggerLightFeedback()
                                                     selectedReminderOption = option
                                                 } label: {
                                                     Text(option)
@@ -335,7 +322,7 @@ struct DeadlineForTaskView: View {
                                 HStack(spacing: 16) {
                                     // Кнопка отмены
                                     Button {
-                                        generateHapticFeedback(style: .light)
+                                        hapticsManager.triggerLightFeedback()
                                         withAnimation(.easeInOut(duration: 0.3)) {
                                             hasReminder = false
                                         }
@@ -371,7 +358,7 @@ struct DeadlineForTaskView: View {
 
                                     // Кнопка установки для режима напоминания
                                     Button {
-                                        generateHapticFeedback(style: .medium)
+                                        hapticsManager.triggerMediumFeedback()
                                         // Создаем финальную дату deadline без вычитания времени напоминания
                                         let baseDate = combineDateAndTime(date: selectedDate, time: selectedTime)
                                         
@@ -469,7 +456,7 @@ struct DeadlineForTaskView: View {
 
                             // Кнопка установки deadline без напоминания
                             Button {
-                                generateHapticFeedback(style: .medium)
+                                hapticsManager.triggerMediumFeedback()
                                 
                                 // Определяем финальную дату в зависимости от того, было ли установлено время
                                 let finalDate: Date

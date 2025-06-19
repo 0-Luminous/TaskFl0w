@@ -16,6 +16,7 @@ struct CategoryEditorViewIOS: View {
     @Binding var isPresented: Bool
     @State var editingCategory: TaskCategoryModel?
     @State private var selectedDockCategory: TaskCategoryModel?
+    let hapticsManager = HapticsManager.shared
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -38,8 +39,6 @@ struct CategoryEditorViewIOS: View {
     @State private var sliderBrightnessPosition: CGFloat = 0.5
     @State private var currentBaseColor: Color = .blue
     @State private var selectedColorHex: String = ""
-
-    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
 
     // Перечисление для вкладок
     enum CategorySettingsTab {
@@ -175,6 +174,7 @@ struct CategoryEditorViewIOS: View {
     // Модификатор для декоративных кнопок
     private struct IconButtonModifier: ViewModifier {
         let color: Color
+        let hapticsManager = HapticsManager.shared
         @ObservedObject private var themeManager = ThemeManager.shared
 
         func body(content: Content) -> some View {
@@ -259,7 +259,7 @@ struct CategoryEditorViewIOS: View {
                 VStack(spacing: 12) {
                     // Выбор иконки
                     Button(action: {
-                        feedbackGenerator.impactOccurred()
+                        hapticsManager.triggerLightFeedback()
                         showingIconPicker = true
                     }) {
                         HStack(spacing: 14) {
@@ -289,7 +289,7 @@ struct CategoryEditorViewIOS: View {
 
                     // Выбор цвета
                     Button(action: {
-                        feedbackGenerator.impactOccurred()
+                        hapticsManager.triggerLightFeedback()
                         showingInlineColorPicker = true
                     }) {
                         HStack(spacing: 14) {
@@ -330,7 +330,7 @@ struct CategoryEditorViewIOS: View {
 
                     // Видимость категории
                     Button(action: {
-                        feedbackGenerator.impactOccurred()
+                        hapticsManager.triggerLightFeedback()
                         isHidden.toggle()
                     }) {
                         HStack(spacing: 14) {
@@ -370,7 +370,7 @@ struct CategoryEditorViewIOS: View {
                     if editingCategory == nil {
                         // Кнопка добавления категории
                         Button(action: {
-                            feedbackGenerator.impactOccurred()
+                            hapticsManager.triggerLightFeedback()
                             saveCategory(autoClose: false)
                         }) {
                             HStack {
@@ -386,7 +386,7 @@ struct CategoryEditorViewIOS: View {
                     } else {
                         // Кнопка удаления категории
                         Button(action: {
-                            feedbackGenerator.impactOccurred()
+                            hapticsManager.triggerLightFeedback()
                             showingDeleteAlert = true
                         }) {
                             HStack {
@@ -550,7 +550,7 @@ struct CategoryEditorViewIOS: View {
                                             selectedColor = category.color
                                             selectedIcon = category.iconName
                                             isHidden = category.isHidden
-                                            feedbackGenerator.impactOccurred()
+                                            hapticsManager.triggerLightFeedback()
                                         } else {
                                             // Сбрасываем значения для новой категории
                                             editingCategory = nil
@@ -616,7 +616,7 @@ struct CategoryEditorViewIOS: View {
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("categoryEditor.cancel".localized) {
-                            feedbackGenerator.impactOccurred()
+                            hapticsManager.triggerLightFeedback()
                             isPresented = false
                         }
                         .foregroundColor(.red1)
@@ -624,7 +624,7 @@ struct CategoryEditorViewIOS: View {
 
                     ToolbarItem(placement: .confirmationAction) {
                         Button("categoryEditor.done".localized) {
-                            feedbackGenerator.impactOccurred()
+                            hapticsManager.triggerLightFeedback()
                             saveCategory(autoClose: true)
                         }
                         .disabled(categoryName.isEmpty)
@@ -672,7 +672,7 @@ struct CategoryEditorViewIOS: View {
                                 let color = standardColors[index]
                                 Button(action: {
                                     selectedColor = color
-                                    feedbackGenerator.impactOccurred()
+                                    hapticsManager.triggerLightFeedback()
                                 }) {
                                     Circle()
                                         .fill(color)
@@ -694,7 +694,7 @@ struct CategoryEditorViewIOS: View {
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("categoryEditor.done".localized) {
-                            feedbackGenerator.impactOccurred()
+                            hapticsManager.triggerLightFeedback()
                             showingColorPicker = false
                         }
                         .foregroundColor(.coral1)
@@ -766,7 +766,7 @@ struct CategoryEditorViewIOS: View {
             selectedColorHex = color.toHex()
             currentBaseColor = ColorUtils.getBaseColor(forColor: color)
             updateSliderPosition()
-            feedbackGenerator.impactOccurred()
+            hapticsManager.triggerLightFeedback()
         }) {
             ZStack {
                 if isSelected {

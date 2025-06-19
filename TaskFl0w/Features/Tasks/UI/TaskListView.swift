@@ -4,45 +4,38 @@
 //
 //  Created by Yan on 19/3/25.
 //
-
 import CoreData
 import SwiftUI
 import UIKit
 
 struct TaskListView: View {
-    @ObservedObject var viewModel: ListViewModel
+    
     let selectedCategory: TaskCategoryModel?
+    let hapticsManager = HapticsManager.shared
+
     @State private var showingAddForm = false
     @State private var isSearchActive = false
     @State private var newTaskTitle = ""
     @State private var isAddingNewTask = false
     @State private var isKeyboardVisible = false
-    @FocusState private var isNewTaskFocused: Bool
     @State private var showingPrioritySheet = false
     @State private var newTaskPriority: TaskPriority = .none
     @State private var showPrioritySelection = false
-    // Добавляем состояние для календаря переноса задач
     @State private var showingDatePicker = false
     @State private var selectedTargetDate = Date()
-    // Добавляем состояние для deadline picker
     @State private var showingDeadlinePicker = false
     @State private var selectedDeadlineDate = Date()
-    // Добавляем состояние для предупреждения об удалении
     @State private var showingDeleteAlert = false
+
+    @FocusState private var isNewTaskFocused: Bool
+
     @Binding var selectedDate: Date
     
-    // Заменяем локальные состояния на ObservedObject
+    @ObservedObject var viewModel: ListViewModel
     @ObservedObject private var calendarState = CalendarState.shared
     @ObservedObject private var themeManager = ThemeManager.shared
     
     private let topID = "top_of_list"
-    
-    // Функция для генерации виброотдачи
-    private func generateHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.prepare()
-        generator.impactOccurred()
-    }
 
     var body: some View {
         NavigationView {
@@ -237,7 +230,7 @@ struct TaskListView: View {
             .listRowBackground(taskRowBackground(for: item))
             .contentShape(Rectangle())
             .onTapGesture {
-                generateHapticFeedback()
+                hapticsManager.triggerMediumFeedback()
                 if viewModel.isSelectionMode {
                     viewModel.toggleTaskSelection(taskId: item.id)
                 } else {
@@ -368,7 +361,7 @@ struct TaskListView: View {
                 showingPrioritySheet = true
             },
             onArchiveTapped: {
-                generateHapticFeedback()
+                hapticsManager.triggerMediumFeedback()
                 viewModel.showCompletedTasksOnly.toggle()
             },
             onUnarchiveSelectedTasks: {
@@ -484,6 +477,3 @@ struct TaskListView: View {
     }
 }
 
-#Preview {
-    TaskListView(viewModel: ListViewModel(), selectedCategory: nil, selectedDate: .constant(Date()))
-}

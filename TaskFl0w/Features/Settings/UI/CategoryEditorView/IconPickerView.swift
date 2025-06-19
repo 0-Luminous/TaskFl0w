@@ -14,7 +14,7 @@ struct IconPickerView: View {
     @Binding var isPresented: Bool
     @State private var searchText: String = ""
     @State private var isSearchActive: Bool = false
-    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
+    let hapticsManager = HapticsManager.shared
     @Environment(\.colorScheme) var colorScheme
     @ObservedObject private var themeManager = ThemeManager.shared
     
@@ -97,7 +97,7 @@ struct IconPickerView: View {
                         ForEach(Array(filteredIcons.enumerated()), id: \.element) { index, icon in
                             Button(action: {
                                 selectedIcon = icon
-                                feedbackGenerator.impactOccurred()
+                                hapticsManager.triggerLightFeedback()
                                 
                                 // Добавляем небольшую задержку перед закрытием для лучшего UX
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -190,7 +190,7 @@ struct IconPickerView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("navigation.done".localized) {
-                        feedbackGenerator.impactOccurred()
+                        hapticsManager.triggerLightFeedback()
                         isPresented = false
                     }
                     .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
@@ -199,7 +199,7 @@ struct IconPickerView: View {
 
                 ToolbarItem(placement: .cancellationAction) {
                     Button("navigation.cancel".localized) {
-                        feedbackGenerator.impactOccurred()
+                        hapticsManager.triggerLightFeedback()
                         isPresented = false
                     }
                     .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
@@ -225,6 +225,7 @@ struct IconPickerDockBar: View {
     @Binding var selectedCategory: IconPickerView.IconCategory
     @Environment(\.colorScheme) var colorScheme
     @ObservedObject private var themeManager = ThemeManager.shared
+    let hapticsManager = HapticsManager.shared
     
     // Разбивка на страницы для категорий при необходимости
     @State private var currentPage = 0
@@ -277,8 +278,7 @@ struct IconPickerDockBar: View {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                 selectedCategory = category
             }
-            // Добавляем тактильный отклик
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            hapticsManager.triggerLightFeedback()
         }) {
             VStack(spacing: 8) {
                 ZStack {
@@ -362,7 +362,7 @@ struct IconSearchBar: View {
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var isFocused: Bool = false
     @FocusState private var isTextFieldFocused: Bool
-    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
+    let hapticsManager = HapticsManager.shared
     
     // Вспомогательные вычисляемые свойства для упрощения кода
     private var isActiveFocus: Bool {
@@ -447,7 +447,7 @@ struct IconSearchBar: View {
                 if hasText {
                     Button(action: {
                         text = ""
-                        feedbackGenerator.impactOccurred()
+                        hapticsManager.triggerLightFeedback()
                         isTextFieldFocused = true
                     }) {
                         Image(systemName: "xmark.circle.fill")
@@ -459,7 +459,7 @@ struct IconSearchBar: View {
                     Button("Отмена") {
                         text = ""
                         isTextFieldFocused = false
-                        feedbackGenerator.impactOccurred()
+                        hapticsManager.triggerLightFeedback()
                         withAnimation {
                             isFocused = false
                             isActive = false
@@ -494,7 +494,7 @@ struct IconSearchBar: View {
             .onTapGesture {
                 if !isActiveFocus {
                     isTextFieldFocused = true
-                    feedbackGenerator.impactOccurred(intensity: 0.4)
+                    hapticsManager.triggerLightFeedback()
                 }
             }
         }

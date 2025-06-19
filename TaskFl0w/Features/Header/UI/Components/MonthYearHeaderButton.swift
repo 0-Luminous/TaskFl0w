@@ -11,16 +11,14 @@ import UIKit
 // Компонент для отображения заголовка с месяцем и годом в виде кнопки
 struct MonthYearHeaderButton: View {
     let date: Date
+    let hapticsManager = HapticsManager.shared
     var onTap: () -> Void
     
     @ObservedObject private var themeManager = ThemeManager.shared
 
     var body: some View {
         Button(action: {
-            // Виброотдача
-            let generator = UIImpactFeedbackGenerator(style: .medium)
-            generator.impactOccurred()
-            // Ваш обработчик
+            hapticsManager.triggerMediumFeedback()
             onTap()
         }) {
             HStack {
@@ -81,6 +79,7 @@ struct MonthYearHeaderButton: View {
 struct MonthYearPickerView: View {
     @Binding var selectedDate: Date
     let onDateSelected: (Date) -> Void
+    let hapticsManager = HapticsManager.shared
 
     @ObservedObject private var themeManager = ThemeManager.shared
     
@@ -184,9 +183,7 @@ struct MonthYearPickerView: View {
             HStack(spacing: 20) {
                 // Кнопка отмены
                 Button(action: {
-                    // Виброотдача
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
+                    hapticsManager.triggerLightFeedback()
                     withAnimation(.spring(response: 0.3)) {
                         onDateSelected(selectedDate)
                     }
@@ -224,9 +221,7 @@ struct MonthYearPickerView: View {
                 
                 // Кнопка подтверждения
                 Button(action: {
-                    // Виброотдача
-                    let generator = UIImpactFeedbackGenerator(style: .heavy)
-                    generator.impactOccurred()
+                    hapticsManager.triggerHeavyFeedback()
                     var components = DateComponents()
                     components.year = selectedYear
                     components.month = selectedMonth + 1 // +1 потому что месяцы в Calendar начинаются с 1

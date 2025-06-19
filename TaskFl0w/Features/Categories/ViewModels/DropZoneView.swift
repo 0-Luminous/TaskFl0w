@@ -11,6 +11,7 @@ import UniformTypeIdentifiers
 
 struct DropZoneView: UIViewRepresentable {
     @Binding var isTargeted: Bool
+    let hapticsManager = HapticsManager.shared
     var acceptedTypes: [UTType] = [.text]
     var onEntered: (() -> Void)?
     var onExited: (() -> Void)?
@@ -107,9 +108,7 @@ struct DropZoneView: UIViewRepresentable {
             
             if success {
                 DispatchQueue.main.async {
-                    // Добавляем haptic feedback при успешном drop
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                    impactFeedback.impactOccurred()
+                    self.parent.hapticsManager.triggerMediumFeedback()
                 }
             }
         }

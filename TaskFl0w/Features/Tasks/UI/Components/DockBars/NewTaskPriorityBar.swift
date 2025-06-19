@@ -1,5 +1,5 @@
 //
-//  PrioritySelectionView.swift
+//  NewTaskPriorityBar.swift
 //  TaskFl0w
 //
 //  Created by Yan on 13/5/25.
@@ -8,62 +8,77 @@
 import SwiftUI
 import UIKit
 
-struct PrioritySelectionView: View {
+struct NewTaskPriorityBar: View {
     @Binding var selectedPriority: TaskPriority
+    @Binding var showPrioritySelection: Bool
     var onSave: () -> Void
     var onCancel: () -> Void
+    let hapticsManager = HapticsManager.shared
 
     @ObservedObject private var themeManager = ThemeManager.shared
     
+    // MARK: - Body
     var body: some View {
         ZStack {
             // Основной контейнер с размытым фоном
             HStack(spacing: 0) {
                 Spacer()
                 
-                // Кнопки приоритета
+                // Четыре основные кнопки
                 HStack {
-                    // Низкий приоритет
+                    // Кнопка календаря
                     ZStack {
                         Color.clear
                             .frame(width: 38, height: 38)
                         
-                        priorityButtonLow
+                        calendarButton
                     }
                     .frame(width: 38, height: 38)
                     
                     Spacer()
-                        .frame(width: 25)
+                        .frame(width: 15)
                     
-                    // Средний приоритет
+                    // Кнопка флага
                     ZStack {
                         Color.clear
                             .frame(width: 38, height: 38)
                         
-                        priorityButtonMedium
+                        flagButton
                     }
                     .frame(width: 38, height: 38)
                     
                     Spacer()
-                        .frame(width: 25)
+                        .frame(width: 15)
                     
-                    // Высокий приоритет
+                    // Кнопка чек-листа
                     ZStack {
                         Color.clear
                             .frame(width: 38, height: 38)
                         
-                        priorityButtonHigh
+                        checklistButton
+                    }
+                    .frame(width: 38, height: 38)
+                    
+                    Spacer()
+                        .frame(width: 15)
+                    
+                    // Кнопка приоритета
+                    ZStack {
+                        Color.clear
+                            .frame(width: 38, height: 38)
+                        
+                        priorityButton
                     }
                     .frame(width: 38, height: 38)
                 }
-                .frame(width: 215)
+                .frame(width: 245) // Увеличиваем ширину для четырех кнопок
                 
                 Spacer()
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 8)
             .frame(height: 52)
-            .frame(maxWidth: 270)
+            .frame(maxWidth: 300) // Увеличиваем максимальную ширину
             .background {
                 ZStack {
                     Capsule()
@@ -86,71 +101,79 @@ struct PrioritySelectionView: View {
                 .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: 1)
             }
         }
-        .padding(.horizontal, 50)
+        .padding(.horizontal, 20)
         .padding(.bottom, 8)
     }
     
     // MARK: - UI Components
     
-    private var priorityButtonLow: some View {
+    private var calendarButton: some View {
         Button(action: {
-            generateFeedback()
-            if selectedPriority == .low {
-                selectedPriority = .none
-            } else {
-                selectedPriority = .low
-            }
-            onSave()
+            hapticsManager.triggerLightFeedback()
         }) {
-            priorityIconView(priority: .low)
+            toolbarIcon(content: {
+                Image(systemName: "calendar")
+                    .font(.system(size: 16, weight: .medium))
+            }, color: themeManager.isDarkMode ? Color(red: 1.0, green: 0.3, blue: 0.3) : Color(red: 1.0, green: 0.5, blue: 0.3), isSelected: false)
         }
     }
     
-    private var priorityButtonMedium: some View {
+    private var flagButton: some View {
         Button(action: {
-            generateFeedback()
-            if selectedPriority == .medium {
-                selectedPriority = .none
-            } else {
-                selectedPriority = .medium
-            }
-            onSave()
+            hapticsManager.triggerLightFeedback()
         }) {
-            priorityIconView(priority: .medium)
+            toolbarIcon(content: {
+                Image(systemName: "flag.fill")
+                    .font(.system(size: 16, weight: .medium))
+            }, color: .yellow, isSelected: false)
         }
     }
     
-    private var priorityButtonHigh: some View {
+    private var checklistButton: some View {
         Button(action: {
-            generateFeedback()
-            if selectedPriority == .high {
-                selectedPriority = .none
-            } else {
-                selectedPriority = .high
-            }
-            onSave()
+            hapticsManager.triggerLightFeedback()
         }) {
-            priorityIconView(priority: .high)
+            toolbarIcon(content: {
+                Image(systemName: "checklist")
+                    .font(.system(size: 16, weight: .medium))
+            }, color: .green, isSelected: false)
         }
     }
     
-    // MARK: - Helper Methods
+    private var priorityButton: some View {
+        Button(action: {
+            hapticsManager.triggerLightFeedback()
+            showPrioritySelection.toggle()
+        }) {
+            toolbarIcon(content: {
+                priorityIconContent
+            }, color: selectedPriority != .none ? getPriorityColor(for: selectedPriority) : .gray, isSelected: selectedPriority != .none)
+        }
+    }
     
-    private func priorityIconView(priority: TaskPriority) -> some View {
-        let color = getPriorityColor(for: priority)
-        let isSelected = selectedPriority == priority
-        
-        return toolbarIcon(content: {
-            VStack(spacing: 2) {
-                ForEach(0..<priority.rawValue, id: \.self) { _ in
+    // Отображение иконки приоритета в виде столбцов
+    private var priorityIconContent: some View {
+        VStack(spacing: 2) {
+            if selectedPriority == .none {
+                // Если приоритет не выбран, показываем три серых столбца
+                ForEach(0..<3, id: \.self) { _ in
                     Rectangle()
-                        .fill(isSelected ? color : Color.gray)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 12, height: 3)
+                }
+            } else {
+                // Показываем столбцы в соответствии с выбранным приоритетом
+                ForEach(0..<selectedPriority.rawValue, id: \.self) { _ in
+                    Rectangle()
+                        .fill(getPriorityColor(for: selectedPriority))
                         .frame(width: 12, height: 3)
                 }
             }
-            .frame(width: 20, height: 20)
-        }, color: isSelected ? color : .gray, isSelected: isSelected)
+        }
+        .frame(width: 20, height: 20)
     }
+    
+    // MARK: - Helper Methods
     
     private func toolbarIcon<Content: View>(content: @escaping () -> Content, color: Color, isSelected: Bool = false) -> some View {
         content()
@@ -187,17 +210,13 @@ struct PrioritySelectionView: View {
             return .gray
         }
     }
-    
-    private func generateFeedback() {
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
-    }
 }
 
 // MARK: - Preview
 #Preview {
     struct PreviewWrapper: View {
         @State private var selectedPriority: TaskPriority = .none
+        @State private var showPrioritySelection: Bool = false
         
         var body: some View {
             ZStack {
@@ -206,8 +225,9 @@ struct PrioritySelectionView: View {
                 
                 VStack {
                     Spacer()
-                    PrioritySelectionView(
+                    NewTaskPriorityBar(
                         selectedPriority: $selectedPriority,
+                        showPrioritySelection: $showPrioritySelection,
                         onSave: { print("Save task") },
                         onCancel: { print("Cancel") }
                     )
@@ -217,4 +237,5 @@ struct PrioritySelectionView: View {
     }
     
     return PreviewWrapper()
-} 
+}
+
