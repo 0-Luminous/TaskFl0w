@@ -31,7 +31,7 @@ struct TaskListView: View {
 
     @Binding var selectedDate: Date
 
-    @ObservedObject var viewModel: ListViewModel
+    @ObservedObject var viewModel: TaskListViewModel  // ИЗМЕНЕНО: используем новый ViewModel
     @ObservedObject private var calendarState = CalendarState.shared
     @ObservedObject private var themeManager = ThemeManager.shared
 
@@ -194,18 +194,18 @@ struct TaskListView: View {
             items: items,
             categoryColor: viewModel.selectedCategory?.color ?? .blue,
             isSelectionMode: viewModel.isSelectionMode,
-            selectedTasks: $viewModel.selectedTasks,
+            selectedTasks: .constant(viewModel.selectedTasks),
             onToggle: { taskId in
-                viewModel.presenter?.toggleItem(id: taskId)
+                viewModel.handle(.toggleTodoCompletion(taskId))  // ИЗМЕНЕНО: используем новый Action
             },
             onEdit: { item in
                 viewModel.editingItem = item
             },
             onDelete: { taskId in
-                viewModel.presenter?.deleteItem(id: taskId)
+                viewModel.handle(.deleteTodoItem(taskId))  // ИЗМЕНЕНО: используем новый Action
             },
             onShare: { taskId in
-                viewModel.presenter?.shareItem(id: taskId)
+                // TODO: Реализуем sharing через новую архитектуру
             }
         )
         .listRowBackground(Color.clear)
@@ -217,21 +217,21 @@ struct TaskListView: View {
             TaskRow(
                 item: item,
                 onToggle: {
-                    viewModel.presenter?.toggleItem(id: item.id)
+                    viewModel.handle(.toggleTodoCompletion(item.id))  // ИЗМЕНЕНО: новый Action
                 },
                 onEdit: {
                     viewModel.editingItem = item
                 },
                 onDelete: {
-                    viewModel.presenter?.deleteItem(id: item.id)
+                    viewModel.handle(.deleteTodoItem(item.id))  // ИЗМЕНЕНО: новый Action
                 },
                 onShare: {
-                    viewModel.presenter?.shareItem(id: item.id)
+                    // TODO: Реализуем sharing через новую архитектуру
                 },
                 categoryColor: viewModel.selectedCategory?.color ?? .blue,
                 isSelectionMode: viewModel.isSelectionMode,
                 isInArchiveMode: viewModel.showCompletedTasksOnly,
-                selectedTasks: $viewModel.selectedTasks
+                selectedTasks: .constant(viewModel.selectedTasks)
             )
             .padding(.trailing, 5)
             .listRowBackground(taskRowBackground(for: item))
@@ -241,7 +241,7 @@ struct TaskListView: View {
                 if viewModel.isSelectionMode {
                     viewModel.toggleTaskSelection(taskId: item.id)
                 } else {
-                    viewModel.presenter?.toggleItem(id: item.id)
+                    viewModel.handle(.toggleTodoCompletion(item.id))  // ИЗМЕНЕНО: новый Action
                 }
             }
             .listRowSeparator(.hidden)
@@ -360,8 +360,8 @@ struct TaskListView: View {
                     isNewTaskFocused = true
                 }
             },
-            isSelectionMode: $viewModel.isSelectionMode,
-            selectedTasks: $viewModel.selectedTasks,
+            isSelectionMode: .constant(viewModel.isSelectionMode),
+            selectedTasks: .constant(viewModel.selectedTasks),
             onDeleteSelectedTasks: {
                 showingDeleteAlert = true
             },
@@ -370,12 +370,12 @@ struct TaskListView: View {
             },
             onArchiveTapped: {
                 hapticsManager.triggerMediumFeedback()
-                viewModel.showCompletedTasksOnly.toggle()
+                viewModel.handle(.showCompletedTodos(!viewModel.showCompletedTasksOnly))
             },
             onUnarchiveSelectedTasks: {
                 viewModel.unarchiveSelectedTasks()
             },
-            showCompletedTasksOnly: $viewModel.showCompletedTasksOnly,
+            showCompletedTasksOnly: .constant(viewModel.showCompletedTasksOnly),
             onFlagSelectedTasks: {
                 selectedDeadlineDate = Date()
                 showingDeadlinePicker = true
@@ -401,7 +401,7 @@ struct TaskListView: View {
                 .default(Text("Низкий")) {
                     viewModel.setPriorityForSelectedTasks(.low)
                 },
-                .default(Text("Нет")) {
+                .default(Text("нет")) {
                     viewModel.setPriorityForSelectedTasks(.none)
                 },
                 .cancel(Text("Отмена")),

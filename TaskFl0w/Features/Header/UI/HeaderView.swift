@@ -18,7 +18,7 @@ struct HeaderView: View {
 
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var isSearchViewPresented = false
-    @StateObject private var listViewModel = ListViewModel()
+    @StateObject private var listViewModel = TaskListViewModel()
 
     @State private var dragOffset: CGFloat = 0
     @State private var expandedCalendar = false
@@ -221,16 +221,16 @@ struct HeaderView: View {
                 isSelectionMode: false,
                 selectedTasks: .constant([]),
                 onToggle: { taskId in
-                    listViewModel.presenter?.toggleItem(id: taskId)
+                    listViewModel.handle(.toggleTodoCompletion(taskId))
                 },
                 onEdit: { task in
-                    listViewModel.presenter?.editItem(id: task.id, title: task.title)
+                    listViewModel.handle(.editTodoItem(task))
                 },
                 onDelete: { taskId in
-                    listViewModel.presenter?.deleteItem(id: taskId)
+                    listViewModel.handle(.deleteTodoItem(taskId))
                 },
                 onShare: { taskId in
-                    listViewModel.presenter?.shareItem(id: taskId)
+                    // Share functionality - можно оставить пустым или добавить позже
                 },
                 categoryManagement: viewModel.categoryManagement
             )

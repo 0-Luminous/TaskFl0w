@@ -18,7 +18,7 @@ struct CategoryHeightPreferenceKey: PreferenceKey {
 
 // Компонент для отображения задач из ToDoList
 struct TasksFromView: View {
-    @ObservedObject var listViewModel: ListViewModel
+    @ObservedObject var listViewModel: TaskListViewModel  // ИЗМЕНЕНО: используем новый ViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
     let selectedDate: Date
     let categoryManager: CategoryManagementProtocol
@@ -50,7 +50,7 @@ struct TasksFromView: View {
                     showFullTasks: tasksToShow.shouldShow,
                     transferMessage: tasksToShow.message,
                     onToggleTask: { taskId in
-                        listViewModel.presenter?.toggleItem(id: taskId)
+                        listViewModel.handle(.toggleTodoCompletion(taskId))  // ИЗМЕНЕНО: новый Action
                     }
                 )
             } else if let category = categoryManager.categories.first(where: { $0.id == selectedCategoryID }) {
@@ -367,7 +367,6 @@ func getCategoryInfo(for categoryID: UUID, categoryManager: CategoryManagementPr
     
     return (color, icon)
 }
-
 #Preview {
     let context = PersistenceController.shared.container.viewContext
     let sharedState = SharedStateService()
@@ -377,7 +376,7 @@ func getCategoryInfo(for categoryID: UUID, categoryManager: CategoryManagementPr
     let endTime = Calendar.current.date(bySettingHour: 10, minute: 30, second: 0, of: selectedDate)
     
     TasksFromView(
-        listViewModel: ListViewModel(),
+        listViewModel: TaskListViewModel(),
         selectedDate: selectedDate,
         categoryManager: categoryManager,
         selectedCategoryID: UUID(),

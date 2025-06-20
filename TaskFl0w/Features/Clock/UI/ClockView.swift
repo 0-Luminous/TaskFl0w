@@ -31,7 +31,7 @@ struct ZoomState {
 struct ClockViewIOS: View {
     // MARK: - View Models
     @StateObject private var viewModel = ClockViewModel()
-    @StateObject private var listViewModel = ListViewModel()
+    @StateObject private var listViewModel = TaskListViewModel()
     @ObservedObject private var themeManager = ThemeManager.shared
     
     // MARK: - Timer
@@ -69,7 +69,7 @@ struct ClockViewIOS: View {
                 TaskTimeline(
                     selectedDate: viewModel.selectedDate,
                     tasks: viewModel.tasks,
-                    listViewModel: listViewModel,
+                    listViewModel: TaskListViewModel,
                     categoryManager: viewModel.categoryManagement
                 )
             }
@@ -157,7 +157,7 @@ struct ClockViewIOS: View {
             TaskListView(
                 selectedCategory: viewModel.selectedCategory,
                 selectedDate: $viewModel.selectedDate,
-                viewModel: listViewModel
+                viewModel: listViewModel  // Уже использует TaskListViewModel
             )
             .background(themeManager.isDarkMode 
                 ? Color(red: 0.098, green: 0.098, blue: 0.098) 

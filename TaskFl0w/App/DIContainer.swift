@@ -13,6 +13,9 @@ import SwiftUI
 @MainActor
 final class DIContainer: ObservableObject {
     
+    // MARK: - Singleton
+    static let shared = DIContainer()
+    
     // MARK: - Core Dependencies
     private let persistenceController: PersistenceController
     private let context: NSManagedObjectContext
@@ -54,8 +57,13 @@ final class DIContainer: ObservableObject {
         return ClockViewModel()
     }
     
-    func makeTaskListViewModel() -> TaskListViewModel {
-        return TaskListViewModel(appState: _sharedStateService)
+    func makeTaskListViewModel(selectedCategory: TaskCategoryModel? = nil) -> TaskListViewModel {
+        return TaskListViewModel(
+            appState: _sharedStateService,
+            taskService: _taskService as? TaskService,
+            todoDataService: nil,  // Создается внутри ViewModel
+            selectedCategory: selectedCategory
+        )
     }
     
     func makeTaskRenderingViewModel() -> TaskRenderingViewModel {
