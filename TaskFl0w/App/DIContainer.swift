@@ -32,18 +32,9 @@ final class DIContainer: ObservableObject {
         self.context = self.persistenceController.container.viewContext
     }
     
-    // MARK: - Repositories
-    // private lazy var _taskRepository: TaskRepositoryProtocol = CoreDataTaskRepository(context: context) // Временно отключено
-    // private lazy var _categoryRepository: CategoryRepositoryProtocol = CoreDataCategoryRepository(context: context) // Временно отключено
-    
-    // var taskRepository: TaskRepositoryProtocol { _taskRepository } // Временно отключено
-    // var categoryRepository: CategoryRepositoryProtocol { _categoryRepository } // Временно отключено
-    
     // MARK: - Services
     private lazy var _sharedStateService: SharedStateService = SharedStateService(context: context)
-    
     private lazy var _taskService: TaskServiceProtocol = TaskService(context: context)
-    
     private lazy var _validationService: ValidationServiceProtocol = ValidationService()
     private lazy var _errorHandler: ErrorHandlerProtocol = ErrorHandler.shared
     private lazy var _notificationService: NotificationServiceProtocol = NotificationService.shared
@@ -60,28 +51,22 @@ final class DIContainer: ObservableObject {
     
     // MARK: - ViewModels Factory
     func makeClockViewModel() -> ClockViewModel {
-        // ClockViewModel() // Упрощенная инициализация до готовности всех зависимостей
         return ClockViewModel()
     }
     
     func makeTaskListViewModel() -> TaskListViewModel {
-        // TaskListViewModel() // Упрощенная инициализация до готовности всех зависимостей
         return TaskListViewModel(appState: _sharedStateService)
     }
     
     func makeTaskRenderingViewModel() -> TaskRenderingViewModel {
-        // TaskRenderingViewModel() // Упрощенная инициализация
         return TaskRenderingViewModel(sharedState: _sharedStateService)
     }
     
     func makeTimeManagementViewModel() -> TimeManagementViewModel {
-        // TimeManagementViewModel() // Упрощенная инициализация
         return TimeManagementViewModel()
     }
     
     func makeUserInteractionViewModel() -> UserInteractionViewModel {
-        // UserInteractionViewModel() // Упрощенная инициализация
-        // Create a basic TaskManagement instance for UserInteractionViewModel
         let basicTaskManagement = TaskManagement(sharedState: _sharedStateService, selectedDate: Date())
         return UserInteractionViewModel(taskManagement: basicTaskManagement)
     }
@@ -89,21 +74,12 @@ final class DIContainer: ObservableObject {
     func makeThemeConfigurationViewModel() -> ThemeConfigurationViewModel {
         ThemeConfigurationViewModel()
     }
-    
-    // MARK: - Coordinator Factory
-    // func makeAppCoordinator() -> AppCoordinator { // Временно отключено
-    //     AppCoordinator(container: self)
-    // }
 }
 
 // MARK: - Protocols Extensions
 extension DIContainer {
     func resolve<T>(_ type: T.Type) -> T {
         switch type {
-        // case is TaskRepositoryProtocol.Type:
-        //     return taskRepository as! T // Временно отключено
-        // case is CategoryRepositoryProtocol.Type:
-        //     return categoryRepository as! T // Временно отключено
         case is SharedStateService.Type:
             return sharedStateService as! T
         case is TaskServiceProtocol.Type:
