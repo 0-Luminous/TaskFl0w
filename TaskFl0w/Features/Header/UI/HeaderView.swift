@@ -18,7 +18,15 @@ struct HeaderView: View {
 
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var isSearchViewPresented = false
-    @StateObject private var listViewModel = TaskListViewModel()
+    @StateObject private var listViewModel: ModernTodoListViewModel = {
+        let context = PersistenceController.shared.container.viewContext
+        let todoDataService = TodoDataService(context: context)
+        let sharedStateService = SharedStateService(context: context)
+        return ModernTodoListViewModel(
+            todoDataService: todoDataService,
+            sharedStateService: sharedStateService
+        )
+    }()
 
     @State private var dragOffset: CGFloat = 0
     @State private var expandedCalendar = false
@@ -221,13 +229,13 @@ struct HeaderView: View {
                 isSelectionMode: false,
                 selectedTasks: .constant([]),
                 onToggle: { taskId in
-                    listViewModel.handle(.toggleTodoCompletion(taskId))
+                    listViewModel.handle(.toggleTaskCompletion(taskId))
                 },
                 onEdit: { task in
-                    listViewModel.handle(.editTodoItem(task))
+                    listViewModel.handle(.editTask(task))
                 },
                 onDelete: { taskId in
-                    listViewModel.handle(.deleteTodoItem(taskId))
+                    listViewModel.handle(.deleteTask(taskId))
                 },
                 onShare: { taskId in
                     // Share functionality - можно оставить пустым или добавить позже
@@ -236,8 +244,7 @@ struct HeaderView: View {
             )
             .onAppear {
                 // Принудительно обновляем данные при открытии поиска
-                listViewModel.refreshData()
-                listViewModel.onViewDidLoad()
+                listViewModel.handle(.loadTasks(Date()))
             }
         }
     }

@@ -34,7 +34,15 @@ struct ClockViewIOS: View {
     
     // MARK: - View Models
     @StateObject private var viewModel = ClockViewModel()
-    @StateObject private var listViewModel = TaskListViewModel()
+    @StateObject private var listViewModel: ModernTodoListViewModel = {
+        let context = PersistenceController.shared.container.viewContext
+        let todoDataService = TodoDataService(context: context)
+        let sharedStateService = SharedStateService(context: context)
+        return ModernTodoListViewModel(
+            todoDataService: todoDataService,
+            sharedStateService: sharedStateService
+        )
+    }()
     
     // Создаем Modern ViewModel для TaskTimeline
     @StateObject private var modernListViewModel: ModernTodoListViewModel = {

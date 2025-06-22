@@ -18,7 +18,7 @@ struct CategoryHeightPreferenceKey: PreferenceKey {
 
 // Компонент для отображения задач из ToDoList
 struct TasksFromView: View {
-    @ObservedObject var listViewModel: TaskListViewModel  // ИЗМЕНЕНО: используем новый ViewModel
+    @ObservedObject var listViewModel: ModernTodoListViewModel  // ИЗМЕНЕНО: используем новый ViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
     let selectedDate: Date
     let categoryManager: CategoryManagementProtocol
@@ -50,7 +50,7 @@ struct TasksFromView: View {
                     showFullTasks: tasksToShow.shouldShow,
                     transferMessage: tasksToShow.message,
                     onToggleTask: { taskId in
-                        listViewModel.handle(.toggleTodoCompletion(taskId))  // ИЗМЕНЕНО: новый Action
+                        listViewModel.handle(.toggleTaskCompletion(taskId))  // ИСПРАВЛЕНО: правильное имя Action
                     }
                 )
             } else if let category = categoryManager.categories.first(where: { $0.id == selectedCategoryID }) {
@@ -370,13 +370,17 @@ func getCategoryInfo(for categoryID: UUID, categoryManager: CategoryManagementPr
 #Preview {
     let context = PersistenceController.shared.container.viewContext
     let sharedState = SharedStateService()
+    let todoDataService = TodoDataService(context: context)
     let categoryManager = CategoryManagement(context: context, sharedState: sharedState)
     let selectedDate = Date()
     let startTime = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: selectedDate)
     let endTime = Calendar.current.date(bySettingHour: 10, minute: 30, second: 0, of: selectedDate)
     
     TasksFromView(
-        listViewModel: TaskListViewModel(),
+        listViewModel: ModernTodoListViewModel(
+            todoDataService: todoDataService,
+            sharedStateService: sharedState
+        ),
         selectedDate: selectedDate,
         categoryManager: categoryManager,
         selectedCategoryID: UUID(),

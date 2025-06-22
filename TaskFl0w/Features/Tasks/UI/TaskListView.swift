@@ -31,7 +31,7 @@ struct TaskListView: View {
 
     @Binding var selectedDate: Date
 
-    @ObservedObject var viewModel: TaskListViewModel  // ИЗМЕНЕНО: используем новый ViewModel
+    @ObservedObject var viewModel: ModernTodoListViewModel // ИЗМЕНЕНО: используем новый ViewModel
     @ObservedObject private var calendarState = CalendarState.shared
     @ObservedObject private var themeManager = ThemeManager.shared
 
@@ -76,7 +76,7 @@ struct TaskListView: View {
         }
         .onChange(of: selectedDate) { oldValue, newValue in
             viewModel.selectedDate = newValue
-            viewModel.refreshData()
+            viewModel.handle(.loadTasks(newValue))
         }
         .onChange(of: calendarState.isWeekCalendarVisible) { oldValue, newValue in
             print("isWeekCalendarVisible изменилось: \(oldValue) -> \(newValue)")
@@ -196,13 +196,13 @@ struct TaskListView: View {
             isSelectionMode: viewModel.isSelectionMode,
             selectedTasks: .constant(viewModel.selectedTasks),
             onToggle: { taskId in
-                viewModel.handle(.toggleTodoCompletion(taskId))  // ИЗМЕНЕНО: используем новый Action
+                viewModel.handle(.toggleTaskCompletion(taskId))  // ИЗМЕНЕНО: используем новый Action
             },
             onEdit: { item in
-                viewModel.editingItem = item
+                viewModel.handle(.editTask(item))
             },
             onDelete: { taskId in
-                viewModel.handle(.deleteTodoItem(taskId))  // ИЗМЕНЕНО: используем новый Action
+                viewModel.handle(.deleteTask(taskId))  // ИЗМЕНЕНО: используем новый Action
             },
             onShare: { taskId in
                 // TODO: Реализуем sharing через новую архитектуру
@@ -217,13 +217,13 @@ struct TaskListView: View {
             TaskRow(
                 item: item,
                 onToggle: {
-                    viewModel.handle(.toggleTodoCompletion(item.id))  // ИЗМЕНЕНО: новый Action
+                    viewModel.handle(.toggleTaskCompletion(item.id))  // ИЗМЕНЕНО: новый Action
                 },
                 onEdit: {
-                    viewModel.editingItem = item
+                    viewModel.handle(.editTask(item))
                 },
                 onDelete: {
-                    viewModel.handle(.deleteTodoItem(item.id))  // ИЗМЕНЕНО: новый Action
+                    viewModel.handle(.deleteTask(item.id))  // ИЗМЕНЕНО: новый Action
                 },
                 onShare: {
                     // TODO: Реализуем sharing через новую архитектуру
@@ -241,7 +241,7 @@ struct TaskListView: View {
                 if viewModel.isSelectionMode {
                     viewModel.toggleTaskSelection(taskId: item.id)
                 } else {
-                    viewModel.handle(.toggleTodoCompletion(item.id))  // ИЗМЕНЕНО: новый Action
+                    viewModel.handle(.toggleTaskCompletion(item.id))  // ИЗМЕНЕНО: новый Action
                 }
             }
             .listRowSeparator(.hidden)
@@ -370,7 +370,7 @@ struct TaskListView: View {
             },
             onArchiveTapped: {
                 hapticsManager.triggerMediumFeedback()
-                viewModel.handle(.showCompletedTodos(!viewModel.showCompletedTasksOnly))
+                viewModel.handle(.showCompletedTasks(!viewModel.showCompletedTasksOnly))
             },
             onUnarchiveSelectedTasks: {
                 viewModel.unarchiveSelectedTasks()
@@ -476,7 +476,7 @@ struct TaskListView: View {
         if let selectedCategory = selectedCategory {
             viewModel.selectedCategory = selectedCategory
         }
-        viewModel.refreshData()
+        viewModel.handle(.loadTasks(Date()))
     }
 
     private func resetNewTask() {
