@@ -63,7 +63,13 @@ final class ListViewModel: ObservableObject {
     
     // MARK: - Computed Properties
     var items: [ToDoItem] { 
-        state.filteredItems.isEmpty && state.searchText.isEmpty ? state.items : state.filteredItems 
+        // Исправлено: если есть активные фильтры, всегда показываем filteredItems
+        // даже если он пустой (нет задач в категории)
+        if !state.searchText.isEmpty || state.selectedCategory != nil {
+            return state.filteredItems
+        }
+        // Возвращаем все задачи только если нет активных фильтров
+        return state.items
     }
     
     var selectedCategory: TaskCategoryModel? { 
