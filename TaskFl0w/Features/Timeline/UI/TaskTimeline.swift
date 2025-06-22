@@ -563,7 +563,7 @@ struct TaskTimeline: View {
         }
         .onAppear {
             clockViewModel.selectedDate = selectedDate
-            listViewModel.refreshData()
+            listViewModel.handle(.loadTasks(selectedDate))
         }
         .onChange(of: clockViewModel.selectedDate) { oldValue, newValue in
             selectedDate = newValue
@@ -966,8 +966,9 @@ struct TaskTimeline: View {
                                 // Правый блок с измерением высоты
                                 let allCategoryTasks = filteredTasks.filter { $0.category.id == firstTask.category.id }
                                 
-                                TasksFromView(
-                                    listViewModel: listViewModel,
+                                // ИСПРАВЛЕНО: создаем adapter для совместимости типов
+                                TasksFromViewAdapter(
+                                    modernViewModel: listViewModel,
                                     selectedDate: selectedDate,
                                     categoryManager: categoryManager,
                                     selectedCategoryID: firstTask.category.id,
@@ -1244,5 +1245,135 @@ struct BlockHeightPreferenceKey: PreferenceKey {
     
     static func reduce(value: inout [String: CGFloat], nextValue: () -> [String: CGFloat]) {
         value.merge(nextValue()) { _, new in new }
+    }
+}
+
+// ДОБАВЛЯЕМ Adapter для совместимости типов в конце файла
+struct TasksFromViewAdapter: View {
+    @ObservedObject var modernViewModel: ModernTodoListViewModel
+    let selectedDate: Date
+    let categoryManager: CategoryManagementProtocol
+    let selectedCategoryID: UUID
+    let startTime: Date?
+    let endTime: Date?
+    let allTimelineTasksForCategory: [TaskOnRing]?
+    let slotId: String?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Получаем задачи из ModernTodoListViewModel
+            let categoryTasks = modernViewModel.items.filter { $0.categoryID == selectedCategoryID }
+            
+            if let firstTask = categoryTasks.first, let categoryName = firstTask.categoryName {
+                let (color, icon) = getCategoryInfo(for: selectedCategoryID, categoryManager: categoryManager)
+                let category = TaskCategoryModel(id: selectedCategoryID, rawValue: categoryName, iconName: icon, color: color)
+                
+                SimpleCategoryView(
+                    category: category,
+                    todoTasks: categoryTasks,
+                    startTime: startTime,
+                    endTime: endTime,
+                    onToggleTask: { taskId in
+                        modernViewModel.handle(.toggleTaskCompletion(taskId))
+                    }
+                )
+            } else if let category = categoryManager.categories.first(where: { $0.id == selectedCategoryID }) {
+                let taskCategory = TaskCategoryModel(
+                    id: selectedCategoryID,
+                    rawValue: category.rawValue,
+                    iconName: category.iconName,
+                    color: category.color
+                )
+                
+                SimpleCategoryView(
+                    category: taskCategory,
+                    todoTasks: [],
+                    startTime: startTime,
+                    endTime: endTime,
+                    onToggleTask: { _ in }
+                )
+            }
+        }
+    }
+    
+    private func getCategoryInfo(for categoryId: UUID, categoryManager: CategoryManagementProtocol) -> (Color, String) {
+        if let category = categoryManager.categories.first(where: { $0.id == categoryId }) {
+            return (category.color, category.iconName)
+        }
+        return (.blue, "folder.fill")
+    }
+}
+
+// Упрощенный компонент для отображения категории
+struct SimpleCategoryView: View {
+    let category: TaskCategoryModel
+    let todoTasks: [ToDoItem]
+    let startTime: Date?
+    let endTime: Date?
+    let onToggleTask: (UUID) -> Void
+    @ObservedObject private var themeManager = ThemeManager.shared
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Время и продолжительность
+            if let start = startTime, let end = endTime {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(formatTime(start))
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                        
+                        Text(formatTime(end))
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                    }
+                    
+                    Spacer()
+                    
+                    Text(formatDuration(end.timeIntervalSince(start)))
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(themeManager.isDarkMode ? .gray : .black)
+                }
+            }
+            
+            // Список задач
+            ForEach(todoTasks) { task in
+                HStack {
+                    Button(action: { onToggleTask(task.id) }) {
+                        Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(task.isCompleted ? .green : .gray)
+                    }
+                    
+                    Text(task.title)
+                        .strikethrough(task.isCompleted)
+                        .foregroundColor(themeManager.isDarkMode ? .white : .black)
+                    
+                    Spacer()
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(themeManager.isDarkMode ? Color.gray.opacity(0.2) : Color.white)
+        )
+    }
+    
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let hours = Int(duration) / 3600
+        let minutes = Int(duration.truncatingRemainder(dividingBy: 3600)) / 60
+        
+        if hours > 0 {
+            return "\(hours)ч \(minutes)м"
+        } else {
+            return "\(minutes)м"
+        }
     }
 }

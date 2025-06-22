@@ -29,9 +29,24 @@ struct ZoomState {
 
 // MARK: - Main View
 struct ClockViewIOS: View {
+    // MARK: - Environment Dependencies  
+    @EnvironmentObject private var sharedState: SharedStateService
+    
     // MARK: - View Models
     @StateObject private var viewModel = ClockViewModel()
     @StateObject private var listViewModel = TaskListViewModel()
+    
+    // Создаем Modern ViewModel для TaskTimeline
+    @StateObject private var modernListViewModel: ModernTodoListViewModel = {
+        let context = PersistenceController.shared.container.viewContext
+        let todoDataService = TodoDataService(context: context)
+        let sharedStateService = SharedStateService(context: context)
+        return ModernTodoListViewModel(
+            todoDataService: todoDataService,
+            sharedStateService: sharedStateService
+        )
+    }()
+    
     @ObservedObject private var themeManager = ThemeManager.shared
     
     // MARK: - Timer
@@ -69,7 +84,7 @@ struct ClockViewIOS: View {
                 TaskTimeline(
                     selectedDate: viewModel.selectedDate,
                     tasks: viewModel.tasks,
-                    listViewModel: TaskListViewModel,
+                    listViewModel: modernListViewModel,  // Используем ModernTodoListViewModel
                     categoryManager: viewModel.categoryManagement
                 )
             }
@@ -157,7 +172,7 @@ struct ClockViewIOS: View {
             TaskListView(
                 selectedCategory: viewModel.selectedCategory,
                 selectedDate: $viewModel.selectedDate,
-                viewModel: listViewModel  // Уже использует TaskListViewModel
+                viewModel: listViewModel
             )
             .background(themeManager.isDarkMode 
                 ? Color(red: 0.098, green: 0.098, blue: 0.098) 
