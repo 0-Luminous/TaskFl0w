@@ -398,7 +398,7 @@ class TimelineManager: ObservableObject {
 struct TaskTimeline: View {
     @State var selectedDate: Date
     let tasks: [TaskOnRing]
-    @ObservedObject var listViewModel: ModernTodoListViewModel
+    @ObservedObject var listViewModel: ListViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
     @ObservedObject private var calendarState = CalendarState.shared
     let categoryManager: CategoryManagementProtocol
@@ -1250,7 +1250,7 @@ struct BlockHeightPreferenceKey: PreferenceKey {
 
 // ДОБАВЛЯЕМ Adapter для совместимости типов в конце файла
 struct TasksFromViewAdapter: View {
-    @ObservedObject var modernViewModel: ModernTodoListViewModel
+    @ObservedObject var modernViewModel: ListViewModel
     let selectedDate: Date
     let categoryManager: CategoryManagementProtocol
     let selectedCategoryID: UUID
@@ -1261,7 +1261,7 @@ struct TasksFromViewAdapter: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Получаем задачи из ModernTodoListViewModel
+            // Получаем задачи из ListViewModel
             let categoryTasks = modernViewModel.items.filter { $0.categoryID == selectedCategoryID }
             
             if let firstTask = categoryTasks.first, let categoryName = firstTask.categoryName {

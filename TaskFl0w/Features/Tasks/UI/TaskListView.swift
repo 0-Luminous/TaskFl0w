@@ -31,7 +31,7 @@ struct TaskListView: View {
 
     @Binding var selectedDate: Date
 
-    @ObservedObject var viewModel: ModernTodoListViewModel // ИЗМЕНЕНО: используем новый ViewModel
+    @ObservedObject var viewModel: ListViewModel // ИЗМЕНЕНО: используем новый ViewModel
     @ObservedObject private var calendarState = CalendarState.shared
     @ObservedObject private var themeManager = ThemeManager.shared
 

@@ -1,5 +1,5 @@
 //
-//  ModernTodoListViewModel.swift
+//  ListViewModel.swift
 //  TaskFl0w
 //
 //  Created by Yan on 24/12/24.
@@ -56,7 +56,7 @@ enum TodoListAction {
 
 /// Современный ViewModel для управления списком ToDo задач
 @MainActor
-final class ModernTodoListViewModel: ObservableObject {
+final class ListViewModel: ObservableObject {
     
     // MARK: - Published Properties
     @Published private(set) var state = TodoListViewState()
@@ -92,7 +92,7 @@ final class ModernTodoListViewModel: ObservableObject {
     // MARK: - Private Properties
     private let todoDataService: TodoDataService
     private let sharedStateService: SharedStateService
-    private let logger = Logger(subsystem: "TaskFl0w", category: "ModernTodoListViewModel")
+    private let logger = Logger(subsystem: "TaskFl0w", category: "ListViewModel")
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Initialization
@@ -422,7 +422,7 @@ final class ModernTodoListViewModel: ObservableObject {
 }
 
 // MARK: - Convenience Methods
-extension ModernTodoListViewModel {
+extension ListViewModel {
     
     /// Получает задачи для сегодняшнего дня
     func loadTodayTasks() {

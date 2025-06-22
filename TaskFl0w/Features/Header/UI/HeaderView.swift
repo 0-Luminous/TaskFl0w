@@ -18,11 +18,11 @@ struct HeaderView: View {
 
     @ObservedObject private var themeManager = ThemeManager.shared
     @State private var isSearchViewPresented = false
-    @StateObject private var listViewModel: ModernTodoListViewModel = {
+    @StateObject private var listViewModel: ListViewModel = {
         let context = PersistenceController.shared.container.viewContext
         let todoDataService = TodoDataService(context: context)
         let sharedStateService = SharedStateService(context: context)
-        return ModernTodoListViewModel(
+        return ListViewModel(
             todoDataService: todoDataService,
             sharedStateService: sharedStateService
         )

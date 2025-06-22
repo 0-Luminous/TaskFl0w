@@ -18,7 +18,7 @@ struct CategoryHeightPreferenceKey: PreferenceKey {
 
 // Компонент для отображения задач из ToDoList
 struct TasksFromView: View {
-    @ObservedObject var listViewModel: ModernTodoListViewModel  // ИЗМЕНЕНО: используем новый ViewModel
+    @ObservedObject var listViewModel: ListViewModel  // ИЗМЕНЕНО: используем новый ViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
     let selectedDate: Date
     let categoryManager: CategoryManagementProtocol
@@ -377,7 +377,7 @@ func getCategoryInfo(for categoryID: UUID, categoryManager: CategoryManagementPr
     let endTime = Calendar.current.date(bySettingHour: 10, minute: 30, second: 0, of: selectedDate)
     
     TasksFromView(
-        listViewModel: ModernTodoListViewModel(
+        listViewModel: ListViewModel(
             todoDataService: todoDataService,
             sharedStateService: sharedState
         ),
