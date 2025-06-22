@@ -17,19 +17,18 @@ struct TaskFl0wApp: App {
     @AppStorage("isAppSetupCompleted") private var isAppSetupCompleted: Bool = false
     
     // MARK: - Core Dependencies
-    private let diContainer: DIContainer
+    @StateObject private var sharedState = SharedStateService()
     private let logger = Logger(subsystem: "TaskFl0w", category: "App")
     
     // MARK: - Initialization
     init() {
-        self.diContainer = DIContainer()
-        logger.info("TaskFl0w приложение инициализировано с новой архитектурой")
+        logger.info("TaskFl0w приложение инициализировано с максимально упрощенной архитектурой")
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(diContainer.sharedStateService)
+                .environmentObject(sharedState)
                 .onAppear {
                     setupApp()
                 }
@@ -62,12 +61,8 @@ struct TaskFl0wApp: App {
     
     // MARK: - Private Methods
     private func setupApp() {
-        logger.info("Настройка приложения с новой архитектурой")
-        
-        // Инициализация сервисов через DI Container
-        Task {
-            // await diContainer.appStateService.loadSavedTheme() // Метод будет добавлен позже
-        }
+        logger.info("Настройка приложения завершена")
+        logger.debug("SharedState готов к работе")
     }
 }
 
