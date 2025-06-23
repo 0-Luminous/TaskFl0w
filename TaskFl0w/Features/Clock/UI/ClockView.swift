@@ -32,6 +32,9 @@ struct ClockViewIOS: View {
     // MARK: - Environment Dependencies  
     @EnvironmentObject private var sharedState: SharedStateService
     
+    // MARK: - Architecture Control
+    @State private var useModernArchitecture = FeatureFlags.modernClockArchitecture
+    
     // MARK: - View Models
     @StateObject private var viewModel = ClockViewModel()
     @StateObject private var listViewModel: ListViewModel = {
@@ -70,6 +73,23 @@ struct ClockViewIOS: View {
     
     // MARK: - Body
     var body: some View {
+        Group {
+            if useModernArchitecture {
+            } else {
+                legacyClockView
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .modernArchitectureToggled)) { notification in
+            if let enabled = notification.userInfo?["enabled"] as? Bool {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    useModernArchitecture = enabled
+                }
+            }
+        }
+    }
+    
+    // MARK: - Legacy Clock View
+    private var legacyClockView: some View {
         NavigationView {
             ZStack {
                 backgroundView
@@ -273,9 +293,13 @@ struct ClockViewIOS: View {
     
     // MARK: - Event Handlers
     private func handleDropZoneEntered() {
-        print("⚠️ [ClockViewIOS] Объект перетаскивания обнаружен во внешней зоне")
+                #if DEBUG
+                NSLog("[ClockViewIOS] Drag object detected in external zone")
+                #endif
         if let task = viewModel.draggedTask {
-            print("⚠️ [ClockViewIOS] Это задача \(task.id) - запускаем анимированное удаление")
+            #if DEBUG
+            NSLog("[ClockViewIOS] Task \(task.id) - starting animated deletion")
+            #endif
             startTaskRemovalAnimation(for: task)
         }
     }
@@ -290,7 +314,9 @@ struct ClockViewIOS: View {
     }
     
     private func handleDropZoneExited() {
-        print("⚠️ [ClockViewIOS] Объект покинул внешнюю зону")
+        #if DEBUG
+        NSLog("[ClockViewIOS] Object exited external zone")
+        #endif
     }
     
     private func handleSearch() {

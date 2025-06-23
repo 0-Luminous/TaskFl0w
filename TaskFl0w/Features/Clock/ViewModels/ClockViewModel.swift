@@ -9,62 +9,14 @@ import Combine
 import CoreData
 import WidgetKit
 
-// MARK: - Configuration Structs
-
-/// Настройки циферблата часов
-struct ClockSettings {
-    let defaultFontName = "SF Pro"
-    let defaultDigitalFontSize: Double = 42.0
-    let defaultMarkersWidth: Double = 2.0
-    let defaultNumbersSize: Double = 16.0
-    let defaultNumberInterval: Int = 1
-}
-
-/// Настройки маркеров циферблата
-struct MarkerSettings {
-    let width: Double
-    let offset: Double
-    let numbersSize: Double
-    let numberInterval: Int
-    let fontName: String
-    let style: MarkerStyle
-    let showHourNumbers: Bool
-    let showMarkers: Bool
-    let showIntermediateMarkers: Bool
-}
-
-/// Кастомные цвета темы для ClockViewModel
-struct ClockThemeColors {
-    let lightModeHandColor: String
-    let darkModeHandColor: String
-    let lightModeDigitalFontColor: String
-    let darkModeDigitalFontColor: String
-    let lightModeClockFaceColor: String
-    let darkModeClockFaceColor: String
-    let lightModeOuterRingColor: String
-    let darkModeOuterRingColor: String
-    let lightModeMarkersColor: String
-    let darkModeMarkersColor: String
-}
-
-// MARK: - Protocols
-
-@MainActor
-protocol ClockViewModelProtocol: ObservableObject {
-    var currentDate: Date { get }
-    var selectedDate: Date { get set }
-    var tasks: [TaskOnRing] { get }
-    var isDarkMode: Bool { get set }
-    
-    func updateCurrentTimeIfNeeded()
-    func startDragging(_ task: TaskOnRing)
-    func stopDragging(didReturnToClock: Bool)
-}
+// Structs and protocols are imported from their specialized files:
+// - ClockSettings, MarkerSettings, ClockThemeColors from ClockThemeModels.swift
+// - ClockViewModelProtocol from ClockViewProtocol.swift
 
 // MARK: - Main ViewModel
 
 @MainActor
-final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
+final class ClockViewModel: ObservableObject {
     
     // MARK: - Specialized ViewModels (Декомпозиция)
     
@@ -100,7 +52,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             timeManager.selectedDate = newValue
             taskRenderer.updateTasksForSelectedDate(newValue)
             clockState.selectedDate = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by timeManager @Published
         }
     }
     
@@ -108,7 +60,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { timeManager.zeroPosition }
         set { 
             timeManager.zeroPosition = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by timeManager @Published
         }
     }
     
@@ -125,7 +77,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { taskRenderer.previewTask }
         set { 
             taskRenderer.previewTask = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by taskRenderer @Published
         }
     }
     
@@ -133,8 +85,16 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { taskRenderer.searchText }
         set { 
             taskRenderer.searchText = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by taskRenderer @Published
         }
+    }
+    
+    var isTasksLoading: Bool {
+        get { taskRenderer.isTasksLoading }
+    }
+    
+    var tasksError: String? {
+        get { taskRenderer.tasksError }
     }
     
     // Modal States (delegated to userInteraction)
@@ -146,7 +106,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             } else {
                 userInteraction.hideAddTask()
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -158,7 +118,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             } else {
                 userInteraction.hideSettings()
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -170,7 +130,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             } else {
                 userInteraction.hideCalendar()
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -182,7 +142,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             } else {
                 userInteraction.hideStatistics()
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -194,7 +154,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             } else {
                 userInteraction.hideTodayTasksList()
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -206,7 +166,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             } else {
                 userInteraction.hideCategoryEditor()
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -216,7 +176,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             if !newValue {
                 userInteraction.hideTaskDetail()
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -225,7 +185,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { userInteraction.selectedTask }
         set { 
             userInteraction.selectTask(newValue)
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -237,12 +197,20 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             } else {
                 userInteraction.finishEditingTask()
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
     var draggedTask: TaskOnRing? {
         get { userInteraction.draggedTask }
+        set { 
+            if let task = newValue {
+                userInteraction.startDragging(task)
+            } else {
+                userInteraction.stopDragging(didReturnToClock: true)
+            }
+            // objectWillChange removed - handled by userInteraction @Published
+        }
     }
     
     var draggedCategory: TaskCategoryModel? {
@@ -253,7 +221,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             } else {
                 userInteraction.stopDraggingCategory()
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -261,7 +229,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { userInteraction.selectedCategory }
         set { 
             userInteraction.selectCategory(newValue)
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -273,12 +241,16 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             } else {
                 userInteraction.disableEditMode()
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
     var isDraggingOutside: Bool {
         get { userInteraction.isDraggingOutside }
+        set { 
+            userInteraction.updateDragPosition(isOutsideClock: newValue)
+            // objectWillChange removed - handled by userInteraction @Published
+        }
     }
     
     var isDraggingStart: Bool {
@@ -294,7 +266,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
                     userInteraction.resetDragStates()
                 }
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -311,7 +283,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
                     userInteraction.resetDragStates()
                 }
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -319,12 +291,16 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { userInteraction.previewTime }
         set { 
             userInteraction.updatePreviewTime(newValue)
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
     var dropLocation: CGPoint? {
         get { userInteraction.dropLocation }
+        set { 
+            userInteraction.updateDragPosition(isOutsideClock: userInteraction.isDraggingOutside, location: newValue)
+            // objectWillChange removed - handled by userInteraction @Published
+        }
     }
     
     var isDockBarEditingEnabled: Bool {
@@ -335,7 +311,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             } else {
                 userInteraction.disableDockBarEditing()
             }
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
@@ -344,7 +320,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.clockStyle }
         set { 
             themeConfig.clockStyle = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -354,7 +330,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.notificationsEnabled }
         set { 
             themeConfig.notificationsEnabled = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -362,7 +338,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.showTimeOnlyForActiveTask }
         set { 
             themeConfig.showTimeOnlyForActiveTask = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -370,7 +346,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.isAnalogArcStyle }
         set { 
             themeConfig.isAnalogArcStyle = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -379,7 +355,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.lightModeHandColor }
         set { 
             themeConfig.lightModeHandColor = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -387,7 +363,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.darkModeHandColor }
         set { 
             themeConfig.darkModeHandColor = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -395,7 +371,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.lightModeDigitalFontColor }
         set { 
             themeConfig.lightModeDigitalFontColor = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -403,7 +379,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.darkModeDigitalFontColor }
         set { 
             themeConfig.darkModeDigitalFontColor = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -411,7 +387,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.lightModeClockFaceColor }
         set { 
             themeConfig.lightModeClockFaceColor = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -419,7 +395,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.darkModeClockFaceColor }
         set { 
             themeConfig.darkModeClockFaceColor = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -427,7 +403,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.lightModeOuterRingColor }
         set { 
             themeConfig.lightModeOuterRingColor = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -435,7 +411,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.darkModeOuterRingColor }
         set { 
             themeConfig.darkModeOuterRingColor = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -443,7 +419,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.lightModeMarkersColor }
         set { 
             themeConfig.lightModeMarkersColor = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -451,7 +427,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.darkModeMarkersColor }
         set { 
             themeConfig.darkModeMarkersColor = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -460,7 +436,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.taskArcLineWidth }
         set { 
             themeConfig.taskArcLineWidth = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -468,7 +444,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.outerRingLineWidth }
         set { 
             themeConfig.outerRingLineWidth = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -477,7 +453,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.showHourNumbers }
         set { 
             themeConfig.showHourNumbers = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -485,7 +461,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.markersWidth }
         set { 
             themeConfig.markersWidth = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -493,7 +469,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.markersOffset }
         set { 
             themeConfig.markersOffset = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -501,7 +477,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.numbersSize }
         set { 
             themeConfig.numbersSize = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -509,7 +485,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.numberInterval }
         set { 
             themeConfig.numberInterval = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -517,7 +493,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.showMarkers }
         set { 
             themeConfig.showMarkers = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -525,7 +501,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.showIntermediateMarkers }
         set { 
             themeConfig.showIntermediateMarkers = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -534,7 +510,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.digitalFont }
         set { 
             themeConfig.digitalFont = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -542,7 +518,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.fontName }
         set { 
             themeConfig.fontName = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -550,7 +526,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.digitalFontSize }
         set { 
             themeConfig.digitalFontSize = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -558,7 +534,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         get { themeConfig.markerStyle }
         set { 
             themeConfig.markerStyle = newValue
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
     
@@ -628,34 +604,9 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     }
     
     private func setupBindings() async {
-        // Привязываем изменения дочерних ViewModels к основному
-        timeManager.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-        
-        taskRenderer.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-        
-        userInteraction.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-        
-        themeConfig.objectWillChange
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
-            }
-            .store(in: &cancellables)
+        // Child ViewModels are already @Published, no manual binding needed
+        // Each ViewModel will automatically notify SwiftUI through their @Published properties
+        // Removed manual objectWillChange binding - handled automatically by SwiftUI/Combine
         
         await bindDockBarUpdates()
         await bindDateChanges()
@@ -749,20 +700,28 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     func startDraggingTaskStart() {
         if let task = editingTask {
             userInteraction.startDraggingTaskStart(task)
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
     func startDraggingTaskEnd() {
         if let task = editingTask {
             userInteraction.startDraggingTaskEnd(task)
-            objectWillChange.send()
+            // objectWillChange removed - handled by userInteraction @Published
         }
     }
     
     func stopDraggingTaskEdges() {
         userInteraction.resetDragStates()
-        objectWillChange.send()
+        // objectWillChange removed - handled by userInteraction @Published
+    }
+    
+    func stopDraggingTaskStart() {
+        userInteraction.stopDraggingTaskStart()
+    }
+    
+    func stopDraggingTaskEnd() {
+        userInteraction.stopDraggingTaskEnd()
     }
     
     // MARK: - Time Calculation Methods
@@ -773,7 +732,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         let newPosition = ZeroPositionManager.shared.zeroPosition
         timeManager.zeroPosition = newPosition
         markersViewModel.zeroPosition = newPosition
-        objectWillChange.send()
+        // objectWillChange removed - handled by timeManager @Published
     }
     
     @objc private func handleClockStyleChange(_ notification: Notification) {
@@ -789,7 +748,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     
     private func saveClockStyle() {
         UserDefaults.standard.set(clockStyle, forKey: "clockStyle")
-        objectWillChange.send()
+        // objectWillChange removed - handled by themeConfig @Published
     }
     
     private func updateThemeState() async {
@@ -805,8 +764,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         
         markersViewModel.updateCurrentThemeColors()
         
-        objectWillChange.send()
-        markersViewModel.objectWillChange.send()
+        // objectWillChange removed - handled by themeConfig and markersViewModel @Published
     }
     
     private func configureMarkersViewModel() async {
@@ -957,7 +915,9 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             do {
                 try await notificationService.sendCategoryStartNotification(category: newCategory)
             } catch {
-                print("⚠️ Failed to send category notification: \(error.localizedDescription)")
+                #if DEBUG
+                NSLog("Failed to send category notification: \(error.localizedDescription)")
+                #endif
             }
         } else if newActiveCategory == nil && currentActiveCategory != nil {
             currentActiveCategory = nil
@@ -966,7 +926,7 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     
     private func updateTasksForSelectedDate() {
         taskRenderer.updateTasksForSelectedDate(timeManager.selectedDate)
-        objectWillChange.send()
+        // objectWillChange removed - handled by taskRenderer @Published
     }
     
     private func updateCategoryStatistics(_ tasks: [TaskOnRing]) {
@@ -990,9 +950,8 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
         await updateThemeManagerColors(themeManager, colors: colors)
         
         await MainActor.run {
-            themeManager.objectWillChange.send()
-            self.objectWillChange.send()
-            self.markersViewModel.objectWillChange.send()
+            // objectWillChange removed - handled by respective ViewModels @Published
+            // ThemeManager, ClockViewModel and markersViewModel handle their own updates
         }
     }
     
@@ -1096,7 +1055,7 @@ extension ClockViewModel {
         get { themeConfig.isDarkMode }
         set { 
             themeConfig.setTheme(newValue)
-            objectWillChange.send()
+            // objectWillChange removed - handled by themeConfig @Published
         }
     }
 }

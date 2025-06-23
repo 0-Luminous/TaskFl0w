@@ -89,7 +89,6 @@ struct RingPlanner: View {
     
     private func handleTaskDrop(at location: CGPoint) -> Bool {
         guard let category = viewModel.draggedCategory else {
-            print("⚠️ DEBUG: draggedCategory is nil")
             return false
         }
         
@@ -99,7 +98,10 @@ struct RingPlanner: View {
             
             return try handleCategoryValidation(for: category)
         } catch {
-            print("❌ DEBUG: Error creating task: \(error)")
+            // Log error for debugging in development only
+            #if DEBUG
+            NSLog("Error creating task: \(error.localizedDescription)")
+            #endif
             return false
         }
     }
@@ -160,7 +162,9 @@ struct RingPlanner: View {
     }
     
     private func addCategoryAndCreateTask(_ category: TaskCategoryModel) {
-        print("❌ DEBUG: Category NOT found in CoreData! Adding category first...")
+        #if DEBUG
+        NSLog("Category not found in CoreData, adding category first")
+        #endif
         viewModel.categoryManagement.addCategory(category)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + Constants.categoryValidationDelay) {
@@ -179,14 +183,18 @@ struct RingPlanner: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + Constants.taskCreationDelay) {
                     let tasksForDate = viewModel.tasksForSelectedDate(viewModel.tasks)
                     if tasksForDate.contains(where: { $0.id == previewTask.id }) {
-                        print("✅ DEBUG: Task successfully added to tasks list")
+                        #if DEBUG
+                        NSLog("Task successfully added to tasks list")
+                        #endif
                         
                         // Включаем режим редактирования только после подтверждения
                         viewModel.isEditingMode = true
                         viewModel.editingTask = previewTask
                         viewModel.previewTask = nil // Очищаем предварительный просмотр
                     } else {
-                        print("❌ DEBUG: Task NOT found in tasks list after adding")
+                        #if DEBUG
+                        NSLog("Task not found in tasks list after adding")
+                        #endif
                     }
                 }
             }

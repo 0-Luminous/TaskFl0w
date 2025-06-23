@@ -110,6 +110,24 @@ final class UserInteractionViewModel: ObservableObject {
         objectWillChange.send()
     }
     
+    /// Останавливает перетаскивание начала задачи
+    func stopDraggingTaskStart() {
+        isDraggingStart = false
+        if !isDraggingEnd {
+            resetDragStates()
+        }
+        objectWillChange.send()
+    }
+    
+    /// Останавливает перетаскивание конца задачи
+    func stopDraggingTaskEnd() {
+        isDraggingEnd = false
+        if !isDraggingStart {
+            resetDragStates()
+        }
+        objectWillChange.send()
+    }
+    
     // MARK: - Task Selection Methods
     
     /// Выбирает задачу
@@ -330,6 +348,8 @@ protocol UserInteractionProtocol: ObservableObject {
     func selectTask(_ task: TaskOnRing?)
     func startEditingTask(_ task: TaskOnRing)
     func finishEditingTask()
+    func stopDraggingTaskStart()
+    func stopDraggingTaskEnd()
 }
 
 extension UserInteractionViewModel: UserInteractionProtocol {} 

@@ -50,6 +50,9 @@ final class TaskRenderingViewModel: ObservableObject {
         }
     }
     
+    var isTasksLoading: Bool { state.isLoading }
+    var tasksError: String? { state.error }
+    
     // MARK: - Private Properties
     private var cancellables = Set<AnyCancellable>()
     private weak var sharedState: SharedStateService?
