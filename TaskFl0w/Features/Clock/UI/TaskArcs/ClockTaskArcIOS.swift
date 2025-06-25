@@ -73,9 +73,7 @@ struct ClockTaskArcIOS: View {
             .onReceive(NotificationCenter.default.publisher(for: .startTaskRemovalAnimation)) { notification in
                 if let taskToRemove = notification.userInfo?["task"] as? TaskOnRing,
                    taskToRemove.id == task.id {
-                    #if DEBUG
-            NSLog("Received task deletion notification: \(task.id)")
-            #endif
+                    print("🎬 Получено уведомление об удалении задачи: \(task.id)")
                     animationManager.startAnimatedRemoval(task: task, taskManagement: viewModel.taskManagement)
                 }
             }

@@ -29,35 +29,17 @@ struct ZoomState {
 
 // MARK: - Main View
 struct ClockViewIOS: View {
-    // MARK: - Environment Dependencies  
-    @EnvironmentObject private var sharedState: SharedStateService
-    
-    // MARK: - Architecture Control
-    @State private var useModernArchitecture = FeatureFlags.modernClockArchitecture
-    
     // MARK: - View Models
     @StateObject private var viewModel = ClockViewModel()
     @StateObject private var listViewModel: ListViewModel = {
         let context = PersistenceController.shared.container.viewContext
         let todoDataService = TodoDataService(context: context)
-        let sharedStateService = SharedStateService(context: context)
+        let sharedStateService = SharedStateService()
         return ListViewModel(
             todoDataService: todoDataService,
             sharedStateService: sharedStateService
         )
     }()
-    
-    // Создаем Modern ViewModel для TaskTimeline
-    @StateObject private var modernListViewModel: ListViewModel = {
-        let context = PersistenceController.shared.container.viewContext
-        let todoDataService = TodoDataService(context: context)
-        let sharedStateService = SharedStateService(context: context)
-        return ListViewModel(
-            todoDataService: todoDataService,
-            sharedStateService: sharedStateService
-        )
-    }()
-    
     @ObservedObject private var themeManager = ThemeManager.shared
     
     // MARK: - Timer
@@ -73,23 +55,6 @@ struct ClockViewIOS: View {
     
     // MARK: - Body
     var body: some View {
-        Group {
-            if useModernArchitecture {
-            } else {
-                legacyClockView
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .modernArchitectureToggled)) { notification in
-            if let enabled = notification.userInfo?["enabled"] as? Bool {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    useModernArchitecture = enabled
-                }
-            }
-        }
-    }
-    
-    // MARK: - Legacy Clock View
-    private var legacyClockView: some View {
         NavigationView {
             ZStack {
                 backgroundView
@@ -112,7 +77,7 @@ struct ClockViewIOS: View {
                 TaskTimeline(
                     selectedDate: viewModel.selectedDate,
                     tasks: viewModel.tasks,
-                    listViewModel: modernListViewModel,  // Используем ListViewModel
+                    listViewModel: listViewModel,
                     categoryManager: viewModel.categoryManagement
                 )
             }
@@ -200,7 +165,7 @@ struct ClockViewIOS: View {
             TaskListView(
                 selectedCategory: viewModel.selectedCategory,
                 selectedDate: $viewModel.selectedDate,
-                viewModel: listViewModel
+                viewModel: listViewModel  // Уже использует TaskListViewModel
             )
             .background(themeManager.isDarkMode 
                 ? Color(red: 0.098, green: 0.098, blue: 0.098) 
@@ -293,13 +258,9 @@ struct ClockViewIOS: View {
     
     // MARK: - Event Handlers
     private func handleDropZoneEntered() {
-                #if DEBUG
-                NSLog("[ClockViewIOS] Drag object detected in external zone")
-                #endif
+        print("⚠️ [ClockViewIOS] Объект перетаскивания обнаружен во внешней зоне")
         if let task = viewModel.draggedTask {
-            #if DEBUG
-            NSLog("[ClockViewIOS] Task \(task.id) - starting animated deletion")
-            #endif
+            print("⚠️ [ClockViewIOS] Это задача \(task.id) - запускаем анимированное удаление")
             startTaskRemovalAnimation(for: task)
         }
     }
@@ -314,9 +275,7 @@ struct ClockViewIOS: View {
     }
     
     private func handleDropZoneExited() {
-        #if DEBUG
-        NSLog("[ClockViewIOS] Object exited external zone")
-        #endif
+        print("⚠️ [ClockViewIOS] Объект покинул внешнюю зону")
     }
     
     private func handleSearch() {

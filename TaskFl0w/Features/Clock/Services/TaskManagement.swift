@@ -341,10 +341,8 @@ class TaskManagement: TaskManagementProtocol {
                     return 
                 }
                 
-                Task { @MainActor in
-                    self.addTask(task)
-                    continuation.resume()
-                }
+                self.addTask(task)
+                continuation.resume()
             }
         }
     }
@@ -368,10 +366,8 @@ class TaskManagement: TaskManagementProtocol {
                     return 
                 }
                 
-                Task { @MainActor in
-                    self.updateTask(task)
-                    continuation.resume()
-                }
+                self.updateTask(task)
+                continuation.resume()
             }
         }
     }
@@ -385,10 +381,8 @@ class TaskManagement: TaskManagementProtocol {
                     return 
                 }
                 
-                Task { @MainActor in
-                    self.removeTask(taskToRemove)
-                    continuation.resume()
-                }
+                self.removeTask(taskToRemove)
+                continuation.resume()
             }
         }
     }
@@ -409,9 +403,7 @@ class TaskManagement: TaskManagementProtocol {
                         var updatedTask = task
                         updatedTask.startTime = newStart
                         updatedTask.endTime = newEnd
-                        Task { @MainActor in
-                            self.updateTask(updatedTask)
-                        }
+                        self.updateTask(updatedTask)
                     }
                     
                     continuation.resume()
@@ -431,12 +423,11 @@ class TaskManagement: TaskManagementProtocol {
                     return 
                 }
                 
-                Task { @MainActor in
-                    for task in tasksToRemove {
-                        self.removeTask(task)
-                    }
-                    continuation.resume()
+                for task in tasksToRemove {
+                    self.removeTask(task)
                 }
+                
+                continuation.resume()
             }
         }
     }
@@ -513,14 +504,10 @@ class TaskManagement: TaskManagementProtocol {
             } else {
                 let newCategoryEntity = CategoryEntity.from(category, context: self.context)
                 taskEntity.category = newCategoryEntity
-                #if DEBUG
-                NSLog("Created new category while updating task")
-                #endif
+                print("⚠️ Создана новая категория при обновлении задачи")
             }
         } catch {
-                            #if DEBUG
-                NSLog("Error updating task category: \(error.localizedDescription)")
-                #endif
+            print("❌ Ошибка при обновлении категории задачи: \(error)")
         }
     }
     
@@ -536,9 +523,7 @@ class TaskManagement: TaskManagementProtocol {
     }
     
     private func handleError(_ error: Error, operation: String) {
-        #if DEBUG
-        NSLog("Error in operation \(operation): \(error.localizedDescription)")
-        #endif
+        print("❌ Ошибка в операции \(operation): \(error)")
         
         DispatchQueue.main.async {
             NotificationCenter.default.post(
