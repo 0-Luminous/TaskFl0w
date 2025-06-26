@@ -41,11 +41,11 @@ struct ClockTaskArcIOS: View {
                 let radius = min(geometry.size.width, geometry.size.height) / 2
                 
                 let configuration = TaskArcConfiguration(
-                    isAnalog: viewModel.isAnalogArcStyle,
+                    isAnalog: viewModel.themeConfig.isAnalogArcStyle,
                     arcLineWidth: arcLineWidth,
-                    outerRingLineWidth: viewModel.outerRingLineWidth,
-                    isEditingMode: viewModel.isEditingMode && task.id == viewModel.editingTask?.id,
-                    showTimeOnlyForActiveTask: viewModel.showTimeOnlyForActiveTask
+                    outerRingLineWidth: viewModel.themeConfig.outerRingLineWidth,
+                    isEditingMode: viewModel.userInteraction.isEditingMode && task.id == viewModel.userInteraction.editingTask?.id,
+                    showTimeOnlyForActiveTask: viewModel.themeConfig.showTimeOnlyForActiveTask
                 )
                 
                 let taskGeometry = TaskArcGeometry(
@@ -89,7 +89,7 @@ struct ClockTaskArcIOS: View {
     private func handleDragStateChange(oldValue: Bool, newValue: Bool) {
         guard oldValue != newValue else { return }
         
-        if newValue && task.id == viewModel.draggedTask?.id && isVisible {
+        if newValue && task.id == viewModel.userInteraction.draggedTask?.id && isVisible {
             DispatchQueue.main.asyncAfter(deadline: .now() + TaskArcConstants.hapticFeedbackDelay) {
                 checkForRemoval()
             }
@@ -103,9 +103,9 @@ struct ClockTaskArcIOS: View {
     
     private func checkForRemoval() {
         if isDragging && 
-           viewModel.draggedTask?.id == task.id && 
+           viewModel.userInteraction.draggedTask?.id == task.id && 
            isVisible && 
-           viewModel.isDraggingOutside {
+           viewModel.userInteraction.isDraggingOutside {
             
             animationManager.startDisappearanceAnimation {
                 viewModel.taskManagement.removeTask(task)
@@ -115,11 +115,11 @@ struct ClockTaskArcIOS: View {
     }
     
     private var isEditingTask: Bool {
-        viewModel.isEditingMode && task.id == viewModel.editingTask?.id
+        viewModel.userInteraction.isEditingMode && task.id == viewModel.userInteraction.editingTask?.id
     }
     
     private var isDraggedTask: Bool {
-        isDragging || viewModel.draggedTask?.id == task.id
+        isDragging || viewModel.userInteraction.draggedTask?.id == task.id
     }
     
     private var zIndexValue: Double {

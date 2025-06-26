@@ -16,27 +16,27 @@ struct ArcStyleControlsView: View {
             HStack(spacing: 10) {
                 Button(action: {
                     withAnimation {
-                        viewModel.isAnalogArcStyle = false
+                        viewModel.themeConfig.isAnalogArcStyle = false
                     }
                 }) {
                     Text("Стандартный")
-                        .buttonStyle(isSelected: !viewModel.isAnalogArcStyle)
+                        .buttonStyle(isSelected: !viewModel.themeConfig.isAnalogArcStyle)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
                 Button(action: {
                     withAnimation {
-                        viewModel.isAnalogArcStyle = true
+                        viewModel.themeConfig.isAnalogArcStyle = true
                     }
                 }) {
                     Text("Аналоговый")
-                        .buttonStyle(isSelected: viewModel.isAnalogArcStyle)
+                        .buttonStyle(isSelected: viewModel.themeConfig.isAnalogArcStyle)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
             .padding(.bottom, 8)
             
-            if !viewModel.isAnalogArcStyle {
+            if !viewModel.themeConfig.isAnalogArcStyle {
                 Text("Отображение времени")
                     .font(.subheadline)
                     .foregroundColor(themeManager.isDarkMode ? .white : .black)
@@ -46,41 +46,41 @@ struct ArcStyleControlsView: View {
                 HStack(spacing: 10) {
                     Button(action: {
                         withAnimation {
-                            viewModel.showTimeOnlyForActiveTask = false
+                            viewModel.themeConfig.showTimeOnlyForActiveTask = false
                             showTimeOnlyForActiveTask = false
                         }
                     }) {
                         HStack {
                             Text("Всегда")
                                 .font(.caption)
-                                .foregroundColor(!viewModel.showTimeOnlyForActiveTask ? 
+                                .foregroundColor(!viewModel.themeConfig.showTimeOnlyForActiveTask ? 
                                     (themeManager.isDarkMode ? .yellow : .red1) : 
                                     (themeManager.isDarkMode ? .white : .black))
                             Image(systemName: "clock")
                                 .font(.caption)
                                 .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                         }
-                        .buttonStyle(isSelected: !viewModel.showTimeOnlyForActiveTask)
+                        .buttonStyle(isSelected: !viewModel.themeConfig.showTimeOnlyForActiveTask)
                     }
                     .buttonStyle(PlainButtonStyle())
                     
                     Button(action: {
                         withAnimation {
-                            viewModel.showTimeOnlyForActiveTask = true
+                            viewModel.themeConfig.showTimeOnlyForActiveTask = true
                             showTimeOnlyForActiveTask = true
                         }
                     }) {
                         HStack {
                             Text("Активная задача")
                                 .font(.caption)
-                                .foregroundColor(viewModel.showTimeOnlyForActiveTask ? 
+                                .foregroundColor(viewModel.themeConfig.showTimeOnlyForActiveTask ? 
                                     (themeManager.isDarkMode ? .yellow : .red1) : 
                                     (themeManager.isDarkMode ? .white : .black))
                             Image(systemName: "clock.badge")
                                 .font(.caption)
                                 .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
                         }
-                        .buttonStyle(isSelected: viewModel.showTimeOnlyForActiveTask)
+                        .buttonStyle(isSelected: viewModel.themeConfig.showTimeOnlyForActiveTask)
                     }
                     .buttonStyle(PlainButtonStyle())
                 }

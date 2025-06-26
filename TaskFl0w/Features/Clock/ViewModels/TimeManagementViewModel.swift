@@ -88,7 +88,7 @@ final class TimeManagementViewModel: ObservableObject {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleZeroPositionChange),
-            name: .zeroPositionDidChange,
+            name: NSNotification.Name("ZeroPositionDidChange"),
             object: nil
         )
     }

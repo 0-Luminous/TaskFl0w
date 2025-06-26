@@ -65,18 +65,18 @@ struct TaskArcContentView: View {
     }
     
     private func toggleEditingMode() {
-        if viewModel.isEditingMode, viewModel.editingTask?.id == task.id {
-            viewModel.isEditingMode = false
-            viewModel.editingTask = nil
+        if viewModel.userInteraction.isEditingMode, viewModel.userInteraction.editingTask?.id == task.id {
+            viewModel.userInteraction.isEditingMode = false
+            viewModel.userInteraction.editingTask = nil
         } else {
-            viewModel.isEditingMode = true
-            viewModel.editingTask = task
+            viewModel.userInteraction.isEditingMode = true
+            viewModel.userInteraction.editingTask = task
         }
     }
     
     private func handleDragStart() -> NSItemProvider {
-        if !viewModel.isEditingMode && viewModel.editingTask == nil && !isDragging {
-            viewModel.startDragging(task)
+        if !viewModel.userInteraction.isEditingMode && viewModel.userInteraction.editingTask == nil && !isDragging {
+            viewModel.userInteraction.startDragging(task)
             isDragging = true
             hapticsManager.triggerHeavyFeedback()
             return NSItemProvider(object: task.id.uuidString as NSString)

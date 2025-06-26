@@ -3,29 +3,29 @@ import SwiftUI
 struct ColorControlsView: View {
     @ObservedObject var viewModel: ClockViewModel
     @ObservedObject var markersViewModel: ClockMarkersViewModel
-    @ObservedObject var themeManager: ThemeManager
+    @ObservedObject private var themeManager = ThemeManager.shared
+    @Binding var selectedColorType: String
+    @Binding var showHandColorSettings: Bool
+    @Binding var showColorSettings: Bool
+    @State private var selectedColorHex: String = "#FFFFFF"
+    @State private var currentBaseColor: Color = .red
+    @State private var sliderBrightnessPosition: Double = 0.5
     
-    @Binding var lightModeOuterRingColor: String
-    @Binding var darkModeOuterRingColor: String
+    // Цвета циферблата
     @Binding var lightModeClockFaceColor: String
     @Binding var darkModeClockFaceColor: String
+    
+    // Цвета маркеров
     @Binding var lightModeMarkersColor: String
     @Binding var darkModeMarkersColor: String
     
-    // Добавляем переменные для цвета стрелки
+    // Цвета внешнего кольца
+    @Binding var lightModeOuterRingColor: String
+    @Binding var darkModeOuterRingColor: String
+    
+    // Цвета стрелки
     @Binding var lightModeHandColor: String
     @Binding var darkModeHandColor: String
-    
-    @Binding var showColorPickerSheet: Bool
-    @Binding var colorPickerType: String
-    @Binding var sliderBrightnessPosition: CGFloat
-    @Binding var currentBaseColor: Color
-    @Binding var selectedColorType: String
-    @Binding var selectedColorHex: String
-    @Binding var selectedColorIndex: Int?
-    
-    // Добавляем состояние для отображения настроек цвета стрелки
-    @State private var showHandColorSettings: Bool = false
     
     // Добавляем новые свойства в ColorControlsView
     @Binding var lightModeDigitalFontColor: String
@@ -33,760 +33,309 @@ struct ColorControlsView: View {
     
     @State private var selectedMarkersColorIndex: Int?
     @State private var selectedHandColorIndex: Int?
-    
-    var body: some View {
-        VStack(spacing: 16) {
 
-            HStack {
-                Text(selectedColorType == "clockFace" ? "Цвет циферблата" : 
-                     selectedColorType == "markers" ? "Цвет маркеров" : 
-                     selectedColorType == "outerRing" ? "Цвет внешнего кольца" : 
-                     selectedColorType == "handColor" ? "Цвет стрелки" : 
-                     selectedColorType == "digitalFontColor" ? "Цвет цифр" : "Цвет стрелки")
-                    .font(.headline)
-                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                
-                Spacer()
-                
-                // Кнопка "Готово" для возврата к выбору цвета циферблата
-                if showHandColorSettings {
-                    Button(action: {
-                        updateSelectedColorType("clockFace")
-                        withAnimation {
-                            showHandColorSettings = false
-                        }
-                    }) {
-                        Text("Готово")
-                            .font(.caption)
-                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
-                            .fontWeight(.medium)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 4)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(themeManager.isDarkMode ? Color.yellow : Color.red1, lineWidth: 1)
-                            )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                } else if selectedColorType != "clockFace" {
-                    Button(action: {
-                        updateSelectedColorType("clockFace")
-                    }) {
-                        Text("Готово")
-                            .font(.caption)
-                            .foregroundColor(themeManager.isDarkMode ? .yellow : .red1)
-                            .fontWeight(.medium)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 4)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(themeManager.isDarkMode ? Color.yellow : Color.red1, lineWidth: 1)
-                            )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-            
-            if showHandColorSettings {
-                // Отображение цветов для выбора
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 16) {
-                        handColorButton(color: .black, index: 0)
-                        handColorButton(color: .gray, index: 1)
-                        handColorButton(color: .Pink1, index: 2)
-                        handColorButton(color: .red1, index: 3)
-                        handColorButton(color: .Orange1, index: 4)
-                        handColorButton(color: .yellow, index: 5)
-                        handColorButton(color: .green1, index: 6)
-                        handColorButton(color: .LightBlue1, index: 7)
-                        handColorButton(color: .Teal1, index: 8)
-                        handColorButton(color: .blue, index: 9)
-                        handColorButton(color: .Indigo1, index: 10)
-                        handColorButton(color: .Purple1, index: 11)
-                    }
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 4)
-                }
-                .frame(height: 60)
-            } else {
-                // Основная секция выбора цвета
-                VStack(alignment: .leading, spacing: 10) {
-                    // Градиентный слайдер для выбора яркости цвета
-                    if selectedColorType != "outerRing" {
-                        ZStack(alignment: .center) {
-                            let _ = {
-                                let currentColor: Color
-                                
-                                if selectedColorType == "clockFace" {
-                                    currentColor = Color(
-                                        hex: themeManager.isDarkMode
-                                        ? darkModeClockFaceColor : lightModeClockFaceColor
-                                    ) ?? .red
-                                } else if selectedColorType == "markers" {
-                                    currentColor = Color(
-                                        hex: themeManager.isDarkMode
-                                        ? darkModeMarkersColor : lightModeMarkersColor
-                                    ) ?? .gray
-                                } else {
-                                    currentColor = Color(
-                                        hex: themeManager.isDarkMode
-                                        ? darkModeClockFaceColor : lightModeClockFaceColor
-                                    ) ?? .red
-                                }
-                                
-                                return currentColor
-                            }()
-                            
-                            // Градиент от светлого к темному
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    ColorUtils.brightenColor(currentBaseColor, factor: 1.3),
-                                    currentBaseColor,
-                                    ColorUtils.darkenColor(currentBaseColor, factor: 0.7)
-                                ]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                            .frame(height: 26)
-                            .clipShape(Capsule())
-                            .overlay(
-                                Capsule()
-                                    .stroke(Color.black.opacity(0.3), lineWidth: 1)
-                            )
-                            .padding(.horizontal, 20)
-                            
-                            // Ползунок слайдера
-                            GeometryReader { geometry in
-                                let paddingHorizontal: CGFloat = 30
-                                let width = geometry.size.width - paddingHorizontal*2
-                                let minX = paddingHorizontal
-                                let currentX = minX + (width * sliderBrightnessPosition)
-                                
-                                Circle()
-                                    .fill(.white)
-                                    .frame(width: 36, height: 36)
-                                    .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 2)
-                                    .overlay(
-                                        Circle()
-                                            .fill(ColorUtils.getColorAt(position: sliderBrightnessPosition, baseColor: currentBaseColor))
-                                            .frame(width: 24, height: 24)
-                                            .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
-                                    )
-                                    .position(x: currentX, y: geometry.size.height / 2)
-                                    .gesture(
-                                        DragGesture(minimumDistance: 0)
-                                            .onChanged { value in
-                                                let maxX = minX + width
-                                                let xPosition = min(max(value.location.x, minX), maxX)
-                                                sliderBrightnessPosition = (xPosition - minX) / width
-                                                
-                                                let newColor = ColorUtils.getColorAt(
-                                                    position: sliderBrightnessPosition, 
-                                                    baseColor: currentBaseColor
-                                                )
-                                                let newColorHex = newColor.toHex()
-                                                
-                                                switch selectedColorType {
-                                                case "clockFace":
-                                                    if themeManager.isDarkMode {
-                                                        darkModeClockFaceColor = newColorHex
-                                                    } else {
-                                                        lightModeClockFaceColor = newColorHex
-                                                    }
-                                                case "markers":
-                                                    if themeManager.isDarkMode {
-                                                        darkModeMarkersColor = newColorHex
-                                                        viewModel.darkModeMarkersColor = newColorHex
-                                                        markersViewModel.darkModeMarkersColor = newColorHex
-                                                    } else {
-                                                        lightModeMarkersColor = newColorHex
-                                                        viewModel.lightModeMarkersColor = newColorHex
-                                                        markersViewModel.lightModeMarkersColor = newColorHex
-                                                    }
-                                                    markersViewModel.updateCurrentThemeColors()
-                                                case "outerRing":
-                                                    if themeManager.isDarkMode {
-                                                        darkModeOuterRingColor = newColorHex
-                                                        viewModel.darkModeOuterRingColor = newColorHex
-                                                    } else {
-                                                        lightModeOuterRingColor = newColorHex
-                                                        viewModel.lightModeOuterRingColor = newColorHex
-                                                    }
-                                                case "digitalFontColor":
-                                                    if themeManager.isDarkMode {
-                                                        darkModeDigitalFontColor = newColorHex
-                                                        viewModel.darkModeDigitalFontColor = newColorHex
-                                                        markersViewModel.darkModeDigitalFontColor = newColorHex
-                                                    } else {
-                                                        lightModeDigitalFontColor = newColorHex
-                                                        viewModel.lightModeDigitalFontColor = newColorHex
-                                                        markersViewModel.lightModeDigitalFontColor = newColorHex
-                                                    }
-                                                    markersViewModel.updateCurrentThemeColors()
-                                                default:
-                                                    break
-                                                }
-                                                
-                                                // Обновляем выбранный цвет в hex для всех типов
-                                                selectedColorHex = newColorHex
-                                            }
-                                    )
-                            }
-                        }
-                        .frame(height: 50)
-                        .padding(.bottom, 10)
-                        .onAppear {
-                            initializeSliderPosition()
-                        }
-                    }
-                    
-                    // Скролл с готовыми цветами
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 16) {
-                            
-                            
-                            // Стандартные цвета - отображаем только для циферблата и маркеров
-                            if selectedColorType != "outerRing" {
-                                
-                                // Базовые нейтральные цвета
-                                colorButton(color: Color(red: 0.1, green: 0.1, blue: 0.1), forType: selectedColorType, index: -3)
-                                colorButton(color: Color(red: 0.2, green: 0.2, blue: 0.2), forType: selectedColorType, index: -2)
-                                colorButton(color: Color(red: 0.85, green: 0.85, blue: 0.85), forType: selectedColorType, index: -1)
-                                
-                                let standardColors: [Color] = [
-                                    .Lilac1, .Pink1, .red1, .Peony1, .Rose1, .coral1, .Orange1, .yellow1, .green0, .green1,
-                                    .Clover1, .Mint1, .Teal1, .Blue1, .LightBlue1, .BlueJay1, .OceanBlue1,
-                                    .StormBlue1, .Indigo1, .Purple1 
-                                ]
-                                
-                                ForEach(0..<standardColors.count, id: \.self) { index in
-                                    colorButton(color: standardColors[index], forType: selectedColorType, index: index)
-                                }
-                            } else {
-                                // Для внешнего кольца - разные цвета для разных тем
-                                if themeManager.isDarkMode {
-                                    // Темные цвета для темной темы
-                                    colorButton(color: Color(red: 0.15, green: 0.15, blue: 0.15), forType: selectedColorType, index: 7) // Очень темно-серый
-                                    colorButton(color: Color(red: 0.2, green: 0.2, blue: 0.2), forType: selectedColorType, index: 8) // Темно-серый
-                                    colorButton(color: Color(red: 0.25, green: 0.25, blue: 0.25), forType: selectedColorType, index: 9) // Серый
-                                    colorButton(color: Color(red: 0.3, green: 0.3, blue: 0.3), forType: selectedColorType, index: 10) // Средне-серый
-                                    colorButton(color: Color(red: 0.4, green: 0.4, blue: 0.4), forType: selectedColorType, index: 11) // Светло-серый
-                                } else {
-                                    // Светлые цвета для светлой темы
-                                    colorButton(color: Color(red: 0.7, green: 0.7, blue: 0.7), forType: selectedColorType, index: 1) // Светло-серый
-                                    colorButton(color: Color(red: 0.75, green: 0.75, blue: 0.75), forType: selectedColorType, index: 2) // Светло-серый
-                                    colorButton(color: Color(red: 0.8, green: 0.8, blue: 0.8), forType: selectedColorType, index: 3) // Очень светло-серый
-                                    colorButton(color: Color(red: 0.85, green: 0.85, blue: 0.85), forType: selectedColorType, index: 4) // Очень светло-серый
-                                    colorButton(color: Color(red: 0.9, green: 0.9, blue: 0.9), forType: selectedColorType, index: 5) // Почти белый
-                                    // colorButton(color: Color(red: 0.95, green: 0.95, blue: 0.95), forType: selectedColorType, index: 5) // Светло-белый
-                                }
-                            }
-                        }
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 4)
-                    }
-                    .frame(height: 50)
-                }
-                
-                // Кнопки для выбора маркеров и внешнего кольца (только в режиме циферблата)
-                if selectedColorType == "clockFace" {
-                    HStack(spacing: 10) {
-                        Button(action: {
-                            updateSelectedColorType("markers")
-                        }) {
-                            HStack {
-                                Text("Маркеры")
-                                    .font(.caption)
-                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                                Circle()
-                                    .fill(Color(
-                                        hex: themeManager.isDarkMode
-                                            ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray)
-                                    .frame(width: 16, height: 16)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                                    )
-                            }
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 10)
-                            .frame(maxWidth: .infinity)
-                            .background(
-                                Capsule()
-                                    .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
-                                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
-                            )
-                            .overlay(
-                                Capsule()
-                                    .stroke(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [
-                                                Color.gray.opacity(0.7),
-                                                Color.gray.opacity(0.3),
-                                            ]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1.0
-                                    )
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        Button(action: {
-                            updateSelectedColorType("outerRing")
-                        }) {
-                            HStack {
-                                Text("Внешнее кольцо")
-                                    .font(.caption)
-                                    .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                                Circle()
-                                    .fill(Color(
-                                        hex: themeManager.isDarkMode
-                                            ? darkModeOuterRingColor : lightModeOuterRingColor) ?? .gray.opacity(0.3))
-                                    .frame(width: 16, height: 16)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                                    )
-                            }
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 10)
-                            .frame(maxWidth: .infinity)
-                            .background(
-                                Capsule()
-                                    .fill(themeManager.isDarkMode ? Color(red: 0.184, green: 0.184, blue: 0.184) : Color(red: 0.95, green: 0.95, blue: 0.95))
-                                    .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
-                            )
-                            .overlay(
-                                Capsule()
-                                    .stroke(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [
-                                                Color.gray.opacity(0.7),
-                                                Color.gray.opacity(0.3),
-                                            ]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1.0
-                                    )
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    .padding(.top, 4)
-                    
-                    // Добавляем кнопку настройки цвета стрелки
-                    Button(action: {
-                        withAnimation {
-                            selectedColorType = "handColor"
-                            showHandColorSettings = true
-                        }
-                    }) {
-                        HStack {
-                            Text("Цвет стрелки")
-                                .font(.caption)
-                                .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                            Circle()
-                                .fill(currentHandColor)
-                                .frame(width: 16, height: 16)
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                                )
-                        }
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 10)
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            Capsule()
-                                .fill(themeManager.isDarkMode ? 
-                                    Color(red: 0.184, green: 0.184, blue: 0.184) : 
-                                    Color(red: 0.95, green: 0.95, blue: 0.95))
-                                .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
-                        )
-                        .overlay(
-                            Capsule()
-                                .stroke(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [
-                                            Color.gray.opacity(0.7),
-                                            Color.gray.opacity(0.3),
-                                        ]),
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.0
-                                )
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .padding(.top, 6)
-                }
-            }
-            
-            // Добавим кнопку для настройки цвета цифрового шрифта когда выбран цифровой стиль часов
-            if selectedColorType == "clockFace" && viewModel.clockStyle == "Цифровой" {
-                // Добавляем кнопку настройки цвета цифрового шрифта
-                Button(action: {
-                    withAnimation {
-                        selectedColorType = "digitalFontColor"
-                    }
-                }) {
-                    HStack {
-                        Text("Цвет цифр")
-                            .font(.caption)
-                            .foregroundColor(themeManager.isDarkMode ? .white : .black)
-                        Circle()
-                            .fill(currentDigitalFontColor)
-                            .frame(width: 16, height: 16)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                            )
-                    }
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        Capsule()
-                            .fill(themeManager.isDarkMode ? 
-                                Color(red: 0.184, green: 0.184, blue: 0.184) : 
-                                Color(red: 0.95, green: 0.95, blue: 0.95))
-                            .shadow(color: .black.opacity(0.5), radius: 3, x: 0, y: 2)
-                    )
-                    .overlay(
-                        Capsule()
-                            .stroke(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [
-                                        Color.gray.opacity(0.7),
-                                        Color.gray.opacity(0.3),
-                                    ]),
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1.0
-                            )
-                    )
-                }
-                .buttonStyle(PlainButtonStyle())
-                .padding(.top, 6)
-            }
+    // MARK: - Computed Properties
+    private var titleText: String {
+        switch selectedColorType {
+        case "clockFace":
+            return "Цвет циферблата"
+        case "markers":
+            return "Цвет маркеров"
+        case "outerRing":
+            return "Цвет внешнего кольца"
+        case "handColor":
+            return "Цвет стрелки"
+        case "digitalFontColor":
+            return "Цвет цифр"
+        default:
+            return "Цвет стрелки"
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18).opacity(0.98) : Color(red: 0.95, green: 0.95, blue: 0.95).opacity(0.98))
-                .shadow(radius: 8)
-        )
-        .padding(.horizontal, 24)
     }
     
-    func colorButton(color: Color, forType type: String, index: Int? = nil) -> some View {
-        // Определяем, выбрана ли эта кнопка
-        let isSelected: Bool
-        
-        // Получаем текущий цвет для данного типа
-        let currentHex: String
-        switch type {
+    private var buttonForegroundColor: Color {
+        themeManager.isDarkMode ? .yellow : .red1
+    }
+    
+    private var buttonStrokeColor: Color {
+        themeManager.isDarkMode ? Color.yellow : Color.red1
+    }
+    
+    private var textForegroundColor: Color {
+        themeManager.isDarkMode ? .white : .black
+    }
+    
+    private var currentColorForSlider: Color {
+        switch selectedColorType {
         case "clockFace":
-            currentHex = themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
-            // Для типа clockFace проверяем как по индексу, так и по цвету
-            isSelected = (index != nil && selectedColorIndex == index) || (index == nil && currentHex == color.toHex())
+            return Color(hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor) ?? .red
         case "markers":
-            currentHex = themeManager.isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
-            isSelected = (index != nil && selectedMarkersColorIndex == index) || (index == nil && currentHex == color.toHex())
-        case "outerRing":
-            currentHex = themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
-            isSelected = currentHex == color.toHex()
-        case "digitalFontColor":
-            currentHex = themeManager.isDarkMode ? darkModeDigitalFontColor : lightModeDigitalFontColor
-            isSelected = currentHex == color.toHex()
+            return Color(hex: themeManager.isDarkMode ? darkModeMarkersColor : lightModeMarkersColor) ?? .gray
         default:
-            currentHex = ""
-            isSelected = false
+            return Color(hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor) ?? .red
         }
-        
-        return Button(action: {
-            // Устанавливаем индекс для текущего типа
-            // Важно! Сохраняем разные индексы для разных типов элементов
-            switch type {
-            case "clockFace":
-                selectedColorIndex = index
-            case "markers":
-                // Сохраняем индекс для маркеров
-                selectedMarkersColorIndex = index
-                if themeManager.isDarkMode {
-                    darkModeMarkersColor = color.toHex()
-                    viewModel.darkModeMarkersColor = color.toHex()
-                    markersViewModel.darkModeMarkersColor = color.toHex()
-                } else {
-                    lightModeMarkersColor = color.toHex()
-                    viewModel.lightModeMarkersColor = color.toHex()
-                    markersViewModel.lightModeMarkersColor = color.toHex()
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            headerSection
+            
+            if showHandColorSettings {
+                handColorSelectionView
+            } else {
+                mainColorSelectionView
+            }
+        }
+        .onAppear {
+            updateCurrentBaseColor()
+        }
+        .onChange(of: selectedColorType) { _, _ in
+            updateCurrentBaseColor()
+        }
+    }
+
+    // MARK: - View Components
+    @ViewBuilder
+    private var headerSection: some View {
+        HStack {
+            Text(titleText)
+                .font(.headline)
+                .foregroundColor(textForegroundColor)
+            
+            Spacer()
+            
+            if showHandColorSettings {
+                createDoneButton {
+                    updateSelectedColorType("clockFace")
+                    withAnimation {
+                        showHandColorSettings = false
+                    }
                 }
-                selectedColorType = type
-                selectedColorHex = color.toHex()
-                initializeSliderPositionWithoutUpdatingSelection()
-                markersViewModel.updateCurrentThemeColors()
-            case "outerRing":
-                if themeManager.isDarkMode {
-                    darkModeOuterRingColor = color.toHex()
-                    viewModel.darkModeOuterRingColor = color.toHex()
-                } else {
-                    lightModeOuterRingColor = color.toHex()
-                    viewModel.lightModeOuterRingColor = color.toHex()
+            } else if selectedColorType != "clockFace" {
+                createDoneButton {
+                    updateSelectedColorType("clockFace")
                 }
-            case "digitalFontColor":
-                if themeManager.isDarkMode {
-                    darkModeDigitalFontColor = color.toHex()
-                    viewModel.darkModeDigitalFontColor = color.toHex()
-                    markersViewModel.darkModeDigitalFontColor = color.toHex()
-                } else {
-                    lightModeDigitalFontColor = color.toHex()
-                    viewModel.lightModeDigitalFontColor = color.toHex()
-                    markersViewModel.lightModeDigitalFontColor = color.toHex()
-                }
-                selectedColorType = type
-                selectedColorHex = color.toHex()
-                initializeSliderPositionWithoutUpdatingSelection()
-                markersViewModel.updateCurrentThemeColors()
-            default:
-                break
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var handColorSelectionView: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 16) {
+                handColorButton(color: .black, index: 0)
+                handColorButton(color: .gray, index: 1)
+                handColorButton(color: .Pink1, index: 2)
+                handColorButton(color: .red1, index: 3)
+                handColorButton(color: .Orange1, index: 4)
+                handColorButton(color: .yellow, index: 5)
+                handColorButton(color: .green1, index: 6)
+                handColorButton(color: .LightBlue1, index: 7)
+                handColorButton(color: .Teal1, index: 8)
+                handColorButton(color: .blue, index: 9)
+                handColorButton(color: .Indigo1, index: 10)
+                handColorButton(color: .Purple1, index: 11)
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
+        }
+        .frame(height: 60)
+    }
+    
+    @ViewBuilder
+    private var mainColorSelectionView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if selectedColorType != "outerRing" {
+                brightnessSliderView
             }
             
-            // Стандартный код для циферблата
-            selectedColorHex = color.toHex()
+            // Остальной контент...
+        }
+    }
+    
+    @ViewBuilder
+    private var brightnessSliderView: some View {
+        ZStack(alignment: .center) {
+            gradientBackground
+            sliderControl
+        }
+    }
+    
+    private var gradientBackground: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                ColorUtils.brightenColor(currentBaseColor, factor: 1.3),
+                currentBaseColor,
+                ColorUtils.darkenColor(currentBaseColor, factor: 0.7)
+            ]),
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .frame(height: 26)
+        .clipShape(Capsule())
+        .overlay(
+            Capsule()
+                .stroke(Color.black.opacity(0.3), lineWidth: 1)
+        )
+        .padding(.horizontal, 20)
+    }
+    
+    private var sliderControl: some View {
+        GeometryReader { geometry in
+            let paddingHorizontal: CGFloat = 30
+            let width = geometry.size.width - paddingHorizontal * 2
+            let minX = paddingHorizontal
+            let currentX = minX + (width * sliderBrightnessPosition)
             
-            if type == "clockFace" {
-                if themeManager.isDarkMode {
-                    darkModeClockFaceColor = color.toHex()
-                } else {
-                    lightModeClockFaceColor = color.toHex()
-                }
-                selectedColorType = type
-                initializeSliderPositionWithoutUpdatingSelection()
-            }
-        }) {
-            ZStack {
-                if isSelected {
+            Circle()
+                .fill(.white)
+                .frame(width: 36, height: 36)
+                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 2)
+                .overlay(
                     Circle()
-                        .fill(Color.clear)
-                        .frame(width: 42, height: 42)
-                        .overlay(
-                            Circle()
-                                .stroke(themeManager.isDarkMode ? Color.yellow : Color.red1, lineWidth: 2)
-                        )
-                        .shadow(color: themeManager.isDarkMode ? Color.yellow.opacity(0.6) : Color.red1.opacity(0.6), radius: 4, x: 0, y: 0)
-                }
-                
-                Circle()
-                    .fill(color)
-                    .frame(width: 30, height: 30)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white.opacity(0.7), lineWidth: isSelected ? 1.5 : 0)
-                    )
-                    .overlay(
-                        Circle()
-                            .stroke(Color.black.opacity(0.2), lineWidth: 1)
-                    )
-                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
-                    
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(ColorUtils.isLightColor(color) ? .black : .white)
-                }
-            }
-            .frame(width: 44, height: 44)
-            .contentShape(Circle())
+                        .fill(ColorUtils.getColorAt(position: sliderBrightnessPosition, baseColor: currentBaseColor))
+                        .frame(width: 24, height: 24)
+                        .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                )
+                .position(x: currentX, y: geometry.size.height / 2)
+                .gesture(createSliderGesture(paddingHorizontal: paddingHorizontal, width: width, minX: minX))
+        }
+    }
+
+    // MARK: - Private Methods
+    private func createDoneButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text("Готово")
+                .font(.caption)
+                .foregroundColor(buttonForegroundColor)
+                .fontWeight(.medium)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(buttonStrokeColor, lineWidth: 1)
+                )
         }
         .buttonStyle(PlainButtonStyle())
     }
     
-    func showColorPickerSheet(for type: String) {
-        colorPickerType = type
-        showColorPickerSheet = true
+    private func createSliderGesture(paddingHorizontal: CGFloat, width: CGFloat, minX: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                handleSliderChange(value: value, paddingHorizontal: paddingHorizontal, width: width, minX: minX)
+            }
     }
     
-    // Инициализирует положение слайдера на основе текущей яркости цвета
-    func initializeSliderPosition() {
-        selectedColorType = "clockFace"
-        updateSelectedColorType(selectedColorType)
-    }
-    
-    // Инициализирует положение слайдера без обновления выбранного индекса
-    func initializeSliderPositionWithoutUpdatingSelection() {
-        let currentColor: Color
+    private func handleSliderChange(value: DragGesture.Value, paddingHorizontal: CGFloat, width: CGFloat, minX: CGFloat) {
+        let maxX = minX + width
+        let xPosition = min(max(value.location.x, minX), maxX)
+        sliderBrightnessPosition = (xPosition - minX) / width
         
+        let newColor = ColorUtils.getColorAt(
+            position: sliderBrightnessPosition,
+            baseColor: currentBaseColor
+        )
+        let newColorHex = newColor.toHex()
+        
+        updateColorForType(newColorHex: newColorHex)
+        selectedColorHex = newColorHex
+    }
+    
+    private func updateColorForType(newColorHex: String) {
         switch selectedColorType {
         case "clockFace":
-            currentColor = Color(
-                hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
-            ) ?? .red
+            updateClockFaceColor(newColorHex)
         case "markers":
-            currentColor = Color(
-                hex: themeManager.isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
-            ) ?? .gray
+            updateMarkersColor(newColorHex)
         case "outerRing":
-            currentColor = Color(
-                hex: themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
-            ) ?? .gray.opacity(0.3)
+            updateOuterRingColor(newColorHex)
         case "digitalFontColor":
-            currentColor = currentDigitalFontColor
-        default:
-            currentColor = Color(
-                hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
-            ) ?? .red
-        }
-        
-        currentBaseColor = ColorUtils.getBaseColor(forColor: currentColor)
-        
-        let brightness = ColorUtils.getBrightness(of: currentColor) / ColorUtils.getBrightness(of: currentBaseColor)
-        
-        if brightness <= 0.7 {
-            sliderBrightnessPosition = 1.0
-        } else if brightness >= 1.3 {
-            sliderBrightnessPosition = 0.0
-        } else {
-            sliderBrightnessPosition = 1.0 - ((brightness - 0.7) / 0.6)
-        }
-    }
-    
-    // Добавляем метод updateSelectedColorType
-    func updateSelectedColorType(_ type: String) {
-        selectedColorType = type
-        
-        switch type {
-        case "clockFace":
-            let currentColor = Color(
-                hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
-            ) ?? .red
-            selectedColorHex = themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
-            currentBaseColor = ColorUtils.getBaseColor(forColor: currentColor)
-        case "markers":
-            let currentColor = Color(
-                hex: themeManager.isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
-            ) ?? .gray
-            selectedColorHex = themeManager.isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
-            currentBaseColor = ColorUtils.getBaseColor(forColor: currentColor)
-        case "outerRing":
-            let currentColor = Color(
-                hex: themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
-            ) ?? .gray.opacity(0.3)
-            selectedColorHex = themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
-            currentBaseColor = ColorUtils.getBaseColor(forColor: currentColor)
-        case "handColor":
-            selectedColorHex = themeManager.isDarkMode ? darkModeHandColor : lightModeHandColor
-        case "digitalFontColor":
-            selectedColorHex = themeManager.isDarkMode ? darkModeDigitalFontColor : lightModeDigitalFontColor
-            currentBaseColor = ColorUtils.getBaseColor(forColor: currentDigitalFontColor)
+            updateDigitalFontColor(newColorHex)
         default:
             break
         }
-        
-        updateSliderPosition()
     }
     
-    // Добавляем метод updateSliderPosition
-    func updateSliderPosition() {
-        let currentColor: Color
-        
-        switch selectedColorType {
-        case "clockFace":
-            currentColor = Color(
-                hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
-            ) ?? .red
-        case "markers":
-            currentColor = Color(
-                hex: themeManager.isDarkMode ? darkModeMarkersColor : lightModeMarkersColor
-            ) ?? .gray
-        case "outerRing":
-            currentColor = Color(
-                hex: themeManager.isDarkMode ? darkModeOuterRingColor : lightModeOuterRingColor
-            ) ?? .gray.opacity(0.3)
-        case "digitalFontColor":
-            currentColor = currentDigitalFontColor
-        default:
-            currentColor = Color(
-                hex: themeManager.isDarkMode ? darkModeClockFaceColor : lightModeClockFaceColor
-            ) ?? .red
-        }
-        
-        let brightness = ColorUtils.getBrightness(of: currentColor) / ColorUtils.getBrightness(of: currentBaseColor)
-        
-        if brightness <= 0.7 {
-            sliderBrightnessPosition = 1.0
-        } else if brightness >= 1.3 {
-            sliderBrightnessPosition = 0.0
+    private func updateClockFaceColor(_ newColorHex: String) {
+        if themeManager.isDarkMode {
+            darkModeClockFaceColor = newColorHex
         } else {
-            sliderBrightnessPosition = 1.0 - ((brightness - 0.7) / 0.6)
+            lightModeClockFaceColor = newColorHex
         }
     }
     
-    // Добавляем вычисляемое свойство для получения текущего цвета стрелки
-    private var currentHandColor: Color {
-        let hexColor = themeManager.isDarkMode ? darkModeHandColor : lightModeHandColor
-        return Color(hex: hexColor) ?? .blue
+    private func updateMarkersColor(_ newColorHex: String) {
+        if themeManager.isDarkMode {
+            darkModeMarkersColor = newColorHex
+            viewModel.themeConfig.darkModeMarkersColor = newColorHex
+            markersViewModel.darkModeMarkersColor = newColorHex
+        } else {
+            lightModeMarkersColor = newColorHex
+            viewModel.themeConfig.lightModeMarkersColor = newColorHex
+            markersViewModel.lightModeMarkersColor = newColorHex
+        }
+        markersViewModel.updateCurrentThemeColors()
     }
     
-    // Добавляем вычисляемое свойство для цвета цифрового шрифта
-    private var currentDigitalFontColor: Color {
-        let hexColor = themeManager.isDarkMode ? darkModeDigitalFontColor : lightModeDigitalFontColor
-        return Color(hex: hexColor) ?? (themeManager.isDarkMode ? .white : .gray)
+    private func updateOuterRingColor(_ newColorHex: String) {
+        if themeManager.isDarkMode {
+            darkModeOuterRingColor = newColorHex
+            viewModel.themeConfig.darkModeOuterRingColor = newColorHex
+        } else {
+            lightModeOuterRingColor = newColorHex
+            viewModel.themeConfig.lightModeOuterRingColor = newColorHex
+        }
     }
     
-    // Добавляем функцию для кнопки выбора цвета стрелки
-    private func handColorButton(color: Color, index: Int? = nil) -> some View {
+    private func updateDigitalFontColor(_ newColorHex: String) {
+        if themeManager.isDarkMode {
+            darkModeDigitalFontColor = newColorHex
+            viewModel.themeConfig.darkModeDigitalFontColor = newColorHex
+            markersViewModel.darkModeDigitalFontColor = newColorHex
+        } else {
+            lightModeDigitalFontColor = newColorHex
+            viewModel.themeConfig.lightModeDigitalFontColor = newColorHex
+            markersViewModel.lightModeDigitalFontColor = newColorHex
+        }
+        markersViewModel.updateCurrentThemeColors()
+    }
+    
+    private func updateCurrentBaseColor() {
+        currentBaseColor = currentColorForSlider
+    }
+    
+    // MARK: - Missing Function Implementations
+    
+    private func updateSelectedColorType(_ newType: String) {
+        selectedColorType = newType
+    }
+    
+    private func handColorButton(color: Color, index: Int) -> some View {
         Button(action: {
             selectedHandColorIndex = index
+            let colorHex = color.toHex()
+            
             if themeManager.isDarkMode {
-                darkModeHandColor = color.toHex()
-                viewModel.darkModeHandColor = color.toHex()
+                darkModeHandColor = colorHex
+                viewModel.themeConfig.darkModeHandColor = colorHex
             } else {
-                lightModeHandColor = color.toHex()
-                viewModel.lightModeHandColor = color.toHex()
+                lightModeHandColor = colorHex
+                viewModel.themeConfig.lightModeHandColor = colorHex
             }
         }) {
-            ZStack {
-                let isSelected = (index != nil && selectedHandColorIndex == index) || (index == nil && currentHandColor == color)
-                
-                if isSelected {
+            Circle()
+                .fill(color)
+                .frame(width: 40, height: 40)
+                .overlay(
                     Circle()
-                        .fill(Color.clear)
-                        .frame(width: 42, height: 42)
-                        .overlay(
-                            Circle()
-                                .stroke(themeManager.isDarkMode ? Color.yellow : Color.red1, lineWidth: 2)
+                        .stroke(
+                            selectedHandColorIndex == index ? 
+                                (themeManager.isDarkMode ? Color.yellow : Color.red1) : 
+                                Color.clear,
+                            lineWidth: 3
                         )
-                        .shadow(color: themeManager.isDarkMode ? Color.yellow.opacity(0.6) : Color.red1.opacity(0.6), radius: 4, x: 0, y: 0)
-                }
-                
-                Circle()
-                    .fill(color)
-                    .frame(width: 30, height: 30)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white.opacity(0.7), lineWidth: isSelected ? 1.5 : 0)
-                    )
-                    .overlay(
-                        Circle()
-                            .stroke(Color.black.opacity(0.2), lineWidth: 1)
-                    )
-                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
-                    
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.white)
-                }
-            }
-            .frame(width: 44, height: 44)
-            .contentShape(Circle())
+                )
+                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
         }
         .buttonStyle(PlainButtonStyle())
     }
-} 
+}

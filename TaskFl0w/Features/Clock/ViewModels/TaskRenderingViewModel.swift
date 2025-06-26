@@ -80,6 +80,77 @@ final class TaskRenderingViewModel: ObservableObject {
     
     // MARK: - Public Methods
     
+    /// Находит пересекающиеся группы задач
+    func findOverlappingTaskGroups(_ tasksToCheck: [TaskOnRing]) -> [[TaskOnRing]] {
+        var overlappingGroups: [[TaskOnRing]] = []
+        var processedTasks: Set<UUID> = []
+        
+        for task in tasksToCheck.sorted(by: { $0.startTime < $1.startTime }) {
+            guard !processedTasks.contains(task.id) else { continue }
+            
+            var currentGroup: [TaskOnRing] = [task]
+            processedTasks.insert(task.id)
+            
+            // Находим все задачи, которые пересекаются с текущей задачей
+            for otherTask in tasksToCheck where !processedTasks.contains(otherTask.id) {
+                if tasksOverlap(task, otherTask) {
+                    currentGroup.append(otherTask)
+                    processedTasks.insert(otherTask.id)
+                }
+            }
+            
+            // Добавляем группу только если она содержит более одной задачи
+            if currentGroup.count > 1 {
+                overlappingGroups.append(currentGroup)
+            }
+        }
+        
+        return overlappingGroups
+    }
+    
+    /// Валидирует пересечения задач
+    func validateTaskOverlaps() {
+        let todayTasks = state.tasks.filter { task in
+            Calendar.current.isDate(task.startTime, inSameDayAs: Date())
+        }
+        
+        state.overlappingTaskGroups = findOverlappingTaskGroups(todayTasks)
+    }
+    
+    /// Обновляет задачи при изменении редактируемой задачи
+    func updateEditingTaskIfNeeded(newTasks: [TaskOnRing], editingTask: TaskOnRing?) -> TaskOnRing? {
+        guard let editingTask = editingTask else { return nil }
+        
+        if let updatedTask = newTasks.first(where: { $0.id == editingTask.id }) {
+            guard !tasksAreEqual(editingTask, updatedTask) else { return editingTask }
+            return updatedTask
+        } else {
+            // Edited task was deleted
+            return nil
+        }
+    }
+    
+    /// Уведомляет компоненты TaskArcs об изменениях
+    func notifyTaskArcsComponents(newTasks: [TaskOnRing]) {
+        NotificationCenter.default.post(
+            name: NSNotification.Name("TaskArcsTasksModified"),
+            object: self,
+            userInfo: ["modifiedTasks": newTasks]
+        )
+    }
+    
+    /// Обновляет статистику категорий
+    func updateCategoryStatistics(_ tasks: [TaskOnRing]) {
+        let categoryTaskCounts = Dictionary(grouping: tasks) { $0.category }
+            .mapValues { $0.count }
+        
+        NotificationCenter.default.post(
+            name: NSNotification.Name("CategoryStatisticsUpdated"),
+            object: self,
+            userInfo: ["categoryTaskCounts": categoryTaskCounts]
+        )
+    }
+    
     // MARK: - Private Methods
     
     private func loadTasks(for date: Date) {
@@ -130,43 +201,6 @@ final class TaskRenderingViewModel: ObservableObject {
     /// Обновляет задачи для выбранной даты
     func updateTasksForSelectedDate(_ selectedDate: Date) {
         handle(.loadTasks(selectedDate))
-    }
-    
-    /// Находит пересекающиеся группы задач
-    func findOverlappingTaskGroups(_ tasksToCheck: [TaskOnRing]) -> [[TaskOnRing]] {
-        var overlappingGroups: [[TaskOnRing]] = []
-        var processedTasks: Set<UUID> = []
-        
-        for task in tasksToCheck.sorted(by: { $0.startTime < $1.startTime }) {
-            guard !processedTasks.contains(task.id) else { continue }
-            
-            var currentGroup: [TaskOnRing] = [task]
-            processedTasks.insert(task.id)
-            
-            // Находим все задачи, которые пересекаются с текущей задачей
-            for otherTask in tasksToCheck where !processedTasks.contains(otherTask.id) {
-                if tasksOverlap(task, otherTask) {
-                    currentGroup.append(otherTask)
-                    processedTasks.insert(otherTask.id)
-                }
-            }
-            
-            // Добавляем группу только если она содержит более одной задачи
-            if currentGroup.count > 1 {
-                overlappingGroups.append(currentGroup)
-            }
-        }
-        
-        return overlappingGroups
-    }
-    
-    /// Валидирует пересечения задач
-    func validateTaskOverlaps() {
-        let todayTasks = state.tasks.filter { task in
-            Calendar.current.isDate(task.startTime, inSameDayAs: Date())
-        }
-        
-        state.overlappingTaskGroups = findOverlappingTaskGroups(todayTasks)
     }
     
     /// Фильтрует задачи по поисковому запросу
@@ -221,23 +255,10 @@ final class TaskRenderingViewModel: ObservableObject {
         validateTaskOverlaps()
         
         // Уведомляем компоненты TaskArcs об изменениях
-        notifyTaskArcsComponents()
+        notifyTaskArcsComponents(newTasks: newTasks)
         
         // Обновляем статистику категорий
-        let categoryStatistics = getCategoryStatistics()
-        NotificationCenter.default.post(
-            name: .categoryStatisticsUpdated,
-            object: self,
-            userInfo: ["categoryTaskCounts": categoryStatistics]
-        )
-    }
-    
-    private func notifyTaskArcsComponents() {
-        NotificationCenter.default.post(
-            name: .taskArcsTasksModified,
-            object: self,
-            userInfo: ["modifiedTasks": state.tasks]
-        )
+        updateCategoryStatistics(newTasks)
     }
     
     private func tasksOverlap(_ task1: TaskOnRing, _ task2: TaskOnRing) -> Bool {

@@ -28,6 +28,7 @@ final class UserInteractionViewModel: ObservableObject {
     @Published var isDraggingStart = false
     @Published var isDraggingEnd = false
     @Published var previewTime: Date?
+    @Published var previewTask: TaskOnRing?
     @Published var dropLocation: CGPoint?
     
     // Edit Mode
@@ -55,6 +56,40 @@ final class UserInteractionViewModel: ObservableObject {
     convenience init(taskManagement: TaskManagementProtocol) {
         let dragAndDropManager = DragAndDropManager(taskManagement: taskManagement)
         self.init(dragAndDropManager: dragAndDropManager)
+    }
+    
+    // MARK: - Computed Properties for UI Access
+    
+    /// Проверяет, открыто ли любое модальное окно
+    var isAnyModalPresented: Bool {
+        showingAddTask || showingSettings || showingCalendar || 
+        showingStatistics || showingTodayTasks || showingCategoryEditor || showingTaskDetail
+    }
+    
+    /// Проверяет, происходит ли любое перетаскивание
+    var isDraggingAny: Bool {
+        draggedTask != nil || draggedCategory != nil || isDraggingStart || isDraggingEnd
+    }
+    
+    // MARK: - Task Editing Convenience Properties
+    
+    /// Начинает перетаскивание начала задачи для редактируемой задачи
+    func startDraggingTaskStart() {
+        if let task = editingTask {
+            startDraggingTaskStart(task)
+        }
+    }
+    
+    /// Начинает перетаскивание конца задачи для редактируемой задачи
+    func startDraggingTaskEnd() {
+        if let task = editingTask {
+            startDraggingTaskEnd(task)
+        }
+    }
+    
+    /// Останавливает перетаскивание краев задачи
+    func stopDraggingTaskEdges() {
+        resetDragStates()
     }
     
     // MARK: - Drag & Drop Methods
@@ -95,6 +130,7 @@ final class UserInteractionViewModel: ObservableObject {
         draggedTask = task
         isDraggingStart = true
         isDraggingEnd = false
+        objectWillChange.send()
     }
     
     /// Начинает перетаскивание конца задачи
@@ -102,6 +138,7 @@ final class UserInteractionViewModel: ObservableObject {
         draggedTask = task
         isDraggingEnd = true
         isDraggingStart = false
+        objectWillChange.send()
     }
     
     /// Обновляет время превью при перетаскивании
@@ -143,12 +180,14 @@ final class UserInteractionViewModel: ObservableObject {
     func showTaskDetail(for task: TaskOnRing) {
         selectedTask = task
         showingTaskDetail = true
+        objectWillChange.send()
     }
     
     /// Скрывает детали задачи
     func hideTaskDetail() {
         showingTaskDetail = false
         selectedTask = nil
+        objectWillChange.send()
     }
     
     // MARK: - Category Selection Methods
@@ -176,61 +215,73 @@ final class UserInteractionViewModel: ObservableObject {
     /// Показывает модальное окно добавления задачи
     func showAddTask() {
         showingAddTask = true
+        objectWillChange.send()
     }
     
     /// Скрывает модальное окно добавления задачи
     func hideAddTask() {
         showingAddTask = false
+        objectWillChange.send()
     }
     
     /// Показывает настройки
     func showSettings() {
         showingSettings = true
+        objectWillChange.send()
     }
     
     /// Скрывает настройки
     func hideSettings() {
         showingSettings = false
+        objectWillChange.send()
     }
     
     /// Показывает календарь
     func showCalendar() {
         showingCalendar = true
+        objectWillChange.send()
     }
     
     /// Скрывает календарь
     func hideCalendar() {
         showingCalendar = false
+        objectWillChange.send()
     }
     
     /// Показывает статистику
     func showStatistics() {
         showingStatistics = true
+        objectWillChange.send()
     }
     
     /// Скрывает статистику
     func hideStatistics() {
         showingStatistics = false
+        objectWillChange.send()
     }
     
     /// Показывает список задач на сегодня
     func showTodayTasksList() {
         showingTodayTasks = true
+        objectWillChange.send()
     }
     
     /// Скрывает список задач на сегодня
     func hideTodayTasksList() {
         showingTodayTasks = false
+        objectWillChange.send()
     }
     
     /// Показывает редактор категорий
     func showCategoryEditor() {
         showingCategoryEditor = true
+        objectWillChange.send()
     }
     
     /// Скрывает редактор категорий
     func hideCategoryEditor() {
         showingCategoryEditor = false
+        objectWillChange.send()
     }
     
     // MARK: - Edit Mode Methods
@@ -290,13 +341,7 @@ final class UserInteractionViewModel: ObservableObject {
         dropLocation = nil
         
         // Скрываем все модальные окна
-        showingAddTask = false
-        showingSettings = false
-        showingCalendar = false
-        showingStatistics = false
-        showingTodayTasks = false
-        showingCategoryEditor = false 
-        showingTaskDetail = false
+        resetModalStates()
         
         objectWillChange.send()
     }
@@ -310,6 +355,32 @@ final class UserInteractionViewModel: ObservableObject {
         isDraggingEnd = false
         previewTime = nil
         dropLocation = nil
+        
+        objectWillChange.send()
+    }
+    
+    /// Сбрасывает только модальные состояния
+    func resetModalStates() {
+        showingAddTask = false
+        showingSettings = false
+        showingCalendar = false
+        showingStatistics = false
+        showingTodayTasks = false
+        showingCategoryEditor = false 
+        showingTaskDetail = false
+        
+        objectWillChange.send()
+    }
+    
+    /// Сбрасывает только состояния редактирования
+    func resetEditingStates() {
+        isEditingMode = false
+        editingTask = nil
+        isDraggingStart = false
+        isDraggingEnd = false
+        previewTime = nil
+        dropLocation = nil
+        selectedTask = nil
         
         objectWillChange.send()
     }

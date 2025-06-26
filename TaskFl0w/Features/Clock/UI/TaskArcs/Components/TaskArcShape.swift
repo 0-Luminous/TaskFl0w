@@ -414,7 +414,7 @@ struct TaskIcon: View {
     }
 
     private var shouldShowDragIndicator: Bool {
-        viewModel.isEditingMode && task.id == viewModel.editingTask?.id
+        viewModel.userInteraction.isEditingMode && task.id == viewModel.userInteraction.editingTask?.id
     }
 
     private var currentPosition: CGPoint {

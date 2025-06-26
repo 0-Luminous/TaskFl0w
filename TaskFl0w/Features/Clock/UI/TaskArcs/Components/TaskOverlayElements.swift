@@ -41,7 +41,7 @@ struct TaskOverlayElements: View {
     
     // MARK: - Computed Properties
     private var shouldShowDragHandles: Bool {
-        viewModel.isEditingMode && task.id == viewModel.editingTask?.id
+        viewModel.userInteraction.isEditingMode && task.id == viewModel.userInteraction.editingTask?.id
     }
 }
 
@@ -105,9 +105,9 @@ struct TaskDragHandle: View {
     
     private func handleDragStart() {
         if isDraggingStart {
-            viewModel.startDraggingTaskStart()
+            viewModel.userInteraction.startDraggingTaskStart()
         } else {
-            viewModel.startDraggingTaskEnd()
+            viewModel.userInteraction.startDraggingTaskEnd()
         }
         
         if gestureHandler.lastHourComponent == -1 {
@@ -131,14 +131,14 @@ struct TaskDragHandle: View {
     }
     
     private func updateEditingTask() {
-        if let updatedTask = viewModel.editingTask,
+        if let updatedTask = viewModel.userInteraction.editingTask,
            let actualTask = viewModel.tasks.first(where: { $0.id == updatedTask.id }) {
-            viewModel.editingTask = actualTask
+            viewModel.userInteraction.editingTask = actualTask
         }
     }
     
     private func resetDragState() {
-        viewModel.stopDraggingTaskEdges()
-        viewModel.previewTime = nil
+        viewModel.userInteraction.stopDraggingTaskEdges()
+        viewModel.userInteraction.updatePreviewTime(nil)
     }
 }

@@ -62,10 +62,16 @@ struct ClockViewIOS: View {
                 overlayViews
             }
             .gesture(dragGesture)
-            .fullScreenCover(isPresented: $viewModel.showingCategoryEditor) {
+            .fullScreenCover(isPresented: Binding(
+                get: { viewModel.userInteraction.showingCategoryEditor },
+                set: { viewModel.userInteraction.showingCategoryEditor = $0 }
+            )) {
                 CategoryEditorViewIOS(
                     viewModel: viewModel,
-                    isPresented: $viewModel.showingCategoryEditor
+                    isPresented: Binding(
+                        get: { viewModel.userInteraction.showingCategoryEditor },
+                        set: { viewModel.userInteraction.showingCategoryEditor = $0 }
+                    )
                 )
             }
             .fullScreenCover(isPresented: $clockState.showingNewSettings) {
@@ -94,10 +100,10 @@ struct ClockViewIOS: View {
         .onDisappear {
             unregisterNotifications()
         }
-        .onChange(of: viewModel.isEditingMode) { _, _ in updateUI() }
-        .onChange(of: viewModel.editingTask) { _, _ in updateUI() }
-        .onChange(of: viewModel.previewTime) { _, _ in
-            if viewModel.isEditingMode && (viewModel.isDraggingStart || viewModel.isDraggingEnd) {
+        .onChange(of: viewModel.userInteraction.isEditingMode) { _, _ in updateUI() }
+        .onChange(of: viewModel.userInteraction.editingTask) { _, _ in updateUI() }
+        .onChange(of: viewModel.userInteraction.previewTime) { _, _ in
+            if viewModel.userInteraction.isEditingMode && (viewModel.userInteraction.isDraggingStart || viewModel.userInteraction.isDraggingEnd) {
                 updateUI()
             }
         }
@@ -123,7 +129,7 @@ struct ClockViewIOS: View {
                 )
             }
             
-            if viewModel.selectedCategory != nil {
+            if viewModel.userInteraction.selectedCategory != nil {
                 taskListView
             } else {
                 clockFaceView
@@ -163,7 +169,7 @@ struct ClockViewIOS: View {
                 .frame(height: 20)
             
             TaskListView(
-                selectedCategory: viewModel.selectedCategory,
+                selectedCategory: viewModel.userInteraction.selectedCategory,
                 selectedDate: $viewModel.selectedDate,
                 viewModel: listViewModel  // Уже использует TaskListViewModel
             )
@@ -171,9 +177,9 @@ struct ClockViewIOS: View {
                 ? Color(red: 0.098, green: 0.098, blue: 0.098) 
                 : Color(red: 0.95, green: 0.95, blue: 0.95))
             .onAppear {
-                listViewModel.selectedCategory = viewModel.selectedCategory
+                listViewModel.selectedCategory = viewModel.userInteraction.selectedCategory
             }
-            .onChange(of: viewModel.selectedCategory) { oldValue, newValue in
+            .onChange(of: viewModel.userInteraction.selectedCategory) { oldValue, newValue in
                 listViewModel.selectedCategory = newValue
             }
             
@@ -188,7 +194,7 @@ struct ClockViewIOS: View {
             insertion: .move(edge: .bottom).combined(with: .opacity),
             removal: .move(edge: .bottom).combined(with: .opacity)
         ))
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.selectedCategory)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.userInteraction.selectedCategory)
         .gesture(
             DragGesture()
                 .onChanged { value in
@@ -200,7 +206,7 @@ struct ClockViewIOS: View {
                 .onEnded { value in
                     if value.translation.height > 80 && value.startLocation.y < 100 {
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            viewModel.selectedCategory = nil
+                            viewModel.userInteraction.selectedCategory = nil
                         }
                     }
                     
@@ -217,9 +223,9 @@ struct ClockViewIOS: View {
             RingPlanner(
                 color: ThemeManager.shared.currentOuterRingColor,
                 viewModel: viewModel,
-                zeroPosition: viewModel.zeroPosition,
+                zeroPosition: viewModel.timeManager.zeroPosition,
                 shouldDeleteTask: false,
-                outerRingLineWidth: viewModel.outerRingLineWidth
+                outerRingLineWidth: viewModel.themeConfig.outerRingLineWidth
             )
 
             GlobleClockFaceViewIOS(
@@ -227,13 +233,16 @@ struct ClockViewIOS: View {
                 tasks: viewModel.tasks,
                 viewModel: viewModel,
                 markersViewModel: viewModel.markersViewModel,
-                draggedCategory: $viewModel.draggedCategory,
-                zeroPosition: viewModel.zeroPosition,
-                taskArcLineWidth: viewModel.isAnalogArcStyle ? viewModel.outerRingLineWidth : viewModel.taskArcLineWidth,
-                outerRingLineWidth: viewModel.outerRingLineWidth
+                draggedCategory: Binding(
+                    get: { viewModel.userInteraction.draggedCategory },
+                    set: { viewModel.userInteraction.draggedCategory = $0 }
+                ),
+                zeroPosition: viewModel.timeManager.zeroPosition,
+                taskArcLineWidth: viewModel.themeConfig.isAnalogArcStyle ? viewModel.themeConfig.outerRingLineWidth : viewModel.themeConfig.taskArcLineWidth,
+                outerRingLineWidth: viewModel.themeConfig.outerRingLineWidth
             )
 
-            if viewModel.isEditingMode, let editingTask = viewModel.editingTask {
+            if viewModel.userInteraction.isEditingMode, let editingTask = viewModel.userInteraction.editingTask {
                 TimeTaskEditorOverlay(
                     viewModel: viewModel,
                     task: editingTask
@@ -259,7 +268,7 @@ struct ClockViewIOS: View {
     // MARK: - Event Handlers
     private func handleDropZoneEntered() {
         print("⚠️ [ClockViewIOS] Объект перетаскивания обнаружен во внешней зоне")
-        if let task = viewModel.draggedTask {
+        if let task = viewModel.userInteraction.draggedTask {
             print("⚠️ [ClockViewIOS] Это задача \(task.id) - запускаем анимированное удаление")
             startTaskRemovalAnimation(for: task)
         }
@@ -290,14 +299,14 @@ struct ClockViewIOS: View {
     }
     
     private func initializeUI() {
-        viewModel.markersViewModel.numbersSize = viewModel.numbersSize
+        viewModel.markersViewModel.numbersSize = viewModel.themeConfig.numbersSize
         viewModel.updateUIForThemeChange()
         viewModel.updateMarkersViewModel()
     }
     
     private func updateUI() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-            if viewModel.isEditingMode, let task = viewModel.editingTask {
+            if viewModel.userInteraction.isEditingMode, let task = viewModel.userInteraction.editingTask {
                 let (scale, offset) = calculateZoomScale(for: task)
                 zoomState.scale = scale
                 zoomState.focusOffset = offset
@@ -401,14 +410,14 @@ struct ClockViewIOS: View {
     }
     
     private func handleDragGesture(_ value: DragGesture.Value) {
-        if value.translation.width < 0 && !clockState.showingWeekCalendar && !viewModel.isEditingMode {
+        if value.translation.width < 0 && !clockState.showingWeekCalendar && !viewModel.userInteraction.isEditingMode {
             dragState.isDragging = true
             dragState.offset = value.translation
         }
     }
     
     private func handleDragGestureEnd(_ value: DragGesture.Value) {
-        if value.translation.width < -100 && !clockState.showingWeekCalendar && !viewModel.isEditingMode {
+        if value.translation.width < -100 && !clockState.showingWeekCalendar && !viewModel.userInteraction.isEditingMode {
             withAnimation {
                 clockState.showingTaskTimeline = true
             }

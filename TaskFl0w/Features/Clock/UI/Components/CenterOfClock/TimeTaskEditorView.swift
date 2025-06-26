@@ -48,7 +48,7 @@ struct TimeTaskEditorOverlay: View {
                 )
                 .frame(width: 170, height: 170)
 
-            if let task = viewModel.editingTask {
+            if let task = viewModel.userInteraction.editingTask {
                 VStack(spacing: 20) {
                     DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
                         .datePickerStyle(.compact)
@@ -101,19 +101,19 @@ struct TimeTaskEditorOverlay: View {
             }
         }
         .transition(.opacity)
-        .onChange(of: viewModel.previewTime) { oldValue, newValue in
+        .onChange(of: viewModel.userInteraction.previewTime) { oldValue, newValue in
             if let previewTime = newValue {
                 isInternalUpdate = true
-                if viewModel.isDraggingStart {
+                if viewModel.userInteraction.isDraggingStart {
                     startTime = previewTime
                 }
-                if viewModel.isDraggingEnd {
+                if viewModel.userInteraction.isDraggingEnd {
                     endTime = previewTime
                 }
                 isInternalUpdate = false
             }
         }
-        .onChange(of: viewModel.editingTask) { oldValue, newTask in
+        .onChange(of: viewModel.userInteraction.editingTask) { oldValue, newTask in
             if let newTask = newTask {
                 // Обновляем времена при смене задачи
                 isInternalUpdate = true

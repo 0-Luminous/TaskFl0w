@@ -274,6 +274,30 @@ final class ThemeConfigurationViewModel: ObservableObject {
         objectWillChange.send()
     }
     
+    /// Обновляет ThemeManager цвета (новый метод)
+    func updateThemeManagerColors() async {
+        let themeManager = ThemeManager.shared
+        let colors = currentThemeColors
+        
+        guard let lightFaceColor = Color(hex: colors.lightModeClockFaceColor),
+              let darkFaceColor = Color(hex: colors.darkModeClockFaceColor),
+              let lightRingColor = Color(hex: colors.lightModeOuterRingColor),
+              let darkRingColor = Color(hex: colors.darkModeOuterRingColor),
+              let lightMarkersColor = Color(hex: colors.lightModeMarkersColor),
+              let darkMarkersColor = Color(hex: colors.darkModeMarkersColor) else { return }
+        
+        themeManager.updateColor(lightFaceColor, for: ThemeManager.Constants.lightModeClockFaceColorKey)
+        themeManager.updateColor(darkFaceColor, for: ThemeManager.Constants.darkModeClockFaceColorKey)
+        themeManager.updateColor(lightRingColor, for: ThemeManager.Constants.lightModeOuterRingColorKey)
+        themeManager.updateColor(darkRingColor, for: ThemeManager.Constants.darkModeOuterRingColorKey)
+        themeManager.updateColor(lightMarkersColor, for: ThemeManager.Constants.lightModeMarkersColorKey)
+        themeManager.updateColor(darkMarkersColor, for: ThemeManager.Constants.darkModeMarkersColorKey)
+        
+        await MainActor.run {
+            themeManager.objectWillChange.send()
+        }
+    }
+    
     // MARK: - Private Methods
     
     private func setupThemeBindings() {
@@ -313,6 +337,7 @@ final class ThemeConfigurationViewModel: ObservableObject {
     }
     
     private func refreshAllSettings() async {
+        await updateThemeManagerColors()
         objectWillChange.send()
         
         NotificationCenter.default.post(

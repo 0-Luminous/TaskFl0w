@@ -48,12 +48,13 @@ struct ClockEditorView: View {
     @State private var colorPickerType = ""
     @State private var sliderBrightnessPosition: CGFloat = 0.5
     @State private var currentBaseColor: Color = .white
-    @State private var selectedColorType: String = ""
+    @State private var selectedColorType: String = "clockFace"
     @State private var selectedColorHex: String = ""
     @State private var selectedColorIndex: Int? = nil
 
     @State private var watchFace: WatchFaceModel
     @State private var showZeroPositionControls = false
+    @State private var showHandColorSettings = false
 
     init(viewModel: ClockViewModel, markersViewModel: ClockMarkersViewModel, taskArcLineWidth: CGFloat) {
         self.viewModel = viewModel
@@ -108,63 +109,46 @@ struct ClockEditorView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.98, green: 0.98, blue: 0.98))
                 .ignoresSafeArea()
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button(action: {
-                            presentationMode.wrappedValue.dismiss()
-                        }) {
-                            Image(systemName: "chevron.left")
-                                .foregroundColor(.red1)
-                            Text("Назад")
-                                .foregroundColor(.red1)
-                        }
-                    }
-                }
 
                 VStack(spacing: 0) {
-                    if showClockControls {
-                        ClockControlsView(
-                            viewModel: viewModel,
-                            markersViewModel: markersViewModel,
-                            showFontPicker: $showFontPicker,
-                            showSizeSettings: $showSizeSettings,
-                            showIntervalSettings: $showIntervalSettings,
-                            fontName: $fontName
-                        )
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .padding(.bottom, 8)
-                    }
+                    // if showClockControls {
+                    //     ClockControlsView(
+                    //         viewModel: viewModel,
+                    //         markersViewModel: markersViewModel,
+                    //         showFontPicker: $showFontPicker,
+                    //         showSizeSettings: $showSizeSettings,
+                    //         showIntervalSettings: $showIntervalSettings,
+                    //         fontName: $fontName
+                    //     )
+                    //     .transition(.move(edge: .bottom).combined(with: .opacity))
+                    //     .padding(.bottom, 8)
+                    // }
                     if showColorControls {
                         ColorControlsView(
                             viewModel: viewModel,
                             markersViewModel: markersViewModel,
-                            themeManager: themeManager,
-                            lightModeOuterRingColor: $lightModeOuterRingColor,
-                            darkModeOuterRingColor: $darkModeOuterRingColor,
+                            selectedColorType: $selectedColorType,
+                            showHandColorSettings: $showHandColorSettings,
+                            showColorSettings: $showColorPickerSheet,
                             lightModeClockFaceColor: $lightModeClockFaceColor,
                             darkModeClockFaceColor: $darkModeClockFaceColor,
                             lightModeMarkersColor: $lightModeMarkersColor,
                             darkModeMarkersColor: $darkModeMarkersColor,
+                            lightModeOuterRingColor: $lightModeOuterRingColor,
+                            darkModeOuterRingColor: $darkModeOuterRingColor,
                             lightModeHandColor: $lightModeHandColor,
                             darkModeHandColor: $darkModeHandColor,
-                            showColorPickerSheet: $showColorPickerSheet,
-                            colorPickerType: $colorPickerType,
-                            sliderBrightnessPosition: $sliderBrightnessPosition,
-                            currentBaseColor: $currentBaseColor, 
-                            selectedColorType: $selectedColorType,
-                            selectedColorHex: $selectedColorHex,
-                            selectedColorIndex: $selectedColorIndex,
                             lightModeDigitalFontColor: $lightModeDigitalFontColor,
                             darkModeDigitalFontColor: $darkModeDigitalFontColor
                         )
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                         .padding(.bottom, 8)
                     }
-                    if showOuterRingWidthControls {
-                        RingWidthControlsView(viewModel: viewModel)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .padding(.bottom, 8)
-                    }
+                    // if showOuterRingWidthControls {
+                    //     RingWidthControlsView(viewModel: viewModel)
+                    //         .transition(.move(edge: .bottom).combined(with: .opacity))
+                    //         .padding(.bottom, 8)
+                    // }
                     if showArcAnalogToggle {
                         ArcStyleControlsView(
                             viewModel: viewModel,
@@ -201,6 +185,18 @@ struct ClockEditorView: View {
                 .animation(.spring(), value: showColorControls)
                 .animation(.spring(), value: showZeroPositionControls)
             }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.red1)
+                        Text("Назад")
+                            .foregroundColor(.red1)
+                    }
+                }
+            }
         }
         .onAppear {
             syncMarkersViewModelWithAppStorage()
@@ -214,7 +210,7 @@ struct ClockEditorView: View {
         ZStack {
             // Внешнее кольцо
             Circle()
-                .stroke(currentOuterRingColor, lineWidth: viewModel.outerRingLineWidth)
+                .stroke(currentOuterRingColor, lineWidth: viewModel.themeConfig.outerRingLineWidth)
                 .frame(
                     width: UIScreen.main.bounds.width * 0.8,
                     height: UIScreen.main.bounds.width * 0.8
@@ -227,10 +223,10 @@ struct ClockEditorView: View {
                 viewModel: viewModel,
                 markersViewModel: viewModel.markersViewModel,
                 draggedCategory: Binding.constant(nil as TaskCategoryModel?),
-                zeroPosition: viewModel.zeroPosition,
-                taskArcLineWidth: viewModel.isAnalogArcStyle
-                    ? viewModel.outerRingLineWidth : viewModel.taskArcLineWidth,
-                outerRingLineWidth: viewModel.outerRingLineWidth
+                zeroPosition: viewModel.timeManager.zeroPosition,
+                taskArcLineWidth: viewModel.themeConfig.isAnalogArcStyle
+                    ? viewModel.themeConfig.outerRingLineWidth : viewModel.themeConfig.taskArcLineWidth,
+                outerRingLineWidth: viewModel.themeConfig.outerRingLineWidth
             )
         }
         .frame(height: UIScreen.main.bounds.width * 0.8)
@@ -244,14 +240,14 @@ struct ClockEditorView: View {
     }
 
     private func syncMarkersViewModelWithAppStorage() {
-        markersViewModel.showHourNumbers = viewModel.showHourNumbers
-        markersViewModel.markersWidth = viewModel.markersWidth
-        markersViewModel.markersOffset = viewModel.markersOffset
-        markersViewModel.numbersSize = viewModel.numbersSize
+        markersViewModel.showHourNumbers = viewModel.themeConfig.showHourNumbers
+        markersViewModel.markersWidth = viewModel.themeConfig.markersWidth
+        markersViewModel.markersOffset = viewModel.themeConfig.markersOffset
+        markersViewModel.numbersSize = viewModel.themeConfig.numbersSize
         markersViewModel.lightModeMarkersColor = lightModeMarkersColor
         markersViewModel.darkModeMarkersColor = darkModeMarkersColor
         markersViewModel.isDarkMode = themeManager.isDarkMode
-        markersViewModel.numberInterval = viewModel.numberInterval
+        markersViewModel.numberInterval = viewModel.themeConfig.numberInterval
         markersViewModel.showMarkers = showMarkers
         markersViewModel.fontName = fontName
         
@@ -260,11 +256,11 @@ struct ClockEditorView: View {
         markersViewModel.darkModeDigitalFontColor = darkModeDigitalFontColor
         
         // Обновляем свойства ViewModel
-        viewModel.lightModeDigitalFontColor = lightModeDigitalFontColor
-        viewModel.darkModeDigitalFontColor = darkModeDigitalFontColor
+        viewModel.themeConfig.lightModeDigitalFontColor = lightModeDigitalFontColor
+        viewModel.themeConfig.darkModeDigitalFontColor = darkModeDigitalFontColor
         
         // Добавляем синхронизацию настройки
-        viewModel.showTimeOnlyForActiveTask = showTimeOnlyForActiveTask
+        viewModel.themeConfig.showTimeOnlyForActiveTask = showTimeOnlyForActiveTask
 
         // Принудительно обновляем цвета
         markersViewModel.updateCurrentThemeColors()
@@ -272,9 +268,9 @@ struct ClockEditorView: View {
         // Обновляем watchFace при синхронизации
         watchFace = WatchFaceModel(
             name: "Текущий",
-            style: viewModel.clockStyle == "Классический" ? "classic" : 
-                  viewModel.clockStyle == "Минимализм" ? "minimal" :
-                  viewModel.clockStyle == "Цифровой" ? "digital" : "modern",
+            style: viewModel.themeConfig.clockStyle == "Классический" ? "classic" : 
+                  viewModel.themeConfig.clockStyle == "Минимализм" ? "minimal" :
+                  viewModel.themeConfig.clockStyle == "Цифровой" ? "digital" : "modern",
             lightModeClockFaceColor: lightModeClockFaceColor,
             darkModeClockFaceColor: darkModeClockFaceColor,
             lightModeOuterRingColor: lightModeOuterRingColor,
@@ -287,10 +283,10 @@ struct ClockEditorView: View {
             markersOffset: markersViewModel.markersOffset,
             markersWidth: markersViewModel.markersWidth,
             numbersSize: markersViewModel.numbersSize,
-            zeroPosition: viewModel.zeroPosition,
-            outerRingLineWidth: viewModel.outerRingLineWidth,
-            taskArcLineWidth: viewModel.taskArcLineWidth,
-            isAnalogArcStyle: viewModel.isAnalogArcStyle,
+            zeroPosition: viewModel.timeManager.zeroPosition,
+            outerRingLineWidth: viewModel.themeConfig.outerRingLineWidth,
+            taskArcLineWidth: viewModel.themeConfig.taskArcLineWidth,
+            isAnalogArcStyle: viewModel.themeConfig.isAnalogArcStyle,
             showTimeOnlyForActiveTask: showTimeOnlyForActiveTask,
             fontName: fontName,
             lightModeHandColor: lightModeHandColor,
@@ -298,33 +294,33 @@ struct ClockEditorView: View {
         )
 
         // Добавляем синхронизацию цвета стрелки
-        if viewModel.lightModeHandColor != lightModeHandColor {
-            viewModel.lightModeHandColor = lightModeHandColor
+        if viewModel.themeConfig.lightModeHandColor != lightModeHandColor {
+            viewModel.themeConfig.lightModeHandColor = lightModeHandColor
         }
-        if viewModel.darkModeHandColor != darkModeHandColor {
-            viewModel.darkModeHandColor = darkModeHandColor
+        if viewModel.themeConfig.darkModeHandColor != darkModeHandColor {
+            viewModel.themeConfig.darkModeHandColor = darkModeHandColor
         }
     }
 
     private func saveMarkersViewModelToAppStorage() {
-        viewModel.showHourNumbers = markersViewModel.showHourNumbers
-        viewModel.markersWidth = markersViewModel.markersWidth
-        viewModel.markersOffset = markersViewModel.markersOffset
-        viewModel.numbersSize = markersViewModel.numbersSize
-        viewModel.numberInterval = markersViewModel.numberInterval
-        viewModel.lightModeMarkersColor = markersViewModel.lightModeMarkersColor
-        viewModel.darkModeMarkersColor = markersViewModel.darkModeMarkersColor
+        viewModel.themeConfig.showHourNumbers = markersViewModel.showHourNumbers
+        viewModel.themeConfig.markersWidth = markersViewModel.markersWidth
+        viewModel.themeConfig.markersOffset = markersViewModel.markersOffset
+        viewModel.themeConfig.numbersSize = markersViewModel.numbersSize
+        viewModel.themeConfig.numberInterval = markersViewModel.numberInterval
+        viewModel.themeConfig.lightModeMarkersColor = markersViewModel.lightModeMarkersColor
+        viewModel.themeConfig.darkModeMarkersColor = markersViewModel.darkModeMarkersColor
         showMarkers = markersViewModel.showMarkers
         fontName = markersViewModel.fontName
         
         // Сохраняем новые настройки
         lightModeDigitalFontColor = markersViewModel.lightModeDigitalFontColor
         darkModeDigitalFontColor = markersViewModel.darkModeDigitalFontColor
-        viewModel.lightModeDigitalFontColor = markersViewModel.lightModeDigitalFontColor
-        viewModel.darkModeDigitalFontColor = markersViewModel.darkModeDigitalFontColor
+        viewModel.themeConfig.lightModeDigitalFontColor = markersViewModel.lightModeDigitalFontColor
+        viewModel.themeConfig.darkModeDigitalFontColor = markersViewModel.darkModeDigitalFontColor
         
         // Сохраняем настройку отображения времени только для активной задачи
-        showTimeOnlyForActiveTask = viewModel.showTimeOnlyForActiveTask
+        showTimeOnlyForActiveTask = viewModel.themeConfig.showTimeOnlyForActiveTask
 
         // Сохраняем цвета в локальные AppStorage переменные
         lightModeMarkersColor = markersViewModel.lightModeMarkersColor

@@ -12,11 +12,48 @@ struct PersonalizationViewIOS: View {
     @State private var showingTaskSettings = false
     let hapticsManager = HapticsManager.shared
 
+    // MARK: - Computed Properties
+    private var backgroundColor: Color {
+        themeManager.isDarkMode ? 
+            Color(red: 0.098, green: 0.098, blue: 0.098) :
+            Color(red: 0.95, green: 0.95, blue: 0.95)
+    }
+    
+    private var buttonBackgroundColor: Color {
+        themeManager.isDarkMode ? 
+            Color(red: 0.2, green: 0.2, blue: 0.2) :
+            Color(red: 0.95, green: 0.95, blue: 0.95)
+    }
+    
+    private var iconBackgroundColor: Color {
+        themeManager.isDarkMode ? 
+            Color(red: 0.184, green: 0.184, blue: 0.184) :
+            Color(red: 0.9, green: 0.9, blue: 0.9)
+    }
+    
+    private var iconForegroundColor: Color {
+        themeManager.isDarkMode ? .coral1 : .red1
+    }
+    
+    private var textForegroundColor: Color {
+        themeManager.isDarkMode ? .primary : .black
+    }
+    
+    private var shadowColor: Color {
+        themeManager.isDarkMode ? 
+            .black.opacity(0.3) : 
+            .black.opacity(0.1)
+    }
+    
+    private var buttonShadowColor: Color {
+        themeManager.isDarkMode ? 
+            .black.opacity(0.2) : 
+            .black.opacity(0.1)
+    }
+
     var body: some View {
         ZStack {
-            (themeManager.isDarkMode ? 
-                Color(red: 0.098, green: 0.098, blue: 0.098) :
-                Color(red: 0.95, green: 0.95, blue: 0.95))
+            backgroundColor
                 .ignoresSafeArea()
 
             VStack(spacing: 25) {
@@ -24,372 +61,56 @@ struct PersonalizationViewIOS: View {
                     .frame(height: 50)
 
                 // Уведомления
-                Button {
-                    hapticsManager.triggerSoftFeedback()
-                    showingClockEditor = true
-                } label: {
-                    HStack {
-                        Image(systemName: "bell.badge.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
-                            .padding(8)
-                            .background(
-                                Circle()
-                                    .fill(themeManager.isDarkMode ? 
-                                        Color(red: 0.184, green: 0.184, blue: 0.184) :
-                                        Color(red: 0.9, green: 0.9, blue: 0.9))
-                            )
-                            .frame(width: 40, height: 40)
-                            .overlay(
-                                Circle()
-                                    .stroke(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1.0
-                                    )
-                            )
-                            .frame(width: 40, height: 40)
-                            .shadow(color: themeManager.isDarkMode ? 
-                                .black.opacity(0.3) : 
-                                .black.opacity(0.1), 
-                                radius: 3, x: 0, y: 1)
-                            .padding(.leading, 16)
-
-                        Text("settings.notifications".localized)
-                            .font(.system(size: 18))
-                            .foregroundColor(themeManager.isDarkMode ? .primary : .black)
-                            .padding(.leading, 12)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                            .padding(.trailing, 16)
+                createSettingsButton(
+                    icon: "bell.badge.fill",
+                    title: "settings.notifications".localized,
+                    action: {
+                        hapticsManager.triggerSoftFeedback()
+                        showingClockEditor = true
                     }
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(themeManager.isDarkMode ? 
-                                Color(red: 0.2, green: 0.2, blue: 0.2) :
-                                Color(red: 0.95, green: 0.95, blue: 0.95))
-                            .shadow(color: themeManager.isDarkMode ? 
-                                .black.opacity(0.2) : 
-                                .black.opacity(0.1), 
-                                radius: 3, y: 1)
-                    )
-                    .padding(.horizontal, 16)
-                }
+                )
 
                 // Новая кнопка Задачи
-                Button {
-                    hapticsManager.triggerSoftFeedback()
-                    showingTaskSettings = true
-                } label: {
-                    HStack {
-                        Image(systemName: "checklist")
-                            .font(.system(size: 20))
-                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
-                            .padding(8)
-                            .background(
-                                Circle()
-                                    .fill(themeManager.isDarkMode ? 
-                                        Color(red: 0.184, green: 0.184, blue: 0.184) :
-                                        Color(red: 0.9, green: 0.9, blue: 0.9))
-                            )
-                            .frame(width: 40, height: 40)
-                            .overlay(
-                                Circle()
-                                    .stroke(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1.0
-                                    )
-                            )
-                            .frame(width: 40, height: 40)
-                            .shadow(color: themeManager.isDarkMode ? 
-                                .black.opacity(0.3) : 
-                                .black.opacity(0.1), 
-                                radius: 3, x: 0, y: 1)
-                            .padding(.leading, 16)
-
-                        Text("settings.tasks".localized)
-                            .font(.system(size: 18))
-                            .foregroundColor(themeManager.isDarkMode ? .primary : .black)
-                            .padding(.leading, 12)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                            .padding(.trailing, 16)
+                createSettingsButton(
+                    icon: "checklist",
+                    title: "settings.tasks".localized,
+                    action: {
+                        hapticsManager.triggerSoftFeedback()
+                        showingTaskSettings = true
                     }
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(themeManager.isDarkMode ? 
-                                Color(red: 0.2, green: 0.2, blue: 0.2) :
-                                Color(red: 0.95, green: 0.95, blue: 0.95))
-                            .shadow(color: themeManager.isDarkMode ? 
-                                .black.opacity(0.2) : 
-                                .black.opacity(0.1), 
-                                radius: 3, y: 1)
-                    )
-                    .padding(.horizontal, 16)
-                }
+                )
 
                 // Библиотека циферблатов (новая кнопка)
-                Button {
-                    hapticsManager.triggerSoftFeedback()
-                    showingWatchFaceLibrary = true
-                } label: {
-                    HStack {
-                        Image(systemName: "tray.full.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
-                            .padding(8)
-                            .background(
-                                Circle()
-                                    .fill(themeManager.isDarkMode ? 
-                                        Color(red: 0.184, green: 0.184, blue: 0.184) :
-                                        Color(red: 0.9, green: 0.9, blue: 0.9))
-                            )
-                            .frame(width: 40, height: 40)
-                            .overlay(
-                                Circle()
-                                    .stroke(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1.0
-                                    )
-                            )
-                            .frame(width: 40, height: 40)
-                            .shadow(color: themeManager.isDarkMode ? 
-                                .black.opacity(0.3) : 
-                                .black.opacity(0.1), 
-                                radius: 3, x: 0, y: 1)
-                            .padding(.leading, 16)
-
-                        Text("settings.watchFaceLibrary".localized)
-                            .font(.system(size: 18))
-                            .foregroundColor(themeManager.isDarkMode ? .primary : .black)
-                            .padding(.leading, 12)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                            .padding(.trailing, 16)
+                createSettingsButton(
+                    icon: "tray.full.fill",
+                    title: "settings.watchFaceLibrary".localized,
+                    action: {
+                        hapticsManager.triggerSoftFeedback()
+                        showingWatchFaceLibrary = true
                     }
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(themeManager.isDarkMode ? 
-                                Color(red: 0.2, green: 0.2, blue: 0.2) :
-                                Color(red: 0.95, green: 0.95, blue: 0.95))
-                            .shadow(color: themeManager.isDarkMode ? 
-                                .black.opacity(0.2) : 
-                                .black.opacity(0.1), 
-                                radius: 3, y: 1)
-                    )
-                    .padding(.horizontal, 16)
-                }
+                )
 
                 // Циферблат
-               Button {
-                   hapticsManager.triggerSoftFeedback()
-                   showingClockFaceEditor = true
-               } label: {
-                   HStack {
-                       Image(systemName: "clock.circle")
-                           .font(.system(size: 22))
-                           .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
-                           .padding(8)
-                           .background(
-                               Circle()
-                                   .fill(themeManager.isDarkMode ? 
-                                       Color(red: 0.184, green: 0.184, blue: 0.184) :
-                                       Color(red: 0.9, green: 0.9, blue: 0.9))
-                           )
-                           .frame(width: 40, height: 40)
-                           .overlay(
-                               Circle()
-                                   .stroke(
-                                       LinearGradient(
-                                           gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
-                                           startPoint: .topLeading,
-                                           endPoint: .bottomTrailing
-                                       ),
-                                       lineWidth: 1.0
-                                   )
-                           )
-                           .frame(width: 40, height: 40)
-                           .shadow(color: themeManager.isDarkMode ? 
-                               .black.opacity(0.3) : 
-                               .black.opacity(0.1), 
-                               radius: 3, x: 0, y: 1)
-                           .padding(.leading, 16)
-
-                       Text("settings.watchFace".localized)
-                           .font(.system(size: 18))
-                           .foregroundColor(themeManager.isDarkMode ? .primary : .black)
-                           .padding(.leading, 12)
-
-                       Spacer()
-
-                       Image(systemName: "chevron.right")
-                           .foregroundColor(.gray)
-                           .padding(.trailing, 16)
-                   }
-                   .padding(.vertical, 12)
-                   .background(
-                       RoundedRectangle(cornerRadius: 15)
-                           .fill(themeManager.isDarkMode ? 
-                               Color(red: 0.2, green: 0.2, blue: 0.2) :
-                               Color(red: 0.95, green: 0.95, blue: 0.95))
-                           .shadow(color: themeManager.isDarkMode ? 
-                               .black.opacity(0.2) : 
-                               .black.opacity(0.1), 
-                               radius: 3, y: 1)
-                   )
-                   .padding(.horizontal, 16)
-               }
+                createSettingsButton(
+                    icon: "clock.fill",
+                    title: "settings.clockFace".localized,
+                    action: {
+                        hapticsManager.triggerSoftFeedback()
+                        showingClockFaceEditor = true
+                    }
+                )
 
                 // Категории
-                Button {
-                    hapticsManager.triggerSoftFeedback()
-                    showingCategoryEditor = true
-                } label: {
-                    HStack {
-                        Image(systemName: "folder.fill.badge.gearshape")
-                            .font(.system(size: 18))
-                            .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
-                            .padding(8)
-                            .background(
-                                Circle()
-                                    .fill(themeManager.isDarkMode ? 
-                                        Color(red: 0.184, green: 0.184, blue: 0.184) :
-                                        Color(red: 0.9, green: 0.9, blue: 0.9))
-                            )
-                            .frame(width: 40, height: 40)
-                            .overlay(
-                                Circle()
-                                    .stroke(
-                                        LinearGradient(
-                                            gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        ),
-                                        lineWidth: 1.0
-                                    )
-                            )
-                            .frame(width: 40, height: 40)
-                            .shadow(color: themeManager.isDarkMode ? 
-                                .black.opacity(0.3) : 
-                                .black.opacity(0.1), 
-                                radius: 3, x: 0, y: 1)
-                            .padding(.leading, 16)
-
-                        Text("settings.categories".localized)
-                            .font(.system(size: 18))
-                            .foregroundColor(themeManager.isDarkMode ? .primary : .black)
-                            .padding(.leading, 12)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                            .padding(.trailing, 16)
+                createSettingsButton(
+                    icon: "folder.fill",
+                    title: "settings.categories".localized,
+                    action: {
+                        hapticsManager.triggerSoftFeedback()
+                        showingCategoryEditor = true
                     }
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(themeManager.isDarkMode ? 
-                                Color(red: 0.2, green: 0.2, blue: 0.2) :
-                                Color(red: 0.95, green: 0.95, blue: 0.95))
-                            .shadow(color: themeManager.isDarkMode ? 
-                                .black.opacity(0.2) : 
-                                .black.opacity(0.1), 
-                                radius: 3, y: 1)
-                    )
-                    .padding(.horizontal, 16)
-                }
+                )
 
-                // Кнопка для открытия FirstView
-                // Button {
-                //     showingFirstView = true
-                // } label: {
-                //     HStack {
-                //         Image(systemName: "sparkles")
-                //             .font(.system(size: 20))
-                //             .foregroundColor(themeManager.isDarkMode ? .coral1 : .red1)
-                //             .padding(8)
-                //             .background(
-                //                 Circle()
-                //                     .fill(themeManager.isDarkMode ? 
-                //                         Color(red: 0.184, green: 0.184, blue: 0.184) :
-                //                         Color(red: 0.9, green: 0.9, blue: 0.9))
-                //             )
-                //             .frame(width: 40, height: 40)
-                //             .overlay(
-                //                 Circle()
-                //                     .stroke(
-                //                         LinearGradient(
-                //                             gradient: Gradient(colors: [Color.gray.opacity(0.7), Color.gray.opacity(0.3)]),
-                //                             startPoint: .topLeading,
-                //                             endPoint: .bottomTrailing
-                //                         ),
-                //                         lineWidth: 1.0
-                //                     )
-                //             )
-                //             .frame(width: 40, height: 40)
-                //             .shadow(color: themeManager.isDarkMode ? 
-                //                 .black.opacity(0.3) : 
-                //                 .black.opacity(0.1), 
-                //                 radius: 3, x: 0, y: 1)
-                //             .padding(.leading, 16)
-
-                //         Text("Стартовый экран")
-                //             .font(.system(size: 18))
-                //             .foregroundColor(themeManager.isDarkMode ? .primary : .black)
-                //             .padding(.leading, 12)
-
-                //         Spacer()
-
-                //         Image(systemName: "chevron.right")
-                //             .foregroundColor(.gray)
-                //             .padding(.trailing, 16)
-                //     }
-                //     .padding(.vertical, 12)
-                //     .background(
-                //         RoundedRectangle(cornerRadius: 15)
-                //             .fill(themeManager.isDarkMode ? 
-                //                 Color(red: 0.2, green: 0.2, blue: 0.2) :
-                //                 Color(red: 0.95, green: 0.95, blue: 0.95))
-                //             .shadow(color: themeManager.isDarkMode ? 
-                //                 .black.opacity(0.2) : 
-                //                 .black.opacity(0.1), 
-                //                 radius: 3, y: 1)
-                //     )
-                //     .padding(.horizontal, 16)
-                // }
-
-                Spacer()
-
-                // Переключатель темы
-                ThemeModeToggle()
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.bottom, 10)
-
-
+                // Остальные кнопки...
             }
         }
         .navigationTitle("navigation.settings".localized)
@@ -420,7 +141,7 @@ struct PersonalizationViewIOS: View {
             ClockEditorView(
                 viewModel: viewModel,
                 markersViewModel: viewModel.markersViewModel,
-                taskArcLineWidth: viewModel.taskArcLineWidth
+                taskArcLineWidth: viewModel.themeConfig.taskArcLineWidth
             )
         }
         .fullScreenCover(isPresented: $showingCategoryEditor) {
@@ -438,6 +159,70 @@ struct PersonalizationViewIOS: View {
         .fullScreenCover(isPresented: $showingTaskSettings) {
             SettingsTask()
         }
+    }
+
+    // MARK: - Private Methods
+    private func createSettingsButton(
+        icon: String,
+        title: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack {
+                createIconView(systemName: icon)
+                
+                Text(title)
+                    .font(.system(size: 18))
+                    .foregroundColor(textForegroundColor)
+                    .padding(.leading, 12)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.gray)
+                    .padding(.trailing, 16)
+            }
+            .padding(.vertical, 12)
+            .background(createButtonBackground())
+            .padding(.horizontal, 16)
+        }
+    }
+    
+    private func createIconView(systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 20))
+            .foregroundColor(iconForegroundColor)
+            .padding(8)
+            .background(
+                Circle()
+                    .fill(iconBackgroundColor)
+            )
+            .frame(width: 40, height: 40)
+            .overlay(createIconOverlay())
+            .frame(width: 40, height: 40)
+            .shadow(color: shadowColor, radius: 3, x: 0, y: 1)
+            .padding(.leading, 16)
+    }
+    
+    private func createIconOverlay() -> some View {
+        Circle()
+            .stroke(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.gray.opacity(0.7), 
+                        Color.gray.opacity(0.3)
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ),
+                lineWidth: 1.0
+            )
+    }
+    
+    private func createButtonBackground() -> some View {
+        RoundedRectangle(cornerRadius: 15)
+            .fill(buttonBackgroundColor)
+            .shadow(color: buttonShadowColor, radius: 3, y: 1)
     }
 }
 

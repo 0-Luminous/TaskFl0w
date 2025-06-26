@@ -63,9 +63,9 @@ struct MarkersControlsView: View {
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
-                .disabled(!markersViewModel.showMarkers && viewModel.clockStyle == "Цифровой")
+                .disabled(!markersViewModel.showMarkers && viewModel.themeConfig.clockStyle == "Цифровой")
                 .opacity(
-                    !markersViewModel.showMarkers && viewModel.clockStyle == "Цифровой" ? 0.5 : 1)
+                    !markersViewModel.showMarkers && viewModel.themeConfig.clockStyle == "Цифровой" ? 0.5 : 1)
             }
             .padding(.bottom, 8)
             
@@ -74,7 +74,7 @@ struct MarkersControlsView: View {
                 HStack(spacing: 10) {
                     Button(action: {
                         markersViewModel.showIntermediateMarkers.toggle()
-                        viewModel.showIntermediateMarkers = markersViewModel.showIntermediateMarkers
+                        viewModel.themeConfig.showIntermediateMarkers = markersViewModel.showIntermediateMarkers
                     }) {
                         HStack {
                             Text(markersViewModel.showIntermediateMarkers ? "Скрыть промежуточные" : "Показать промежуточные")
@@ -179,7 +179,7 @@ struct MarkersControlsView: View {
                             ForEach([MarkerStyle.lines, .dots, .standard, .classicWatch, .thinUniform, .hourAccent, .uniformDense], id: \.self) { style in
                                 Button(action: {
                                     markersViewModel.markerStyle = style
-                                    viewModel.markerStyle = style
+                                    viewModel.themeConfig.markerStyle = style
                                     selectedStyle = style
                                     withAnimation {
                                         showStylePicker = false
@@ -242,7 +242,7 @@ struct MarkersControlsView: View {
                     Button(action: {
                         if markersViewModel.markersWidth > 1.0 {
                             markersViewModel.markersWidth -= 0.5
-                            viewModel.markersWidth = markersViewModel.markersWidth
+                            viewModel.themeConfig.markersWidth = markersViewModel.markersWidth
                         }
                     }) {
                         HStack {
@@ -269,7 +269,7 @@ struct MarkersControlsView: View {
                     Button(action: {
                         if markersViewModel.markersWidth < 8.0 {
                             markersViewModel.markersWidth += 0.5
-                            viewModel.markersWidth = markersViewModel.markersWidth
+                            viewModel.themeConfig.markersWidth = markersViewModel.markersWidth
                         }
                     }) {
                         HStack {

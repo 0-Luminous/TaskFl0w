@@ -50,7 +50,7 @@ class TaskArcGestureHandler: ObservableObject {
         let vector = CGVector(dx: value.location.x - center.x, dy: value.location.y - center.y)
         let angle = atan2(vector.dy, vector.dx)
         let degrees = (angle * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
-        let adjustedDegrees = (degrees - 270 - viewModel.zeroPosition + 360).truncatingRemainder(dividingBy: 360)
+        let adjustedDegrees = (degrees - 270 - viewModel.timeManager.zeroPosition + 360).truncatingRemainder(dividingBy: 360)
         
         let hours = adjustedDegrees / 15
         let hourComponent = Int(hours)
@@ -145,7 +145,7 @@ class TaskArcGestureHandler: ObservableObject {
         let duration = task.duration
         let newEndTime = newStartTime.addingTimeInterval(duration)
         
-        viewModel.previewTime = newStartTime
+        viewModel.userInteraction.updatePreviewTime(newStartTime)
         task.startTime = newStartTime
         task.endTime = newEndTime
         
@@ -157,7 +157,7 @@ class TaskArcGestureHandler: ObservableObject {
         let vector = CGVector(dx: location.x - center.x, dy: location.y - center.y)
         let angle = atan2(vector.dy, vector.dx)
         let degrees = (angle * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
-        let adjustedDegrees = (degrees - 270 - viewModel.zeroPosition + 360).truncatingRemainder(dividingBy: 360)
+        let adjustedDegrees = (degrees - 270 - viewModel.timeManager.zeroPosition + 360).truncatingRemainder(dividingBy: 360)
         
         let hours = adjustedDegrees / 15
         let hourComponent = Int(hours)
@@ -226,7 +226,7 @@ class TaskArcGestureHandler: ObservableObject {
             return // НЕ ОБНОВЛЯЕМ позицию маркера
         }
         
-        viewModel.previewTime = constrainedTime
+        viewModel.userInteraction.updatePreviewTime(constrainedTime)
         // Обновление уже произошло в adjustTaskStartTimesForOverlap
     }
     
@@ -257,7 +257,7 @@ class TaskArcGestureHandler: ObservableObject {
             return // НЕ ОБНОВЛЯЕМ позицию маркера
         }
         
-        viewModel.previewTime = constrainedTime
+        viewModel.userInteraction.updatePreviewTime(constrainedTime)
         // Обновление уже произошло в adjustTaskEndTimesForOverlap
     }
     
@@ -274,7 +274,7 @@ class TaskArcGestureHandler: ObservableObject {
         let duration = task.duration
         let newEndTime = newStartTime.addingTimeInterval(duration)
         
-        viewModel.previewTime = newStartTime
+        viewModel.userInteraction.updatePreviewTime(newStartTime)
         // ✅ Больше не изменяем локальную копию задачи
         
         viewModel.taskManagement.updateWholeTask(task, newStartTime: newStartTime, newEndTime: newEndTime)

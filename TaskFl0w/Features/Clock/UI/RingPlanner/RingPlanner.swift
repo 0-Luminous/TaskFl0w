@@ -46,16 +46,16 @@ struct RingPlanner: View {
                 }
             
             // Показываем previewTask, если он есть
-            if let previewTask = viewModel.previewTask {
+            if let previewTask = viewModel.userInteraction.previewTask {
                 GeometryReader { geometry in
                     let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
                     let radius = min(geometry.size.width, geometry.size.height) / 2
                     let configuration = TaskArcConfiguration(
-                        isAnalog: viewModel.isAnalogArcStyle,
-                        arcLineWidth: viewModel.taskArcLineWidth,
-                        outerRingLineWidth: viewModel.outerRingLineWidth,
+                        isAnalog: viewModel.themeConfig.isAnalogArcStyle,
+                        arcLineWidth: viewModel.themeConfig.taskArcLineWidth,
+                        outerRingLineWidth: viewModel.themeConfig.outerRingLineWidth,
                         isEditingMode: false,
-                        showTimeOnlyForActiveTask: viewModel.showTimeOnlyForActiveTask
+                        showTimeOnlyForActiveTask: viewModel.themeConfig.showTimeOnlyForActiveTask
                     )
                     let taskGeometry = TaskArcGeometry(
                         center: center,
@@ -88,14 +88,14 @@ struct RingPlanner: View {
     // MARK: - Private Methods
     
     private func handleTaskDrop(at location: CGPoint) -> Bool {
-        guard let category = viewModel.draggedCategory else {
+        guard let category = viewModel.userInteraction.draggedCategory else {
             print("⚠️ DEBUG: draggedCategory is nil")
             return false
         }
         
         do {
             let previewTask = try createPreviewTask(for: category, at: location)
-            viewModel.previewTask = previewTask
+            viewModel.userInteraction.previewTask = previewTask
             
             return try handleCategoryValidation(for: category)
         } catch {
@@ -169,7 +169,7 @@ struct RingPlanner: View {
     }
     
     private func createTaskWithValidatedCategory() {
-        guard let previewTask = viewModel.previewTask else { return }
+        guard let previewTask = viewModel.userInteraction.previewTask else { return }
         
         Task {
             await MainActor.run {
@@ -182,9 +182,9 @@ struct RingPlanner: View {
                         print("✅ DEBUG: Task successfully added to tasks list")
                         
                         // Включаем режим редактирования только после подтверждения
-                        viewModel.isEditingMode = true
-                        viewModel.editingTask = previewTask
-                        viewModel.previewTask = nil // Очищаем предварительный просмотр
+                        viewModel.userInteraction.isEditingMode = true
+                        viewModel.userInteraction.editingTask = previewTask
+                        viewModel.userInteraction.previewTask = nil // Очищаем предварительный просмотр
                     } else {
                         print("❌ DEBUG: Task NOT found in tasks list after adding")
                     }

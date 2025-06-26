@@ -16,7 +16,7 @@ struct ZeroPositionControlView: View {
     init(viewModel: ClockViewModel) {
         self.viewModel = viewModel
         // Инициализируем временное состояние текущим значением
-        _tempZeroPosition = State(initialValue: viewModel.zeroPosition)
+        _tempZeroPosition = State(initialValue: viewModel.timeManager.zeroPosition)
     }
     
     var body: some View {
@@ -93,7 +93,7 @@ struct ZeroPositionControlView: View {
         .padding(.horizontal, 24)
         .onAppear {
             // Синхронизируем состояние при появлении
-            tempZeroPosition = viewModel.zeroPosition
+            tempZeroPosition = viewModel.timeManager.zeroPosition
         }
     }
     

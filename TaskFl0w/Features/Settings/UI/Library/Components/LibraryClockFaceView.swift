@@ -179,14 +179,14 @@ struct LibraryClockFaceView: View {
         markersViewModel.darkModeDigitalFontColor = watchFace.darkModeDigitalFontColor
         
         // Настройка viewModel
-        viewModel.clockStyle = WatchFaceModel.displayStyleName(for: watchFace.style)
-        viewModel.zeroPosition = watchFace.zeroPosition
-        viewModel.outerRingLineWidth = watchFace.outerRingLineWidth
-        viewModel.taskArcLineWidth = watchFace.taskArcLineWidth
-        viewModel.isAnalogArcStyle = watchFace.isAnalogArcStyle
-        viewModel.showTimeOnlyForActiveTask = watchFace.showTimeOnlyForActiveTask
-        viewModel.lightModeHandColor = watchFace.lightModeHandColor  
-        viewModel.darkModeHandColor = watchFace.darkModeHandColor
+        viewModel.themeConfig.clockStyle = WatchFaceModel.displayStyleName(for: watchFace.style)
+        viewModel.timeManager.zeroPosition = watchFace.zeroPosition
+        viewModel.themeConfig.outerRingLineWidth = watchFace.outerRingLineWidth
+        viewModel.themeConfig.taskArcLineWidth = watchFace.taskArcLineWidth
+        viewModel.themeConfig.isAnalogArcStyle = watchFace.isAnalogArcStyle
+        viewModel.themeConfig.showTimeOnlyForActiveTask = watchFace.showTimeOnlyForActiveTask
+        viewModel.themeConfig.lightModeHandColor = watchFace.lightModeHandColor  
+        viewModel.themeConfig.darkModeHandColor = watchFace.darkModeHandColor
         
         // Добавляем эти строки в SetupViewModels()
         if watchFace.style == "digital" {

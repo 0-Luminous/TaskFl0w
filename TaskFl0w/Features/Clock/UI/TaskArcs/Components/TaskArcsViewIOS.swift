@@ -17,6 +17,6 @@ struct TaskArcsViewIOS: View {
                 ClockTaskArcIOS(task: task, viewModel: viewModel, arcLineWidth: arcLineWidth)
             }
         }
-        .rotationEffect(.degrees(viewModel.zeroPosition))
+        .rotationEffect(.degrees(viewModel.timeManager.zeroPosition))
     }
 }
