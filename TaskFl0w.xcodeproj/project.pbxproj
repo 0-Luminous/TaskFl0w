@@ -41,9 +41,22 @@
 		2CDF440A2D1AC2C000149A0B /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		2C6DA7562E0E853C005DF7EE /* Exceptions for "TaskFl0w" folder in "TaskFl0w" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2C1DB3892D1AB92000C768B1 /* TaskFl0w */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2C1DB38C2D1AB92000C768B1 /* TaskFl0w */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2C6DA7562E0E853C005DF7EE /* Exceptions for "TaskFl0w" folder in "TaskFl0w" target */,
+			);
 			path = TaskFl0w;
 			sourceTree = "<group>";
 		};
@@ -464,6 +477,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"TaskFl0w/\" \"TaskFl0w/Resources\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TaskFl0w/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TaskFl0w;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -500,6 +514,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"TaskFl0w/\" \"TaskFl0w/Resources\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TaskFl0w/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TaskFl0w;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

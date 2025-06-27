@@ -19,18 +19,20 @@ struct ToDoTaskRow: View {
     var body: some View {
         Button(action: handleTap) {
             HStack(spacing: 12) {
-                // Индикатор выполнения
-                completionIndicator
-                
-                // Основной контент
-                taskContent
-                
-                Spacer()
                 
                 // Индикатор приоритета
                 if task.priority != .none {
                     priorityIndicator
                 }
+                
+                // Основной контент
+                taskContent
+                
+                Spacer()
+
+                // Индикатор выполнения
+                completionIndicator
+
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 12)

@@ -41,6 +41,7 @@ final class ClockMarkersViewModel: ObservableObject {
 
 
  
+        "Nunito",
         "SF Pro",
         "MOSCOW2024",
         "ForestSmooth",

@@ -23,22 +23,12 @@ struct TaskRow: View {
         ZStack {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    if isSelectionMode {
-                        Button(action: {
-                            toggleSelection()
-                        }) {
-                            Image(systemName: isSelected ? "checkmark.circle.fill" : (item.isCompleted ? "checkmark.circle" : "circle"))
-                                .foregroundColor(themeManager.isDarkMode ? isSelected ? categoryColor : (item.isCompleted ? .black : .white) : isSelected ? categoryColor : (item.isCompleted ? .black : .white))
-                                .font(.system(size: 22))
-                        }
-                    } else {
-                        Button(action: onToggle) {
-                            Image(systemName: item.isCompleted ? "checkmark.circle" : "circle")
-                                .foregroundColor(themeManager.isDarkMode ? item.isCompleted ? .black : .white : item.isCompleted ? .black : .white)
-                                .font(.system(size: 22))
-                        }
+
+                    // Заменяем иконку приоритета на столбец приоритета
+                    if item.priority != .none {
+                        priorityIndicator(for: item.priority)
                     }
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         // Название задачи
                         Text(item.title)
@@ -60,13 +50,26 @@ struct TaskRow: View {
                             .opacity((item.isCompleted && !isSelectionMode && !isInArchiveMode) || isInArchiveMode ? 0.5 : 1.0)
                         }
                     }
+                    .padding(.leading, 12)
                     
                     Spacer()
                     
-                    // Заменяем иконку приоритета на столбец приоритета
-                    if item.priority != .none {
-                        priorityIndicator(for: item.priority)
+                    if isSelectionMode {
+                        Button(action: {
+                            toggleSelection()
+                        }) {
+                            Image(systemName: isSelected ? "checkmark.circle.fill" : (item.isCompleted ? "checkmark.circle" : "circle"))
+                                .foregroundColor(themeManager.isDarkMode ? isSelected ? categoryColor : (item.isCompleted ? .black : .white) : isSelected ? categoryColor : (item.isCompleted ? .black : .white))
+                                .font(.system(size: 22))
+                        }
+                    } else {
+                        Button(action: onToggle) {
+                            Image(systemName: item.isCompleted ? "checkmark.circle" : "circle")
+                                .foregroundColor(themeManager.isDarkMode ? item.isCompleted ? .black : .white : item.isCompleted ? .black : .white)
+                                .font(.system(size: 22))
+                        }
                     }
+                    
                 }
             }
         }

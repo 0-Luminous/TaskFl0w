@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Banana Brick.ttf</string>
+		<string>Brunothg.otf</string>
+		<string>Cakra-Normal.otf</string>
+		<string>catstack.ttf</string>
+		<string>cellblocknbp.otf</string>
+		<string>Chokokutai-Regular.ttf</string>
+		<string>Daneehand Regular Cyr.ttf</string>
+		<string>ElfarNormalG98.ttf</string>
+		<string>EternalLent.ttf</string>
+		<string>Hussar3dTwo.otf</string>
+		<string>Letterblocks.ttf</string>
+		<string>Minstrels.ttf</string>
+		<string>NovaCut.ttf</string>
+		<string>pershotravneva55-regular.ttf</string>
+		<string>TDAText.ttf</string>
+		<string>UnifrakturCook-Bold.ttf</string>
+		<string>Vetka.otf</string>
+		<string>ForestSmooth.ttf</string>
+		<string>MOSCOW2024.otf</string>
+		<string>Brillant.otf</string>
+		<string>Nunito.ttf</string>
+	</array>
+</dict>
+</plist>

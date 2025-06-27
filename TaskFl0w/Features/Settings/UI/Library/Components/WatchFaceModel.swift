@@ -40,8 +40,8 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
     var taskArcLineWidth: CGFloat = 20.0
     var isAnalogArcStyle: Bool = false
     var showTimeOnlyForActiveTask: Bool = false
-    var fontName: String = "SF Pro"
-    var digitalFont: String = "SF Pro" // Шрифт для цифровых циферблатов
+    var fontName: String = "Nunito"
+    var digitalFont: String = "Nunito" // Шрифт для цифровых циферблатов
     var digitalFontSize: Double = 32.0 // Размер шрифта для цифровых циферблатов
     var lightModeDigitalFontColor: String = Color.black.toHex() // Цвет шрифта в светлой теме
     var darkModeDigitalFontColor: String = Color.white.toHex() // Цвет шрифта в темной теме
@@ -70,7 +70,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
     // Предустановленные циферблаты
     static var defaultWatchFaces: [WatchFaceModel] {
         [
-            // Классический светлый циферблат
+            // Детальный 
             WatchFaceModel(
                 name: "libraryOfWatchFaces.model.classic",
                 nameKey: "libraryOfWatchFaces.model.classic",
@@ -86,11 +86,10 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 showHourNumbers: true,
                 markerStyle: "hourAccent",
                 showIntermediateMarkers: true,
-                fontName: "SF Pro",
+                fontName: "Nunito",
                 lightModeHandColor: Color.gray.toHex(),
                 darkModeHandColor: Color.gray.toHex()
             ),
-            // Добавляем еще один классический циферблат
             WatchFaceModel(
                 name: "libraryOfWatchFaces.model.grafitti",
                 nameKey: "libraryOfWatchFaces.model.grafitti",
@@ -110,7 +109,6 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 lightModeHandColor: Color(red: 1, green: 1, blue: 0.329).toHex(),
                 darkModeHandColor: Color(red: 1, green: 1, blue: 0.329).toHex()
             ),
-            // Добавляем кастомные циферблаты с разными шрифтами и стилями маркеров
             WatchFaceModel(
                 name: "libraryOfWatchFaces.model.crimsonCore",
                 nameKey: "libraryOfWatchFaces.model.crimsonCore",
@@ -167,8 +165,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 fontName: "cellblocknbp",
                 lightModeHandColor: Color.gray.toHex(),
                 darkModeHandColor: Color.gray.toHex()
-            ),       
-            // Необычные стили
+            ),
             WatchFaceModel(
                 name: "libraryOfWatchFaces.model.bluePixel",
                 nameKey: "libraryOfWatchFaces.model.bluePixel",
@@ -188,6 +185,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 lightModeHandColor: Color(red: 0.361, green: 0.686, blue: 0.773).toHex(),
                 darkModeHandColor: Color(red: 0.361, green: 0.686, blue: 0.773).toHex()
             ),
+            // Цифровой
             WatchFaceModel(
                 name: "libraryOfWatchFaces.model.lines",
                 nameKey: "libraryOfWatchFaces.model.lines",
@@ -225,7 +223,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 showHourNumbers: false,
                 markerStyle: "thinUniform",
                 showIntermediateMarkers: true,
-                digitalFont: "SF Pro",
+                digitalFont: "Nunito",
                 digitalFontSize: 55.0,
                 lightModeDigitalFontColor: Color.black.toHex(),
                 darkModeDigitalFontColor: Color.black.opacity(0.7).toHex(),
@@ -320,7 +318,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 lightModeHandColor: Color.gray.toHex(),
                 darkModeHandColor: Color.green0.toHex()
             ),     
-            // Классический светлый циферблат
+            // Минимализм
             WatchFaceModel(
                 name: "libraryOfWatchFaces.model.classic",
                 nameKey: "libraryOfWatchFaces.model.classic",
@@ -337,7 +335,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
                 numberInterval: 2,
                 markerStyle: "hourAccent",
                 showIntermediateMarkers: true,
-                fontName: "Futura",
+                fontName: "Nunito",
                 lightModeHandColor: Color.gray.toHex(),
                 darkModeHandColor: Color.gray.toHex()
             ),
