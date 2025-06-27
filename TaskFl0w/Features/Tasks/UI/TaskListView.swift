@@ -271,7 +271,7 @@ struct TaskListView: View {
                 selectedTasks: .constant(viewModel.selectedTasks)
             )
             .padding(.trailing, 5)
-            .listRowBackground(taskRowBackground(for: item))
+            .listRowBackground(Color.clear)
             .contentShape(Rectangle())
             .onTapGesture {
                 hapticsManager.triggerMediumFeedback()
@@ -285,21 +285,21 @@ struct TaskListView: View {
         }
     }
 
-    private func taskRowBackground(for item: ToDoItem) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(backgroundFillColor)
-                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
+    // private func taskRowBackground(for item: ToDoItem) -> some View {
+    //     ZStack {
+    //         RoundedRectangle(cornerRadius: 10)
+    //             .fill(backgroundFillColor)
+    //             .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
 
-            if item.priority != .none {
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
-                    .opacity(priorityOpacity(for: item))
-            }
-        }
-        .padding(.vertical, 5)
-        .padding(.horizontal, 12)
-    }
+    //         if item.priority != .none {
+    //             RoundedRectangle(cornerRadius: 10)
+    //                 .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
+    //                 .opacity(priorityOpacity(for: item))
+    //         }
+    //     }
+    //     .padding(.vertical, 5)
+    //     .padding(.horizontal, 12)
+    // }
 
     private var backgroundFillColor: Color {
         themeManager.isDarkMode
