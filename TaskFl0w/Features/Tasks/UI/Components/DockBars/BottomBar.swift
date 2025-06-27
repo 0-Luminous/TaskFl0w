@@ -29,6 +29,22 @@ struct BottomBar: View {
     // Добавляем состояние для отслеживания нажатий
     @State private var isAddButtonPressed = false
     
+    // ДОБАВЛЯЕМ: состояния для анимации
+    @State private var selectionButtonScale: CGFloat = 1.0
+    @State private var selectionButtonRotation: Double = 0.0
+    @State private var isSelectionButtonPressed = false
+    @State private var pulseAnimation = false
+    // ДОБАВЛЯЕМ: состояния для анимации кнопки выхода
+    @State private var exitButtonScale: CGFloat = 1.0
+    @State private var exitButtonRotation: Double = 0.0
+    @State private var isExitButtonPressed = false
+    @State private var exitPulseAnimation = false
+    // ДОБАВЛЯЕМ: состояния для анимации архивной кнопки
+    @State private var archiveButtonScale: CGFloat = 1.0
+    @State private var archiveButtonRotation: Double = 0.0
+    @State private var isArchiveButtonPressed = false
+    @State private var archivePulseAnimation = false
+
     // MARK: - Body
     var body: some View {
         ZStack {
@@ -140,7 +156,6 @@ struct BottomBar: View {
                 .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: 1)
             }
         }
-        .padding(.horizontal, isSelectionMode ? 30 : 75)
         .padding(.bottom, 8)
     }
     
@@ -148,23 +163,339 @@ struct BottomBar: View {
     
     private var archiveButton: some View {
         Button(action: {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6, blendDuration: 0.1)) {
+                isArchiveButtonPressed = true
+                archiveButtonScale = 0.85
+                archiveButtonRotation += 360
+            }
+            
             hapticsManager.triggerMediumFeedback()
-            onArchiveTapped()
+            
+            // Добавляем задержку для visual feedback
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    onArchiveTapped()
+                    archiveButtonScale = 1.0
+                    isArchiveButtonPressed = false
+                }
+            }
+            
+            // Запускаем пульсацию при переключении в архив
+            withAnimation(.easeInOut(duration: 0.8).repeatCount(2, autoreverses: true)) {
+                archivePulseAnimation.toggle()
+            }
         }) {
-            toolbarIcon(systemName: showCompletedTasksOnly ? "archivebox.fill" : "archivebox", 
-                        color: themeManager.isDarkMode ? showCompletedTasksOnly ? .white : .gray : showCompletedTasksOnly ? .black : .gray)
+            animatedArchiveIcon
         }
+        .scaleEffect(archiveButtonScale)
+        .rotationEffect(.degrees(archiveButtonRotation))
+        .onAppear {
+            // Небольшая задержка для smooth transition при появлении
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    archiveButtonScale = 1.0
+                }
+            }
+        }
+    }
+    
+    // Создаем отдельный компонент для анимированной архивной иконки
+    private var animatedArchiveIcon: some View {
+        ZStack {
+            // Основная иконка
+            Image(systemName: showCompletedTasksOnly ? "archivebox.fill" : "archivebox")
+                .font(.system(size: 20, weight: showCompletedTasksOnly ? .bold : .regular))
+                .foregroundStyle(
+                    showCompletedTasksOnly 
+                        ? LinearGradient(
+                            gradient: Gradient(colors: [.purple, .indigo]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        : LinearGradient(
+                            gradient: Gradient(colors: [
+                                themeManager.isDarkMode ? .gray : .gray,
+                                themeManager.isDarkMode ? .gray : .gray
+                            ]),
+                            startPoint: .center,
+                            endPoint: .center
+                        )
+                )
+                .scaleEffect(isArchiveButtonPressed ? 1.2 : 1.0)
+                
+            // Пульсирующий эффект при активации
+            if showCompletedTasksOnly && archivePulseAnimation {
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [.purple.opacity(0.6), .indigo.opacity(0.3)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2
+                    )
+                    .scaleEffect(archivePulseAnimation ? 1.8 : 1.0)
+                    .opacity(archivePulseAnimation ? 0.0 : 0.8)
+                    .animation(.easeOut(duration: 1.0), value: archivePulseAnimation)
+            }
+            
+            // Дополнительные частицы при активации
+            if showCompletedTasksOnly {
+                ForEach(0..<6, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [.purple.opacity(0.7), .indigo.opacity(0.4)]),
+                                startPoint: .center,
+                                endPoint: .center
+                            )
+                        )
+                        .frame(width: 4, height: 2)
+                        .offset(
+                            x: cos(Double(index) * .pi / 3) * (archivePulseAnimation ? 25 : 15),
+                            y: sin(Double(index) * .pi / 3) * (archivePulseAnimation ? 25 : 15)
+                        )
+                        .opacity(archivePulseAnimation ? 0.0 : 0.8)
+                        .scaleEffect(archivePulseAnimation ? 0.1 : 1.0)
+                        .animation(
+                            .easeOut(duration: 0.8)
+                                .delay(Double(index) * 0.1),
+                            value: archivePulseAnimation
+                        )
+                }
+            }
+            
+            // Специальный эффект "заполнения архива" при активации
+            if isArchiveButtonPressed && !showCompletedTasksOnly {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.purple.opacity(0.3),
+                                Color.indigo.opacity(0.2)
+                            ]),
+                            startPoint: .bottom,
+                            endPoint: .top
+                        )
+                    )
+                    .frame(width: 16, height: isArchiveButtonPressed ? 12 : 2)
+                    .cornerRadius(2)
+                    .offset(y: 2)
+                    .animation(.easeInOut(duration: 0.4), value: isArchiveButtonPressed)
+            }
+            
+            // Волновой эффект при переключении
+            if archivePulseAnimation {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            gradient: Gradient(colors: [
+                                Color.purple.opacity(0.4),
+                                Color.indigo.opacity(0.2),
+                                Color.clear
+                            ]),
+                            center: .center,
+                            startRadius: 2,
+                            endRadius: 20
+                        )
+                    )
+                    .scaleEffect(archivePulseAnimation ? 1.8 : 0.5)
+                    .opacity(archivePulseAnimation ? 0.0 : 0.8)
+                    .animation(.easeOut(duration: 0.8), value: archivePulseAnimation)
+            }
+        }
+        .padding(6)
+        .background(
+            Circle()
+                .fill(
+                    themeManager.isDarkMode 
+                        ? Color(red: 0.184, green: 0.184, blue: 0.184)
+                        : Color(red: 0.95, green: 0.95, blue: 0.95)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(
+                            showCompletedTasksOnly
+                                ? LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.purple.opacity(0.8),
+                                        Color.indigo.opacity(0.6)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                : LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.gray.opacity(0.7),
+                                        Color.gray.opacity(0.3)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                            lineWidth: showCompletedTasksOnly ? 2.0 : 1.0
+                        )
+                        .scaleEffect(isArchiveButtonPressed ? 1.1 : 1.0)
+                )
+                .shadow(
+                    color: showCompletedTasksOnly 
+                        ? Color.purple.opacity(0.4) 
+                        : Color.black.opacity(0.3),
+                    radius: showCompletedTasksOnly ? 5 : 3,
+                    x: 0,
+                    y: 1
+                )
+        )
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: showCompletedTasksOnly)
+        .animation(.easeInOut(duration: 0.2), value: isArchiveButtonPressed)
     }
     
     private var selectionModeToggleButton: some View {
         Button(action: {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6, blendDuration: 0.1)) {
+                isSelectionButtonPressed = true
+                selectionButtonScale = 0.85
+                selectionButtonRotation += 360
+            }
+            
             hapticsManager.triggerMediumFeedback()
-            toggleSelectionMode()
+            
+            // Добавляем задержку для visual feedback
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    toggleSelectionMode()
+                    selectionButtonScale = 1.0
+                    isSelectionButtonPressed = false
+                }
+            }
+            
+            // Запускаем пульсацию ТОЛЬКО при ВХОДЕ в режим селекции
+            if !isSelectionMode {
+                withAnimation(.easeInOut(duration: 0.8).repeatCount(2, autoreverses: true)) {
+                    pulseAnimation.toggle()
+                }
+            }
         }) {
-            toolbarIcon(systemName: "checkmark.circle", color: .gray)
+            animatedSelectionIcon
+        }
+        .scaleEffect(selectionButtonScale)
+        .rotationEffect(.degrees(selectionButtonRotation))
+        .onAppear {
+            // Небольшая задержка для smooth transition при появлении
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    selectionButtonScale = 1.0
+                }
+            }
         }
     }
     
+    // Создаем отдельный компонент для анимированной иконки
+    private var animatedSelectionIcon: some View {
+        ZStack {
+            // Основная иконка
+            Image(systemName: isSelectionMode ? "checkmark.circle.fill" : "checkmark.circle")
+                .font(.system(size: 20, weight: isSelectionMode ? .bold : .regular))
+                .foregroundStyle(
+                    isSelectionMode 
+                        ? LinearGradient(
+                            gradient: Gradient(colors: [.blue, .cyan]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                        : LinearGradient(
+                            gradient: Gradient(colors: [.gray, .gray]),
+                            startPoint: .center,
+                            endPoint: .center
+                        )
+                )
+                .scaleEffect(isSelectionButtonPressed ? 1.2 : 1.0)
+                
+            // Пульсирующий эффект при активации
+            if isSelectionMode && pulseAnimation {
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [.blue.opacity(0.6), .cyan.opacity(0.3)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2
+                    )
+                    .scaleEffect(pulseAnimation ? 1.8 : 1.0)
+                    .opacity(pulseAnimation ? 0.0 : 0.8)
+                    .animation(.easeOut(duration: 1.0), value: pulseAnimation)
+            }
+            
+            // Дополнительные частицы при активации
+            if isSelectionMode {
+                ForEach(0..<6, id: \.self) { index in
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [.blue.opacity(0.7), .cyan.opacity(0.4)]),
+                                startPoint: .center,
+                                endPoint: .center
+                            )
+                        )
+                        .frame(width: 3, height: 3)
+                        .offset(
+                            x: cos(Double(index) * .pi / 3) * (pulseAnimation ? 25 : 15),
+                            y: sin(Double(index) * .pi / 3) * (pulseAnimation ? 25 : 15)
+                        )
+                        .opacity(pulseAnimation ? 0.0 : 0.8)
+                        .scaleEffect(pulseAnimation ? 0.1 : 1.0)
+                        .animation(
+                            .easeOut(duration: 0.8)
+                                .delay(Double(index) * 0.1),
+                            value: pulseAnimation
+                        )
+                }
+            }
+        }
+        .padding(6)
+        .background(
+            Circle()
+                .fill(
+                    themeManager.isDarkMode 
+                        ? Color(red: 0.184, green: 0.184, blue: 0.184)
+                        : Color(red: 0.95, green: 0.95, blue: 0.95)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(
+                            isSelectionMode
+                                ? LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.blue.opacity(0.8),
+                                        Color.cyan.opacity(0.6)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                : LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.gray.opacity(0.7),
+                                        Color.gray.opacity(0.3)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                            lineWidth: isSelectionMode ? 2.0 : 1.0
+                        )
+                        .scaleEffect(isSelectionButtonPressed ? 1.1 : 1.0)
+                )
+                .shadow(
+                    color: isSelectionMode 
+                        ? Color.blue.opacity(0.4) 
+                        : Color.black.opacity(0.3),
+                    radius: isSelectionMode ? 5 : 3,
+                    x: 0,
+                    y: 1
+                )
+        )
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isSelectionMode)
+        .animation(.easeInOut(duration: 0.2), value: isSelectionButtonPressed)
+    }
     
     private var deleteButton: some View {
         Button(action: {
@@ -207,12 +538,162 @@ struct BottomBar: View {
     
     private var exitSelectionModeButton: some View {
         Button(action: {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6, blendDuration: 0.1)) {
+                isExitButtonPressed = true
+                exitButtonScale = 0.8
+                exitButtonRotation -= 360 // Обратное вращение для выхода
+            }
+            
             hapticsManager.triggerMediumFeedback()
-            toggleSelectionMode()
+            
+            // Запускаем эффект "исчезновения" перед выходом
+            withAnimation(.easeInOut(duration: 0.6).repeatCount(1, autoreverses: true)) {
+                exitPulseAnimation.toggle()
+            }
+            
+            // Добавляем задержку для visual feedback
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    toggleSelectionMode()
+                    exitButtonScale = 1.0
+                    isExitButtonPressed = false
+                }
+            }
         }) {
-            toolbarIcon(systemName: "checkmark.circle.fill", color: themeManager.isDarkMode ? .white : .black)
+            animatedExitIcon
         }
+        .scaleEffect(exitButtonScale)
+        .rotationEffect(.degrees(exitButtonRotation))
         .frame(width: 38, height: 38)
+        .onAppear {
+            // Анимация появления при входе в режим селекции
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.2)) {
+                exitButtonScale = 1.0
+            }
+        }
+    }
+    
+    // Создаем отдельный компонент для анимированной иконки выхода
+    private var animatedExitIcon: some View {
+        ZStack {
+            // Основная иконка
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            themeManager.isDarkMode ? .white : .black,
+                            themeManager.isDarkMode ? .gray : .gray
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .scaleEffect(isExitButtonPressed ? 1.3 : 1.0)
+                
+            // Эффект "растворения" при выходе
+            if exitPulseAnimation {
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.red.opacity(0.6), 
+                                Color.orange.opacity(0.3)
+                            ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 2
+                    )
+                    .scaleEffect(exitPulseAnimation ? 2.2 : 1.0)
+                    .opacity(exitPulseAnimation ? 0.0 : 0.9)
+                    .animation(.easeOut(duration: 0.8), value: exitPulseAnimation)
+            }
+            
+            // Частицы "разрушения" при выходе
+            if exitPulseAnimation {
+                ForEach(0..<8, id: \.self) { index in
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.red.opacity(0.8), 
+                                    Color.orange.opacity(0.5)
+                                ]),
+                                startPoint: .center,
+                                endPoint: .center
+                            )
+                        )
+                        .frame(width: 2, height: 6)
+                        .offset(
+                            x: cos(Double(index) * .pi / 4) * (exitPulseAnimation ? 30 : 8),
+                            y: sin(Double(index) * .pi / 4) * (exitPulseAnimation ? 30 : 8)
+                        )
+                        .rotationEffect(.degrees(Double(index) * 45))
+                        .opacity(exitPulseAnimation ? 0.0 : 0.9)
+                        .scaleEffect(exitPulseAnimation ? 0.1 : 1.0)
+                        .animation(
+                            .easeOut(duration: 0.8)
+                                .delay(Double(index) * 0.08),
+                            value: exitPulseAnimation
+                        )
+                }
+            }
+            
+            // Волновой эффект "выключения"
+            if isExitButtonPressed {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            gradient: Gradient(colors: [
+                                Color.red.opacity(0.4),
+                                Color.orange.opacity(0.2),
+                                Color.clear
+                            ]),
+                            center: .center,
+                            startRadius: 5,
+                            endRadius: 25
+                        )
+                    )
+                    .scaleEffect(isExitButtonPressed ? 1.5 : 0.5)
+                    .opacity(isExitButtonPressed ? 0.0 : 0.8)
+                    .animation(.easeOut(duration: 0.6), value: isExitButtonPressed)
+            }
+        }
+        .padding(6)
+        .background(
+            Circle()
+                .fill(
+                    themeManager.isDarkMode 
+                        ? Color(red: 0.184, green: 0.184, blue: 0.184)
+                        : Color(red: 0.95, green: 0.95, blue: 0.95)
+                )
+                .overlay(
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color.red.opacity(exitPulseAnimation ? 0.8 : 0.4),
+                                    Color.orange.opacity(exitPulseAnimation ? 0.6 : 0.3)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isExitButtonPressed ? 2.5 : 1.5
+                        )
+                        .scaleEffect(isExitButtonPressed ? 1.2 : 1.0)
+                )
+                .shadow(
+                    color: exitPulseAnimation 
+                        ? Color.red.opacity(0.5) 
+                        : Color.black.opacity(0.3),
+                    radius: exitPulseAnimation ? 8 : 3,
+                    x: 0,
+                    y: 1
+                )
+        )
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: exitPulseAnimation)
+        .animation(.easeInOut(duration: 0.3), value: isExitButtonPressed)
     }
     
     private var unarchiveButton: some View {
