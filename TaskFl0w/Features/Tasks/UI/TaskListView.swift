@@ -285,33 +285,6 @@ struct TaskListView: View {
         }
     }
 
-    // private func taskRowBackground(for item: ToDoItem) -> some View {
-    //     ZStack {
-    //         RoundedRectangle(cornerRadius: 10)
-    //             .fill(backgroundFillColor)
-    //             .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
-
-    //         if item.priority != .none {
-    //             RoundedRectangle(cornerRadius: 10)
-    //                 .stroke(viewModel.getPriorityColor(for: item.priority), lineWidth: 1.5)
-    //                 .opacity(priorityOpacity(for: item))
-    //         }
-    //     }
-    //     .padding(.vertical, 5)
-    //     .padding(.horizontal, 12)
-    // }
-
-    private var backgroundFillColor: Color {
-        themeManager.isDarkMode
-            ? Color(red: 0.18, green: 0.18, blue: 0.18)
-            : Color(red: 0.9, green: 0.9, blue: 0.9)
-    }
-
-    private func priorityOpacity(for item: ToDoItem) -> Double {
-        item.isCompleted && !viewModel.isSelectionMode && !viewModel.showCompletedTasksOnly
-            ? 0.5 : 1.0
-    }
-
     private var newTaskSection: some View {
         Group {
             if isAddingNewTask {

@@ -63,7 +63,7 @@ struct TaskRow: View {
                 .padding(.trailing, 16)
             }
         }
-        .padding(.vertical, 16)
+        .padding(.vertical, 8)
     }
     
     // MARK: - Action Zone (Completion Indicator)
