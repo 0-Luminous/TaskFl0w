@@ -39,8 +39,6 @@ final class ClockMarkersViewModel: ObservableObject {
     // Список доступных шрифтов с PostScript именами
     let customFonts: [String] = [
 
-
- 
         "Nunito",
         "SF Pro",
         "MOSCOW2024",

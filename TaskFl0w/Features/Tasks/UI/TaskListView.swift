@@ -26,12 +26,17 @@ struct TaskListView: View {
     @State private var showingDeadlinePicker = false
     @State private var selectedDeadlineDate = Date()
     @State private var showingDeleteAlert = false
+    
+    // ДОБАВЛЯЕМ: локальные @State для синхронизации с ViewModel
+    @State private var localIsSelectionMode = false
+    @State private var localSelectedTasks: Set<UUID> = []
+    @State private var localShowCompletedTasksOnly = false
 
     @FocusState private var isNewTaskFocused: Bool
 
     @Binding var selectedDate: Date
 
-    @ObservedObject var viewModel: ListViewModel // ИЗМЕНЕНО: используем новый ViewModel
+    @ObservedObject var viewModel: ListViewModel
     @ObservedObject private var calendarState = CalendarState.shared
     @ObservedObject private var themeManager = ThemeManager.shared
 
@@ -103,7 +108,39 @@ struct TaskListView: View {
                 "Вы уверены, что хотите удалить выбранные задачи (\(viewModel.selectedTasks.count))?"
             )
         }
-
+        // ДОБАВЛЯЕМ: синхронизация состояний с ViewModel
+        .onChange(of: viewModel.isSelectionMode) { oldValue, newValue in
+            localIsSelectionMode = newValue
+        }
+        .onChange(of: viewModel.selectedTasks) { oldValue, newValue in
+            localSelectedTasks = newValue
+        }
+        .onChange(of: viewModel.showCompletedTasksOnly) { oldValue, newValue in
+            localShowCompletedTasksOnly = newValue
+        }
+        // ДОБАВЛЯЕМ: обратная синхронизация от UI к ViewModel
+        .onChange(of: localIsSelectionMode) { oldValue, newValue in
+            if newValue != viewModel.isSelectionMode {
+                viewModel.handle(.toggleSelectionMode)
+            }
+        }
+        .onChange(of: localSelectedTasks) { oldValue, newValue in
+            // Синхронизируем отдельные изменения задач
+            let added = newValue.subtracting(oldValue)
+            let removed = oldValue.subtracting(newValue)
+            
+            for taskId in added {
+                viewModel.handle(.selectTask(taskId))
+            }
+            for taskId in removed {
+                viewModel.handle(.deselectTask(taskId))
+            }
+        }
+        .onChange(of: localShowCompletedTasksOnly) { oldValue, newValue in
+            if newValue != viewModel.showCompletedTasksOnly {
+                viewModel.handle(.showCompletedTasks(newValue))
+            }
+        }
     }
 
     // MARK: - Computed Properties для разбивки сложного body
@@ -360,8 +397,9 @@ struct TaskListView: View {
                     isNewTaskFocused = true
                 }
             },
-            isSelectionMode: .constant(viewModel.isSelectionMode),
-            selectedTasks: .constant(viewModel.selectedTasks),
+            // ИЗМЕНЯЕМ: используем локальные @State биндинги
+            isSelectionMode: $localIsSelectionMode,
+            selectedTasks: $localSelectedTasks,
             onDeleteSelectedTasks: {
                 showingDeleteAlert = true
             },
@@ -375,7 +413,8 @@ struct TaskListView: View {
             onUnarchiveSelectedTasks: {
                 viewModel.unarchiveSelectedTasks()
             },
-            showCompletedTasksOnly: .constant(viewModel.showCompletedTasksOnly),
+            // ИЗМЕНЯЕМ: используем локальный биндинг
+            showCompletedTasksOnly: $localShowCompletedTasksOnly,
             onFlagSelectedTasks: {
                 selectedDeadlineDate = Date()
                 showingDeadlinePicker = true
@@ -477,6 +516,11 @@ struct TaskListView: View {
             viewModel.selectedCategory = selectedCategory
         }
         viewModel.handle(.loadTasks(Date()))
+        
+        // ДОБАВЛЯЕМ: инициализация локальных состояний
+        localIsSelectionMode = viewModel.isSelectionMode
+        localSelectedTasks = viewModel.selectedTasks
+        localShowCompletedTasksOnly = viewModel.showCompletedTasksOnly
     }
 
     private func resetNewTask() {
