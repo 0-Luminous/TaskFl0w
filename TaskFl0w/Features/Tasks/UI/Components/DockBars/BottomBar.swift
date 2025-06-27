@@ -40,7 +40,6 @@ struct BottomBar: View {
     @State private var isExitButtonPressed = false
     @State private var exitPulseAnimation = false
     // ДОБАВЛЯЕМ: состояния для анимации архивной кнопки
-    @State private var archiveButtonScale: CGFloat = 1.0
     @State private var archiveButtonRotation: Double = 0.0
     @State private var isArchiveButtonPressed = false
     @State private var archivePulseAnimation = false
@@ -165,7 +164,6 @@ struct BottomBar: View {
         Button(action: {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.6, blendDuration: 0.1)) {
                 isArchiveButtonPressed = true
-                archiveButtonScale = 0.85
                 archiveButtonRotation += 360
             }
             
@@ -175,7 +173,6 @@ struct BottomBar: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                     onArchiveTapped()
-                    archiveButtonScale = 1.0
                     isArchiveButtonPressed = false
                 }
             }
@@ -187,16 +184,7 @@ struct BottomBar: View {
         }) {
             animatedArchiveIcon
         }
-        .scaleEffect(archiveButtonScale)
         .rotationEffect(.degrees(archiveButtonRotation))
-        .onAppear {
-            // Небольшая задержка для smooth transition при появлении
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                    archiveButtonScale = 1.0
-                }
-            }
-        }
     }
     
     // Создаем отдельный компонент для анимированной архивной иконки
@@ -221,7 +209,6 @@ struct BottomBar: View {
                             endPoint: .center
                         )
                 )
-                .scaleEffect(isArchiveButtonPressed ? 1.2 : 1.0)
                 
             // Пульсирующий эффект при активации
             if showCompletedTasksOnly && archivePulseAnimation {
@@ -264,45 +251,6 @@ struct BottomBar: View {
                         )
                 }
             }
-            
-            // Специальный эффект "заполнения архива" при активации
-            if isArchiveButtonPressed && !showCompletedTasksOnly {
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [
-                                Color.purple.opacity(0.3),
-                                Color.indigo.opacity(0.2)
-                            ]),
-                            startPoint: .bottom,
-                            endPoint: .top
-                        )
-                    )
-                    .frame(width: 16, height: isArchiveButtonPressed ? 12 : 2)
-                    .cornerRadius(2)
-                    .offset(y: 2)
-                    .animation(.easeInOut(duration: 0.4), value: isArchiveButtonPressed)
-            }
-            
-            // Волновой эффект при переключении
-            if archivePulseAnimation {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            gradient: Gradient(colors: [
-                                Color.purple.opacity(0.4),
-                                Color.indigo.opacity(0.2),
-                                Color.clear
-                            ]),
-                            center: .center,
-                            startRadius: 2,
-                            endRadius: 20
-                        )
-                    )
-                    .scaleEffect(archivePulseAnimation ? 1.8 : 0.5)
-                    .opacity(archivePulseAnimation ? 0.0 : 0.8)
-                    .animation(.easeOut(duration: 0.8), value: archivePulseAnimation)
-            }
         }
         .padding(6)
         .background(
@@ -334,7 +282,7 @@ struct BottomBar: View {
                                 ),
                             lineWidth: showCompletedTasksOnly ? 2.0 : 1.0
                         )
-                        .scaleEffect(isArchiveButtonPressed ? 1.1 : 1.0)
+                        // .scaleEffect(isArchiveButtonPressed ? 1.1 : 1.0)
                 )
                 .shadow(
                     color: showCompletedTasksOnly 
