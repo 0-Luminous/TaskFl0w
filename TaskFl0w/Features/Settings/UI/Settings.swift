@@ -93,7 +93,7 @@ struct PersonalizationViewIOS: View {
                 // Циферблат
                 createSettingsButton(
                     icon: "clock.fill",
-                    title: "settings.clockFace".localized,
+                    title: "settings.watchFace".localized,
                     action: {
                         hapticsManager.triggerSoftFeedback()
                         showingClockFaceEditor = true
@@ -109,8 +109,12 @@ struct PersonalizationViewIOS: View {
                         showingCategoryEditor = true
                     }
                 )
+                Spacer()
 
-                // Остальные кнопки...
+                // Переключатель темы
+                ThemeModeToggle()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.bottom, 10)
             }
         }
         .navigationTitle("navigation.settings".localized)

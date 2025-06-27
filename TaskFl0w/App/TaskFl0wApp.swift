@@ -42,14 +42,14 @@ struct TaskFl0wApp: App {
         
         var body: some View {
             Group {
-                if shouldShowFirstView {
-                    FirstView()
-                        .onDisappear {
-                            isAppAlreadyLaunchedOnce = true
-                        }
-                } else {
+                // if shouldShowFirstView {
+                //     FirstView()
+                //         .onDisappear {
+                //             isAppAlreadyLaunchedOnce = true
+                //         }
+                // } else {
                     ClockViewIOS()
-                }
+                // }
             }
             .animation(.easeInOut(duration: 0.3), value: shouldShowFirstView)
         }

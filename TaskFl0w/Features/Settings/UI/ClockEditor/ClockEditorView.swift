@@ -111,18 +111,18 @@ struct ClockEditorView: View {
                 .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    // if showClockControls {
-                    //     ClockControlsView(
-                    //         viewModel: viewModel,
-                    //         markersViewModel: markersViewModel,
-                    //         showFontPicker: $showFontPicker,
-                    //         showSizeSettings: $showSizeSettings,
-                    //         showIntervalSettings: $showIntervalSettings,
-                    //         fontName: $fontName
-                    //     )
-                    //     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    //     .padding(.bottom, 8)
-                    // }
+                   if showClockControls {
+                       ClockControlsView(
+                           viewModel: viewModel,
+                           markersViewModel: markersViewModel,
+                           showFontPicker: $showFontPicker,
+                           showSizeSettings: $showSizeSettings,
+                           showIntervalSettings: $showIntervalSettings,
+                           fontName: $fontName
+                       )
+                       .transition(AnyTransition.move(edge: .bottom).combined(with: .opacity))
+                       .padding(.bottom, 8)
+                   }
                     if showColorControls {
                         ColorControlsView(
                             viewModel: viewModel,
@@ -141,20 +141,20 @@ struct ClockEditorView: View {
                             lightModeDigitalFontColor: $lightModeDigitalFontColor,
                             darkModeDigitalFontColor: $darkModeDigitalFontColor
                         )
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .transition(AnyTransition.move(edge: .bottom).combined(with: .opacity))
                         .padding(.bottom, 8)
                     }
-                    // if showOuterRingWidthControls {
-                    //     RingWidthControlsView(viewModel: viewModel)
-                    //         .transition(.move(edge: .bottom).combined(with: .opacity))
-                    //         .padding(.bottom, 8)
-                    // }
+                    if showOuterRingWidthControls {
+                        RingWidthControlsView(viewModel: viewModel)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .padding(.bottom, 8)
+                    }
                     if showArcAnalogToggle {
                         ArcStyleControlsView(
                             viewModel: viewModel,
                             showTimeOnlyForActiveTask: $showTimeOnlyForActiveTask
                         )
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .transition(AnyTransition.move(edge: .bottom).combined(with: .opacity))
                         .padding(.bottom, 8)
                     }
                     if showMarkersControls {
@@ -163,14 +163,15 @@ struct ClockEditorView: View {
                             markersViewModel: markersViewModel,
                             showMarkers: $showMarkers
                         )
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .transition(AnyTransition.move(edge: .bottom).combined(with: .opacity))
                         .padding(.bottom, 8)
                     }
-                    if showZeroPositionControls {
-                        ZeroPositionControlView(viewModel: viewModel)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .padding(.bottom, 8)
-                    }
+                    // Временно закомментируем ZeroPositionControlView, так как он не работает
+                    // if showZeroPositionControls {
+                    //     ZeroPositionControlView(viewModel: viewModel)
+                    //         .transition(AnyTransition.move(edge: .bottom).combined(with: .opacity))
+                    //         .padding(.bottom, 8)
+                    // }
                     
                     DockBarView(
                         showClockControls: $showClockControls,
