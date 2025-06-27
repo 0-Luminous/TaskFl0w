@@ -11,6 +11,7 @@ struct ClockEditorView: View {
     @ObservedObject var viewModel: ClockViewModel
     @ObservedObject var markersViewModel: ClockMarkersViewModel
     @ObservedObject private var themeManager = ThemeManager.shared
+    @StateObject private var themeConfigurationViewModel = ThemeConfigurationViewModel()
     let taskArcLineWidth: CGFloat
 
     @AppStorage("lightModeOuterRingColor") private var lightModeOuterRingColor: String = Color.gray
@@ -125,19 +126,24 @@ struct ClockEditorView: View {
                    }
                     if showColorControls {
                         ColorControlsView(
-                            viewModel: viewModel,
+                            viewModel: themeConfigurationViewModel,
                             markersViewModel: markersViewModel,
-                            selectedColorType: $selectedColorType,
-                            showHandColorSettings: $showHandColorSettings,
-                            showColorSettings: $showColorPickerSheet,
+                            themeManager: themeManager,
+                            lightModeOuterRingColor: $lightModeOuterRingColor,
+                            darkModeOuterRingColor: $darkModeOuterRingColor,
                             lightModeClockFaceColor: $lightModeClockFaceColor,
                             darkModeClockFaceColor: $darkModeClockFaceColor,
                             lightModeMarkersColor: $lightModeMarkersColor,
                             darkModeMarkersColor: $darkModeMarkersColor,
-                            lightModeOuterRingColor: $lightModeOuterRingColor,
-                            darkModeOuterRingColor: $darkModeOuterRingColor,
                             lightModeHandColor: $lightModeHandColor,
                             darkModeHandColor: $darkModeHandColor,
+                            showColorPickerSheet: $showColorPickerSheet,
+                            colorPickerType: $colorPickerType,
+                            sliderBrightnessPosition: $sliderBrightnessPosition,
+                            currentBaseColor: $currentBaseColor,
+                            selectedColorType: $selectedColorType,
+                            selectedColorHex: $selectedColorHex,
+                            selectedColorIndex: $selectedColorIndex,
                             lightModeDigitalFontColor: $lightModeDigitalFontColor,
                             darkModeDigitalFontColor: $darkModeDigitalFontColor
                         )
