@@ -574,9 +574,9 @@ private struct CategoryContainerView: View {
                     )
                     .padding(.horizontal, 5)
                     .padding(.vertical, 3)
-                    .background(
-                        TaskRowBackground(priority: item.priority)
-                    )
+                    // .background(
+                    //     TaskRowBackground(priority: item.priority)
+                    // )
                     .contentShape(Rectangle())
                     .onTapGesture {
                         handleTaskTap(item.id)
