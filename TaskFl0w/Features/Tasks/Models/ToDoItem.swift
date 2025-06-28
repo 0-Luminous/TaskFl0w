@@ -6,7 +6,7 @@
 //
 import Foundation
 
-struct ToDoItem: Identifiable, Codable {
+struct ToDoItem: Identifiable, Codable, Equatable {
     let id: UUID
     var title: String
     var date: Date
@@ -29,5 +29,17 @@ struct ToDoItem: Identifiable, Codable {
         self.categoryName = categoryName
         self.priority = priority
         self.deadline = deadline
+    }
+    
+    // MARK: - Equatable Implementation
+    static func == (lhs: ToDoItem, rhs: ToDoItem) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.title == rhs.title &&
+               lhs.date == rhs.date &&
+               lhs.isCompleted == rhs.isCompleted &&
+               lhs.categoryID == rhs.categoryID &&
+               lhs.categoryName == rhs.categoryName &&
+               lhs.priority == rhs.priority &&
+               lhs.deadline == rhs.deadline
     }
 }
