@@ -121,7 +121,7 @@ extension TaskListView {
     }
 
     private var shouldShowBottomBar: Bool {
-        !isSearchActive && !isKeyboardVisible && !isAddingNewTask
+        !isSearchActive && !isAddingNewTask
     }
     
     // 🎨 КРАСИВАЯ АНИМАЦИЯ: Основной список с плавным перемещением задач
@@ -272,6 +272,7 @@ extension TaskListView {
                 }
             }
         )
+        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: shouldShowBottomBar)
     }
 
     // ОПТИМИЗАЦИЯ: Упрощенный ActionSheet
@@ -348,7 +349,7 @@ extension TaskListView {
             NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
                 .map { _ in false }
         )
-        .debounce(for: .milliseconds(100), scheduler: RunLoop.main)
+        .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
         .eraseToAnyPublisher()
     }
     
@@ -375,18 +376,29 @@ extension TaskListView {
         if let selectedCategory = selectedCategory {
             viewModel.selectedCategory = selectedCategory
         }
-        isAddingNewTask = true
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            isAddingNewTask = true
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             isNewTaskFocused = true
         }
     }
     
     private func resetNewTask() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        
         newTaskTitle = ""
         newTaskPriority = .none
         isAddingNewTask = false
         isNewTaskFocused = false
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isKeyboardVisible = false
+            }
+        }
     }
     
     // Вспомогательные методы
@@ -465,6 +477,9 @@ extension TaskListView {
                 onSave: {
                     withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                         viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
+                        
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        
                         resetNewTask()
                     }
                 }
