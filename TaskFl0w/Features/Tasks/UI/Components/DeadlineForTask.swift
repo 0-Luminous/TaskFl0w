@@ -359,21 +359,21 @@ struct DeadlineForTaskView: View {
                                     // Кнопка установки для режима напоминания
                                     Button {
                                         hapticsManager.triggerMediumFeedback()
-                                        // Создаем финальную дату deadline без вычитания времени напоминания
+                                        // Создаем финальную дату deadline
                                         let baseDate = combineDateAndTime(date: selectedDate, time: selectedTime)
+                                        
+                                        // 🔧 ИСПРАВЛЕНИЕ: Удаляем старые уведомления ПЕРЕД созданием новых
+                                        removeExistingNotifications()
                                         
                                         // Создаем системное уведомление
                                         createNotificationForDeadline(baseDate: baseDate, reminderOption: selectedReminderOption)
                                         
-                                        // Обновляем локальное состояние для показа информации о deadline
-                                        currentDeadline = baseDate
+                                        // 🔧 ИСПРАВЛЕНИЕ: Вызываем callback для сохранения в базе данных
+                                        onSetDeadlineForTasks(baseDate)
                                         
-                                        // Обновляем selectedDate чтобы календарь показывал установленную дату
-                                        selectedDate = baseDate
-                                        
-                                        // Возвращаемся к календарю вместо закрытия экрана
+                                        // 🔧 ИСПРАВЛЕНИЕ: Закрываем экран после установки
                                         withAnimation(.easeInOut(duration: 0.3)) {
-                                            hasReminder = false
+                                            isPresented = false
                                         }
                                     } label: {
                                         HStack(spacing: 8) {
@@ -458,19 +458,13 @@ struct DeadlineForTaskView: View {
                             Button {
                                 hapticsManager.triggerMediumFeedback()
                                 
-                                // Определяем финальную дату в зависимости от того, было ли установлено время
-                                let finalDate: Date
-                                if let current = currentDeadline {
-                                    // Если время было установлено через напоминание, используем его
-                                    finalDate = current
-                                } else {
-                                    // Иначе используем только выбранную дату без времени (00:00)
-                                    finalDate = selectedDate
-                                }
+                                // 🔧 ИСПРАВЛЕНИЕ: Удаляем старые уведомления для всех задач
+                                removeExistingNotifications()
                                 
-                                // Обновляем локальное состояние для показа информации о deadline
-                                currentDeadline = finalDate
+                                // 🔧 ИСПРАВЛЕНИЕ: Используем выбранную дату напрямую (как кнопка с checkmark)
+                                let finalDate = selectedDate
                                 
+                                // 🔧 ИСПРАВЛЕНИЕ: Всегда вызываем callback для сохранения
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     onSetDeadlineForTasks(finalDate)
                                     isPresented = false
@@ -716,19 +710,31 @@ struct DeadlineForTaskView: View {
         let taskIds = selectedTasks.map { $0.id.uuidString }
         
         UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
-            let identifiersToRemove = requests.compactMap { request in
-                // Проверяем, содержит ли идентификатор ID наших задач
-                for taskId in taskIds {
-                    if request.identifier.contains(taskId) {
-                        return request.identifier
+            var identifiersToRemove: [String] = []
+            
+            for request in requests {
+                // Проверяем по user info данным
+                let userInfo = request.content.userInfo
+                if let notificationTaskIds = userInfo["taskIds"] as? [String] {
+                    // Если есть пересечение с нашими задачами - удаляем
+                    if !Set(notificationTaskIds).isDisjoint(with: Set(taskIds)) {
+                        identifiersToRemove.append(request.identifier)
+                    }
+                } else {
+                    // Также проверяем по старому формату (по identifier)
+                    for taskId in taskIds {
+                        if request.identifier.contains(taskId) {
+                            identifiersToRemove.append(request.identifier)
+                            break
+                        }
                     }
                 }
-                return nil
             }
             
             if !identifiersToRemove.isEmpty {
                 UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: identifiersToRemove)
                 print("🗑️ Удалено \(identifiersToRemove.count) старых уведомлений для задач")
+                print("📋 Удаленные ID: \(identifiersToRemove)")
             }
         }
     }

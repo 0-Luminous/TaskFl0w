@@ -7,8 +7,8 @@
 
 import CoreData
 import SwiftUI
-import UIKit
 import Combine
+import UIKit
 
 struct TaskListView: View {
     // MARK: - Core Properties
@@ -320,23 +320,38 @@ extension TaskListView {
     }
 
     private var deadlineTaskSheet: some View {
-        DeadlineForTaskView(
+        let existingDeadline = getExistingDeadlineForSelectedTasks()
+        print("🔄 deadlineTaskSheet: Пересчитали existingDeadline = \(existingDeadline?.description ?? "nil")")
+        
+        return DeadlineForTaskView(
             selectedDate: $selectedDeadlineDate,
             isPresented: $showingDeadlinePicker,
             selectedTasksCount: viewModel.selectedTasks.count,
             selectedTasks: getSelectedTasksInfo(),
             onSetDeadlineForTasks: { date in
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                    viewModel.setDeadlineForSelectedTasks(date)
-                }
+                viewModel.setDeadlineForSelectedTasks(date)
             },
-            existingDeadline: getExistingDeadlineForSelectedTasks()
+            existingDeadline: existingDeadline
         )
         .onAppear {
-            if let existingDeadline = getExistingDeadlineForSelectedTasks() {
+            let currentExisting = getExistingDeadlineForSelectedTasks()
+            print("📱 DeadlineTaskSheet onAppear: existingDeadline = \(currentExisting?.description ?? "nil")")
+            
+            if let existingDeadline = currentExisting {
                 selectedDeadlineDate = existingDeadline
             } else {
                 selectedDeadlineDate = Date()
+            }
+        }
+        // 🔧 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Обновляем при изменении данных
+        .onChange(of: viewModel.items) { oldItems, newItems in
+            print("🔄 TaskListView: Данные изменились! Старое количество: \(oldItems.count), новое: \(newItems.count)")
+            
+            // Проверяем deadline'ы в новых данных
+            for item in newItems {
+                if viewModel.selectedTasks.contains(item.id) {
+                    print("📝 Задача \(item.id): deadline = \(item.deadline?.description ?? "nil")")
+                }
             }
         }
     }
@@ -387,12 +402,12 @@ extension TaskListView {
     }
     
     private func resetNewTask() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        // 🔧 ИСПРАВЛЕНИЕ: Используем FocusState вместо UIKit
+        isNewTaskFocused = false
         
         newTaskTitle = ""
         newTaskPriority = .none
         isAddingNewTask = false
-        isNewTaskFocused = false
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             withAnimation(.easeInOut(duration: 0.3)) {
@@ -417,11 +432,18 @@ extension TaskListView {
     private func getExistingDeadlineForSelectedTasks() -> Date? {
         let selectedTaskItems = viewModel.items.filter { viewModel.selectedTasks.contains($0.id) }
         let deadlines = selectedTaskItems.compactMap { $0.deadline }
+        
+        print("🔍 getExistingDeadlineForSelectedTasks: Выбрано \(selectedTaskItems.count) задач")
+        print("🔍 Найдено \(deadlines.count) deadline'ов: \(deadlines.map { $0.description })")
 
-        if !deadlines.isEmpty && deadlines.allSatisfy({ Calendar.current.isDate($0, inSameDayAs: deadlines.first!) }) {
-            return deadlines.first
+        if !deadlines.isEmpty {
+            // 🔧 ИСПРАВЛЕНИЕ: Возвращаем первый найденный deadline вместо проверки на одинаковую дату
+            let firstDeadline = deadlines.first!
+            print("✅ Возвращаем deadline: \(firstDeadline)")
+            return firstDeadline
         }
 
+        print("❌ Нет deadline'ов для выбранных задач")
         return nil
     }
 }
@@ -478,7 +500,8 @@ extension TaskListView {
                     withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                         viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
                         
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        // 🔧 ИСПРАВЛЕНИЕ: Используем FocusState вместо UIKit
+                        isNewTaskFocused = false
                         
                         resetNewTask()
                     }

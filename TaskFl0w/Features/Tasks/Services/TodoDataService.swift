@@ -102,8 +102,11 @@ final class TodoDataService: ObservableObject {
             entity.setValue(item.categoryID, forKey: "categoryID")
             entity.setValue(item.categoryName, forKey: "categoryName")
             
+            // 🔧 ИСПРАВЛЕНИЕ: Принудительное обновление deadline
+            entity.setValue(item.deadline, forKey: "deadline")
+            
             try saveContext()
-            logger.info("Обновлена задача: \(item.id)")
+            logger.info("✅ Обновлена задача: \(item.id) с deadline: \(item.deadline?.description ?? "nil")")
         } catch {
             logger.error("Ошибка обновления задачи: \(error.localizedDescription)")
             throw error
@@ -208,6 +211,12 @@ final class TodoDataService: ObservableObject {
         let priorityRaw = entity.value(forKey: "priority") as? Int ?? 0
         let priority = TaskPriority(rawValue: priorityRaw) ?? .none
         
+        // 🔧 ИСПРАВЛЕНИЕ: Принудительно загружаем deadline из базы данных
+        let deadline = entity.value(forKey: "deadline") as? Date
+        
+        // 📝 ДЕБАГ: Логируем загруженные данные
+        logger.debug("📦 Загружена задача \(id): deadline = \(deadline?.description ?? "nil")")
+        
         return ToDoItem(
             id: id,
             title: title,
@@ -216,7 +225,7 @@ final class TodoDataService: ObservableObject {
             categoryID: categoryID,
             categoryName: categoryName,
             priority: priority,
-            deadline: nil // Deadline пока не поддерживается в CoreData модели
+            deadline: deadline // Теперь загружаем deadline из CoreData
         )
     }
     

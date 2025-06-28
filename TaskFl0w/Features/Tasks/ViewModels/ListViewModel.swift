@@ -292,16 +292,27 @@ final class ListViewModel: ObservableObject {
     private func updateTask(_ item: ToDoItem) {
         Task {
             do {
+                logger.info("🔄 Обновляем задачу: \(item.id) с deadline: \(item.deadline?.description ?? "nil")")
+                
                 try await todoDataService.updateTask(item)
+                
                 await MainActor.run {
+                    // 🔧 ИСПРАВЛЕНИЕ: Обновляем локальное состояние сразу
+                    if let index = self.state.items.firstIndex(where: { $0.id == item.id }) {
+                        self.state.items[index] = item
+                        logger.info("✅ Локальное состояние обновлено для задачи: \(item.id)")
+                    }
+                    
+                    // Применяем фильтры для обновления UI
+                    self.applyCurrentFilters()
+                    
                     self.state.editingItem = nil
-                    self.handle(.loadTasks(self.state.selectedDate))
-                    self.logger.info("Обновлена задача: \(item.id)")
+                    self.logger.info("✅ Задача обновлена: \(item.id) с deadline: \(item.deadline?.description ?? "nil")")
                 }
             } catch {
                 await MainActor.run {
                     self.state.error = error.localizedDescription
-                    self.logger.error("Ошибка обновления задачи: \(error.localizedDescription)")
+                    self.logger.error("❌ Ошибка обновления задачи: \(error.localizedDescription)")
                 }
             }
         }
@@ -425,6 +436,77 @@ final class ListViewModel: ObservableObject {
             }
         }
     }
+    
+    func setDeadlineForSelectedTasks(_ deadline: Date) {
+        logger.info("🎯 Устанавливаем deadline для \(self.state.selectedTasks.count) задач: \(deadline)")
+        
+        let selectedTaskIds = Array(self.state.selectedTasks) // Копируем чтобы не потерять после clearSelection
+        
+        Task {
+            var successCount = 0
+            var errorCount = 0
+            
+            // Обновляем каждую задачу последовательно
+            for taskId in selectedTaskIds {
+                logger.info("📝 Устанавливаем deadline для задачи: \(taskId)")
+                
+                guard let task = self.state.items.first(where: { $0.id == taskId }) else {
+                    logger.warning("❌ Задача с ID \(taskId) не найдена для установки deadline")
+                    errorCount += 1
+                    continue
+                }
+                
+                let updatedTask = ToDoItem(
+                    id: task.id,
+                    title: task.title,
+                    date: task.date,
+                    isCompleted: task.isCompleted,
+                    categoryID: task.categoryID,
+                    categoryName: task.categoryName,
+                    priority: task.priority,
+                    deadline: deadline
+                )
+                
+                do {
+                    logger.info("💾 Сохраняем задачу \(taskId) с deadline: \(deadline)")
+                    try await todoDataService.updateTask(updatedTask)
+                    
+                    await MainActor.run {
+                        // Обновляем локальное состояние сразу
+                        if let index = self.state.items.firstIndex(where: { $0.id == taskId }) {
+                            self.state.items[index] = updatedTask
+                            logger.info("✅ Локально обновлена задача \(taskId)")
+                        }
+                    }
+                    
+                    successCount += 1
+                    logger.info("✅ Успешно установлен deadline для задачи: \(taskId)")
+                } catch {
+                    errorCount += 1
+                    logger.error("❌ Ошибка установки deadline для задачи \(taskId): \(error)")
+                }
+            }
+            
+            // После завершения всех операций обновляем UI
+            await MainActor.run {
+                logger.info("🎉 Завершено: успешно \(successCount), ошибок \(errorCount)")
+                
+                // Принудительно применяем фильтры для обновления UI
+                self.applyCurrentFilters()
+                
+                // Принудительно обновляем данные из базы
+                self.handle(.loadTasks(self.state.selectedDate))
+                
+                // Очищаем выделение только после успешного сохранения
+                if successCount > 0 {
+                    self.state.selectedTasks.removeAll()
+                    self.state.isSelectionMode = false
+                }
+                
+                logger.info("✅ Завершена установка deadline для всех выбранных задач")
+            }
+        }
+    }
 }
 
 // MARK: - Convenience Methods
@@ -504,21 +586,21 @@ extension ListViewModel {
     // MARK: - Batch Operations для выбранных задач
     
     func deleteSelectedTasks() {
-        for taskId in state.selectedTasks {
+        for taskId in self.state.selectedTasks {
             handle(.deleteTask(taskId))
         }
         handle(.clearSelection)
     }
     
     func unarchiveSelectedTasks() {
-        for taskId in state.selectedTasks {
+        for taskId in self.state.selectedTasks {
             handle(.toggleTaskCompletion(taskId))
         }
         handle(.clearSelection)
     }
     
     func setPriorityForSelectedTasks(_ priority: TaskPriority) {
-        for taskId in state.selectedTasks {
+        for taskId in self.state.selectedTasks {
             handle(.changePriority(taskId, priority))
         }
         handle(.clearSelection)
@@ -526,23 +608,15 @@ extension ListViewModel {
     }
     
     func moveSelectedTasksToDate(_ targetDate: Date) {
-        for taskId in state.selectedTasks {
+        for taskId in self.state.selectedTasks {
             handle(.updateTaskDate(taskId, targetDate))
         }
         handle(.clearSelection)
         handle(.toggleSelectionMode)
     }
     
-    func setDeadlineForSelectedTasks(_ deadline: Date) {
-        for taskId in state.selectedTasks {
-            handle(.setDeadline(taskId, deadline))
-        }
-        handle(.clearSelection)
-        handle(.toggleSelectionMode)
-    }
-    
     func toggleTaskSelection(taskId: UUID) {
-        if state.selectedTasks.contains(taskId) {
+        if self.state.selectedTasks.contains(taskId) {
             handle(.deselectTask(taskId))
         } else {
             handle(.selectTask(taskId))
@@ -553,9 +627,9 @@ extension ListViewModel {
     func saveNewTask(title: String, priority: TaskPriority) {
         handle(.addTask(
             title: title,
-            category: state.selectedCategory,
+            category: self.state.selectedCategory,
             priority: priority,
-            date: state.selectedDate
+            date: self.state.selectedDate
         ))
     }
 } 
