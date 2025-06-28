@@ -71,19 +71,6 @@ struct ArchivedTasksGroupView: View {
                             )
                             .padding(.horizontal, 5)
                             .padding(.vertical, 3)
-                            .background(
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
-                                        .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
-                                    // Добавляем внешний бордер для задач с приоритетом
-                                    if item.priority != .none {
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(getPriorityColor(for: item.priority), lineWidth: 1.5)
-                                            .opacity(0.3)
-                                    }
-                                }
-                            )
                             .contentShape(Rectangle())
                             // Явно добавляем обработчики нажатий
                             .onTapGesture {
@@ -108,16 +95,16 @@ struct ArchivedTasksGroupView: View {
                         RoundedRectangle(cornerRadius: 16)
                             .fill(themeManager.isDarkMode ? Color(red: 0.13, green: 0.13, blue: 0.13) : Color(red: 0.9, green: 0.9, blue: 0.9))
                             .shadow(color: Color.black.opacity(0.3), radius: 8, x: 0, y: 4)
-                        // // Градиентный бордер
-                        // RoundedRectangle(cornerRadius: 16)
-                        //     .stroke(
-                        //         LinearGradient(
-                        //             gradient: Gradient(colors: [categoryColor.opacity(0.7), Color.gray.opacity(0.6)]),
-                        //             startPoint: .topLeading,
-                        //             endPoint: .bottomTrailing
-                        //         ),
-                        //         lineWidth: 1.5
-                        //     )
+                        // Градиентный бордер
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [categoryColor.opacity(0.7), Color.gray.opacity(0.6)]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.5
+                            )
                     }
                 )
                 .padding(.vertical, 8)

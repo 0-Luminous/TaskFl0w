@@ -39,7 +39,7 @@ enum TodoListAction {
     case toggleTaskCompletion(UUID)
     case changePriority(UUID, TaskPriority)
     case updateTaskDate(UUID, Date)
-    case setDeadline(UUID, Date)
+    case setDeadline(UUID, Date?)
     case archiveCompletedTasks
     
     // UI Actions
@@ -395,7 +395,7 @@ final class ListViewModel: ObservableObject {
         handle(.updateTask(updatedTask))
     }
     
-    private func setDeadline(id: UUID, deadline: Date) {
+    private func setDeadline(id: UUID, deadline: Date?) {
         guard let task = state.items.first(where: { $0.id == id }) else {
             logger.warning("Задача с ID \(id) не найдена для установки deadline")
             return
@@ -437,8 +437,9 @@ final class ListViewModel: ObservableObject {
         }
     }
     
-    func setDeadlineForSelectedTasks(_ deadline: Date) {
-        logger.info("🎯 Устанавливаем deadline для \(self.state.selectedTasks.count) задач: \(deadline)")
+    func setDeadlineForSelectedTasks(_ deadline: Date?) {
+        let deadlineDescription = deadline?.description ?? "nil (сброс)"
+        logger.info("🎯 Устанавливаем deadline для \(self.state.selectedTasks.count) задач: \(deadlineDescription)")
         
         let selectedTaskIds = Array(self.state.selectedTasks) // Копируем чтобы не потерять после clearSelection
         
@@ -468,7 +469,7 @@ final class ListViewModel: ObservableObject {
                 )
                 
                 do {
-                    logger.info("💾 Сохраняем задачу \(taskId) с deadline: \(deadline)")
+                    logger.info("💾 Сохраняем задачу \(taskId) с deadline: \(deadlineDescription)")
                     try await todoDataService.updateTask(updatedTask)
                     
                     await MainActor.run {
@@ -503,7 +504,11 @@ final class ListViewModel: ObservableObject {
                     self.state.isSelectionMode = false
                 }
                 
-                logger.info("✅ Завершена установка deadline для всех выбранных задач")
+                if deadline == nil {
+                    logger.info("🗑️ Завершен сброс deadline для всех выбранных задач")
+                } else {
+                    logger.info("✅ Завершена установка deadline для всех выбранных задач")
+                }
             }
         }
     }

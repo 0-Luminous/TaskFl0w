@@ -5,9 +5,9 @@
 //  Beautiful task movement animations by Senior iOS Developer
 //
 
+import Combine
 import CoreData
 import SwiftUI
-import Combine
 import UIKit
 
 struct TaskListView: View {
@@ -17,7 +17,7 @@ struct TaskListView: View {
 
     @Binding var selectedDate: Date
     @ObservedObject var viewModel: ListViewModel
-    
+
     // MARK: - State Management (OPTIMIZED)
     @State private var showingAddForm = false
     @State private var isSearchActive = false
@@ -50,24 +50,26 @@ struct TaskListView: View {
                 // 🎨 ГЛАВНАЯ ФИШКА: Основной скролл с анимацией перемещения задач
                 animatedTaskListView
             }
-            
+
             // ОПТИМИЗАЦИЯ: Условные оверлеи с анимациями
             if viewModel.showCompletedTasksOnly {
                 archiveOverlayView
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .top).combined(with: .opacity),
-                        removal: .move(edge: .top).combined(with: .opacity)
-                    ))
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .top).combined(with: .opacity),
+                            removal: .move(edge: .top).combined(with: .opacity)
+                        ))
             }
-            
+
             if isAddingNewTask {
                 newTaskOverlayView
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.8).combined(with: .opacity),
-                        removal: .scale(scale: 0.8).combined(with: .opacity)
-                    ))
+                    .transition(
+                        .asymmetric(
+                            insertion: .scale(scale: 0.8).combined(with: .opacity),
+                            removal: .scale(scale: 0.8).combined(with: .opacity)
+                        ))
             }
-            
+
             // ОПТИМИЗАЦИЯ: Нижний бар с анимацией
             if shouldShowBottomBar {
                 VStack {
@@ -104,7 +106,9 @@ struct TaskListView: View {
                 }
             }
         } message: {
-            Text("Вы уверены, что хотите удалить выбранные задачи (\(viewModel.selectedTasks.count))?")
+            Text(
+                "Вы уверены, что хотите удалить выбранные задачи (\(viewModel.selectedTasks.count))?"
+            )
         }
     }
 }
@@ -112,7 +116,7 @@ struct TaskListView: View {
 // MARK: - PERFORMANCE Extensions
 
 extension TaskListView {
-    
+
     // ОПТИМИЗАЦИЯ: Вычисляемые свойства с кешированием
     private var backgroundView: some View {
         Rectangle()
@@ -123,14 +127,14 @@ extension TaskListView {
     private var shouldShowBottomBar: Bool {
         !isSearchActive && !isAddingNewTask
     }
-    
+
     // 🎨 КРАСИВАЯ АНИМАЦИЯ: Основной список с плавным перемещением задач
     private var animatedTaskListView: some View {
         ScrollViewReader { scrollProxy in
             List {
                 listHeaderSection
                 calendarSpacerSection
-                
+
                 // 🎨 ГЛАВНАЯ ФИШКА: Единый список с сортировкой для плавного перемещения
                 if viewModel.showCompletedTasksOnly {
                     // Архивный режим - показываем только завершенные
@@ -141,13 +145,16 @@ extension TaskListView {
                     let allItems = getSortedTasksForAnimation()
                     allTasksSection(items: allItems)
                 }
-                
+
                 newTaskSectionIfNeeded
                 bottomSpacerSection
             }
             .listStyle(.grouped)
             // 🎨 КЛЮЧЕВАЯ АНИМАЦИЯ: Плавное перемещение при изменении порядка задач
-            .animation(.spring(response: 0.8, dampingFraction: 0.75, blendDuration: 0.3), value: getSortedTasksForAnimation().map { "\($0.id)_\($0.isCompleted)" })
+            .animation(
+                .spring(response: 0.8, dampingFraction: 0.75, blendDuration: 0.3),
+                value: getSortedTasksForAnimation().map { "\($0.id)_\($0.isCompleted)" }
+            )
             .animation(.easeInOut(duration: 0.3), value: viewModel.showCompletedTasksOnly)
             .onAppear(perform: setupInitialState)
             .onChange(of: isAddingNewTask) { _, newValue in
@@ -162,23 +169,24 @@ extension TaskListView {
 
     // 🎨 КЛЮЧЕВАЯ ФУНКЦИЯ: Сортировка задач для плавной анимации перемещения
     private func getSortedTasksForAnimation() -> [ToDoItem] {
-        let items = viewModel.showCompletedTasksOnly 
+        let items =
+            viewModel.showCompletedTasksOnly
             ? viewModel.getAllArchivedItems()
             : viewModel.getFilteredItems()
-        
+
         // 🎨 ВАЖНО: Сортируем так, чтобы незавершенные были сверху, завершенные - снизу
         // Это обеспечивает плавное "скольжение" вниз при завершении задачи
         return items.sorted { task1, task2 in
             // Первичная сортировка по статусу завершения
             if task1.isCompleted != task2.isCompleted {
-                return !task1.isCompleted && task2.isCompleted // незавершенные сверху
+                return !task1.isCompleted && task2.isCompleted  // незавершенные сверху
             }
-            
+
             // Вторичная сортировка по приоритету внутри группы
             if task1.priority != task2.priority {
                 return task1.priority.rawValue > task2.priority.rawValue
             }
-            
+
             // Третичная сортировка по дате создания
             return task1.date < task2.date
         }
@@ -300,7 +308,7 @@ extension TaskListView {
                         viewModel.setPriorityForSelectedTasks(.none)
                     }
                 },
-                .cancel()
+                .cancel(),
             ]
         )
     }
@@ -321,8 +329,10 @@ extension TaskListView {
 
     private var deadlineTaskSheet: some View {
         let existingDeadline = getExistingDeadlineForSelectedTasks()
-        print("🔄 deadlineTaskSheet: Пересчитали existingDeadline = \(existingDeadline?.description ?? "nil")")
-        
+        print(
+            "🔄 deadlineTaskSheet: Пересчитали existingDeadline = \(existingDeadline?.description ?? "nil")"
+        )
+
         return DeadlineForTaskView(
             selectedDate: $selectedDeadlineDate,
             isPresented: $showingDeadlinePicker,
@@ -335,18 +345,22 @@ extension TaskListView {
         )
         .onAppear {
             let currentExisting = getExistingDeadlineForSelectedTasks()
-            print("📱 DeadlineTaskSheet onAppear: existingDeadline = \(currentExisting?.description ?? "nil")")
-            
+            print(
+                "📱 DeadlineTaskSheet onAppear: existingDeadline = \(currentExisting?.description ?? "nil")"
+            )
+
             if let existingDeadline = currentExisting {
                 selectedDeadlineDate = existingDeadline
             } else {
-                selectedDeadlineDate = Date()
+                selectedDeadlineDate = Calendar.current.startOfDay(for: Date())
             }
         }
         // 🔧 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Обновляем при изменении данных
         .onChange(of: viewModel.items) { oldItems, newItems in
-            print("🔄 TaskListView: Данные изменились! Старое количество: \(oldItems.count), новое: \(newItems.count)")
-            
+            print(
+                "🔄 TaskListView: Данные изменились! Старое количество: \(oldItems.count), новое: \(newItems.count)"
+            )
+
             // Проверяем deadline'ы в новых данных
             for item in newItems {
                 if viewModel.selectedTasks.contains(item.id) {
@@ -367,7 +381,7 @@ extension TaskListView {
         .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
         .eraseToAnyPublisher()
     }
-    
+
     // ОПТИМИЗАЦИЯ: Методы для обработки событий
     private func handleDateChangeOptimized(_ newDate: Date) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -379,43 +393,43 @@ extension TaskListView {
             }
         }
     }
-    
+
     private func setupInitialState() {
         if let selectedCategory = selectedCategory {
             viewModel.selectedCategory = selectedCategory
         }
         viewModel.handle(.loadTasks(Date()))
     }
-    
+
     private func handleAddTask() {
         if let selectedCategory = selectedCategory {
             viewModel.selectedCategory = selectedCategory
         }
-        
+
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
             isAddingNewTask = true
         }
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             isNewTaskFocused = true
         }
     }
-    
+
     private func resetNewTask() {
         // 🔧 ИСПРАВЛЕНИЕ: Используем FocusState вместо UIKit
         isNewTaskFocused = false
-        
+
         newTaskTitle = ""
         newTaskPriority = .none
         isAddingNewTask = false
-        
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             withAnimation(.easeInOut(duration: 0.3)) {
                 isKeyboardVisible = false
             }
         }
     }
-    
+
     // Вспомогательные методы
     private func getSelectedTasksInfo() -> [SelectedTaskInfo] {
         return viewModel.items
@@ -432,7 +446,7 @@ extension TaskListView {
     private func getExistingDeadlineForSelectedTasks() -> Date? {
         let selectedTaskItems = viewModel.items.filter { viewModel.selectedTasks.contains($0.id) }
         let deadlines = selectedTaskItems.compactMap { $0.deadline }
-        
+
         print("🔍 getExistingDeadlineForSelectedTasks: Выбрано \(selectedTaskItems.count) задач")
         print("🔍 Найдено \(deadlines.count) deadline'ов: \(deadlines.map { $0.description })")
 
@@ -451,7 +465,7 @@ extension TaskListView {
 // MARK: - Optimized Sections
 
 extension TaskListView {
-    
+
     // ОПТИМИЗАЦИЯ: Разделение на секции с @ViewBuilder
     @ViewBuilder
     private var listHeaderSection: some View {
@@ -460,7 +474,7 @@ extension TaskListView {
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets())
-        
+
         if viewModel.showCompletedTasksOnly {
             Color.clear
                 .frame(height: 20)
@@ -469,7 +483,7 @@ extension TaskListView {
                 .transition(.opacity.combined(with: .move(edge: .top)))
         }
     }
-    
+
     @ViewBuilder
     private var calendarSpacerSection: some View {
         if calendarState.isWeekCalendarVisible {
@@ -479,7 +493,7 @@ extension TaskListView {
                 .listRowSeparator(.hidden)
                 .transition(.slide.combined(with: .opacity))
         }
-        
+
         if calendarState.isMonthCalendarVisible {
             Color.clear
                 .frame(height: 300)
@@ -488,7 +502,7 @@ extension TaskListView {
                 .transition(.slide.combined(with: .opacity))
         }
     }
-    
+
     @ViewBuilder
     private var newTaskSectionIfNeeded: some View {
         if isAddingNewTask {
@@ -499,29 +513,30 @@ extension TaskListView {
                 onSave: {
                     withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                         viewModel.saveNewTask(title: newTaskTitle, priority: newTaskPriority)
-                        
+
                         // 🔧 ИСПРАВЛЕНИЕ: Используем FocusState вместо UIKit
                         isNewTaskFocused = false
-                        
+
                         resetNewTask()
                     }
                 }
             )
             .id("new_task_input")
-            .transition(.asymmetric(
-                insertion: .move(edge: .bottom).combined(with: .opacity),
-                removal: .move(edge: .bottom).combined(with: .opacity)
-            ))
+            .transition(
+                .asymmetric(
+                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                    removal: .move(edge: .bottom).combined(with: .opacity)
+                ))
         }
     }
-    
+
     private var bottomSpacerSection: some View {
         Color.clear
             .frame(height: 160)
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
     }
-    
+
     // ОПТИМИЗАЦИЯ: Архивные задачи
     private func archivedTasksSection(items: [ToDoItem]) -> some View {
         ArchivedTasksGroupView(
@@ -551,7 +566,7 @@ extension TaskListView {
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
     }
-    
+
     // 🎨 ГЛАВНАЯ ФУНКЦИЯ: Все задачи в одной секции для плавной анимации перемещения
     @ViewBuilder
     private func allTasksSection(items: [ToDoItem]) -> some View {
@@ -560,7 +575,8 @@ extension TaskListView {
                 item: item,
                 onToggle: {
                     // 🎨 КРАСИВАЯ АНИМАЦИЯ: Плавное "скольжение" задачи при завершении
-                    withAnimation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.3)) {
+                    withAnimation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.3))
+                    {
                         hapticsManager.triggerMediumFeedback()
                         viewModel.handle(.toggleTaskCompletion(item.id))
                     }
@@ -598,7 +614,8 @@ extension TaskListView {
                     }
                 } else {
                     // 🎨 КЛЮЧЕВАЯ АНИМАЦИЯ: Плавное перемещение при тапе
-                    withAnimation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.3)) {
+                    withAnimation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.3))
+                    {
                         hapticsManager.triggerMediumFeedback()
                         viewModel.handle(.toggleTaskCompletion(item.id))
                     }
@@ -613,7 +630,7 @@ extension TaskListView {
 
 extension ThemeManager {
     var backgroundColor: Color {
-        isDarkMode 
+        isDarkMode
             ? Color(red: 0.098, green: 0.098, blue: 0.098)
             : Color(red: 0.95, green: 0.95, blue: 0.95)
     }

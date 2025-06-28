@@ -112,25 +112,29 @@ struct DeadlineForTaskView: View {
     
     private var headerSection: some View {
         VStack(spacing: 16) {
-            // Иконка deadline
-            deadlineIcon
-            
-            VStack(spacing: 8) {
-                Text("Крайний срок")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundColor(themeManager.isDarkMode ? .white : .primary)
-
-                Text("Установите крайний срок для \(viewModel.selectedTasksCount) задач(и)")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(
-                        themeManager.isDarkMode
-                            ? Color.white.opacity(0.7) : Color.secondary
-                    )
-                    .multilineTextAlignment(.center)
+            // Заголовок с иконкой слева
+            HStack(spacing: 12) {
+                // Более компактная иконка deadline
+                deadlineIcon
                 
-                // Отображение информации о deadline
-                existingDeadlineInfo
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Крайний срок")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundColor(themeManager.isDarkMode ? .white : .primary)
+                    
+                    Text("Выбрано \(viewModel.selectedTasksCount) задач(и)")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(
+                            themeManager.isDarkMode
+                                ? Color.white.opacity(0.7) : Color.secondary
+                        )
+                }
+                
+                Spacer()
             }
+            
+            // Отображение информации о deadline
+            existingDeadlineInfo
         }
         .padding(.top, 30)
         .padding(.horizontal, 20)
@@ -149,11 +153,11 @@ struct DeadlineForTaskView: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .frame(width: 60, height: 60)
-                .shadow(color: Color.red.opacity(0.3), radius: 10, x: 0, y: 5)
+                .frame(width: 44, height: 44)
+                .shadow(color: Color.red.opacity(0.3), radius: 8, x: 0, y: 4)
 
             Image(systemName: "flag.fill")
-                .font(.system(size: 28, weight: .medium))
+                .font(.system(size: 20, weight: .medium))
                 .foregroundColor(.white)
         }
     }
@@ -456,61 +460,13 @@ struct DeadlineForTaskView: View {
     }
     
     private var actionButtonsSection: some View {
-        VStack(spacing: 16) {
-            // Кнопка сброса, если есть существующий deadline
-            if viewModel.hasExistingDeadline {
-                resetDeadlineMainButton
-            }
-            
-            HStack(spacing: 16) {
-                cancelButton
-                setDeadlineButton
-            }
+        HStack(spacing: 16) {
+            cancelButton
+            setDeadlineButton
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 30)
         .transition(.scale.combined(with: .opacity))
-    }
-    
-    private var resetDeadlineMainButton: some View {
-        Button {
-            viewModel.resetDeadline()
-            withAnimation(.easeInOut(duration: 0.3)) {
-                isPresented = false
-            }
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "trash.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                Text("Сбросить крайний срок")
-                    .font(.system(size: 16, weight: .semibold))
-            }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 48)
-            .background(resetButtonBackground)
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-    
-    private var resetButtonBackground: some View {
-        RoundedRectangle(cornerRadius: 14)
-            .fill(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color.red.opacity(0.8),
-                        Color.red.opacity(0.6),
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .shadow(
-                color: Color.red.opacity(0.3),
-                radius: 6,
-                x: 0,
-                y: 3
-            )
     }
     
     private var cancelButton: some View {
@@ -589,6 +545,35 @@ struct DeadlineForTaskView: View {
             )
             .shadow(
                 color: Color.green.opacity(0.4),
+                radius: 8,
+                x: 0,
+                y: 4
+            )
+    }
+    
+    private var primaryButtonBackground: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(
+                viewModel.selectedTasksCount == 0
+                    ? LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.gray.opacity(0.5),
+                            Color.gray.opacity(0.3),
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    : LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.red, Color.orange,
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+            )
+            .shadow(
+                color: viewModel.selectedTasksCount == 0
+                    ? Color.clear : Color.red.opacity(0.4),
                 radius: 8,
                 x: 0,
                 y: 4
