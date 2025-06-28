@@ -776,7 +776,7 @@ struct TaskTimeline: View {
                         .padding(.leading, 7)
                 }
                 .offset(y: yPosition - 11)
-                .padding(.leading, 22)
+                .padding(.leading, 16)
                 .zIndex(10)
             )
         } else {
@@ -820,9 +820,9 @@ struct TaskTimeline: View {
                 // Отступ для иконки луны
                 Spacer().frame(height: 20)
             }
-            .padding(.leading, 15)
+            .padding(.leading, 12)
         }
-        .padding(.leading, 10)
+        .padding(.leading, 8)
         .coordinateSpace(name: "timelineContainer")
         .onPreferenceChange(BlockPositionPreferenceKey.self) { positions in
             self.blockPositions = positions
@@ -889,7 +889,7 @@ struct TaskTimeline: View {
                     .frame(width: 1, height: 0)
             }
         }
-        .padding(.leading, 15)
+        .padding(.leading, 11)
     }
 
     // ОБНОВЛЯЕМ timeBlockView с увеличенными отступами
