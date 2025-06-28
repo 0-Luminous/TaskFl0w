@@ -1,8 +1,8 @@
 //
-//  TaskListView.swift - OPTIMIZED VERSION with ANIMATIONS
+//  TaskListView.swift - OPTIMIZED with SMOOTH TASK MOVEMENT ANIMATION
 //  TaskFl0w
 //
-//  Performance improvements + Beautiful Animations by Senior iOS Developer
+//  Beautiful task movement animations by Senior iOS Developer
 //
 
 import CoreData
@@ -47,8 +47,8 @@ struct TaskListView: View {
             backgroundView
 
             VStack(spacing: 0) {
-                // ОПТИМИЗАЦИЯ: Основной скролл с анимациями
-                optimizedScrollView
+                // 🎨 ГЛАВНАЯ ФИШКА: Основной скролл с анимацией перемещения задач
+                animatedTaskListView
             }
             
             // ОПТИМИЗАЦИЯ: Условные оверлеи с анимациями
@@ -85,7 +85,6 @@ struct TaskListView: View {
             }
         }
         .onChange(of: selectedDate) { oldValue, newValue in
-            // ОПТИМИЗАЦИЯ: Дебаунсинг обновлений даты с анимацией
             handleDateChangeOptimized(newValue)
         }
         .sheet(isPresented: $showingDatePicker) {
@@ -125,19 +124,30 @@ extension TaskListView {
         !isSearchActive && !isKeyboardVisible && !isAddingNewTask
     }
     
-    // ОПТИМИЗАЦИЯ: Основной скролл компонент с анимациями
-    private var optimizedScrollView: some View {
+    // 🎨 КРАСИВАЯ АНИМАЦИЯ: Основной список с плавным перемещением задач
+    private var animatedTaskListView: some View {
         ScrollViewReader { scrollProxy in
             List {
                 listHeaderSection
                 calendarSpacerSection
-                taskContentSection
+                
+                // 🎨 ГЛАВНАЯ ФИШКА: Единый список с сортировкой для плавного перемещения
+                if viewModel.showCompletedTasksOnly {
+                    // Архивный режим - показываем только завершенные
+                    let archivedItems = viewModel.getAllArchivedItems()
+                    archivedTasksSection(items: archivedItems)
+                } else {
+                    // 🎨 АНИМАЦИЯ ПЕРЕМЕЩЕНИЯ: Все задачи в одной секции, сортированные по статусу
+                    let allItems = getSortedTasksForAnimation()
+                    allTasksSection(items: allItems)
+                }
+                
                 newTaskSectionIfNeeded
                 bottomSpacerSection
             }
             .listStyle(.grouped)
-            // 🎨 АНИМАЦИЯ: Плавные переходы в списке
-            .animation(.spring(response: 0.5, dampingFraction: 0.8, blendDuration: 0.2), value: viewModel.items)
+            // 🎨 КЛЮЧЕВАЯ АНИМАЦИЯ: Плавное перемещение при изменении порядка задач
+            .animation(.spring(response: 0.8, dampingFraction: 0.75, blendDuration: 0.3), value: getSortedTasksForAnimation().map { "\($0.id)_\($0.isCompleted)" })
             .animation(.easeInOut(duration: 0.3), value: viewModel.showCompletedTasksOnly)
             .onAppear(perform: setupInitialState)
             .onChange(of: isAddingNewTask) { _, newValue in
@@ -147,6 +157,30 @@ extension TaskListView {
                     }
                 }
             }
+        }
+    }
+
+    // 🎨 КЛЮЧЕВАЯ ФУНКЦИЯ: Сортировка задач для плавной анимации перемещения
+    private func getSortedTasksForAnimation() -> [ToDoItem] {
+        let items = viewModel.showCompletedTasksOnly 
+            ? viewModel.getAllArchivedItems()
+            : viewModel.getFilteredItems()
+        
+        // 🎨 ВАЖНО: Сортируем так, чтобы незавершенные были сверху, завершенные - снизу
+        // Это обеспечивает плавное "скольжение" вниз при завершении задачи
+        return items.sorted { task1, task2 in
+            // Первичная сортировка по статусу завершения
+            if task1.isCompleted != task2.isCompleted {
+                return !task1.isCompleted && task2.isCompleted // незавершенные сверху
+            }
+            
+            // Вторичная сортировка по приоритету внутри группы
+            if task1.priority != task2.priority {
+                return task1.priority.rawValue > task2.priority.rawValue
+            }
+            
+            // Третичная сортировка по дате создания
+            return task1.date < task2.date
         }
     }
 
@@ -192,8 +226,14 @@ extension TaskListView {
                     handleAddTask()
                 }
             },
-            isSelectionMode: .constant(viewModel.isSelectionMode),
-            selectedTasks: .constant(viewModel.selectedTasks),
+            isSelectionMode: Binding(
+                get: { viewModel.isSelectionMode },
+                set: { _ in viewModel.handle(.toggleSelectionMode) }
+            ),
+            selectedTasks: Binding(
+                get: { viewModel.selectedTasks },
+                set: { _ in /* Изменения управляются через toggleTaskSelection */ }
+            ),
             onDeleteSelectedTasks: {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     showingDeleteAlert = true
@@ -215,7 +255,10 @@ extension TaskListView {
                     viewModel.unarchiveSelectedTasks()
                 }
             },
-            showCompletedTasksOnly: .constant(viewModel.showCompletedTasksOnly),
+            showCompletedTasksOnly: Binding(
+                get: { viewModel.showCompletedTasksOnly },
+                set: { _ in /* Управляется через onArchiveTapped */ }
+            ),
             onFlagSelectedTasks: {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     selectedDeadlineDate = Date()
@@ -311,7 +354,6 @@ extension TaskListView {
     
     // ОПТИМИЗАЦИЯ: Методы для обработки событий
     private func handleDateChangeOptimized(_ newDate: Date) {
-        // Debouncing для частых изменений даты с анимацией
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             if selectedDate == newDate {
                 withAnimation(.easeInOut(duration: 0.4)) {
@@ -335,7 +377,6 @@ extension TaskListView {
         }
         isAddingNewTask = true
         
-        // ОПТИМИЗАЦИЯ: Отложенный фокус
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             isNewTaskFocused = true
         }
@@ -415,19 +456,6 @@ extension TaskListView {
     }
     
     @ViewBuilder
-    private var taskContentSection: some View {
-        let items = viewModel.showCompletedTasksOnly 
-            ? viewModel.getAllArchivedItems()
-            : viewModel.getFilteredItems()
-        
-        if viewModel.showCompletedTasksOnly {
-            archivedTasksView(items: items)
-        } else {
-            regularTasksView(items: items)
-        }
-    }
-    
-    @ViewBuilder
     private var newTaskSectionIfNeeded: some View {
         if isAddingNewTask {
             TaskInput(
@@ -456,8 +484,8 @@ extension TaskListView {
             .listRowSeparator(.hidden)
     }
     
-    // ОПТИМИЗАЦИЯ: Архивные задачи с анимацией
-    private func archivedTasksView(items: [ToDoItem]) -> some View {
+    // ОПТИМИЗАЦИЯ: Архивные задачи
+    private func archivedTasksSection(items: [ToDoItem]) -> some View {
         ArchivedTasksGroupView(
             items: items,
             categoryColor: viewModel.selectedCategory?.color ?? .blue,
@@ -484,22 +512,18 @@ extension TaskListView {
         )
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
-        .transition(.asymmetric(
-            insertion: .move(edge: .top).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
-        ))
     }
     
-    // 🎨 КРАСИВЫЕ АНИМАЦИИ: Обычные задачи с плавными переходами
+    // 🎨 ГЛАВНАЯ ФУНКЦИЯ: Все задачи в одной секции для плавной анимации перемещения
     @ViewBuilder
-    private func regularTasksView(items: [ToDoItem]) -> some View {
+    private func allTasksSection(items: [ToDoItem]) -> some View {
         ForEach(items) { item in
             TaskRow(
                 item: item,
                 onToggle: {
-                    // 🎨 АНИМАЦИЯ: Плавный переход при завершении задачи
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                        hapticsManager.triggerLightFeedback()
+                    // 🎨 КРАСИВАЯ АНИМАЦИЯ: Плавное "скольжение" задачи при завершении
+                    withAnimation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.3)) {
+                        hapticsManager.triggerMediumFeedback()
                         viewModel.handle(.toggleTaskCompletion(item.id))
                     }
                 },
@@ -509,7 +533,6 @@ extension TaskListView {
                     }
                 },
                 onDelete: {
-                    // 🎨 АНИМАЦИЯ: Удаление с bounce эффектом
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
                         hapticsManager.triggerMediumFeedback()
                         viewModel.handle(.deleteTask(item.id))
@@ -527,33 +550,24 @@ extension TaskListView {
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
             .contentShape(Rectangle())
-            // 🎨 АНИМАЦИЯ: Плавное изменение при изменении приоритета или состояния
-            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: item.isCompleted)
-            .animation(.easeInOut(duration: 0.3), value: item.priority)
+            // 🎨 УНИКАЛЬНЫЙ ID: Для правильной анимации перемещения
+            .id("\(item.id.uuidString)_\(item.isCompleted ? "completed" : "active")")
             .onTapGesture {
                 if viewModel.isSelectionMode {
-                    // 🎨 АНИМАЦИЯ: Плавное выделение
                     withAnimation(.easeInOut(duration: 0.2)) {
                         hapticsManager.triggerLightFeedback()
                         viewModel.toggleTaskSelection(taskId: item.id)
                     }
                 } else {
-                    // 🎨 АНИМАЦИЯ: Плавное завершение задачи
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                    // 🎨 КЛЮЧЕВАЯ АНИМАЦИЯ: Плавное перемещение при тапе
+                    withAnimation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.3)) {
                         hapticsManager.triggerMediumFeedback()
                         viewModel.handle(.toggleTaskCompletion(item.id))
                     }
                 }
             }
             .listRowSeparator(.hidden)
-            // 🎨 АНИМАЦИЯ: Появление/исчезновение задач
-            .transition(.asymmetric(
-                insertion: .move(edge: .trailing).combined(with: .opacity).combined(with: .scale(scale: 0.95)),
-                removal: .move(edge: .leading).combined(with: .opacity).combined(with: .scale(scale: 0.95))
-            ))
         }
-        // 🎨 АНИМАЦИЯ: Перемещение задач при изменении порядка
-        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: items.map { $0.id })
     }
 }
 
