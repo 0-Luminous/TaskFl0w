@@ -16,14 +16,12 @@ struct TaskContentView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // Название задачи
             Text(item.title)
                 .strikethrough(shouldStrikethrough)
                 .foregroundColor(titleColor)
                 .fontWeight(getFontWeight(for: item.priority))
                 .animation(.easeInOut(duration: 0.2), value: item.isCompleted)
             
-            // Крайний срок, если установлен
             if let deadline = item.deadline {
                 DeadlineView(
                     deadline: deadline,
@@ -34,8 +32,6 @@ struct TaskContentView: View {
             }
         }
     }
-    
-    // MARK: - Private Computed Properties
     
     private var shouldStrikethrough: Bool {
         item.isCompleted && !isSelectionMode && !isInArchiveMode
@@ -52,18 +48,10 @@ struct TaskContentView: View {
     }
     
     private func getFontWeight(for priority: TaskPriority) -> Font.Weight {
-        switch priority {
-        case .high:
-            return .semibold
-        case .medium:
-            return .semibold
-        case .low, .none:
-            return .regular
-        }
+        return .regular
     }
 }
 
-// MARK: - DeadlineView
 struct DeadlineView: View {
     let deadline: Date
     let isCompleted: Bool
@@ -94,27 +82,22 @@ struct DeadlineView: View {
         let now = Date()
         let timeInterval = deadline.timeIntervalSince(now)
         
-        // Прошедший deadline - красный
         if timeInterval < 0 {
             return .red
         }
         
-        // Меньше часа - красный
         if timeInterval < 3600 {
             return .red
         }
         
-        // Меньше 6 часов - оранжевый
         if timeInterval < 21600 {
             return .orange
         }
         
-        // Меньше дня - желтый
         if timeInterval < 86400 {
             return .yellow
         }
         
-        // Обычный цвет для дальних deadline
         return themeManager.isDarkMode ? .white.opacity(0.7) : .secondary
     }
     
@@ -122,11 +105,9 @@ struct DeadlineView: View {
         let calendar = Calendar.current
         let now = Date()
         
-        // Проверяем, установлено ли конкретное время (не 00:00)
         let timeComponents = calendar.dateComponents([.hour, .minute], from: deadline)
         let hasSpecificTime = timeComponents.hour != 0 || timeComponents.minute != 0
-        
-        // Проверяем, сегодня ли deadline
+
         if calendar.isDateInToday(deadline) {
             if hasSpecificTime {
                 let timeFormatter = DateFormatter()
@@ -137,7 +118,6 @@ struct DeadlineView: View {
             }
         }
         
-        // Проверяем, завтра ли deadline
         if calendar.isDateInTomorrow(deadline) {
             if hasSpecificTime {
                 let timeFormatter = DateFormatter()
@@ -148,7 +128,6 @@ struct DeadlineView: View {
             }
         }
         
-        // Проверяем, на этой неделе ли deadline
         let weekOfYear = calendar.component(.weekOfYear, from: now)
         let deadlineWeek = calendar.component(.weekOfYear, from: deadline)
         let year = calendar.component(.year, from: now)
@@ -167,7 +146,6 @@ struct DeadlineView: View {
             }
         }
         
-        // Обычное форматирование для более отдаленных дат
         if hasSpecificTime {
             let dateFormatter = DateFormatter()
             dateFormatter.dateStyle = .short

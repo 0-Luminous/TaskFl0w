@@ -43,7 +43,7 @@ struct TaskCompletionIndicator: View {
         }
         
         if isCompleted {
-            return themeManager.isDarkMode ? .green : .green
+            return themeManager.isDarkMode ? .gray : .gray
         }
         
         return themeManager.isDarkMode ? .white.opacity(0.8) : .black.opacity(0.7)

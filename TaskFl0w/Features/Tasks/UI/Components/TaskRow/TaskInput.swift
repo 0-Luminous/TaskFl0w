@@ -29,48 +29,40 @@ struct TaskInput: View {
                 .keyboardType(.default)
                 .autocapitalization(.sentences)
                 .disableAutocorrection(false)
-                .padding(.leading, 5) // Добавляем отступ слева 5 пикселей
-                .padding(.vertical, 2) // Добавляем вертикальный отступ
-                // Специальный модификатор для обработки ввода
+                .padding(.leading, 5)
+                .padding(.vertical, 2)
                 .onChange(of: newTaskTitle) { oldValue, newValue in
-                    // Если в тексте есть символ новой строки, значит была нажата кнопка Return
                     if newValue.contains("\n") {
-                        // Удаляем символ новой строки
                         newTaskTitle = newValue.replacingOccurrences(of: "\n", with: "")
-                        // Сохраняем задачу
                         onSave()
                     }
                 }
-                .fixedSize(horizontal: false, vertical: true) // Позволяет расширяться по вертикали
+                .fixedSize(horizontal: false, vertical: true)
             
-            // Иконка приоритета, если приоритет выбран
             if selectedPriority != .none {
                 priorityIcon
             }
         }
         .padding(.vertical, 6)
-        .padding(.horizontal, 6) // Добавляем правый отступ как у обычных задач
+        .padding(.horizontal, 6)
         .listRowBackground(
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(themeManager.isDarkMode ? Color(red: 0.18, green: 0.18, blue: 0.18) : Color(red: 0.9, green: 0.9, blue: 0.9))
                     .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
                 
-                // Добавляем бордер для выбранного приоритета
                 if selectedPriority != .none {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(getPriorityColor(for: selectedPriority), lineWidth: 1.5)
                 }
             }
             .padding(.vertical, 10)
-            .padding(.horizontal, 12) // Используем те же отступы, что и у обычных задач
+            .padding(.horizontal, 12)
         )
         .listRowSeparator(.hidden)
     }
     
-    // Индикатор приоритета
     private var priorityIcon: some View {
-        // Используем тот же индикатор приоритета, что и в TaskRow
         VStack(spacing: 2) {
             ForEach(0..<selectedPriority.rawValue, id: \.self) { _ in
                 Rectangle()
@@ -80,10 +72,8 @@ struct TaskInput: View {
         }
         .padding(.vertical, 2)
         .padding(.horizontal, 3)
-        // .padding(.trailing, 5)
     }
     
-    // Цвет для приоритета
     private func getPriorityColor(for priority: TaskPriority) -> Color {
         switch priority {
         case .high:

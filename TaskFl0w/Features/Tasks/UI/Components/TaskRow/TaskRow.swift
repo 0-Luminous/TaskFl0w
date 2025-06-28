@@ -21,38 +21,22 @@ struct TaskRow: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            // ЗОНА ЗАДАЧИ: Основной контент + приоритет
             taskContentZone
                 .background(taskBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.3), radius: 3, x: 0, y: 1)
             
-            // РАЗДЕЛИТЕЛЬ между зонами
             Spacer()
-                .frame(width: 16)
             
-            // ЗОНА ДЕЙСТВИЙ: Completion Indicator вне зоны задачи
             actionZone
         }
-        .padding(.vertical, 4)
         .animation(.easeInOut(duration: 0.3), value: item.priority)
         .animation(.easeInOut(duration: 0.2), value: item.isCompleted)
     }
     
-    // MARK: - Task Content Zone
-    
     private var taskContentZone: some View {
         HStack(spacing: 12) {
-            // Основной контент задачи
-            TaskContentView(
-                item: item,
-                isSelectionMode: isSelectionMode,
-                isInArchiveMode: isInArchiveMode
-            )
-            .padding(.leading, 16)
-            
-            Spacer()
-            
-            // Индикатор приоритета (остается внутри зоны задачи)
+
             if item.priority != .none {
                 TaskPriorityIndicator(
                     priority: item.priority,
@@ -60,13 +44,21 @@ struct TaskRow: View {
                     isSelectionMode: isSelectionMode,
                     isInArchiveMode: isInArchiveMode
                 )
-                .padding(.trailing, 16)
+                .padding(.leading, 10)
             }
+
+            TaskContentView(
+                item: item,
+                isSelectionMode: isSelectionMode,
+                isInArchiveMode: isInArchiveMode
+            )
+            .padding(.leading, item.priority != .none ? 0 : 10)
+            
+            Spacer()
+            
         }
-        .padding(.vertical, 16)
+        .padding(.vertical, 10)
     }
-    
-    // MARK: - Action Zone (Completion Indicator)
     
     private var actionZone: some View {
         VStack {
@@ -82,21 +74,11 @@ struct TaskRow: View {
         .clipShape(Circle())
     }
     
-    // MARK: - Background Styles
-    
     private var taskBackground: some View {
         ZStack {
-            // Основной фон задачи
             RoundedRectangle(cornerRadius: 12)
                 .fill(taskBackgroundColor)
-                .shadow(
-                    color: themeManager.isDarkMode ? .black.opacity(0.4) : .gray.opacity(0.15),
-                    radius: 4,
-                    x: 0,
-                    y: 2
-                )
             
-            // Рамка приоритета
             if item.priority != .none {
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(priorityBorderColor, lineWidth: 1.5)
@@ -115,13 +97,11 @@ struct TaskRow: View {
             )
     }
     
-    // MARK: - Color Computed Properties
-    
     private var taskBackgroundColor: Color {
         if themeManager.isDarkMode {
-            return Color(red: 0.18, green: 0.18, blue: 0.18)
+            return Color(red: 0.2, green: 0.2, blue: 0.2)
         } else {
-            return Color(red: 0.98, green: 0.98, blue: 0.98)
+            return Color(red: 0.9, green: 0.9, blue: 0.9)
         }
     }
     
@@ -163,13 +143,9 @@ struct TaskRow: View {
         return isCompletedAndNotInteractive || isInArchiveMode ? 0.3 : 1.0
     }
     
-    // MARK: - Private Computed Properties
-    
     private var isSelected: Bool {
         selectedTasks.contains(item.id)
     }
-    
-    // MARK: - Private Methods
     
     private func toggleSelection() {
         if selectedTasks.contains(item.id) {
@@ -177,70 +153,5 @@ struct TaskRow: View {
         } else {
             selectedTasks.insert(item.id)
         }
-    }
-}
-
-// MARK: - Preview
-struct TaskRow_Previews: PreviewProvider {
-    @State static var selectedTasks: Set<UUID> = []
-    
-    static var previews: some View {
-        VStack(spacing: 16) {
-            // Обычная задача
-            TaskRow(
-                item: ToDoItem(
-                    title: "Обычная задача",
-                    isCompleted: false,
-                    priority: .medium,
-                    deadline: Date().addingTimeInterval(3600)
-                ),
-                onToggle: {},
-                onEdit: {},
-                onDelete: {},
-                onShare: {},
-                categoryColor: .blue,
-                isSelectionMode: false,
-                isInArchiveMode: false,
-                selectedTasks: $selectedTasks
-            )
-            
-            // Завершенная задача
-            TaskRow(
-                item: ToDoItem(
-                    title: "Завершенная задача с длинным названием",
-                    isCompleted: true,
-                    priority: .high
-                ),
-                onToggle: {},
-                onEdit: {},
-                onDelete: {},
-                onShare: {},
-                categoryColor: .blue,
-                isSelectionMode: false,
-                isInArchiveMode: false,
-                selectedTasks: $selectedTasks
-            )
-            
-            // Задача в режиме выбора
-            TaskRow(
-                item: ToDoItem(
-                    title: "Выбранная задача",
-                    isCompleted: false,
-                    priority: .low,
-                    deadline: Calendar.current.date(byAdding: .day, value: 1, to: Date())
-                ),
-                onToggle: {},
-                onEdit: {},
-                onDelete: {},
-                onShare: {},
-                categoryColor: .green,
-                isSelectionMode: true,
-                isInArchiveMode: false,
-                selectedTasks: .constant([UUID()])
-            )
-        }
-        .padding(20)
-        .background(Color.gray.opacity(0.1))
-        .environment(\.colorScheme, .light)
     }
 }
