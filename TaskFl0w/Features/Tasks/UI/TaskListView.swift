@@ -143,7 +143,13 @@ extension TaskListView {
                 } else {
                     // 🎨 АНИМАЦИЯ ПЕРЕМЕЩЕНИЯ: Все задачи в одной секции, сортированные по статусу
                     let allItems = getSortedTasksForAnimation()
-                    allTasksSection(items: allItems)
+
+                    // 🎯 НОВАЯ ФИШКА: Проверяем наличие задач в категории
+                    if allItems.isEmpty {
+                        emptyStateSection
+                    } else {
+                        allTasksSection(items: allItems)
+                    }
                 }
 
                 newTaskSectionIfNeeded
@@ -624,6 +630,44 @@ extension TaskListView {
             .listRowSeparator(.hidden)
         }
     }
+
+    // 🎯 НОВАЯ СЕКЦИЯ: Пустое состояние для категории
+    @ViewBuilder
+    private var emptyStateSection: some View {
+        VStack(spacing: 16) {
+
+            Spacer()
+                .frame(height: 100)
+
+            HStack {
+                Image(systemName: "checklist")
+                    .font(.system(size: 48))
+                    .foregroundColor(themeManager.primaryColor.opacity(0.4))
+            }
+            .environment(\.layoutDirection, .rightToLeft)
+
+            Text("В этой категории нет задач на сегодня")
+                .font(.title3)
+                .fontWeight(.medium)
+                .foregroundColor(themeManager.primaryColor.opacity(0.7))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            Text("Нажмите кнопку \"+\" внизу, чтобы добавить новую задачу")
+                .font(.subheadline)
+                .foregroundColor(themeManager.secondaryColor.opacity(0.6))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+
+            Spacer()
+                .frame(height: 100)
+        }
+        .frame(maxWidth: .infinity)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets())
+        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+    }
 }
 
 // MARK: - Performance Extensions
@@ -633,5 +677,14 @@ extension ThemeManager {
         isDarkMode
             ? Color(red: 0.098, green: 0.098, blue: 0.098)
             : Color(red: 0.95, green: 0.95, blue: 0.95)
+    }
+
+    // 🎯 НОВЫЕ ЦВЕТА: Для пустого состояния
+    var primaryColor: Color {
+        isDarkMode ? .white : .black
+    }
+
+    var secondaryColor: Color {
+        isDarkMode ? Color.gray : Color.gray
     }
 }
