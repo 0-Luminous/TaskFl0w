@@ -273,6 +273,9 @@ extension TaskListView {
                 get: { viewModel.showCompletedTasksOnly },
                 set: { _ in /* Управляется через onArchiveTapped */ }
             ),
+            // 🎯 ПЕРЕДАЕМ ИНФОРМАЦИЮ О НАЛИЧИИ ЗАДАЧ
+            hasArchivedTasks: viewModel.hasArchivedTasksInCategory,
+            hasActiveTasksForCurrentDay: viewModel.hasActiveTasksForCurrentDay,
             onFlagSelectedTasks: {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     selectedDeadlineDate = Date()
@@ -287,6 +290,9 @@ extension TaskListView {
             }
         )
         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: shouldShowBottomBar)
+        // 🎯 АНИМАЦИИ ПРИ ИЗМЕНЕНИИ СОСТОЯНИЯ КНОПОК
+        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: viewModel.hasArchivedTasksInCategory)
+        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: viewModel.hasActiveTasksForCurrentDay)
     }
 
     // ОПТИМИЗАЦИЯ: Упрощенный ActionSheet

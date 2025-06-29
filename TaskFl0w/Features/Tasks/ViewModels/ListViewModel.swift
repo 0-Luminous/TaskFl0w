@@ -95,6 +95,40 @@ final class ListViewModel: ObservableObject {
     var selectedTasks: Set<UUID> { state.selectedTasks }
     var isSelectionMode: Bool { state.isSelectionMode }
     
+    /// Получает статистику выполнения задач
+    var completionPercentage: Double {
+        guard !items.isEmpty else { return 0 }
+        return Double(completedTasksCount) / Double(items.count) * 100
+    }
+    
+    /// Проверяет, есть ли архивные задачи в выбранной категории
+    var hasArchivedTasksInCategory: Bool {
+        let archivedItems = state.items.filter { $0.isCompleted }
+        
+        // Если категория не выбрана, проверяем все архивные задачи 
+        guard let selectedCategory = state.selectedCategory else {
+            return !archivedItems.isEmpty
+        }
+        
+        // Если категория выбрана, проверяем архивные задачи только в этой категории
+        return archivedItems.contains { $0.categoryID == selectedCategory.id }
+    }
+    
+    /// Проверяет, есть ли активные задачи на текущий день в выбранной категории
+    var hasActiveTasksForCurrentDay: Bool {
+        let todayTasks = state.items.filter { item in
+            Calendar.current.isDate(item.date, inSameDayAs: state.selectedDate)
+        }
+        
+        // Если категория не выбрана, проверяем все задачи на сегодня
+        guard let selectedCategory = state.selectedCategory else {
+            return !todayTasks.isEmpty
+        }
+        
+        // Если категория выбрана, проверяем задачи только в этой категории на сегодня
+        return todayTasks.contains { $0.categoryID == selectedCategory.id }
+    }
+    
     // MARK: - Private Properties
     private let todoDataService: TodoDataService
     private let sharedStateService: SharedStateService
@@ -551,12 +585,6 @@ extension ListViewModel {
     /// Проверяет, есть ли задачи для отображения
     var hasTasks: Bool {
         !items.isEmpty
-    }
-    
-    /// Получает статистику выполнения задач
-    var completionPercentage: Double {
-        guard !items.isEmpty else { return 0 }
-        return Double(completedTasksCount) / Double(items.count) * 100
     }
     
     // MARK: - Helper Methods для UI

@@ -19,6 +19,10 @@ struct BottomBar: View {
     var onUnarchiveSelectedTasks: () -> Void
     @Binding var showCompletedTasksOnly: Bool
     
+    // 🎯 НОВЫЕ ПАРАМЕТРЫ: Проверка наличия задач
+    var hasArchivedTasks: Bool = true
+    var hasActiveTasksForCurrentDay: Bool = true
+    
     // Обновляем порядок обработчиков для дополнительных кнопок
     var onFlagSelectedTasks: () -> Void
     var onCalendarSelectedTasks: () -> Void
@@ -52,29 +56,37 @@ struct BottomBar: View {
                 
                 if !isSelectionMode {
                     HStack {
-                        ZStack {
-                            Color.clear
-                            archiveButton
+                        // 🎯 УСЛОВНОЕ ОТОБРАЖЕНИЕ: Показываем кнопку архива только если есть архивные задачи
+                        if hasArchivedTasks {
+                            ZStack {
+                                Color.clear
+                                archiveButton
+                            }
+                            
+                            if hasActiveTasksForCurrentDay {
+                                Spacer()
+                                    .frame(width: 25)
+                            }
                         }
-
                         
-                        Spacer()
-                            .frame(width: 25)
-                        
-                        ZStack {
-                            Color.clear
-                            selectionModeToggleButton
+                        // 🎯 УСЛОВНОЕ ОТОБРАЖЕНИЕ: Показываем кнопку выбора только если есть задачи на текущий день
+                        if hasActiveTasksForCurrentDay {
+                            ZStack {
+                                Color.clear
+                                selectionModeToggleButton
+                            }
+                            
+                            Spacer()
+                                .frame(width: 25)
                         }
-                        
-                        Spacer()
-                            .frame(width: 25)
                         
                         ZStack {
                             Color.clear
                             addButton
                         }
                     }
-                    .frame(width: 165)
+                    // 🎯 ДИНАМИЧЕСКАЯ ШИРИНА: Адаптируется в зависимости от наличия кнопок
+                    .frame(width: dynamicBottomBarWidth)
                 } else {
                     HStack(spacing: 16) {
 
@@ -130,7 +142,10 @@ struct BottomBar: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 8)
             .frame(height: 52)
-            .frame(maxWidth: isSelectionMode ? (showCompletedTasksOnly ? 240 : 340) : 220)
+            // 🎯 ДИНАМИЧЕСКАЯ МАКСИМАЛЬНАЯ ШИРИНА
+            .frame(maxWidth: isSelectionMode 
+                ? (showCompletedTasksOnly ? 240 : 340) 
+                : dynamicMaxWidth)
             .background {
                 ZStack {
                     // Размытый фон
@@ -156,6 +171,38 @@ struct BottomBar: View {
             }
         }
         .padding(.bottom, 8)
+    }
+    
+    // MARK: - Computed Properties для динамической ширины
+    
+    private var dynamicBottomBarWidth: CGFloat {
+        let baseWidth: CGFloat = 65 // ширина кнопки Add + отступы
+        var additionalWidth: CGFloat = 0
+        
+        if hasArchivedTasks {
+            additionalWidth += 50 // ширина кнопки архива + отступ
+        }
+        
+        if hasActiveTasksForCurrentDay {
+            additionalWidth += 50 // ширина кнопки выбора + отступ
+        }
+        
+        return baseWidth + additionalWidth
+    }
+    
+    private var dynamicMaxWidth: CGFloat {
+        let baseMaxWidth: CGFloat = 120 // базовая ширина для кнопки Add
+        var additionalWidth: CGFloat = 0
+        
+        if hasArchivedTasks {
+            additionalWidth += 50
+        }
+        
+        if hasActiveTasksForCurrentDay {
+            additionalWidth += 50
+        }
+        
+        return baseMaxWidth + additionalWidth
     }
     
     // MARK: - UI Components
