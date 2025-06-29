@@ -8,7 +8,6 @@
 import Combine
 import CoreData
 import SwiftUI
-import UIKit
 
 struct TaskListView: View {
     // MARK: - Core Properties

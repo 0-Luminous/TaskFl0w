@@ -5,7 +5,6 @@
 // Created by Yan on 21/3/25.
 
 import SwiftUI
-import UIKit
 
 struct BottomBar: View {
     // MARK: - Properties

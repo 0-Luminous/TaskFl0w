@@ -176,6 +176,89 @@ final class TodoDataService: ObservableObject {
         }
     }
     
+    /// Загружает все завершенные (архивные) задачи
+    func loadAllCompletedTasks() async throws -> [ToDoItem] {
+        logger.info("🔍 Начинаем загрузку всех архивных задач из БД...")
+        
+        let request = NSFetchRequest<NSManagedObject>(entityName: "CDToDoItem")
+        request.predicate = NSPredicate(format: "isCompleted == %@", NSNumber(value: true))
+        request.sortDescriptors = [
+            NSSortDescriptor(key: "date", ascending: false),
+            NSSortDescriptor(key: "priority", ascending: false)
+        ]
+        
+        do {
+            let results = try context.fetch(request)
+            logger.info("📊 Найдено \(results.count) записей с isCompleted == true в БД")
+            
+            // Дебаг: показываем все найденные записи
+            for (index, entity) in results.enumerated() {
+                let title = entity.value(forKey: "title") as? String ?? "Unknown"
+                let isCompleted = entity.value(forKey: "isCompleted") as? Bool ?? false
+                let categoryID = entity.value(forKey: "categoryID") as? UUID
+                logger.info("📝 Запись \(index + 1): \(title) (isCompleted: \(isCompleted), categoryID: \(categoryID?.uuidString ?? "nil"))")
+            }
+            
+            let items = results.compactMap { convertToToDoItem($0) }
+            logger.info("✅ Успешно конвертировано \(items.count) архивных задач")
+            
+            // Дебаг: показываем финальные задачи
+            for (index, item) in items.enumerated() {
+                logger.info("🎯 Архивная задача \(index + 1): \(item.title) (categoryID: \(item.categoryID?.uuidString ?? "nil"))")
+            }
+            
+            return items
+        } catch {
+            logger.error("❌ Ошибка загрузки архивных задач: \(error.localizedDescription)")
+            throw error
+        }
+    }
+    
+    /// Загружает ВСЕ задачи из базы данных (для дебаггинга)
+    func loadAllTasks() async throws -> [ToDoItem] {
+        logger.info("🔍 Загружаем ВСЕ задачи из БД для дебаггинга...")
+        
+        let request = NSFetchRequest<NSManagedObject>(entityName: "CDToDoItem")
+        request.sortDescriptors = [
+            NSSortDescriptor(key: "date", ascending: false),
+            NSSortDescriptor(key: "isCompleted", ascending: true)
+        ]
+        
+        do {
+            let results = try context.fetch(request)
+            logger.info("📊 Всего найдено записей в БД: \(results.count)")
+            
+            // Дебаг: показываем все найденные записи
+            var completedCount = 0
+            var activeCount = 0
+            
+            for (index, entity) in results.enumerated() {
+                let title = entity.value(forKey: "title") as? String ?? "Unknown"
+                let isCompleted = entity.value(forKey: "isCompleted") as? Bool ?? false
+                let categoryID = entity.value(forKey: "categoryID") as? UUID
+                let dateCreated = entity.value(forKey: "date") as? Date
+                
+                if isCompleted {
+                    completedCount += 1
+                    logger.info("✅ Завершенная задача \(index + 1): \(title) (categoryID: \(categoryID?.uuidString ?? "nil"), дата: \(dateCreated?.description ?? "nil"))")
+                } else {
+                    activeCount += 1
+                    logger.info("⏳ Активная задача \(index + 1): \(title) (categoryID: \(categoryID?.uuidString ?? "nil"), дата: \(dateCreated?.description ?? "nil"))")
+                }
+            }
+            
+            logger.info("📈 Статистика БД: завершенных \(completedCount), активных \(activeCount)")
+            
+            let items = results.compactMap { convertToToDoItem($0) }
+            logger.info("✅ Успешно конвертировано \(items.count) задач")
+            
+            return items
+        } catch {
+            logger.error("❌ Ошибка загрузки всех задач: \(error.localizedDescription)")
+            throw error
+        }
+    }
+    
     /// Архивирует выполненные задачи
     func archiveCompletedTasks() async throws {
         let request = NSFetchRequest<NSManagedObject>(entityName: "CDToDoItem")

@@ -101,18 +101,14 @@ final class ListViewModel: ObservableObject {
         return Double(completedTasksCount) / Double(items.count) * 100
     }
     
-    /// Проверяет, есть ли архивные задачи в выбранной категории
+//     Проверяет, есть ли архивные задачи в выбранной категории (для всех дней)
     var hasArchivedTasksInCategory: Bool {
-        let archivedItems = state.items.filter { $0.isCompleted }
-        
-        // Если категория не выбрана, проверяем все архивные задачи 
-        guard let selectedCategory = state.selectedCategory else {
-            return !archivedItems.isEmpty
-        }
-        
-        // Если категория выбрана, проверяем архивные задачи только в этой категории
-        return archivedItems.contains { $0.categoryID == selectedCategory.id }
+        // Создаем асинхронную проверку для всех архивных задач категории
+        return hasArchivedTasksInCategoryCache
     }
+    
+    // Кешированное значение для проверки архивных задач
+    @Published private(set) var hasArchivedTasksInCategoryCache: Bool = false
     
     /// Проверяет, есть ли активные задачи на текущий день в выбранной категории
     var hasActiveTasksForCurrentDay: Bool {
@@ -149,6 +145,11 @@ final class ListViewModel: ObservableObject {
         
         // Загружаем начальные данные
         handle(.loadTasks(Date()))
+        
+        // Инициализируем кеш архивных задач
+        Task {
+            await updateArchivedTasksCache()
+        }
     }
     
     // MARK: - Action Handler
@@ -195,6 +196,11 @@ final class ListViewModel: ObservableObject {
             state.selectedTasks.removeAll()
         case .showCompletedTasks(let show):
             state.showCompletedTasksOnly = show
+            if show {
+                loadAllArchivedTasks()
+            } else {
+                handle(.loadTasks(state.selectedDate))
+            }
         case .clearError:
             state.error = nil
         }
@@ -231,6 +237,9 @@ final class ListViewModel: ObservableObject {
                     self.state.isLoading = false
                     self.logger.info("Загружено \(tasks.count) задач для даты \(date)")
                 }
+                
+                // Обновляем кеш архивных задач для категории
+                await self.updateArchivedTasksCache()
             } catch {
                 await MainActor.run {
                     self.state.error = error.localizedDescription
@@ -249,14 +258,22 @@ final class ListViewModel: ObservableObject {
     private func filterByCategory(_ category: TaskCategoryModel?) {
         state.selectedCategory = category
         applyCurrentFilters()
+        
+        // Обновляем кеш архивных задач при смене категории
+        Task {
+            await updateArchivedTasksCache()
+        }
     }
     
     private func applyCurrentFilters() {
         var filteredItems = state.items
         
-        // Фильтр по дате
-        filteredItems = filteredItems.filter { item in
-            Calendar.current.isDate(item.date, inSameDayAs: state.selectedDate)
+        // 🔧 ИСПРАВЛЕНИЕ: Фильтр по дате НЕ применяется в режиме архива
+        if !state.showCompletedTasksOnly {
+            // Фильтр по дате только для обычного режима
+            filteredItems = filteredItems.filter { item in
+                Calendar.current.isDate(item.date, inSameDayAs: state.selectedDate)
+            }
         }
         
         // Фильтр по категории
@@ -296,6 +313,51 @@ final class ListViewModel: ObservableObject {
         
         state.filteredItems = filteredItems
     }
+   
+   /// Обновляет кеш наличия архивных задач в текущей категории
+   private func updateArchivedTasksCache() async {
+       logger.info("🔄 Начинаем обновление кеша архивных задач...")
+       
+       do {
+           // Загружаем все архивные задачи (завершенные)
+            let allArchivedTasks = try await todoDataService.loadAllCompletedTasks()
+           logger.info("📦 Загружено архивных задач из БД: \(allArchivedTasks.count)")
+           
+           // Дебаг: показываем все архивные задачи
+           for (index, task) in allArchivedTasks.enumerated() {
+               logger.info("📝 Архивная задача \(index + 1): \(task.title) (categoryID: \(task.categoryID?.uuidString ?? "nil"))")
+           }
+           
+           await MainActor.run {
+               // Если категория не выбрана, проверяем все архивные задачи
+               guard let selectedCategory = self.state.selectedCategory else {
+                   let result = !allArchivedTasks.isEmpty
+                   self.hasArchivedTasksInCategoryCache = result
+                   self.logger.info("✅ Обновлен кеш архивных задач (все категории): \(result)")
+                   return
+               }
+               
+               // Если категория выбрана, проверяем архивные задачи только в этой категории
+               logger.info("🔍 Ищем архивные задачи для категории: \(selectedCategory.rawValue) (ID: \(selectedCategory.id.uuidString))")
+               
+               let hasArchivedInCategory = allArchivedTasks.contains { task in
+                   let matches = task.categoryID == selectedCategory.id
+                   if matches {
+                       logger.info("✅ Найдена архивная задача в категории: \(task.title)")
+                   }
+                   return matches
+               }
+               
+               self.hasArchivedTasksInCategoryCache = hasArchivedInCategory
+               self.logger.info("✅ Обновлен кеш архивных задач для категории \(selectedCategory.rawValue): \(hasArchivedInCategory)")
+           }
+       } catch {
+           await MainActor.run {
+               self.logger.error("❌ Ошибка обновления кеша архивных задач: \(error.localizedDescription)")
+               // В случае ошибки оставляем текущее значение кеша
+           }
+       }
+   }
     
     private func addTask(title: String, category: TaskCategoryModel?, priority: TaskPriority, date: Date) {
         guard !title.isEmpty else { return }
@@ -314,6 +376,9 @@ final class ListViewModel: ObservableObject {
                     self.handle(.loadTasks(self.state.selectedDate))
                     self.logger.info("Добавлена новая задача: \(title)")
                 }
+               
+               // Обновляем кеш архивных задач после добавления задачи
+               await self.updateArchivedTasksCache()
             } catch {
                 await MainActor.run {
                     self.state.error = error.localizedDescription
@@ -343,6 +408,9 @@ final class ListViewModel: ObservableObject {
                     self.state.editingItem = nil
                     self.logger.info("✅ Задача обновлена: \(item.id) с deadline: \(item.deadline?.description ?? "nil")")
                 }
+               
+               // Обновляем кеш архивных задач после изменения задачи
+               await self.updateArchivedTasksCache()
             } catch {
                 await MainActor.run {
                     self.state.error = error.localizedDescription
@@ -360,6 +428,9 @@ final class ListViewModel: ObservableObject {
                     self.handle(.loadTasks(self.state.selectedDate))
                     self.logger.info("Удалена задача: \(id)")
                 }
+               
+               // Обновляем кеш архивных задач после удаления задачи
+               await self.updateArchivedTasksCache()
             } catch {
                 await MainActor.run {
                     self.state.error = error.localizedDescription
@@ -387,6 +458,11 @@ final class ListViewModel: ObservableObject {
         )
         
         handle(.updateTask(updatedTask))
+       
+       // Обновляем кеш архивных задач при изменении статуса
+       Task {
+           await updateArchivedTasksCache()
+        }
     }
     
     private func changePriority(id: UUID, priority: TaskPriority) {
@@ -546,6 +622,30 @@ final class ListViewModel: ObservableObject {
             }
         }
     }
+    
+    /// Загружает все архивные задачи для режима архива
+    private func loadAllArchivedTasks() {
+        state.isLoading = true
+        state.error = nil
+        
+        Task {
+            do {
+                let archivedTasks = try await todoDataService.loadAllCompletedTasks()
+                await MainActor.run {
+                    self.state.items = archivedTasks
+                    self.applyCurrentFilters()
+                    self.state.isLoading = false
+                    self.logger.info("✅ Загружено \(archivedTasks.count) архивных задач")
+                }
+            } catch {
+                await MainActor.run {
+                    self.state.error = error.localizedDescription
+                    self.state.isLoading = false
+                    self.logger.error("❌ Ошибка загрузки архивных задач: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Convenience Methods
@@ -569,6 +669,12 @@ extension ListViewModel {
     
     /// Получает архивные задачи
     func getAllArchivedItems() -> [ToDoItem] {
+        // 🔧 ИСПРАВЛЕНИЕ: В режиме архива возвращаем все загруженные задачи
+        // (они уже отфильтрованы по завершенности в applyCurrentFilters)
+        if state.showCompletedTasksOnly {
+            return state.filteredItems
+        }
+        // В обычном режиме возвращаем только завершенные задачи для текущей даты
         return state.items.filter { $0.isCompleted }
     }
     
@@ -665,4 +771,39 @@ extension ListViewModel {
             date: self.state.selectedDate
         ))
     }
+   
+   /// Принудительно обновляет кеш архивных задач (для дебаггинга)
+   func forceUpdateArchivedTasksCache() {
+       logger.info("🔧 Принудительное обновление кеша архивных задач...")
+       Task {
+           await updateArchivedTasksCache()
+       }
+   }
+   
+   /// Показывает полную статистику задач в БД (для дебаггинга)
+   func debugAllTasks() {
+       logger.info("🔍 ДЕБАГ: Проверяем все задачи в БД...")
+       Task {
+           do {
+               let allTasks = try await todoDataService.loadAllTasks()
+               await MainActor.run {
+                   logger.info("🎯 ДЕБАГ: Текущая категория: \(self.state.selectedCategory?.rawValue ?? "Все")")
+                   logger.info("🎯 ДЕБАГ: Кеш архивных задач = \(self.hasArchivedTasksInCategoryCache)")
+                   logger.info("🎯 ДЕБАГ: Всего задач в БД: \(allTasks.count)")
+                   
+                   let completedTasks = allTasks.filter { $0.isCompleted }
+                   logger.info("🎯 ДЕБАГ: Завершенных задач всего: \(completedTasks.count)")
+                   
+                   if let category = self.state.selectedCategory {
+                       let completedInCategory = completedTasks.filter { $0.categoryID == category.id }
+                       logger.info("🎯 ДЕБАГ: Завершенных задач в текущей категории: \(completedInCategory.count)")
+                   }
+               }
+           } catch {
+               await MainActor.run {
+                   logger.error("❌ ДЕБАГ: Ошибка загрузки задач: \(error)")
+               }
+           }
+       }
+   }
 } 
