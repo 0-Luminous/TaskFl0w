@@ -20,6 +20,7 @@ final class SharedStateService: ObservableObject {
     
     // MARK: - Properties
     let context: NSManagedObjectContext
+    private let backgroundContext: NSManagedObjectContext
     private let logger = Logger(subsystem: "TaskFl0w", category: "SharedStateService")
     private var tasksUpdateCallbacks: [() -> Void] = []
     private var cancellables = Set<AnyCancellable>()
@@ -27,6 +28,12 @@ final class SharedStateService: ObservableObject {
     // MARK: - Initialization (убираем Singleton)
     init(context: NSManagedObjectContext) {
         self.context = context
+        
+        // ✅ ИСПРАВЛЕНИЕ #1: Правильное создание BACKGROUND CONTEXT
+        let container = PersistenceController.shared.container
+        self.backgroundContext = container.newBackgroundContext()
+        self.backgroundContext.automaticallyMergesChangesFromParent = true
+        
         setupBindings()
         
         // Загружаем начальные данные асинхронно
@@ -63,25 +70,38 @@ final class SharedStateService: ObservableObject {
         isLoading = true
         error = nil
         
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
+        
         do {
-            let calendar = Calendar.current
-            let startOfDay = calendar.startOfDay(for: date)
-            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
+            // ✅ ИСПРАВЛЕНИЕ #2: Добавляем try для throwing continuation
+            let tasks = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[TaskOnRing], Error>) in
+                backgroundContext.perform {
+                    do {
+                        let taskRequest = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
+                        taskRequest.predicate = NSPredicate(
+                            format: "startTime >= %@ AND startTime < %@",
+                            startOfDay as NSDate,
+                            endOfDay as NSDate
+                        )
+                        taskRequest.sortDescriptors = [
+                            NSSortDescriptor(keyPath: \TaskEntity.startTime, ascending: true)
+                        ]
+                        
+                        let taskEntities = try self.backgroundContext.fetch(taskRequest)
+                        let tasks = taskEntities.map { $0.taskModel }
+                        continuation.resume(returning: tasks)
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
             
-            let taskRequest = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
-            taskRequest.predicate = NSPredicate(
-                format: "startTime >= %@ AND startTime < %@",
-                startOfDay as NSDate,
-                endOfDay as NSDate
-            )
-            taskRequest.sortDescriptors = [
-                NSSortDescriptor(keyPath: \TaskEntity.startTime, ascending: true)
-            ]
-            
-            let taskEntities = try context.fetch(taskRequest)
-            self.tasks = taskEntities.map { $0.taskModel }
-            
+            // Обновляем UI на MAIN THREAD
+            self.tasks = tasks
             logger.info("Загружено \(self.tasks.count) задач для даты \(date)")
+            
         } catch {
             self.error = error
             logger.error("Ошибка загрузки задач: \(error.localizedDescription)")
@@ -90,23 +110,20 @@ final class SharedStateService: ObservableObject {
         isLoading = false
     }
     
-    func saveContext() throws {
-        guard context.hasChanges else { return }
-        
-        do {
-            try context.save()
-            logger.info("Контекст сохранен успешно")
-        } catch {
-            logger.error("Ошибка сохранения контекста: \(error.localizedDescription)")
-            self.error = error
-            throw error
-        }
-    }
-    
     func addTask(_ task: TaskOnRing) async {
         do {
-            let entity = TaskEntity.from(task, context: context)
-            try saveContext()
+            // ✅ ИСПРАВЛЕНИЕ #3: Добавляем try
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                backgroundContext.perform {
+                    do {
+                        let entity = TaskEntity.from(task, context: self.backgroundContext)
+                        try self.backgroundContext.save()
+                        continuation.resume()
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
             
             // Обновляем локальный массив
             self.tasks.append(task)
@@ -119,21 +136,39 @@ final class SharedStateService: ObservableObject {
     
     func updateTask(_ task: TaskOnRing) async {
         do {
-            // Находим и обновляем entity
-            let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
-            request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
+            // ✅ ИСПРАВЛЕНИЕ #4: Добавляем try
+            let updated = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
+                backgroundContext.perform {
+                    do {
+                        let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
+                        request.predicate = NSPredicate(format: "id == %@", task.id as CVarArg)
+                        
+                        if let entity = try self.backgroundContext.fetch(request).first {
+                            // Обновляем свойства entity
+                            entity.startTime = task.startTime
+                            entity.endTime = task.endTime
+                            entity.isCompleted = task.isCompleted
+                            // TODO: обновить category если нужно
+                            
+                            try self.backgroundContext.save()
+                            continuation.resume(returning: true)
+                        } else {
+                            continuation.resume(returning: false)
+                        }
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
             
-            if let entity = try context.fetch(request).first {
-                // entity.update(from: task) // Метод будет добавлен позже
-                try saveContext()
-                
+            if updated {
                 // Обновляем локальный массив
                 if let index = self.tasks.firstIndex(where: { $0.id == task.id }) {
                     self.tasks[index] = task
                 }
-                
                 logger.info("Обновлена задача: \(task.id)")
             }
+            
         } catch {
             self.error = error
             logger.error("Ошибка обновления задачи: \(error.localizedDescription)")
@@ -142,17 +177,32 @@ final class SharedStateService: ObservableObject {
     
     func deleteTask(with id: UUID) async {
         do {
-            let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
-            request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+            // ✅ ИСПРАВЛЕНИЕ #5: Добавляем try
+            let deleted = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
+                backgroundContext.perform {
+                    do {
+                        let request = NSFetchRequest<TaskEntity>(entityName: "TaskEntity")
+                        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+                        
+                        if let entity = try self.backgroundContext.fetch(request).first {
+                            self.backgroundContext.delete(entity)
+                            try self.backgroundContext.save()
+                            continuation.resume(returning: true)
+                        } else {
+                            continuation.resume(returning: false)
+                        }
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
             
-            if let entity = try context.fetch(request).first {
-                context.delete(entity)
-                try saveContext()
-                
+            if deleted {
                 // Обновляем локальный массив
                 self.tasks.removeAll { $0.id == id }
                 logger.info("Удалена задача: \(id)")
             }
+            
         } catch {
             self.error = error
             logger.error("Ошибка удаления задачи: \(error.localizedDescription)")

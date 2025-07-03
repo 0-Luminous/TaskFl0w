@@ -101,11 +101,11 @@ extension UserDefaults {
 struct UserDefaultsDefaults {
     static let themeMode = "auto"
     static let clockStyle = "Классический"
-    static let fontName = "SF Pro"
+    static let fontName = "Nunito"
     static let digitalFontSize: Double = 42.0
     static let markersWidth: Double = 2.0
     static let numbersSize: Double = 16.0
-    static let numberInterval: Int = 1
+    static let numberInterval: Int = 2
     static let taskArcLineWidth: Double = 20.0
     static let outerRingLineWidth: Double = 20.0
     static let reminderTime: Int = 5 // minutes

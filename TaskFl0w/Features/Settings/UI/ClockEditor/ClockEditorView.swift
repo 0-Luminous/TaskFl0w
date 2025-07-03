@@ -33,7 +33,7 @@ struct ClockEditorView: View {
     @AppStorage("darkModeDigitalFontColor") private var darkModeDigitalFontColor: String = Color.white.toHex()
 
     @AppStorage("showMarkers") private var showMarkers: Bool = true
-    @AppStorage("fontName") private var fontName: String = "SF Pro"
+    @AppStorage("fontName") private var fontName: String = "Nunito"
     @AppStorage("showTimeOnlyForActiveTask") private var showTimeOnlyForActiveTask: Bool = false
 
     @Environment(\.presentationMode) var presentationMode
@@ -224,7 +224,7 @@ struct ClockEditorView: View {
                 )
 
             // Сам циферблат
-            GlobleClockFaceViewIOS(
+            ClockFaceView(
                 currentDate: viewModel.selectedDate,
                 tasks: viewModel.tasks,
                 viewModel: viewModel,

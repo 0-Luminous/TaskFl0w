@@ -83,7 +83,7 @@ final class ThemeConfigurationViewModel: ObservableObject {
     var numbersSize: Double = 16.0
     
     @AppStorage("numberInterval") 
-    var numberInterval = 1
+    var numberInterval = 2
     
     @AppStorage("showMarkers") 
     var showMarkers = true
@@ -93,16 +93,16 @@ final class ThemeConfigurationViewModel: ObservableObject {
     
     // Fonts
     @AppStorage("digitalFont") 
-    var digitalFont = "SF Pro"
+    var digitalFont = "Nunito"
     
     @AppStorage("fontName") 
-    var fontName = "SF Pro"
+    var fontName = "Nunito"
     
     @AppStorage("digitalFontSize") 
     var digitalFontSizeRaw: Double = 42.0
     
     @AppStorage("markerStyle") 
-    private var markerStyleRaw = "lines"
+    private var markerStyleRaw = "hourAccent"
     
     // MARK: - Computed Properties
     
@@ -258,14 +258,14 @@ final class ThemeConfigurationViewModel: ObservableObject {
         markersOffset = 0.0
         numbersSize = 16.0
         
-        digitalFont = "SF Pro"
-        fontName = "SF Pro"
+        digitalFont = "Nunito"
+        fontName = "Nunito"
         markerStyleRaw = "lines"
         
         showHourNumbers = true
         showMarkers = true
         showIntermediateMarkers = true
-        numberInterval = 1
+        numberInterval = 2
         
         notificationsEnabled = true
         showTimeOnlyForActiveTask = false

@@ -127,7 +127,7 @@ struct LibraryClockFaceView: View {
         let fontName: String
         let fontSize: Double
         
-        init(hour: Int, minute: Int, color: Color, fontName: String = "SF Pro", fontSize: Double = 40.0) {
+        init(hour: Int, minute: Int, color: Color, fontName: String = "Nunito", fontSize: Double = 40.0) {
             self.hour = hour
             self.minute = minute
             self.color = color
@@ -149,7 +149,7 @@ struct LibraryClockFaceView: View {
         
         // Создаем шрифт на основе переданных параметров
         private var customFont: Font {
-            if fontName != "SF Pro" {
+            if fontName != "Nunito" {
                 return Font.custom(fontName, size: fontSize)
             } else {
                 return .system(size: fontSize, weight: .bold, design: .monospaced)

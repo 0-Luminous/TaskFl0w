@@ -41,9 +41,7 @@ struct ClockViewIOS: View {
         )
     }()
     @ObservedObject private var themeManager = ThemeManager.shared
-    
-    // MARK: - Timer
-    @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @ObservedObject private var timeManager = CentralTimeManager.shared
     
     // MARK: - View States
     @State private var clockState = MainViewState()
@@ -90,7 +88,7 @@ struct ClockViewIOS: View {
             .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95))
         }
         .navigationViewStyle(StackNavigationViewStyle())
-        .onReceive(timer) { _ in
+        .onReceive(timeManager.secondPublisher) { _ in
             viewModel.updateCurrentTimeIfNeeded()
         }
         .onAppear {
@@ -228,7 +226,7 @@ struct ClockViewIOS: View {
                 outerRingLineWidth: viewModel.themeConfig.outerRingLineWidth
             )
 
-            GlobleClockFaceViewIOS(
+            ClockFaceView(
                 currentDate: viewModel.selectedDate,
                 tasks: viewModel.tasks,
                 viewModel: viewModel,

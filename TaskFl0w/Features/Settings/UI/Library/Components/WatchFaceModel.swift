@@ -27,7 +27,7 @@ struct WatchFaceModel: Identifiable, Codable, Equatable {
     // Настройки маркеров
     var showMarkers: Bool = true
     var showHourNumbers: Bool = true
-    var numberInterval: Int = 1
+    var numberInterval: Int = 2
     var markersOffset: Double = 0.0
     var markersWidth: Double = 2.0
     var numbersSize: Double = 16.0

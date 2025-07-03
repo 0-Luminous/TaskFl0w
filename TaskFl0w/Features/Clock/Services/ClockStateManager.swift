@@ -11,9 +11,6 @@ final class ClockStateManager: ObservableObject {
     private let themeManager = ThemeManager.shared
     private let zeroPositionManager = ZeroPositionManager.shared
 
-    // MARK: - Timer for current time updates
-    private var timerCancellable: AnyCancellable?
-
     // Кэшируем calendar для переиспользования
     private let calendar = Calendar.current
 
@@ -21,9 +18,9 @@ final class ClockStateManager: ObservableObject {
     private var isActive: Bool = true {
         didSet {
             if isActive {
-                startTimeUpdates()
+                setupTimeSubscription()
             } else {
-                stopTimeUpdates()
+                cancellables.removeAll()
             }
         }
     }
@@ -43,37 +40,34 @@ final class ClockStateManager: ObservableObject {
 
     private let computationQueue = DispatchQueue(label: "clock.computation", qos: .userInitiated)
 
+    // ✅ ДОБАВЛЯЕМ подписку на центральный таймер:
+    private var cancellables = Set<AnyCancellable>()
+
     // MARK: - Initialization
     init() {
-        startTimeUpdates()
+        setupTimeSubscription()
     }
 
     deinit {
-        timerCancellable?.cancel()
+        cancellables.removeAll()
     }
 
-    // MARK: - Time management
-    private func startTimeUpdates() {
-        timerCancellable = Timer.publish(every: 1.0, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                guard let self = self, self.needsTimeUpdate else { return }
-                self.currentDate = Date()
+    // ✅ НОВЫЙ метод подписки:
+    private func setupTimeSubscription() {
+        CentralTimeManager.shared.secondPublisher
+            .sink { [weak self] newTime in
+                self?.currentDate = newTime
             }
+            .store(in: &cancellables)
     }
 
-    private func stopTimeUpdates() {
-        timerCancellable?.cancel()
-        timerCancellable = nil
-    }
-
-    // Методы для паузы/возобновления когда view неактивен
+    // ✅ УПРОЩАЕМ методы паузы:
     func pauseUpdates() {
-        isActive = false
+        CentralTimeManager.shared.pauseUpdates()
     }
 
     func resumeUpdates() {
-        isActive = true
+        CentralTimeManager.shared.resumeUpdates()
     }
 
     // MARK: - Time conversion methods

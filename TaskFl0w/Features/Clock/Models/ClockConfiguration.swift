@@ -16,7 +16,7 @@ struct ClockSettings {
     let defaultDigitalFontSize: Double = 42.0
     let defaultMarkersWidth: Double = 2.0
     let defaultNumbersSize: Double = 16.0
-    let defaultNumberInterval: Int = 1
+    let defaultNumberInterval: Int = 2
 }
 
 /// Настройки маркеров циферблата

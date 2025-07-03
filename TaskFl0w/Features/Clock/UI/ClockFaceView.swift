@@ -1,12 +1,12 @@
 //
-//  MainClockFaceViewIOS.swift
+//  ClockFaceView.swift
 //  TaskFl0w
 //
 //  Created by Yan on 24/12/24.
 //
 import SwiftUI
 
-struct GlobleClockFaceViewIOS: View {
+struct ClockFaceView: View {
     // MARK: - Properties
     let currentDate: Date
     let tasks: [TaskOnRing]
@@ -26,7 +26,7 @@ struct GlobleClockFaceViewIOS: View {
     
     // MARK: - AppStorage Properties
     @AppStorage("markersOffset") private var markersOffset: Double = 0.0
-    @AppStorage("numberInterval") private var numberInterval: Int = 1
+    @AppStorage("numberInterval") private var numberInterval: Int = 2
     @AppStorage("markersWidth") private var markersWidth: Double = 2.0
     @AppStorage("numbersSize") private var numbersSize: Double = 16.0
     
@@ -320,7 +320,7 @@ private struct DigitalTimeDisplay: View {
         let digitalFontName = UserDefaults.standard.string(forKey: "digitalFont") ?? markersViewModel.fontName
         
         // Сначала пробуем использовать кастомный шрифт
-        if digitalFontName != "SF Pro" {
+        if digitalFontName != "Nunito" {
             return Font.custom(digitalFontName, size: fontSize)
                 .weight(.bold)
         }
@@ -331,7 +331,7 @@ private struct DigitalTimeDisplay: View {
 }
 
 // MARK: - Calendar Extension
-private extension GlobleClockFaceViewIOS {
+private extension ClockFaceView {
     var calendar: Calendar {
         Calendar.current
     }

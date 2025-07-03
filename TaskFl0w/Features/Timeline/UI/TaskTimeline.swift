@@ -110,24 +110,27 @@ struct CategoryBlockPositionPreferenceKey: PreferenceKey {
 }
 
 // Абстрагируем логику работы с таймлайном в отдельный класс
+@MainActor
 class TimelineManager: ObservableObject {
     @Published var currentTime = Date()
 
-    // Используем AnyCancellable вместо Timer для работы с Combine
-    private var timerCancellable: AnyCancellable?
+    private var cancellables = Set<AnyCancellable>()
 
     init() {
-        // Создаем таймер с интервалом в 1 минуту для обновления времени
-        timerCancellable = Timer.publish(every: 60, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                self?.currentTime = Date()
+        setupTimeSubscription()
+    }
+
+    private func setupTimeSubscription() {
+        // Подписываемся на минутные обновления вместо создания своего таймера
+        CentralTimeManager.shared.minutePublisher
+            .sink { [weak self] newTime in
+                self?.currentTime = newTime
             }
+            .store(in: &cancellables)
     }
 
     deinit {
-        // Отменяем подписку при уничтожении объекта
-        timerCancellable?.cancel()
+        cancellables.removeAll()
     }
 
     // Интеллектуальное определение диапазона задач
@@ -553,7 +556,7 @@ struct TaskTimeline: View {
                     }
                 }
         )
-        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { _ in
+        .onReceive(CentralTimeManager.shared.minutePublisher) { _ in
             self.timelineManager.currentTime = Date()
         }
         .fullScreenCover(isPresented: $showSettings) {

@@ -14,7 +14,7 @@ final class ClockMarkersViewModel: ObservableObject {
         }
     }
     @Published var zeroPosition: Double = 0.0
-    @Published var numberInterval: Int = 1 // 1, 2, 3 или 6 - интервал отображения цифр
+    @Published var numberInterval: Int = 2 // 1, 2, 3 или 6 - интервал отображения цифр
     @Published var isDarkMode: Bool = false {
         didSet {
             // Отправляем уведомление для обновления currentMarkersColor
@@ -84,6 +84,17 @@ final class ClockMarkersViewModel: ObservableObject {
         "Menlo-Bold",
     ]
 
+    // Названия стилей маркеров для отображения в интерфейсе
+    var markerStyleNames: [MarkerStyle: String] = [
+        .lines: "Линии",
+        .dots: "Точки",
+        .standard: "Стандартные",
+        .classicWatch: "Классические",
+        .thinUniform: "Тонкие",
+        .hourAccent: "Часовые",
+        .uniformDense: "Плотные"
+    ]
+
     // MARK: - Environment
     @Environment(\.colorScheme) var colorScheme
 
@@ -97,17 +108,6 @@ final class ClockMarkersViewModel: ObservableObject {
         let hexColor = isDarkMode ? darkModeDigitalFontColor : lightModeDigitalFontColor
         return Color(hex: hexColor) ?? (isDarkMode ? .white : .gray)
     }
-
-    // Названия стилей маркеров для отображения в интерфейсе
-    var markerStyleNames: [MarkerStyle: String] = [
-        .lines: "Линии",
-        .dots: "Точки",
-        .standard: "Стандартные",
-        .classicWatch: "Классические",
-        .thinUniform: "Тонкие",
-        .hourAccent: "Часовые",
-        .uniformDense: "Плотные"
-    ]
 
     // MARK: - Methods
     func startPoint(angle: CGFloat, length: CGFloat, geometry: GeometryProxy) -> CGPoint {
