@@ -80,6 +80,10 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     private var cancellables = Set<AnyCancellable>()
     private var currentActiveCategory: TaskCategoryModel?
     
+    // ✅ ИСПРАВЛЕНИЕ: Кэширующие переменные для checkForCategoryChange
+    private var cachedTodayTasks: [TaskOnRing] = []
+    private var lastCacheUpdate: Date = .distantPast
+    
     // MARK: - Initialization
     
     init(
@@ -121,9 +125,20 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
     // MARK: - Public Methods (Essential Coordinator Functions)
     
     func updateCurrentTimeIfNeeded() {
+        // Проверяем нужность обновления времени
+        guard Calendar.current.isDate(selectedDate, inSameDayAs: Date()) else { return }
+        
+        let oldTime = timeManager.currentDate
         timeManager.updateCurrentTimeIfNeeded()
-        Task {
-            await checkForCategoryChange()
+        
+        // ✅ ОПТИМИЗАЦИЯ: checkForCategoryChange только если минута изменилась
+        let newTime = timeManager.currentDate
+        let calendar = Calendar.current
+        
+        if !calendar.isDate(oldTime, equalTo: newTime, toGranularity: .minute) {
+            Task {
+                await checkForCategoryChange()
+            }
         }
     }
     
@@ -350,18 +365,29 @@ final class ClockViewModel: ObservableObject, ClockViewModelProtocol {
             .store(in: &cancellables)
     }
     
+    /// ✅ ИСПРАВЛЕННАЯ версия checkForCategoryChange
     private func checkForCategoryChange() async {
+        // Ранний выход если уведомления отключены
         guard themeConfig.notificationsEnabled else { return }
         
-        let todayTasks = tasksForSelectedDate(tasks)
         let now = Date()
+        let calendar = Calendar.current
         
-        let activeTask = todayTasks.first { task in
+        // Обновляем кэш только если прошла минута или дата изменилась
+        if !calendar.isDate(lastCacheUpdate, equalTo: now, toGranularity: .minute) ||
+           !calendar.isDate(selectedDate, inSameDayAs: lastCacheUpdate) {
+            cachedTodayTasks = tasksForSelectedDate(tasks)
+            lastCacheUpdate = now
+        }
+        
+        // Быстрый поиск активной задачи
+        let activeTask = cachedTodayTasks.first { task in
             task.startTime <= now && task.endTime > now
         }
         
         let newActiveCategory = activeTask?.category
         
+        // Проверяем изменение категории
         if let newCategory = newActiveCategory, 
            newCategory != currentActiveCategory {
             currentActiveCategory = newCategory

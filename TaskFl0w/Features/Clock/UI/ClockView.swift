@@ -51,6 +51,10 @@ struct ClockViewIOS: View {
     // MARK: - Subscriptions
     @State private var cancellables = Set<AnyCancellable>()
     
+    // ✅ ОПТИМИЗАЦИЯ: Дебаунсинг для updateUI
+    @State private var updateUIDebouncer: AnyCancellable?
+    @State private var lastUIUpdateTime = Date.distantPast
+    
     // MARK: - Body
     var body: some View {
         NavigationView {
@@ -88,7 +92,8 @@ struct ClockViewIOS: View {
             .background(themeManager.isDarkMode ? Color(red: 0.098, green: 0.098, blue: 0.098) : Color(red: 0.95, green: 0.95, blue: 0.95))
         }
         .navigationViewStyle(StackNavigationViewStyle())
-        .onReceive(timeManager.secondPublisher) { _ in
+        // ✅ КРИТИЧЕСКАЯ ОПТИМИЗАЦИЯ: minutePublisher вместо secondPublisher
+        .onReceive(timeManager.minutePublisher) { _ in
             viewModel.updateCurrentTimeIfNeeded()
         }
         .onAppear {
@@ -97,13 +102,26 @@ struct ClockViewIOS: View {
         }
         .onDisappear {
             unregisterNotifications()
+            // ✅ ИСПРАВЛЕНИЕ: Очистка дебаунсера
+            updateUIDebouncer?.cancel()
         }
-        .onChange(of: viewModel.userInteraction.isEditingMode) { _, _ in updateUI() }
-        .onChange(of: viewModel.userInteraction.editingTask) { _, _ in updateUI() }
-        .onChange(of: viewModel.userInteraction.previewTime) { _, _ in
-            if viewModel.userInteraction.isEditingMode && (viewModel.userInteraction.isDraggingStart || viewModel.userInteraction.isDraggingEnd) {
-                updateUI()
-            }
+        // ✅ ОПТИМИЗАЦИЯ: Дебаунсинг onChange событий
+        .onChange(of: viewModel.userInteraction.isEditingMode) { oldValue, newValue in
+            guard oldValue != newValue else { return }
+            debouncedUpdateUI()
+        }
+        .onChange(of: viewModel.userInteraction.editingTask) { oldValue, newValue in
+            guard oldValue?.id != newValue?.id else { return }
+            debouncedUpdateUI()
+        }
+        .onChange(of: viewModel.userInteraction.previewTime) { oldValue, newValue in
+            // ✅ ОПТИМИЗАЦИЯ: Условные обновления + защита от спама
+            guard viewModel.userInteraction.isEditingMode,
+                  viewModel.userInteraction.isDraggingStart || viewModel.userInteraction.isDraggingEnd,
+                  let oldTime = oldValue, let newTime = newValue,
+                  abs(oldTime.timeIntervalSince(newTime)) > 0.1 else { return }
+            
+            debouncedUpdateUI()
         }
     }
     
@@ -289,7 +307,22 @@ struct ClockViewIOS: View {
         // Реализация поиска
     }
     
-    // MARK: - Helper Functions
+    // MARK: - Helper Functions (Optimized)
+    
+    /// ✅ ОПТИМИЗАЦИЯ: Дебаунсинг для updateUI
+    private func debouncedUpdateUI() {
+        let now = Date()
+        guard now.timeIntervalSince(lastUIUpdateTime) > 0.016 else { return } // 60 FPS limit
+        
+        updateUIDebouncer?.cancel()
+        updateUIDebouncer = Just(())
+            .delay(for: .milliseconds(16), scheduler: RunLoop.main) // 60 FPS
+            .sink { _ in
+                updateUI()
+                lastUIUpdateTime = Date()
+            }
+    }
+    
     private func toggleWeekCalendar() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
             clockState.showingWeekCalendar.toggle()
